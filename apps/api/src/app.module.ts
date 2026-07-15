@@ -17,6 +17,9 @@ import { ClerkAuthGuard } from './auth/guards/clerk-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { TenantGuard } from './auth/guards/tenant.guard';
 import { UsersModule } from './users/users.module';
+import { CompaniesModule } from './companies/companies.module';
+import { AiModule } from './ai/ai.module';
+import { KnowledgeModule } from './knowledge/knowledge.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -52,6 +55,9 @@ import { HealthModule } from './health/health.module';
     }),
     AuthModule,
     UsersModule,
+    CompaniesModule,
+    AiModule,
+    KnowledgeModule,
     HealthModule,
   ],
   providers: [
