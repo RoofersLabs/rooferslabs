@@ -21,6 +21,13 @@ import { CompaniesModule } from './companies/companies.module';
 import { AiModule } from './ai/ai.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
 import { ReceptionistModule } from './receptionist/receptionist.module';
+import { CustomersModule } from './customers/customers.module';
+import { AppointmentsModule } from './appointments/appointments.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { CallsModule } from './calls/calls.module';
+import { TelephonyModule } from './telephony/telephony.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { SearchModule } from './search/search.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -60,6 +67,13 @@ import { HealthModule } from './health/health.module';
     AiModule,
     KnowledgeModule,
     ReceptionistModule,
+    CustomersModule,
+    AppointmentsModule,
+    NotificationsModule,
+    CallsModule,
+    TelephonyModule,
+    DashboardModule,
+    SearchModule,
     HealthModule,
   ],
   providers: [

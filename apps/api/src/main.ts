@@ -9,9 +9,13 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
+import { WebSocketServer } from 'ws';
+import type { IncomingMessage } from 'node:http';
+import type { Duplex } from 'node:stream';
 import type { ApiValidationError } from '@rooferslabs/shared';
 import { AppModule } from './app.module';
 import { AppConfigService } from './config/app-config.service';
+import { MediaStreamBridge } from './telephony/media-stream.bridge';
 
 function flattenValidationErrors(errors: ValidationError[], parent = ''): ApiValidationError[] {
   const result: ApiValidationError[] = [];
@@ -64,6 +68,23 @@ async function bootstrap(): Promise<void> {
   );
 
   app.enableShutdownHooks();
+
+  // Attach the Twilio Media Streams WebSocket bridge to the HTTP server on
+  // /v1/telephony/media-stream (a raw WebSocket, not socket.io).
+  const mediaStreamPath = '/v1/telephony/media-stream';
+  const wss = new WebSocketServer({ noServer: true });
+  const bridge = app.get(MediaStreamBridge);
+  wss.on('connection', (socket) => bridge.handleConnection(socket));
+
+  const httpServer = app.getHttpServer();
+  httpServer.on('upgrade', (request: IncomingMessage, socket: Duplex, head: Buffer) => {
+    const { pathname } = new URL(request.url ?? '', 'http://localhost');
+    if (pathname === mediaStreamPath) {
+      wss.handleUpgrade(request, socket, head, (ws) => wss.emit('connection', ws, request));
+    } else {
+      socket.destroy();
+    }
+  });
 
   // OpenAPI / Swagger documentation at /docs.
   const swaggerConfig = new DocumentBuilder()
