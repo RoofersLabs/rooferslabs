@@ -20,6 +20,7 @@ import { UsersModule } from './users/users.module';
 import { CompaniesModule } from './companies/companies.module';
 import { AiModule } from './ai/ai.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
+import { ReceptionistModule } from './receptionist/receptionist.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -58,6 +59,7 @@ import { HealthModule } from './health/health.module';
     CompaniesModule,
     AiModule,
     KnowledgeModule,
+    ReceptionistModule,
     HealthModule,
   ],
   providers: [
