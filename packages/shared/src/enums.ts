@@ -1,0 +1,199 @@
+/**
+ * Platform-wide enumerations.
+ *
+ * These values are the single source of truth shared between the backend and
+ * frontend. They are mirrored exactly by the Prisma schema enums; any change
+ * here must be reflected in `apps/api/prisma/schema.prisma`.
+ */
+
+/** Role of a user within a company (tenant). */
+export enum UserRole {
+  OWNER = 'OWNER',
+  ADMIN = 'ADMIN',
+  MEMBER = 'MEMBER',
+}
+
+/** Lifecycle status of a company (tenant). */
+export enum CompanyStatus {
+  ONBOARDING = 'ONBOARDING',
+  ACTIVE = 'ACTIVE',
+  SUSPENDED = 'SUSPENDED',
+}
+
+/** Discrete steps of the guided onboarding wizard. */
+export enum OnboardingStep {
+  COMPANY = 'COMPANY',
+  BUSINESS = 'BUSINESS',
+  AI = 'AI',
+  KNOWLEDGE = 'KNOWLEDGE',
+  COMPLETE = 'COMPLETE',
+}
+
+/** Direction of a phone call. The MVP handles inbound calls only. */
+export enum CallDirection {
+  INBOUND = 'INBOUND',
+  OUTBOUND = 'OUTBOUND',
+}
+
+/** Lifecycle status of a call. */
+export enum CallStatus {
+  INCOMING = 'INCOMING',
+  RINGING = 'RINGING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  NO_ANSWER = 'NO_ANSWER',
+  MISSED = 'MISSED',
+}
+
+/** Lifecycle status of an AI conversation attached to a call. */
+export enum ConversationStatus {
+  ACTIVE = 'ACTIVE',
+  COMPLETED = 'COMPLETED',
+  ABANDONED = 'ABANDONED',
+  FAILED = 'FAILED',
+}
+
+/** Business outcome derived from a conversation. */
+export enum ConversationOutcome {
+  LEAD_CAPTURED = 'LEAD_CAPTURED',
+  APPOINTMENT_REQUESTED = 'APPOINTMENT_REQUESTED',
+  EMERGENCY = 'EMERGENCY',
+  INFORMATION_PROVIDED = 'INFORMATION_PROVIDED',
+  NO_ACTION = 'NO_ACTION',
+  SPAM = 'SPAM',
+}
+
+/** Detected customer intent for a conversation. */
+export enum ConversationIntent {
+  NEW_ESTIMATE = 'NEW_ESTIMATE',
+  EMERGENCY_REPAIR = 'EMERGENCY_REPAIR',
+  REPAIR = 'REPAIR',
+  INSPECTION = 'INSPECTION',
+  WARRANTY = 'WARRANTY',
+  FOLLOW_UP = 'FOLLOW_UP',
+  GENERAL_QUESTION = 'GENERAL_QUESTION',
+  BILLING = 'BILLING',
+  OTHER = 'OTHER',
+}
+
+/** How urgent a captured lead / conversation is. */
+export enum UrgencyLevel {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  EMERGENCY = 'EMERGENCY',
+}
+
+/** Qualification tier assigned to a lead. */
+export enum LeadQuality {
+  UNQUALIFIED = 'UNQUALIFIED',
+  COLD = 'COLD',
+  WARM = 'WARM',
+  HOT = 'HOT',
+}
+
+/** Status of a customer record within a company. */
+export enum CustomerStatus {
+  NEW = 'NEW',
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  ARCHIVED = 'ARCHIVED',
+}
+
+/** Type of property a customer owns. */
+export enum PropertyType {
+  RESIDENTIAL = 'RESIDENTIAL',
+  COMMERCIAL = 'COMMERCIAL',
+  UNKNOWN = 'UNKNOWN',
+}
+
+/** Lifecycle status of an appointment request. */
+export enum AppointmentStatus {
+  REQUESTED = 'REQUESTED',
+  CONFIRMED = 'CONFIRMED',
+  RESCHEDULED = 'RESCHEDULED',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
+/** Priority of an appointment request. */
+export enum AppointmentPriority {
+  LOW = 'LOW',
+  NORMAL = 'NORMAL',
+  HIGH = 'HIGH',
+  EMERGENCY = 'EMERGENCY',
+}
+
+/** Category of a knowledge base article. */
+export enum KnowledgeCategory {
+  BUSINESS_INFO = 'BUSINESS_INFO',
+  SERVICES = 'SERVICES',
+  FAQ = 'FAQ',
+  POLICIES = 'POLICIES',
+  WARRANTY = 'WARRANTY',
+  PRICING = 'PRICING',
+  FINANCING = 'FINANCING',
+  EMERGENCY = 'EMERGENCY',
+  SERVICE_AREAS = 'SERVICE_AREAS',
+}
+
+/** Publication status of a knowledge base article. */
+export enum KnowledgeStatus {
+  DRAFT = 'DRAFT',
+  PUBLISHED = 'PUBLISHED',
+  ARCHIVED = 'ARCHIVED',
+}
+
+/** Type of a notification event. */
+export enum NotificationType {
+  NEW_CALL = 'NEW_CALL',
+  NEW_LEAD = 'NEW_LEAD',
+  APPOINTMENT_REQUEST = 'APPOINTMENT_REQUEST',
+  EMERGENCY = 'EMERGENCY',
+  CALL_SUMMARY = 'CALL_SUMMARY',
+  SYSTEM = 'SYSTEM',
+  ACCOUNT = 'ACCOUNT',
+}
+
+/** Priority of a notification. */
+export enum NotificationPriority {
+  LOW = 'LOW',
+  NORMAL = 'NORMAL',
+  HIGH = 'HIGH',
+  CRITICAL = 'CRITICAL',
+}
+
+/** Delivery channel for a notification. */
+export enum NotificationChannel {
+  IN_APP = 'IN_APP',
+  EMAIL = 'EMAIL',
+  SMS = 'SMS',
+}
+
+/** Read/delivery status of a notification. */
+export enum NotificationStatus {
+  UNREAD = 'UNREAD',
+  READ = 'READ',
+  ARCHIVED = 'ARCHIVED',
+}
+
+/** Provisioning / assignment status of a Twilio phone number. */
+export enum PhoneNumberStatus {
+  PROVISIONED = 'PROVISIONED',
+  ASSIGNED = 'ASSIGNED',
+  ACTIVE = 'ACTIVE',
+  RELEASED = 'RELEASED',
+}
+
+/** AI receptionist voice presets exposed by the OpenAI Realtime API. */
+export enum AiVoice {
+  ALLOY = 'alloy',
+  ASH = 'ash',
+  BALLAD = 'ballad',
+  CORAL = 'coral',
+  ECHO = 'echo',
+  SAGE = 'sage',
+  SHIMMER = 'shimmer',
+  VERSE = 'verse',
+}
