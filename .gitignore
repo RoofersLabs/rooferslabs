@@ -50,3 +50,4 @@ bun.lockb
 # Local Claude settings (optional)
 .claude/local/
 .claude/skills/
+.gstack/
