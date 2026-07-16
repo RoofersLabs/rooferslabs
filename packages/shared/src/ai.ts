@@ -13,7 +13,7 @@ import type {
   LeadQuality,
   PropertyType,
   UrgencyLevel,
-} from './enums';
+} from './enums.js';
 
 /** Customer identity/contact details extracted from the conversation. */
 export interface ExtractedCustomer {
