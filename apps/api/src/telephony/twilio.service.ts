@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import twilio from 'twilio';
 import { AppConfigService } from '../config/app-config.service';
 
@@ -39,7 +40,36 @@ export class TwilioService {
     const stream = connect.stream({ url: params.wssUrl });
     stream.parameter({ name: 'callId', value: params.callId });
     stream.parameter({ name: 'companyId', value: params.companyId });
+    stream.parameter({
+      name: 'token',
+      value: this.signStreamToken(params.callId, params.companyId),
+    });
     return response.toString();
+  }
+
+  /**
+   * HMAC token embedded in the Media Streams TwiML so the WebSocket bridge only
+   * accepts sessions this server created. Keyed on the Twilio auth token, which
+   * never leaves the backend, so the callId/companyId pair cannot be forged.
+   */
+  signStreamToken(callId: string, companyId: string): string {
+    const authToken = this.config.twilio.authToken;
+    if (!authToken) return '';
+    return createHmac('sha256', authToken).update(`${callId}:${companyId}`).digest('hex');
+  }
+
+  /** Verify a Media Streams token. Without an auth token: dev allows, production rejects. */
+  verifyStreamToken(token: string | undefined, callId: string, companyId: string): boolean {
+    const authToken = this.config.twilio.authToken;
+    if (!authToken) {
+      if (this.config.isProduction) return false;
+      this.logger.warn('TWILIO_AUTH_TOKEN not set — skipping stream token validation (dev only).');
+      return true;
+    }
+    if (!token) return false;
+    const expected = Buffer.from(this.signStreamToken(callId, companyId), 'hex');
+    const provided = Buffer.from(token, 'hex');
+    return provided.length === expected.length && timingSafeEqual(provided, expected);
   }
 
   /** TwiML that politely rejects a call (unconfigured number, inactive company). */

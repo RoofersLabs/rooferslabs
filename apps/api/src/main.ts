@@ -6,6 +6,7 @@ import {
   type ValidationError,
 } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
@@ -34,18 +35,27 @@ function flattenValidationErrors(errors: ValidationError[], parent = ''): ApiVal
 }
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true, rawBody: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bufferLogs: true,
+    rawBody: true,
+  });
 
   const logger = app.get(Logger);
   app.useLogger(logger);
 
   const config = app.get(AppConfigService);
 
+  // Behind Cloudflare/ALB the first hop is the proxy; trust it so req.ip (used
+  // by rate limiting and logs) reflects the real client.
+  app.set('trust proxy', 1);
+
   // Security headers. CSP is relaxed for the Swagger UI in non-production.
   app.use(helmet({ contentSecurityPolicy: config.isProduction ? undefined : false }));
 
+  // Strict CORS: only the configured origins (never a wildcard), falling back
+  // to the web app's public URL so a misconfigured CORS_ORIGINS fails closed.
   app.enableCors({
-    origin: config.api.corsOrigins.length ? config.api.corsOrigins : true,
+    origin: config.api.corsOrigins.length ? config.api.corsOrigins : [config.api.webPublicUrl],
     credentials: true,
     exposedHeaders: ['x-request-id'],
   });
@@ -84,6 +94,11 @@ async function bootstrap(): Promise<void> {
     } else {
       socket.destroy();
     }
+  });
+  // Close active media streams during shutdown so in-flight calls finalize.
+  httpServer.on('close', () => {
+    for (const client of wss.clients) client.close();
+    wss.close();
   });
 
   // OpenAPI / Swagger documentation at /docs.

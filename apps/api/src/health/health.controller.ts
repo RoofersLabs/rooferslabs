@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../common/decorators/public.decorator';
 import { respond } from '../common/response';
@@ -17,7 +17,10 @@ export class HealthController {
   @Public()
   @ApiOperation({ summary: 'Liveness probe' })
   live() {
-    return respond({ status: 'ok', uptimeSeconds: Math.round(process.uptime()) }, 'Service is live.');
+    return respond(
+      { status: 'ok', uptimeSeconds: Math.round(process.uptime()) },
+      'Service is live.',
+    );
   }
 
   @Get('ready')
@@ -25,10 +28,18 @@ export class HealthController {
   @ApiOperation({ summary: 'Readiness probe (checks database and cache)' })
   async ready() {
     const [database, cache] = await Promise.all([this.checkDatabase(), this.checkRedis()]);
-    const status = database && cache ? 'ready' : 'degraded';
+
+    // The database is a hard dependency: without it the instance must be taken
+    // out of rotation (503). Redis only degrades caching, so it is reported but
+    // does not fail readiness.
+    if (!database) {
+      throw new ServiceUnavailableException('Database is unreachable.');
+    }
+
+    const status = cache ? 'ready' : 'degraded';
     return respond(
       { status, checks: { database, cache } },
-      status === 'ready' ? 'All dependencies healthy.' : 'One or more dependencies are degraded.',
+      status === 'ready' ? 'All dependencies healthy.' : 'Cache is degraded; service remains available.',
     );
   }
 

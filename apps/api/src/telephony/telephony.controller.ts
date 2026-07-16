@@ -1,14 +1,6 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Headers,
-  Post,
-  Req,
-  Res,
-} from '@nestjs/common';
+import { Body, Controller, Get, Headers, Post, Res } from '@nestjs/common';
 import { ApiBearerAuth, ApiExcludeEndpoint, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import { CallStatus, UserRole } from '@rooferslabs/shared';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentCompanyId } from '../common/decorators/current-company.decorator';
@@ -44,7 +36,6 @@ export class TelephonyController {
   @Public()
   @ApiExcludeEndpoint()
   async incoming(
-    @Req() req: Request,
     @Res() res: Response,
     @Headers('x-twilio-signature') signature: string | undefined,
     @Body() body: TwilioVoiceWebhookBody,
@@ -60,7 +51,11 @@ export class TelephonyController {
     if (!resolved) {
       res
         .type('text/xml')
-        .send(this.twilio.buildRejectTwiml('This number is not yet configured. Please try again later.'));
+        .send(
+          this.twilio.buildRejectTwiml(
+            'This number is not yet configured. Please try again later.',
+          ),
+        );
       return;
     }
 
@@ -84,7 +79,17 @@ export class TelephonyController {
   @Post('status')
   @Public()
   @ApiExcludeEndpoint()
-  async status(@Res() res: Response, @Body() body: TwilioVoiceWebhookBody): Promise<void> {
+  async status(
+    @Res() res: Response,
+    @Headers('x-twilio-signature') signature: string | undefined,
+    @Body() body: TwilioVoiceWebhookBody,
+  ): Promise<void> {
+    const url = `${this.config.api.publicUrl}/v1/telephony/status`;
+    if (!this.twilio.validateSignature(signature, url, body as Record<string, unknown>)) {
+      res.status(403).send();
+      return;
+    }
+
     const status = mapTwilioStatus(body.CallStatus);
     if (status && body.CallSid) {
       await this.callProcessing.handleStatusCallback(body.CallSid, status);

@@ -5,9 +5,14 @@ import { CallStatus } from '@rooferslabs/shared';
 import { AppConfigService } from '../config/app-config.service';
 import { ReceptionistService } from '../receptionist/receptionist.service';
 import { CallProcessingService } from '../calls/call-processing.service';
+import { TwilioService } from './twilio.service';
 import { createEmptySignals, type LiveConversationSignals } from '../receptionist/session-state';
 
 const OPENAI_REALTIME_URL = 'wss://api.openai.com/v1/realtime';
+
+/** Hard safety cap on a single call so a stuck socket can never burn an
+ *  unbounded OpenAI Realtime session. Well above any legitimate call length. */
+const MAX_CALL_DURATION_MS = 30 * 60 * 1000;
 
 /**
  * Bridges a single Twilio Media Streams WebSocket to an OpenAI Realtime session.
@@ -23,6 +28,7 @@ export class MediaStreamBridge {
     private readonly config: AppConfigService,
     private readonly receptionist: ReceptionistService,
     private readonly callProcessing: CallProcessingService,
+    private readonly twilio: TwilioService,
   ) {}
 
   handleConnection(twilioWs: WebSocket): void {
@@ -31,6 +37,7 @@ export class MediaStreamBridge {
       this.config,
       this.receptionist,
       this.callProcessing,
+      this.twilio,
       this.logger,
     ).start();
   }
@@ -46,12 +53,14 @@ class CallBridgeSession {
   private readonly startedAt = Date.now();
   private finalized = false;
   private openaiReady = false;
+  private maxDurationTimer: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly twilioWs: WebSocket,
     private readonly config: AppConfigService,
     private readonly receptionist: ReceptionistService,
     private readonly callProcessing: CallProcessingService,
+    private readonly twilio: TwilioService,
     private readonly logger: Logger,
   ) {}
 
@@ -62,6 +71,12 @@ class CallBridgeSession {
       this.logger.warn(`Twilio socket error: ${err.message}`);
       void this.finalize(CallStatus.FAILED);
     });
+    this.maxDurationTimer = setTimeout(() => {
+      this.logger.warn(
+        `Call ${this.callId} hit the ${MAX_CALL_DURATION_MS / 60000}-minute safety cap; ending.`,
+      );
+      void this.finalize(CallStatus.COMPLETED);
+    }, MAX_CALL_DURATION_MS);
   }
 
   private onTwilioMessage(raw: RawData): void {
@@ -95,6 +110,14 @@ class CallBridgeSession {
 
     if (!this.callId || !this.companyId) {
       this.logger.error('Media stream started without callId/companyId; closing.');
+      this.twilioWs.close();
+      return;
+    }
+    if (!this.twilio.verifyStreamToken(params.token, this.callId, this.companyId)) {
+      this.logger.error(
+        `Media stream for call ${this.callId} presented an invalid token; closing.`,
+      );
+      this.callId = null; // do not touch the call record for an unauthenticated stream
       this.twilioWs.close();
       return;
     }
@@ -193,6 +216,16 @@ class CallBridgeSession {
         await this.handleFunctionCall(event);
         break;
 
+      case 'error':
+        // Benign cancellation races are expected (barge-in with no active
+        // response); anything else is worth surfacing in the logs.
+        if (event.error?.code !== 'response_cancel_not_active') {
+          this.logger.warn(
+            `OpenAI realtime error event for call ${this.callId}: ${event.error?.message ?? 'unknown'}`,
+          );
+        }
+        break;
+
       default:
         break;
     }
@@ -223,7 +256,8 @@ class CallBridgeSession {
 
   private pushTranscript(role: 'assistant' | 'customer', text: string): void {
     const trimmed = text.trim();
-    if (trimmed) this.transcript.push({ role, text: trimmed, offsetMs: Date.now() - this.startedAt });
+    if (trimmed)
+      this.transcript.push({ role, text: trimmed, offsetMs: Date.now() - this.startedAt });
   }
 
   private sendToOpenAi(payload: unknown): void {
@@ -241,6 +275,8 @@ class CallBridgeSession {
   private async finalize(status: CallStatus): Promise<void> {
     if (this.finalized) return;
     this.finalized = true;
+
+    if (this.maxDurationTimer) clearTimeout(this.maxDurationTimer);
 
     try {
       this.openaiWs?.close();
@@ -289,4 +325,5 @@ interface OpenAiRealtimeEvent {
   name?: string;
   call_id?: string;
   arguments?: string;
+  error?: { code?: string; message?: string };
 }
