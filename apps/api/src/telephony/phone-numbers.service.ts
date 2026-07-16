@@ -65,7 +65,17 @@ export class PhoneNumbersService {
   }
 }
 
+/**
+ * Normalize a phone number toward E.164 for stable lookups: strips formatting
+ * characters and adds +1 to bare 10-digit US numbers. Twilio always sends
+ * E.164, so this mainly guards operator-entered numbers at assignment time.
+ */
 function normalize(phone: string): string {
   const trimmed = phone.trim();
+  if (!trimmed) return trimmed;
+  const digits = trimmed.replace(/[\s\-().]/g, '');
+  if (/^\+\d{7,15}$/.test(digits)) return digits;
+  if (/^\d{10}$/.test(digits)) return `+1${digits}`;
+  if (/^1\d{10}$/.test(digits)) return `+${digits}`;
   return trimmed;
 }

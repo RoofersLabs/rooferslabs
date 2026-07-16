@@ -21,17 +21,6 @@ import type {
 
 const SORTABLE = ['createdAt', 'preferredDate', 'priority', 'status'] as const;
 
-export interface CreateAppointmentFromCallInput {
-  customerId?: string | null;
-  conversationId?: string | null;
-  serviceRequested?: string | null;
-  propertyAddress?: string | null;
-  preferredDate?: Date | null;
-  preferredTimeWindow?: string | null;
-  priority?: AppointmentPriority;
-  notes?: string | null;
-}
-
 @Injectable()
 export class AppointmentsService {
   constructor(private readonly repo: AppointmentsRepository) {}
@@ -46,24 +35,6 @@ export class AppointmentsService {
       preferredTimeWindow: dto.preferredTimeWindow ?? null,
       priority: dto.priority ?? AppointmentPriority.NORMAL,
       notes: dto.notes ?? null,
-      status: AppointmentStatus.REQUESTED,
-    });
-  }
-
-  /** Persist an appointment captured by the AI during a call. */
-  createFromCall(companyId: string, input: CreateAppointmentFromCallInput): Promise<Appointment> {
-    return this.repo.create({
-      company: { connect: { id: companyId } },
-      ...(input.customerId ? { customer: { connect: { id: input.customerId } } } : {}),
-      ...(input.conversationId
-        ? { conversation: { connect: { id: input.conversationId } } }
-        : {}),
-      serviceRequested: input.serviceRequested ?? null,
-      propertyAddress: input.propertyAddress ?? null,
-      preferredDate: input.preferredDate ?? null,
-      preferredTimeWindow: input.preferredTimeWindow ?? null,
-      priority: input.priority ?? AppointmentPriority.NORMAL,
-      notes: input.notes ?? null,
       status: AppointmentStatus.REQUESTED,
     });
   }

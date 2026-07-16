@@ -7,6 +7,8 @@ import { PrismaService } from '../prisma/prisma.service';
  */
 @Injectable()
 export class SearchService {
+  constructor(private readonly prisma: PrismaService) {}
+
   async search(companyId: string, rawQuery: string) {
     const query = rawQuery.trim();
     if (query.length < 2) {
@@ -75,6 +77,4 @@ export class SearchService {
 
     return { customers, conversations, appointments, knowledgeArticles };
   }
-
-  constructor(private readonly prisma: PrismaService) {}
 }
