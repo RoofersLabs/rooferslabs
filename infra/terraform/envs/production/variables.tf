@@ -29,8 +29,9 @@ variable "api_subdomain" {
 }
 
 variable "app_subdomain" {
-  type    = string
-  default = "app"
+  description = "Subdomain of the Vercel-hosted frontend; used to derive WEB_PUBLIC_URL and CORS_ORIGINS for the API."
+  type        = string
+  default     = "app"
 }
 
 variable "enable_https" {
@@ -108,21 +109,6 @@ variable "api_memory" {
 }
 
 variable "api_desired_count" {
-  type    = number
-  default = 1
-}
-
-variable "web_cpu" {
-  type    = number
-  default = 256
-}
-
-variable "web_memory" {
-  type    = number
-  default = 512
-}
-
-variable "web_desired_count" {
   type    = number
   default = 1
 }

@@ -7,8 +7,8 @@ steps below — no manual console configuration except the external services
 
 ## What gets created
 
-| Module          | Resources                                                              |
-| --------------- | ---------------------------------------------------------------------- |
+| Module          | Resources                                                               |
+| --------------- | ----------------------------------------------------------------------- |
 | `networking`    | VPC, 2×public + 2×private subnets, IGW, NAT gateway, route tables       |
 | `ecr`           | `rooferslabs/api` + `rooferslabs/web` repositories, lifecycle policies  |
 | `alb`           | Application Load Balancer, target groups, ACM certificate, host routing |

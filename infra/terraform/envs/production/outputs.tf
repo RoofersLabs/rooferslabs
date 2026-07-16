@@ -3,7 +3,7 @@
 # =============================================================================
 
 output "alb_dns_name" {
-  description = "Create Cloudflare CNAMEs: api.<domain> and app.<domain> → this hostname."
+  description = "Create the Cloudflare CNAME: api.<domain> → this hostname. (app.<domain> points at Vercel, not the ALB.)"
   value       = module.alb.alb_dns_name
 }
 
@@ -24,16 +24,22 @@ output "api_service_name" {
   value = module.api_service.service_name
 }
 
-output "web_service_name" {
-  value = module.web_service.service_name
-}
-
 output "api_url" {
   value = "https://${var.api_subdomain}.${var.root_domain}"
 }
 
 output "app_url" {
-  value = "https://${var.app_subdomain}.${var.root_domain}"
+  description = "Vercel-hosted frontend; set VITE_API_BASE_URL=<api_url> and VITE_CLERK_PUBLISHABLE_KEY in the Vercel project."
+  value       = "https://${var.app_subdomain}.${var.root_domain}"
+}
+
+output "sqs_queue_url" {
+  description = "Background jobs queue (provisioned; consumers arrive in a later release)."
+  value       = module.sqs.queue_url
+}
+
+output "sqs_dead_letter_queue_url" {
+  value = module.sqs.dead_letter_queue_url
 }
 
 output "twilio_voice_webhook" {

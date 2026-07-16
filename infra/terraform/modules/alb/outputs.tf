@@ -1,5 +1,5 @@
 output "alb_dns_name" {
-  description = "Point Cloudflare CNAMEs for the api/app hostnames here."
+  description = "Point the Cloudflare CNAME for the api hostname here."
   value       = aws_lb.this.dns_name
 }
 
@@ -13,10 +13,6 @@ output "alb_security_group_id" {
 
 output "api_target_group_arn" {
   value = aws_lb_target_group.api.arn
-}
-
-output "web_target_group_arn" {
-  value = aws_lb_target_group.web.arn
 }
 
 output "certificate_arn" {

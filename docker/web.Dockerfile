@@ -1,9 +1,12 @@
 # =============================================================================
-# RoofersLabs Web — production image (Vite PWA served by nginx)
-# Build from the repository root. Vite inlines env vars at build time:
+# RoofersLabs Web — LOCAL DEVELOPMENT image (Vite PWA served by nginx)
+#
+# Production frontend hosting is Vercel (see /vercel.json); this image exists
+# only for the local docker-compose full-stack profile. Vite inlines env vars
+# at build time:
 #   docker build -f docker/web.Dockerfile \
-#     --build-arg VITE_CLERK_PUBLISHABLE_KEY=pk_live_xxx \
-#     --build-arg VITE_API_BASE_URL=https://api.rooferslabs.com \
+#     --build-arg VITE_CLERK_PUBLISHABLE_KEY=pk_test_xxx \
+#     --build-arg VITE_API_BASE_URL=http://localhost:4000 \
 #     -t rooferslabs-web .
 # =============================================================================
 

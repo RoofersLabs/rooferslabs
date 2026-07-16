@@ -18,3 +18,15 @@ variable "s3_bucket_arns" {
   type        = list(string)
   default     = []
 }
+
+variable "enable_sqs_access" {
+  description = "Attach the SQS policy to the task role. Must be a plan-time literal."
+  type        = bool
+  default     = true
+}
+
+variable "sqs_queue_arns" {
+  description = "SQS queue ARNs the application task role may use (jobs queue + DLQ)."
+  type        = list(string)
+  default     = []
+}

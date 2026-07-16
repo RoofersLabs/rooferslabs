@@ -79,6 +79,37 @@ resource "aws_iam_role_policy" "task_s3" {
   }
 }
 
+data "aws_iam_policy_document" "task_sqs" {
+  statement {
+    sid = "BackgroundJobsQueue"
+    actions = [
+      "sqs:SendMessage",
+      "sqs:ReceiveMessage",
+      "sqs:DeleteMessage",
+      "sqs:GetQueueAttributes",
+      "sqs:GetQueueUrl",
+    ]
+    resources = var.sqs_queue_arns
+  }
+}
+
+# Gated on a plan-time boolean (same rule as the S3 policy): `count` must
+# never depend on the potentially unknown-until-apply queue ARNs.
+resource "aws_iam_role_policy" "task_sqs" {
+  count = var.enable_sqs_access ? 1 : 0
+
+  name   = "sqs-background-jobs"
+  role   = aws_iam_role.task.id
+  policy = data.aws_iam_policy_document.task_sqs.json
+
+  lifecycle {
+    precondition {
+      condition     = length(var.sqs_queue_arns) > 0
+      error_message = "enable_sqs_access is true but sqs_queue_arns is empty."
+    }
+  }
+}
+
 # ECS Exec (aws ecs execute-command) for production debugging.
 data "aws_iam_policy_document" "task_exec" {
   statement {

@@ -1,9 +1,12 @@
 # =============================================================================
 # RoofersLabs — production environment
 # =============================================================================
-# Composes the reusable modules into the full stack:
-#   VPC → ALB (+ACM) → ECR → RDS → Redis → S3 → Secrets → IAM → CloudWatch
-#   → ECS Fargate (api + web)
+# Composes the reusable modules into the backend stack:
+#   VPC → ALB (+ACM) → ECR → RDS → Redis → S3 → SQS → Secrets → IAM
+#   → CloudWatch → ECS Fargate (api)
+#
+# The frontend (apps/web) is hosted on Vercel — see /vercel.json and
+# docs/13_Deployment_Guide.md. This stack serves the API only.
 #
 # See infra/terraform/README.md for the from-scratch walkthrough.
 
@@ -30,7 +33,8 @@ module "networking" {
 module "ecr" {
   source = "../../modules/ecr"
 
-  name = "rooferslabs"
+  name         = "rooferslabs"
+  repositories = ["api"]
 }
 
 # ---- Load balancer -----------------------------------------------------------------
@@ -42,7 +46,6 @@ module "alb" {
   vpc_id            = module.networking.vpc_id
   public_subnet_ids = module.networking.public_subnet_ids
   api_domain        = local.api_domain
-  app_domain        = local.app_domain
   enable_https      = var.enable_https
 }
 
@@ -103,6 +106,12 @@ module "s3" {
   name = "${local.name}-${data.aws_caller_identity.current.account_id}"
 }
 
+module "sqs" {
+  source = "../../modules/sqs"
+
+  name = local.name
+}
+
 # ---- Secrets -----------------------------------------------------------------------
 
 module "secrets" {
@@ -134,6 +143,7 @@ module "iam" {
     module.secrets.app_secret_arn,
   ]
   s3_bucket_arns = values(module.s3.bucket_arns)
+  sqs_queue_arns = [module.sqs.queue_arn, module.sqs.dead_letter_queue_arn]
 }
 
 # ---- CloudWatch ------------------------------------------------------------------------
@@ -142,6 +152,7 @@ module "observability" {
   source = "../../modules/observability"
 
   name               = local.name
+  services           = ["api"]
   log_retention_days = var.log_retention_days
   alarm_email        = var.alarm_email
   alb_arn_suffix     = module.alb.alb_arn_suffix
@@ -202,6 +213,9 @@ module "api_service" {
     AWS_REGION              = var.aws_region
     S3_BUCKET_RECORDINGS    = module.s3.bucket_names["recordings"]
     S3_BUCKET_UPLOADS       = module.s3.bucket_names["uploads"]
+    # Queue is provisioned and permitted; consumers arrive in a later release.
+    SQS_QUEUE_URL          = module.sqs.queue_url
+    BACKGROUND_JOBS_INLINE = "true"
   }
 
   secrets = merge(
@@ -221,27 +235,3 @@ module "api_service" {
   )
 }
 
-module "web_service" {
-  source = "../../modules/ecs-service"
-
-  name                  = "${local.name}-web"
-  region                = var.aws_region
-  cluster_arn           = aws_ecs_cluster.this.arn
-  vpc_id                = module.networking.vpc_id
-  private_subnet_ids    = module.networking.private_subnet_ids
-  alb_security_group_id = module.alb.alb_security_group_id
-  target_group_arn      = module.alb.web_target_group_arn
-
-  container_name       = "web"
-  container_port       = 80
-  image_repository_url = module.ecr.repository_urls["web"]
-  cpu                  = var.web_cpu
-  memory               = var.web_memory
-  desired_count        = var.web_desired_count
-
-  execution_role_arn = module.iam.execution_role_arn
-  task_role_arn      = module.iam.task_role_arn
-  log_group_name     = module.observability.log_group_names["web"]
-
-  health_check_grace_period_seconds = 30
-}

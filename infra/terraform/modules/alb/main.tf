@@ -1,9 +1,8 @@
 # =============================================================================
-# ALB — public load balancer, target groups, listeners, ACM certificate
+# ALB — public load balancer for the API, listeners, ACM certificate
 # =============================================================================
-# One ALB fronts both services with host-based routing:
+# The ALB fronts the API service only (the frontend is hosted on Vercel):
 #   api.<domain> → API target group (ECS, port 4000)
-#   app.<domain> → web target group (ECS/nginx, port 80)
 #
 # HTTPS is a two-phase setup because ACM DNS validation records live in
 # Cloudflare (managed outside Terraform):
@@ -56,7 +55,7 @@ resource "aws_lb" "this" {
   drop_invalid_header_fields = true
 }
 
-# ---- Target groups -----------------------------------------------------------
+# ---- Target group -------------------------------------------------------------
 
 resource "aws_lb_target_group" "api" {
   name        = "${var.name}-api"
@@ -77,31 +76,11 @@ resource "aws_lb_target_group" "api" {
   deregistration_delay = 30
 }
 
-resource "aws_lb_target_group" "web" {
-  name        = "${var.name}-web"
-  port        = 80
-  protocol    = "HTTP"
-  vpc_id      = var.vpc_id
-  target_type = "ip"
-
-  health_check {
-    path                = "/"
-    matcher             = "200"
-    interval            = 30
-    timeout             = 5
-    healthy_threshold   = 2
-    unhealthy_threshold = 3
-  }
-
-  deregistration_delay = 30
-}
-
 # ---- ACM certificate (validated via DNS records added in Cloudflare) ----------
 
 resource "aws_acm_certificate" "this" {
-  domain_name               = var.api_domain
-  subject_alternative_names = [var.app_domain]
-  validation_method         = "DNS"
+  domain_name       = var.api_domain
+  validation_method = "DNS"
 
   lifecycle {
     create_before_destroy = true
@@ -110,7 +89,7 @@ resource "aws_acm_certificate" "this" {
 
 # ---- Listeners ----------------------------------------------------------------
 
-# HTTP: redirect to HTTPS once enabled; plain routing before that.
+# HTTP: redirect to HTTPS once enabled; direct API forwarding before that.
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.this.arn
   port              = 80
@@ -132,25 +111,7 @@ resource "aws_lb_listener" "http" {
     for_each = var.enable_https ? [] : [1]
     content {
       type             = "forward"
-      target_group_arn = aws_lb_target_group.web.arn
-    }
-  }
-}
-
-resource "aws_lb_listener_rule" "http_api" {
-  count = var.enable_https ? 0 : 1
-
-  listener_arn = aws_lb_listener.http.arn
-  priority     = 10
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.api.arn
-  }
-
-  condition {
-    host_header {
-      values = [var.api_domain]
+      target_group_arn = aws_lb_target_group.api.arn
     }
   }
 }
@@ -166,24 +127,6 @@ resource "aws_lb_listener" "https" {
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.web.arn
-  }
-}
-
-resource "aws_lb_listener_rule" "https_api" {
-  count = var.enable_https ? 1 : 0
-
-  listener_arn = aws_lb_listener.https[0].arn
-  priority     = 10
-
-  action {
-    type             = "forward"
     target_group_arn = aws_lb_target_group.api.arn
-  }
-
-  condition {
-    host_header {
-      values = [var.api_domain]
-    }
   }
 }

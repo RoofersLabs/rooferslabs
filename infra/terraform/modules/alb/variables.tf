@@ -16,11 +16,6 @@ variable "api_domain" {
   type        = string
 }
 
-variable "app_domain" {
-  description = "Public hostname for the web app (e.g. app.rooferslabs.com)."
-  type        = string
-}
-
 variable "api_container_port" {
   type    = number
   default = 4000
