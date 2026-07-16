@@ -6,8 +6,11 @@
 
 # The service SG can be supplied by the root module (the API's SG is created
 # there so RDS/Redis can whitelist it without a module cycle) or created here.
+# Creation is gated on the plan-time boolean `create_security_group`, never on
+# whether the (computed, unknown-until-apply) security_group_id is null —
+# `count` must always be resolvable during planning.
 resource "aws_security_group" "this" {
-  count = var.security_group_id == null ? 1 : 0
+  count = var.create_security_group ? 1 : 0
 
   name        = "${var.name}-svc"
   description = "Ingress from the ALB to ${var.name}"
@@ -32,7 +35,7 @@ resource "aws_security_group" "this" {
 }
 
 locals {
-  service_security_group_id = coalesce(var.security_group_id, one(aws_security_group.this[*].id))
+  service_security_group_id = var.create_security_group ? one(aws_security_group.this[*].id) : var.security_group_id
 }
 
 resource "aws_ecs_task_definition" "this" {
@@ -116,5 +119,10 @@ resource "aws_ecs_service" "this" {
   # definition itself only changes when configuration changes.
   lifecycle {
     ignore_changes = [desired_count]
+
+    precondition {
+      condition     = var.create_security_group || var.security_group_id != null
+      error_message = "When create_security_group is false, security_group_id must be provided."
+    }
   }
 }

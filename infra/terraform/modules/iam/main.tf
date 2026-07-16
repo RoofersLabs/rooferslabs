@@ -62,12 +62,21 @@ data "aws_iam_policy_document" "task_s3" {
   }
 }
 
+# Gated on a plan-time boolean, never on the (potentially unknown-until-apply)
+# contents of s3_bucket_arns — `count` must always resolve during planning.
 resource "aws_iam_role_policy" "task_s3" {
-  count = length(var.s3_bucket_arns) > 0 ? 1 : 0
+  count = var.enable_s3_access ? 1 : 0
 
   name   = "s3-application-buckets"
   role   = aws_iam_role.task.id
   policy = data.aws_iam_policy_document.task_s3.json
+
+  lifecycle {
+    precondition {
+      condition     = length(var.s3_bucket_arns) > 0
+      error_message = "enable_s3_access is true but s3_bucket_arns is empty."
+    }
+  }
 }
 
 # ECS Exec (aws ecs execute-command) for production debugging.

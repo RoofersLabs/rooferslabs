@@ -169,6 +169,7 @@ module "api_service" {
   vpc_id                = module.networking.vpc_id
   private_subnet_ids    = module.networking.private_subnet_ids
   alb_security_group_id = module.alb.alb_security_group_id
+  create_security_group = false # plan-time literal; the SG below is created in this root
   security_group_id     = aws_security_group.api_service.id
   target_group_arn      = module.alb.api_target_group_arn
 

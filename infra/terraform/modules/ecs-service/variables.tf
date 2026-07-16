@@ -23,8 +23,14 @@ variable "alb_security_group_id" {
   type = string
 }
 
+variable "create_security_group" {
+  description = "Create the service security group in this module. Set false and pass security_group_id to use a pre-created one. Must be a plan-time literal (never derived from resource attributes)."
+  type        = bool
+  default     = true
+}
+
 variable "security_group_id" {
-  description = "Pre-created service security group; when null the module creates one."
+  description = "Pre-created service security group; required when create_security_group is false."
   type        = string
   default     = null
 }
