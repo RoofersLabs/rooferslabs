@@ -1,4 +1,13 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+
+function canResolve(moduleName: string): boolean {
+  try {
+    require.resolve(moduleName);
+    return true;
+  } catch {
+    return false;
+  }
+}
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
@@ -50,9 +59,13 @@ import { HealthModule } from './health/health.module';
             ],
             remove: true,
           },
-          transport: config.isProduction
-            ? undefined
-            : { target: 'pino-pretty', options: { singleLine: true, colorize: true } },
+          // Pretty logs only when pino-pretty is installed (it is a dev
+          // dependency, absent from production images) — otherwise the app
+          // would crash at boot when run with NODE_ENV!=production.
+          transport:
+            !config.isProduction && canResolve('pino-pretty')
+              ? { target: 'pino-pretty', options: { singleLine: true, colorize: true } }
+              : undefined,
           customProps: (req) => ({ requestId: (req as { requestId?: string }).requestId }),
           autoLogging: { ignore: (req) => req.url === '/v1/health' },
         },
