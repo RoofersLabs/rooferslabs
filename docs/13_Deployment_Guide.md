@@ -5,35 +5,34 @@
 **Prerequisite reading:** `10_AWS_Infrastructure.md`, `00_GStack_Architecture.md`
 
 This is the operational runbook for deploying the RoofersLabs platform to
-production. It follows the frozen G-Stack architecture: Docker images on
-Amazon ECS/Fargate, Amazon RDS PostgreSQL, Redis, S3, Secrets Manager,
-CloudWatch, and Cloudflare at the edge.
+production: the frontend on **Vercel**, the backend as a Docker image on
+**Amazon ECS/Fargate**, with Amazon RDS PostgreSQL, ElastiCache Redis, S3,
+SQS, Secrets Manager, CloudWatch, and Cloudflare at the edge.
 
 ---
 
 ## 1. Topology
 
 ```text
-Customer phone ──► Twilio ──► Cloudflare (api.rooferslabs.com)
-                                   │
-Browser / PWA ──► Cloudflare ──────┤
-  (app.rooferslabs.com)            ▼
-                          AWS ALB ──► ECS Fargate
-                                   ├── rooferslabs-api (NestJS, port 4000)
-                                   └── rooferslabs-web (nginx, port 80)
-                                        │
-                     ┌─────────────┬────┴───────┬──────────────┐
-                     ▼             ▼            ▼              ▼
-                Amazon RDS      Redis        Amazon S3     CloudWatch
-               (PostgreSQL) (ElastiCache) (recordings/logos)  (logs)
+Browser / PWA ──► Cloudflare (app.rooferslabs.com) ──► Vercel (static PWA)
+
+Customer phone ─► Twilio ─┐
+Browser / PWA ────────────┤► Cloudflare (api.rooferslabs.com)
+                          ▼
+                     AWS ALB ──► ECS Fargate: rooferslabs-api (NestJS, :4000)
+                                      │
+                  ┌───────────┬───────┴────┬───────────┬──────────────┐
+                  ▼           ▼            ▼           ▼              ▼
+             Amazon RDS     Redis      Amazon S3   Amazon SQS    CloudWatch
+            (PostgreSQL) (ElastiCache) (recordings) (jobs+DLQ)      (logs)
 ```
 
-Two DNS names, both proxied through Cloudflare:
+Two DNS names:
 
 | Host | Serves | Origin |
 | ---- | ------ | ------ |
-| `app.rooferslabs.com` | PWA (static) | ALB → web service |
-| `api.rooferslabs.com` | REST API + Media Streams WebSocket | ALB → api service |
+| `app.rooferslabs.com` | PWA (static) | Vercel |
+| `api.rooferslabs.com` | REST API + Media Streams WebSocket | Cloudflare → ALB → api service |
 
 ---
 
@@ -72,23 +71,29 @@ under `infra/terraform/modules/`):
    automated backups, deletion protection, generated master password (never
    leaves Secrets Manager), security group admitting only the API service.
 3. **ElastiCache Redis 7** — single node by default (`replicas_per_node` for
-   failover), same network rules.
+   failover), same network rules. Backs both the application cache and
+   fleet-wide API rate limiting.
 4. **S3** — private `recordings` + `uploads` buckets (KMS encryption, all
-   public access blocked). SQS is deferred until background workers exist
-   (`BACKGROUND_JOBS_INLINE=true` remains the default).
-5. **Secrets Manager** — `rooferslabs-production/database` (generated
+   public access blocked).
+5. **SQS** — `rooferslabs-production-jobs` queue (long polling, SSE) with a
+   14-day dead-letter queue (redrive after 5 attempts). Provisioned and
+   permitted so background consumers can ship in a later release without an
+   infrastructure migration; the app processes jobs inline until then
+   (`BACKGROUND_JOBS_INLINE=true`).
+6. **Secrets Manager** — `rooferslabs-production/database` (generated
    DATABASE_URL) and `rooferslabs-production/app` (Clerk/OpenAI/Twilio/VAPID),
    mapped into the task definition via `valueFrom`.
-6. **ECR** — `rooferslabs/api` and `rooferslabs/web` with lifecycle policies.
-7. **ECS Fargate** — one cluster, two services behind one ALB with host-based
-   routing (`api.` → :4000, `app.` → :80), WebSocket-friendly 300 s idle
-   timeout, deployment circuit breaker with automatic rollback, ECS Exec
-   enabled. API health check: `GET /v1/health/ready`.
-8. **CloudWatch** — log groups (`/rooferslabs-production/api|web`, 30-day
+7. **ECR** — `rooferslabs/api` with lifecycle policies (the frontend has no
+   production image — it deploys to Vercel).
+8. **ECS Fargate** — one cluster, the API service behind the ALB,
+   WebSocket-friendly 300 s idle timeout, deployment circuit breaker with
+   automatic rollback, ECS Exec enabled. Health check: `GET /v1/health/ready`.
+9. **CloudWatch** — log group (`/rooferslabs-production/api`, 30-day
    retention) and alarms on ALB 5xx + API CPU (optional email via
    `alarm_email`).
-9. **IAM** — execution role limited to pulling images, writing logs, and
-   reading the two secrets; task role limited to the two S3 buckets.
+10. **IAM** — execution role limited to pulling images, writing logs, and
+    reading the two secrets; task role limited to the two S3 buckets and the
+    SQS queues.
 
 All production env values (`API_PUBLIC_URL`, `CORS_ORIGINS`,
 `TWILIO_MEDIA_STREAM_URL`, model names, …) are derived from your domain inside
@@ -98,34 +103,48 @@ Terraform — nothing to assemble by hand.
 
 ## 4. Deploy / release
 
+**Backend (API):**
+
 ```bash
-infra/scripts/deploy.sh          # build + push both images, roll both services
-infra/scripts/deploy.sh api      # API only
-infra/scripts/deploy.sh web      # web only
+infra/scripts/deploy.sh          # build, push, and roll the API service
 ```
 
-The script reads every setting from Terraform outputs (ECR URLs, cluster and
-service names, Clerk publishable key, API URL), builds `linux/amd64` images
-tagged `latest` + git SHA, and waits for the services to stabilize.
+The script reads every setting from Terraform outputs (ECR URL, cluster and
+service names), builds a `linux/amd64` image tagged `latest` + git SHA, and
+waits for the service to stabilize. The api entrypoint runs
+`prisma migrate deploy` before the server starts (`MIGRATE_ON_START=true`).
+Rolling deployments with the circuit breaker give zero-downtime releases and
+automatic rollback on failed health checks; manual rollback = redeploy the
+previous image tag.
 
-The api entrypoint runs `prisma migrate deploy` before the server starts
-(`MIGRATE_ON_START=true`). Rolling deployments with the circuit breaker give
-zero-downtime releases and automatic rollback on failed health checks; manual
-rollback = redeploy the previous image tag.
+**Frontend (Vercel):** production deploys ride pushes to the production
+branch (`vercel --prod` for manual deploys). `/vercel.json` owns the monorepo
+build, SPA rewrites, and cache/security headers; rollback = "Promote previous
+deployment" in the Vercel dashboard.
+
+Required Vercel project settings: import this repository, add the
+`app.rooferslabs.com` domain, and set the environment variables
+`VITE_CLERK_PUBLISHABLE_KEY` (pk_live) and
+`VITE_API_BASE_URL=https://api.rooferslabs.com`.
 
 ---
 
 ## 5. Cloudflare configuration
 
 1. Add the `rooferslabs.com` zone; point the domain's nameservers at Cloudflare.
-2. DNS records (both **Proxied** ☁️):
-   - `app` → CNAME → ALB DNS name
-   - `api` → CNAME → ALB DNS name
+2. DNS records:
+   - `api` → CNAME → ALB DNS name (**Proxied** ☁️)
+   - `app` → CNAME → `cname.vercel-dns.com` (**DNS only** recommended —
+     Vercel terminates TLS and manages its own edge cache; if proxied, add a
+     cache-bypass rule for `app.rooferslabs.com/sw.js` and
+     `/manifest.webmanifest`)
+   - ACM validation CNAMEs from `terraform output acm_validation_records`
+     (**DNS only**)
+   - Clerk production-instance CNAMEs (**DNS only**)
 3. **SSL/TLS → Full (strict)** (the ALB has a valid ACM certificate).
 4. **Network → WebSockets: ON** (required for Twilio Media Streams).
 5. Edge Certificates → Always Use HTTPS: ON; minimum TLS 1.2.
 6. Recommended rules:
-   - Cache Rule: `app.rooferslabs.com/assets/*` → cache everything, 1 year.
    - Cache Rule: `api.rooferslabs.com/*` → bypass cache.
    - Rate-limiting rule on `api.rooferslabs.com/v1/*` as a coarse edge shield
      (the API also rate-limits per instance).
@@ -157,8 +176,9 @@ Customer-side call forwarding instructions live in the product
    application domain and complete Clerk's DNS records (CNAMEs in Cloudflare —
    set those records to **DNS only**, not proxied).
 2. Enable Email + Password (and optionally Google) sign-in.
-3. Copy `pk_live_…` / `sk_live_…` into Secrets Manager and the web image
-   build args.
+3. Put `sk_live_…` / `pk_live_…` in `terraform.tfvars` (Terraform writes them
+   to Secrets Manager) and set `VITE_CLERK_PUBLISHABLE_KEY=pk_live_…` in the
+   Vercel project.
 4. Allowed redirect origins: `https://app.rooferslabs.com`.
 
 ---

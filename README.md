@@ -183,16 +183,20 @@ docker build -f docker/web.Dockerfile \
   -t rooferslabs-web .
 ```
 
-## Deployment (AWS) & Cloudflare
+## Deployment (Vercel + AWS + Cloudflare)
 
-**All AWS infrastructure is Terraform** — VPC, ALB/ACM, ECR, ECS Fargate, RDS,
-ElastiCache, S3, Secrets Manager, IAM, CloudWatch:
+**Frontend → Vercel** (configured by [`/vercel.json`](./vercel.json)): import
+the repo, add the `app.` domain, set `VITE_CLERK_PUBLISHABLE_KEY` and
+`VITE_API_BASE_URL`; production deploys ride pushes to the production branch.
+
+**Backend → AWS, all Terraform** — VPC, ALB/ACM, ECR, ECS Fargate, RDS,
+ElastiCache, S3, SQS, Secrets Manager, IAM, CloudWatch:
 
 ```bash
 cd infra/terraform/envs/production
 cp terraform.tfvars.example terraform.tfvars   # domain + Clerk/OpenAI/Twilio/VAPID keys
 terraform init && terraform apply
-../../scripts/deploy.sh                        # build + push + roll both services
+../../scripts/deploy.sh                        # build + push + roll the API service
 ```
 
 From-scratch walkthrough: [`infra/terraform/README.md`](./infra/terraform/README.md).
