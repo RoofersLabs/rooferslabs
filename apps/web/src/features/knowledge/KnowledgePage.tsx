@@ -6,27 +6,30 @@ import {
   useKnowledgeArticles,
   useSaveKnowledgeArticle,
 } from '@/hooks/queries';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import type { KnowledgeArticle } from '@/types/api';
 import { humanizeEnum, timeAgo } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input, Select, Textarea } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
-import { LoadingBlock } from '@/components/ui/Spinner';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
 
 export function KnowledgePage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search);
   const [category, setCategory] = useState('');
   const [editing, setEditing] = useState<KnowledgeArticle | null>(null);
   const [creating, setCreating] = useState(false);
 
   const articles = useKnowledgeArticles({
     page,
-    search: search || undefined,
+    search: debouncedSearch || undefined,
     category: category || undefined,
   });
 
@@ -81,7 +84,13 @@ export function KnowledgePage() {
         </div>
 
         {articles.isLoading ? (
-          <LoadingBlock />
+          <ListSkeleton />
+        ) : articles.isError ? (
+          <ErrorState
+            title="Couldn’t load the knowledge base"
+            message={(articles.error as Error).message}
+            onRetry={() => void articles.refetch()}
+          />
         ) : !articles.data?.items.length ? (
           <EmptyState
             icon={BookOpen}

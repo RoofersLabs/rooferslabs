@@ -15,6 +15,7 @@ import { AppointmentsPage } from '@/features/appointments/AppointmentsPage';
 import { KnowledgePage } from '@/features/knowledge/KnowledgePage';
 import { NotificationsPage } from '@/features/notifications/NotificationsPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
+import { NotFoundPage } from '@/features/misc/NotFoundPage';
 
 /**
  * Guards the authenticated area: loads the session, then routes users without a
@@ -91,7 +92,7 @@ export function App() {
         <Route path="/settings/:tab" element={<SettingsPage />} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

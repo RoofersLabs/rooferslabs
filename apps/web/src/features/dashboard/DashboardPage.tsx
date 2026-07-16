@@ -11,13 +11,29 @@ import {
 import { useDashboard, usePhoneNumber } from '@/hooks/queries';
 import { formatDuration, formatPhone, humanizeEnum, timeAgo } from '@/lib/utils';
 import { EnumBadge } from '@/components/ui/Badge';
-import { LoadingBlock } from '@/components/ui/Spinner';
+import { ListSkeleton, Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 
 export function DashboardPage() {
   const dashboard = useDashboard();
   const phone = usePhoneNumber();
+
+  if (dashboard.isError) {
+    return (
+      <div>
+        <PageHeader title="Dashboard" description="Today’s activity across your front office." />
+        <div className="card">
+          <ErrorState
+            title="Couldn’t load your dashboard"
+            message={(dashboard.error as Error).message}
+            onRetry={() => void dashboard.refetch()}
+          />
+        </div>
+      </div>
+    );
+  }
 
   const metrics = dashboard.data?.metrics;
   const needsPhoneSetup = !phone.isLoading && !phone.data;
@@ -82,7 +98,7 @@ export function DashboardPage() {
             </Link>
           </header>
           {dashboard.isLoading ? (
-            <LoadingBlock />
+            <ListSkeleton rows={4} />
           ) : !dashboard.data?.recentConversations.length ? (
             <EmptyState
               icon={Phone}
@@ -145,7 +161,7 @@ export function DashboardPage() {
             </Link>
           </header>
           {dashboard.isLoading ? (
-            <LoadingBlock />
+            <ListSkeleton rows={4} />
           ) : !dashboard.data?.upcomingAppointments.length ? (
             <EmptyState
               icon={CalendarClock}
@@ -225,7 +241,11 @@ function MetricCard({
         <Icon className="h-5 w-5" aria-hidden />
       </span>
       <span>
-        <span className="block text-2xl font-bold text-slate-900">{value ?? '—'}</span>
+        {value === undefined ? (
+          <Skeleton className="h-7 w-10" />
+        ) : (
+          <span className="block text-2xl font-bold text-slate-900">{value}</span>
+        )}
         <span className="block text-xs text-slate-500">{label}</span>
       </span>
     </div>

@@ -2,23 +2,26 @@ import { useState } from 'react';
 import { Users, Search, Plus } from 'lucide-react';
 import { PropertyType } from '@rooferslabs/shared';
 import { useCustomers, useSaveCustomer } from '@/hooks/queries';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import type { Customer } from '@/types/api';
 import { formatPhone, humanizeEnum, timeAgo } from '@/lib/utils';
 import { EnumBadge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input, Select, Textarea } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
-import { LoadingBlock } from '@/components/ui/Spinner';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
 
 export function CustomersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search);
   const [editing, setEditing] = useState<Customer | null>(null);
   const [creating, setCreating] = useState(false);
-  const customers = useCustomers({ page, search: search || undefined });
+  const customers = useCustomers({ page, search: debouncedSearch || undefined });
 
   return (
     <div>
@@ -55,7 +58,13 @@ export function CustomersPage() {
         </div>
 
         {customers.isLoading ? (
-          <LoadingBlock />
+          <ListSkeleton />
+        ) : customers.isError ? (
+          <ErrorState
+            title="Couldn’t load customers"
+            message={(customers.error as Error).message}
+            onRetry={() => void customers.refetch()}
+          />
         ) : !customers.data?.items.length ? (
           <EmptyState
             icon={Users}

@@ -10,8 +10,9 @@ import {
 import type { Notification } from '@/types/api';
 import { cn, timeAgo } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
-import { LoadingBlock } from '@/components/ui/Spinner';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
 
@@ -62,7 +63,13 @@ export function NotificationsPage() {
 
       <div className="card overflow-hidden">
         {notifications.isLoading ? (
-          <LoadingBlock />
+          <ListSkeleton />
+        ) : notifications.isError ? (
+          <ErrorState
+            title="Couldn’t load notifications"
+            message={(notifications.error as Error).message}
+            onRetry={() => void notifications.refetch()}
+          />
         ) : !notifications.data?.items.length ? (
           <EmptyState
             icon={Bell}

@@ -6,8 +6,9 @@ import { useAppointments, useUpdateAppointment } from '@/hooks/queries';
 import { formatDateTime, humanizeEnum, timeAgo } from '@/lib/utils';
 import { EnumBadge } from '@/components/ui/Badge';
 import { Select } from '@/components/ui/Input';
-import { LoadingBlock } from '@/components/ui/Spinner';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
 
@@ -44,7 +45,13 @@ export function AppointmentsPage() {
 
       <div className="card overflow-hidden">
         {appointments.isLoading ? (
-          <LoadingBlock />
+          <ListSkeleton />
+        ) : appointments.isError ? (
+          <ErrorState
+            title="Couldn’t load appointments"
+            message={(appointments.error as Error).message}
+            onRetry={() => void appointments.refetch()}
+          />
         ) : !appointments.data?.items.length ? (
           <EmptyState
             icon={CalendarClock}

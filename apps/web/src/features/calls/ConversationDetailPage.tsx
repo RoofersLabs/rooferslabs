@@ -9,17 +9,38 @@ import {
   PhoneCall,
 } from 'lucide-react';
 import { useConversation } from '@/hooks/queries';
+import { ApiError } from '@/lib/api-client';
 import { formatDateTime, formatDuration, formatPhone, humanizeEnum } from '@/lib/utils';
 import { Badge, EnumBadge } from '@/components/ui/Badge';
 import { LoadingBlock } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
 
 export function ConversationDetailPage() {
   const { id } = useParams<{ id: string }>();
   const conversation = useConversation(id);
 
   if (conversation.isLoading) return <LoadingBlock label="Loading conversation…" />;
-  if (conversation.isError || !conversation.data) {
+  if (conversation.isError) {
+    const notFound = conversation.error instanceof ApiError && conversation.error.status === 404;
+    if (notFound) {
+      return (
+        <EmptyState
+          icon={PhoneCall}
+          title="Conversation not found"
+          description="It may have been removed or you may not have access to it."
+        />
+      );
+    }
+    return (
+      <ErrorState
+        title="Couldn’t load this conversation"
+        message={(conversation.error as Error).message}
+        onRetry={() => void conversation.refetch()}
+      />
+    );
+  }
+  if (!conversation.data) {
     return (
       <EmptyState
         icon={PhoneCall}

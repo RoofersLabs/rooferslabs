@@ -2,17 +2,20 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, PhoneMissed, Search } from 'lucide-react';
 import { useCalls } from '@/hooks/queries';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { formatDateTime, formatDuration, formatPhone } from '@/lib/utils';
 import { EnumBadge } from '@/components/ui/Badge';
-import { LoadingBlock } from '@/components/ui/Spinner';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
 
 export function CallsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const calls = useCalls({ page, search: search || undefined });
+  const debouncedSearch = useDebouncedValue(search);
+  const calls = useCalls({ page, search: debouncedSearch || undefined });
 
   return (
     <div>
@@ -43,7 +46,13 @@ export function CallsPage() {
         </div>
 
         {calls.isLoading ? (
-          <LoadingBlock />
+          <ListSkeleton />
+        ) : calls.isError ? (
+          <ErrorState
+            title="Couldn’t load calls"
+            message={(calls.error as Error).message}
+            onRetry={() => void calls.refetch()}
+          />
         ) : !calls.data?.items.length ? (
           <EmptyState
             icon={PhoneMissed}
