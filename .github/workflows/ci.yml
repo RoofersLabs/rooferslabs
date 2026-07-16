@@ -48,6 +48,24 @@ jobs:
       - name: Run tests
         run: npm test
 
+  terraform:
+    name: Terraform format and validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '~> 1.6'
+
+      - name: Format check
+        run: terraform -chdir=infra/terraform fmt -recursive -check
+
+      - name: Validate
+        run: |
+          terraform -chdir=infra/terraform/envs/production init -backend=false -input=false
+          terraform -chdir=infra/terraform/envs/production validate
+
   docker:
     name: Docker images build
     runs-on: ubuntu-latest
