@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { ClerkProvider, useAuth } from '@clerk/clerk-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -20,15 +20,18 @@ const queryClient = new QueryClient({
   },
 });
 
-/** Wires Clerk's session token into the API client once auth is ready. */
+/**
+ * Wires Clerk's session token into the API client once auth is ready. The
+ * getter is installed during render (idempotent), not in an effect: child
+ * effects run before parent effects, so an effect here would let the first
+ * child queries fire without a token.
+ */
 function TokenBridge({ children }: { children: ReactNode }) {
   const { getToken, isLoaded } = useAuth();
 
-  useEffect(() => {
-    if (isLoaded) {
-      setTokenGetter(() => getToken());
-    }
-  }, [isLoaded, getToken]);
+  if (isLoaded) {
+    setTokenGetter(() => getToken());
+  }
 
   if (!isLoaded) return null;
   return <>{children}</>;

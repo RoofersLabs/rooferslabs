@@ -50,6 +50,7 @@ export class TelephonyController {
     const resolved = await this.phoneNumbers.resolveByNumber(toNumber);
     if (!resolved) {
       res
+        .status(200)
         .type('text/xml')
         .send(
           this.twilio.buildRejectTwiml(
@@ -72,7 +73,8 @@ export class TelephonyController {
       callId: call.id,
       companyId: resolved.companyId,
     });
-    res.type('text/xml').send(twiml);
+    // Twilio expects 200 with TwiML (Nest would default POST to 201).
+    res.status(200).type('text/xml').send(twiml);
   }
 
   /** Twilio call status callback (fallback for calls that never streamed). */
