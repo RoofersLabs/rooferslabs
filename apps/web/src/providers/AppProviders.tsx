@@ -4,6 +4,7 @@ import { ClerkProvider, useAuth } from '@clerk/clerk-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { config } from '@/config';
 import { ApiError, setTokenGetter } from '@/lib/api-client';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,12 +56,14 @@ export function AppProviders({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ClerkProvider publishableKey={config.clerkPublishableKey} afterSignOutUrl="/">
-      <QueryClientProvider client={queryClient}>
-        <TokenBridge>
-          <BrowserRouter>{children}</BrowserRouter>
-        </TokenBridge>
-      </QueryClientProvider>
-    </ClerkProvider>
+    <ErrorBoundary>
+      <ClerkProvider publishableKey={config.clerkPublishableKey} afterSignOutUrl="/">
+        <QueryClientProvider client={queryClient}>
+          <TokenBridge>
+            <BrowserRouter>{children}</BrowserRouter>
+          </TokenBridge>
+        </QueryClientProvider>
+      </ClerkProvider>
+    </ErrorBoundary>
   );
 }

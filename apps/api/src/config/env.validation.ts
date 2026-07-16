@@ -17,6 +17,14 @@ const REQUIRED_IN_PRODUCTION = [
   'WEB_PUBLIC_URL',
 ] as const;
 
+/** Feature credentials: their absence degrades a capability rather than the
+ *  platform, so production boots with a loud warning instead of failing. */
+const FEATURE_CREDENTIALS: Record<string, string> = {
+  OPENAI_API_KEY: 'the AI receptionist and post-call analysis are disabled',
+  TWILIO_ACCOUNT_SID: 'telephony (inbound calls) is disabled',
+  TWILIO_AUTH_TOKEN: 'Twilio webhooks and media streams will be rejected',
+};
+
 export function validateEnv(config: Record<string, unknown>): Record<string, unknown> {
   const isProduction = (config.NODE_ENV ?? 'development') === 'production';
   const missing: string[] = [];
@@ -36,6 +44,15 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
       `Missing required environment variables: ${missing.join(', ')}. ` +
         `See .env.example for guidance.`,
     );
+  }
+
+  if (isProduction) {
+    for (const [key, consequence] of Object.entries(FEATURE_CREDENTIALS)) {
+      if (!config[key]) {
+        // The structured logger is not constructed yet at env-validation time.
+        console.warn(`[env] ${key} is not set — ${consequence}.`);
+      }
+    }
   }
 
   return config;

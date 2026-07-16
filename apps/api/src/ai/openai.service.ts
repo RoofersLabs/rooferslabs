@@ -16,7 +16,9 @@ export class OpenAiService {
 
   constructor(private readonly config: AppConfigService) {
     const apiKey = this.config.openai.apiKey;
-    this.client = apiKey ? new OpenAI({ apiKey }) : null;
+    // Bounded timeout + retries: post-call analysis must never hang the call
+    // pipeline; failures fall back to heuristic analysis upstream.
+    this.client = apiKey ? new OpenAI({ apiKey, timeout: 60_000, maxRetries: 2 }) : null;
     if (!this.client) {
       this.logger.warn('OPENAI_API_KEY not set — AI features are disabled until configured.');
     }
@@ -28,7 +30,9 @@ export class OpenAiService {
 
   private require(): OpenAI {
     if (!this.client) {
-      throw new ExternalServiceError('AI is not configured on this server (missing OPENAI_API_KEY).');
+      throw new ExternalServiceError(
+        'AI is not configured on this server (missing OPENAI_API_KEY).',
+      );
     }
     return this.client;
   }

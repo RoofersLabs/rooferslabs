@@ -14,6 +14,9 @@ export class ApiError extends Error {
   }
 }
 
+/** Generous client-side cap so a hung request never hangs the UI forever. */
+const REQUEST_TIMEOUT_MS = 30_000;
+
 type TokenGetter = () => Promise<string | null>;
 
 let getToken: TokenGetter = async () => null;
@@ -40,7 +43,10 @@ interface RequestOptions {
  * contract from @rooferslabs/shared; this unwraps `data` on success and throws
  * a typed {@link ApiError} on failure.
  */
-async function request<T>(path: string, options: RequestOptions = {}): Promise<ApiSuccessResponse<T>> {
+async function request<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<ApiSuccessResponse<T>> {
   const url = new URL(`${config.apiBaseUrl}/v1${path}`, window.location.origin);
   if (options.query) {
     for (const [key, value] of Object.entries(options.query)) {
@@ -49,20 +55,39 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<A
   }
 
   const token = await getToken();
-  const response = await fetch(url.toString(), {
-    method: options.method ?? 'GET',
-    headers: {
-      ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), {
+      method: options.method ?? 'GET',
+      headers: {
+        ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'TimeoutError') {
+      throw new ApiError('TIMEOUT', 'The request timed out. Please try again.', 0);
+    }
+    throw new ApiError(
+      'NETWORK_ERROR',
+      navigator.onLine
+        ? 'Unable to reach the server. Please try again.'
+        : 'You appear to be offline. Check your connection and try again.',
+      0,
+    );
+  }
 
   let payload: ApiSuccessResponse<T> | ApiErrorResponse;
   try {
     payload = (await response.json()) as ApiSuccessResponse<T> | ApiErrorResponse;
   } catch {
-    throw new ApiError('NETWORK_ERROR', 'The server returned an unexpected response.', response.status);
+    throw new ApiError(
+      'NETWORK_ERROR',
+      'The server returned an unexpected response.',
+      response.status,
+    );
   }
 
   if (!payload.success) {
@@ -78,13 +103,23 @@ export const api = {
   },
 
   /** GET a paginated collection, preserving pagination + metadata. */
-  async getPaginated<T>(path: string, query?: RequestOptions['query']): Promise<PaginatedResult<T>> {
+  async getPaginated<T>(
+    path: string,
+    query?: RequestOptions['query'],
+  ): Promise<PaginatedResult<T>> {
     const res = await request<T[]>(path, { query });
     return {
       items: res.data,
       pagination:
         res.pagination ??
-        ({ page: 1, limit: res.data.length, totalRecords: res.data.length, totalPages: 1, hasNextPage: false, hasPreviousPage: false } satisfies PaginationMeta),
+        ({
+          page: 1,
+          limit: res.data.length,
+          totalRecords: res.data.length,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        } satisfies PaginationMeta),
       metadata: res.metadata,
     };
   },
