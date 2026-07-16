@@ -1,5 +1,15 @@
 # Master Project Specification
 
+**Document Status:** Active
+
+**Version:** 1.0.0
+
+**Owner:** RoofersLabs
+
+**Scope:** Product Vision & Strategy
+
+**Source of Truth:** Product, Business, and Strategic Direction
+
 ## 1. Executive Summary
 
 ### Purpose
@@ -672,11 +682,12 @@ Validate that roofing companies trust AI to manage inbound customer communicatio
 A roofing company should be able to:
 
 1. Create an account.
-2. Configure its business.
-3. Forward its phone number.
-4. Allow AI to answer calls.
-5. Review every customer interaction.
-6. Operate independently without developer assistance.
+2. Configure company information.
+3. Configure the AI receptionist.
+4. Forward its existing business phone number to the assigned Twilio number.
+5. Allow the AI receptionist to answer inbound customer calls.
+6. Review conversations, transcripts, recordings, summaries, and captured customer information.
+7. Operate the platform independently without developer assistance.
 
 ## 17. Success Definition
 
@@ -814,7 +825,15 @@ Customers should confidently trust RoofersLabs with their primary business phone
 
 ### Engineering Philosophy
 
-Technology decisions should always improve customer outcomes while maintaining long-term maintainability.
+---
+
+### Architecture Reference
+
+The official technical architecture for the RoofersLabs platform is defined in `00_GStack_Architecture.md`.
+
+This specification intentionally avoids defining implementation technologies.
+
+All engineering teams should follow the G-Stack Architecture when making technical decisions.
 
 ## 21. Product Principles
 
@@ -930,19 +949,61 @@ If the majority of answers are **No**, the initiative should be deferred or reco
 
 ## 26. Related Documentation
 
-The Master Project Specification should be read together with:
+### Architecture Hierarchy
+
+This document defines the overall product vision, business objectives, strategic direction, and high-level product scope for the RoofersLabs platform.
+
+The following documents provide detailed technical and implementation guidance and should be read together with this specification.
+
+---
+
+### Core Documentation
+
+- `00_GStack_Architecture.md` _(Canonical Technical Architecture)_
+- `CLAUDE.md` _(AI Development Guide)_
+
+---
+
+### Product Documentation
 
 - `01_Product_Requirements.md`
+
+---
+
+### Technical Architecture
+
 - `02_System_Architecture.md`
 - `03_Backend_Architecture.md`
 - `04_Frontend_Architecture.md`
-- `05_AI_Receptionist_Specification.md`
+- `05_UI_UX_Guidelines.md`
+- `06_Telephony_Architecture.md`
+- `07_AI_Receptionist_Specification.md`
 - `08_Database_Design.md`
 - `09_API_Standards.md`
-- `11_Security_Architecture.md`
-- `12_AWS_Infrastructure.md`
-- `13_Deployment_Guide.md`
-- `14_Coding_Standards.md`
+- `10_AWS_Infrastructure.md`
+- `11_Coding_Standards.md`
+- `12_Testing_Strategy.md`
+
+---
+
+### Relationship
+
+This document defines **what** RoofersLabs should become.
+
+The G-Stack Architecture defines **how** RoofersLabs is engineered.
+
+The remaining documents describe the implementation details for individual platform components.
+
+When conflicts occur:
+
+1. Master Project Specification
+2. G-Stack Architecture
+3. Supporting Architecture Documents
+4. Feature Specifications
+5. Coding Standards
+6. Testing Strategy
+
+Higher-level documentation always takes precedence.
 
 These documents provide the detailed implementation guidance referenced by this specification.
 
@@ -1276,12 +1337,16 @@ Project governance ensures:
 
 ### Governance Principles
 
-- Maintain a single source of truth.
-- Document important decisions.
-- Review significant changes.
-- Keep documentation synchronized.
+Project governance follows a documentation hierarchy.
 
----
+- Master Project Specification defines product direction.
+- G-Stack Architecture defines technical architecture.
+- Supporting documents define implementation details.
+- Major architectural decisions require updating the G-Stack Architecture before implementation.
+- Documentation should remain synchronized with the production system.
+- Architecture changes should be intentional, reviewed, and documented.
+
+## This governance model minimizes documentation drift and ensures long-term consistency.
 
 ### Goal
 

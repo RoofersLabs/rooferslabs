@@ -1,5 +1,31 @@
 # G-Stack Architecture
 
+**Document Status:** Active
+
+**Architecture Version:** 1.0.0
+
+**Last Updated:** July 2026
+
+**Owner:** RoofersLabs
+
+**Scope:** Entire Platform
+
+**Source of Truth:** Yes
+
+## Architecture Decision Hierarchy
+
+When architectural conflicts occur, decisions must follow this hierarchy.
+
+1. 00_Master_Project_Specification.md
+2. 00_GStack_Architecture.md
+3. CLAUDE.md
+4. Supporting Architecture Documents
+5. Feature Specifications
+6. Coding Standards
+7. Testing Strategy
+
+Lower-level documents must never override higher-level architectural decisions.
+
 ## 1. Document Purpose
 
 ### Overview
@@ -789,26 +815,105 @@ The introduction of new technologies should be carefully evaluated against these
 
 The G-Stack architecture standardizes the following core technologies:
 
-#### Frontend
+### Frontend
+
+Framework
 
 - React
+
+Language
+
 - TypeScript
+
+Build Tool
+
 - Vite
+
+Routing
+
+- React Router
+
+State Management
+
+- Zustand
+
+Server State
+
+- TanStack Query
+
+Forms
+
+- React Hook Form
+
+Validation
+
+- Zod
+
+Styling
+
 - Tailwind CSS
+
+PWA
+
+- Vite PWA Plugin
 
 #### Backend
 
+Framework
+
 - NestJS
+
+Runtime
+
 - Node.js
+
+Language
+
 - TypeScript
+
+Validation
+
+- class-validator
+
+Transformation
+
+- class-transformer
+
+API Documentation
+
+- Swagger/OpenAPI
 
 #### Authentication
 
+Identity Provider
+
 - Clerk
+
+Authorization
+
+- Application Managed
+
+Tenant Management
+
+- Application Managed
 
 #### Database
 
+Engine
+
 - PostgreSQL
+
+ORM
+
+- Prisma
+
+Migration
+
+- Prisma Migrate
+
+Hosting
+
+- Amazon RDS
 
 #### ORM
 
@@ -816,14 +921,59 @@ The G-Stack architecture standardizes the following core technologies:
 
 #### Artificial Intelligence
 
+Voice Conversations
+
 - OpenAI Realtime API
+
+Reasoning
+
 - OpenAI Responses API
+
+Knowledge Retrieval
+
+- RAG
+
+Future Vector Store
+
+- pgvector
 
 #### Telephony
 
 - Twilio
 
 #### Storage
+
+Compute
+
+- ECS
+
+Containers
+
+- Docker
+
+Runtime
+
+- AWS Fargate
+
+Object Storage
+
+- Amazon S3
+
+Queue
+
+- Amazon SQS
+
+Cache
+
+- Redis
+
+Secrets
+
+- AWS Secrets Manager
+
+Monitoring
+
+- CloudWatch
 
 - Amazon S3
 
@@ -953,3 +1103,29 @@ The following rules govern the use of G-Stack:
 ### Goal
 
 The goal of G-Stack is to provide a stable, opinionated, and production-ready architectural foundation that enables the RoofersLabs platform to evolve consistently while maintaining high standards of quality, scalability, security, and developer productivity.
+
+### Non-Negotiable Rules
+
+The following architectural rules must never be violated.
+
+- One company equals one tenant.
+- Every database record belongs to exactly one company.
+- Every S3 object belongs to exactly one company.
+- Business logic must never depend on Clerk.
+- Every API endpoint must enforce tenant isolation.
+- AI must never access another tenant's data.
+- Infrastructure must remain cloud-native.
+- All external services must be accessed through adapters.
+
+### Out of Scope
+
+The following technologies are intentionally excluded.
+
+- Kubernetes
+- Microservices
+- GraphQL
+- Elasticsearch
+- MongoDB
+- Firebase
+- Self-hosted authentication
+- Self-managed infrastructure

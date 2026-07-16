@@ -35,7 +35,7 @@ docker build --platform linux/amd64 -f "$REPO_ROOT/docker/api.Dockerfile" \
 docker push "$API_REPO:latest"
 docker push "$API_REPO:$GIT_SHA"
 
-echo "==> Deploying $API_SERVICE…"
+echo "==> Deploying ${API_SERVICE}..."
 aws ecs update-service --region "$AWS_REGION" --cluster "$CLUSTER" \
   --service "$API_SERVICE" --force-new-deployment --no-cli-pager >/dev/null
 
