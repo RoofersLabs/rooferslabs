@@ -15,10 +15,7 @@ import { OpenAiService } from '../ai/openai.service';
 import { RagService } from '../ai/rag.service';
 import { buildGreeting, buildReceptionistInstructions } from './prompt.builder';
 import { buildRealtimeTools, CONVERSATION_OUTPUT_SCHEMA, TOOL } from './tools';
-import {
-  type LiveConversationSignals,
-  type ToolExecutionResult,
-} from './session-state';
+import { type LiveConversationSignals, type ToolExecutionResult } from './session-state';
 
 export interface RealtimeSessionConfig {
   model: string;
@@ -72,7 +69,9 @@ export class ReceptionistService {
         const query = String(args.query ?? '').trim();
         const results = await this.rag.retrieve(companyId, query, 4);
         if (results.length === 0) {
-          return { output: 'No specific information is available. Offer to have the team follow up.' };
+          return {
+            output: 'No specific information is available. Offer to have the team follow up.',
+          };
         }
         const text = results
           .map((r) => `• ${r.title}: ${r.content}`)
@@ -102,7 +101,9 @@ export class ReceptionistService {
           priority: normalizeEnum(args.priority, AppointmentPriority, AppointmentPriority.NORMAL),
           notes: asString(args.notes),
         };
-        return { output: 'Appointment request recorded. Confirm the team will follow up to schedule.' };
+        return {
+          output: 'Appointment request recorded. Confirm the team will follow up to schedule.',
+        };
       }
 
       case TOOL.FLAG_EMERGENCY: {
@@ -111,7 +112,9 @@ export class ReceptionistService {
           urgency: normalizeEnum(args.urgency, UrgencyLevel, UrgencyLevel.EMERGENCY),
           reason: asString(args.reason),
         };
-        return { output: 'Emergency flagged. Reassure the caller and collect the property address.' };
+        return {
+          output: 'Emergency flagged. Reassure the caller and collect the property address.',
+        };
       }
 
       case TOOL.TRANSFER_TO_HUMAN: {
@@ -156,9 +159,7 @@ export class ReceptionistService {
         schema: CONVERSATION_OUTPUT_SCHEMA,
       });
     } catch (error) {
-      this.logger.warn(
-        `Structured analysis failed, using fallback: ${(error as Error).message}`,
-      );
+      this.logger.warn(`Structured analysis failed, using fallback: ${(error as Error).message}`);
       return this.fallbackAnalysis(transcript, signals);
     }
   }
@@ -186,10 +187,21 @@ export class ReceptionistService {
       : 'Inbound call with no transcript captured.';
 
     return {
-      intent: isEmergency ? ConversationIntent.EMERGENCY_REPAIR : ConversationIntent.GENERAL_QUESTION,
+      intent: isEmergency
+        ? ConversationIntent.EMERGENCY_REPAIR
+        : ConversationIntent.GENERAL_QUESTION,
       outcome,
-      leadQuality: isEmergency || appointmentRequested ? LeadQuality.HOT : hasContact ? LeadQuality.WARM : LeadQuality.UNQUALIFIED,
-      urgency: isEmergency ? UrgencyLevel.EMERGENCY : appointmentRequested ? UrgencyLevel.MEDIUM : UrgencyLevel.LOW,
+      leadQuality:
+        isEmergency || appointmentRequested
+          ? LeadQuality.HOT
+          : hasContact
+            ? LeadQuality.WARM
+            : LeadQuality.UNQUALIFIED,
+      urgency: isEmergency
+        ? UrgencyLevel.EMERGENCY
+        : appointmentRequested
+          ? UrgencyLevel.MEDIUM
+          : UrgencyLevel.LOW,
       customer: {
         fullName: signals.customer.fullName ?? null,
         phone: signals.customer.phone ?? null,

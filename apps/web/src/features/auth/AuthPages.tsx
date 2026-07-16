@@ -20,11 +20,7 @@ function AuthShell({ children }: { children: React.ReactNode }) {
 export function SignInPage() {
   return (
     <AuthShell>
-      <SignIn
-        path="/sign-in"
-        signUpUrl="/sign-up"
-        fallbackRedirectUrl="/dashboard"
-      />
+      <SignIn path="/sign-in" signUpUrl="/sign-up" fallbackRedirectUrl="/dashboard" />
     </AuthShell>
   );
 }
@@ -32,11 +28,7 @@ export function SignInPage() {
 export function SignUpPage() {
   return (
     <AuthShell>
-      <SignUp
-        path="/sign-up"
-        signInUrl="/sign-in"
-        fallbackRedirectUrl="/onboarding"
-      />
+      <SignUp path="/sign-up" signInUrl="/sign-in" fallbackRedirectUrl="/onboarding" />
     </AuthShell>
   );
 }

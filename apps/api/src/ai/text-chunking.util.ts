@@ -9,7 +9,10 @@ export function chunkText(content: string, maxChars = 1000, overlap = 150): stri
   }
 
   // Prefer splitting on paragraph boundaries, then pack into chunks.
-  const paragraphs = normalized.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  const paragraphs = normalized
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
   const chunks: string[] = [];
   let current = '';
 

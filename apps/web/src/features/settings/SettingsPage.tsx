@@ -1,14 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
-import {
-  Building2,
-  Clock,
-  Bot,
-  PhoneForwarded,
-  Palette,
-  CheckCircle2,
-  Copy,
-} from 'lucide-react';
+import { Building2, Clock, Bot, PhoneForwarded, Palette, CheckCircle2, Copy } from 'lucide-react';
 import { AiVoice } from '@rooferslabs/shared';
 import {
   useAiConfig,
@@ -49,7 +41,7 @@ export function SettingsPage() {
             className={({ isActive }) =>
               cn(
                 'focus-ring flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium',
-                (isActive || (item.key === 'business' && tab === 'business'))
+                isActive || (item.key === 'business' && tab === 'business')
                   ? 'bg-brand-50 text-brand-800'
                   : 'text-slate-600 hover:bg-slate-50',
               )
@@ -126,7 +118,8 @@ function BusinessTab() {
         .map((s) => s.trim())
         .filter(Boolean),
       emergencyPhone: value('emergencyPhone', data.emergencyPhone) || undefined,
-      emergencyInstructions: value('emergencyInstructions', data.emergencyInstructions) || undefined,
+      emergencyInstructions:
+        value('emergencyInstructions', data.emergencyInstructions) || undefined,
     });
   };
 
@@ -149,7 +142,11 @@ function BusinessTab() {
         <div className="grid grid-cols-3 gap-3">
           <Input label="City" value={value('city', data.city)} onChange={set('city')} />
           <Input label="State" value={value('state', data.state)} onChange={set('state')} />
-          <Input label="ZIP" value={value('postalCode', data.postalCode)} onChange={set('postalCode')} />
+          <Input
+            label="ZIP"
+            value={value('postalCode', data.postalCode)}
+            onChange={set('postalCode')}
+          />
         </div>
       </div>
       <Input
@@ -230,7 +227,10 @@ function HoursTab() {
       </p>
       <div className="space-y-2">
         {current.map((hour, index) => (
-          <div key={hour.day} className="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-2.5">
+          <div
+            key={hour.day}
+            className="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-2.5"
+          >
             <span className="w-24 text-sm font-medium capitalize text-slate-800">{hour.day}</span>
             <label className="flex items-center gap-2 text-xs text-slate-500">
               <input
@@ -303,10 +303,22 @@ function AiTab() {
     });
   };
 
-  const toggles: { field: 'captureLeads' | 'detectEmergencies' | 'requestAppointments'; label: string; hint: string }[] = [
+  const toggles: {
+    field: 'captureLeads' | 'detectEmergencies' | 'requestAppointments';
+    label: string;
+    hint: string;
+  }[] = [
     { field: 'captureLeads', label: 'Capture leads', hint: 'Collect caller contact details.' },
-    { field: 'detectEmergencies', label: 'Detect emergencies', hint: 'Flag leaks and storm damage.' },
-    { field: 'requestAppointments', label: 'Request appointments', hint: 'Offer to schedule visits.' },
+    {
+      field: 'detectEmergencies',
+      label: 'Detect emergencies',
+      hint: 'Flag leaks and storm damage.',
+    },
+    {
+      field: 'requestAppointments',
+      label: 'Request appointments',
+      hint: 'Offer to schedule visits.',
+    },
   ];
 
   return (

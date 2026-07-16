@@ -114,7 +114,13 @@ export class CallProcessingService {
     });
 
     // 3. Persist conversation + call update + appointment atomically.
-    const conversationId = await this.persist(call.id, companyId, customer?.id ?? null, structured, input);
+    const conversationId = await this.persist(
+      call.id,
+      companyId,
+      customer?.id ?? null,
+      structured,
+      input,
+    );
 
     // 4. Notify the team (outside the transaction).
     await this.notify(companyId, conversationId, structured);

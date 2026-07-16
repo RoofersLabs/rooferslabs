@@ -105,7 +105,8 @@ export class RagService {
     });
 
     return articles.map((article) => {
-      const haystack = `${article.title} ${article.content} ${article.keywords.join(' ')}`.toLowerCase();
+      const haystack =
+        `${article.title} ${article.content} ${article.keywords.join(' ')}`.toLowerCase();
       const matches = terms.filter((term) => haystack.includes(term)).length;
       return {
         articleId: article.id,

@@ -46,7 +46,10 @@ export function KnowledgePage() {
       <div className="card overflow-hidden">
         <div className="flex flex-col gap-3 border-b border-slate-200 p-4 sm:flex-row">
           <div className="relative flex-1 sm:max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              aria-hidden
+            />
             <input
               type="search"
               value={search}
@@ -103,7 +106,9 @@ export function KnowledgePage() {
                       <span className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-medium text-slate-900">{article.title}</span>
                         <Badge tone="brand">{humanizeEnum(article.category)}</Badge>
-                        {article.status !== 'PUBLISHED' && <Badge>{humanizeEnum(article.status)}</Badge>}
+                        {article.status !== 'PUBLISHED' && (
+                          <Badge>{humanizeEnum(article.status)}</Badge>
+                        )}
                       </span>
                       <span className="mt-0.5 block truncate text-xs text-slate-500">
                         {article.content.slice(0, 140)}
@@ -194,9 +199,7 @@ function ArticleModal({
           required
         />
         {(save.isError || remove.isError) && (
-          <p className="text-sm text-red-600">
-            {((save.error ?? remove.error) as Error).message}
-          </p>
+          <p className="text-sm text-red-600">{((save.error ?? remove.error) as Error).message}</p>
         )}
         <div className="flex items-center justify-between">
           {article ? (

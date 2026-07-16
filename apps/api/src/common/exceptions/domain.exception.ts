@@ -18,13 +18,19 @@ export class DomainException extends HttpException {
 }
 
 export class NotFoundError extends DomainException {
-  constructor(message = 'The requested resource could not be found.', code = ApiErrorCode.NOT_FOUND) {
+  constructor(
+    message = 'The requested resource could not be found.',
+    code = ApiErrorCode.NOT_FOUND,
+  ) {
     super(code, message, HttpStatus.NOT_FOUND);
   }
 }
 
 export class ConflictError extends DomainException {
-  constructor(message = 'The request conflicts with the current state.', code = ApiErrorCode.CONFLICT) {
+  constructor(
+    message = 'The request conflicts with the current state.',
+    code = ApiErrorCode.CONFLICT,
+  ) {
     super(code, message, HttpStatus.CONFLICT);
   }
 }

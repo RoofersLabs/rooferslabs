@@ -4,7 +4,12 @@ import { PrismaService } from '../prisma/prisma.service';
 
 export type CompanyWithRelations = Company & {
   aiConfiguration: AiConfiguration | null;
-  phoneNumbers: { id: string; phoneNumber: string; status: string; forwardingVerifiedAt: Date | null }[];
+  phoneNumbers: {
+    id: string;
+    phoneNumber: string;
+    status: string;
+    forwardingVerifiedAt: Date | null;
+  }[];
 };
 
 /** Data-access for the Company and AiConfiguration entities. */

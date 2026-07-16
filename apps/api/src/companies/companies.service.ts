@@ -108,10 +108,7 @@ export class CompaniesService {
     return updated;
   }
 
-  async setOnboardingStep(
-    companyId: string,
-    step: OnboardingStep,
-  ): Promise<CompanyWithRelations> {
+  async setOnboardingStep(companyId: string, step: OnboardingStep): Promise<CompanyWithRelations> {
     await this.repo.update(companyId, { onboardingStep: step });
     await this.invalidate(companyId);
     return this.getById(companyId);

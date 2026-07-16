@@ -13,11 +13,7 @@ import {
   parseSort,
 } from '../common/utils/pagination.util';
 import { CustomersRepository } from './customers.repository';
-import type {
-  CreateCustomerDto,
-  CustomerQueryDto,
-  UpdateCustomerDto,
-} from './dto/customer.dto';
+import type { CreateCustomerDto, CustomerQueryDto, UpdateCustomerDto } from './dto/customer.dto';
 
 const SORTABLE = ['createdAt', 'updatedAt', 'fullName', 'status'] as const;
 

@@ -87,9 +87,7 @@ function StepIndicator({ current }: { current: OnboardingStep }) {
               {done ? <Check className="h-4 w-4" /> : <step.icon className="h-4 w-4" />}
             </span>
             <span
-              className={
-                active ? 'text-xs font-semibold text-brand-800' : 'text-xs text-slate-500'
-              }
+              className={active ? 'text-xs font-semibold text-brand-800' : 'text-xs text-slate-500'}
             >
               {step.label}
             </span>
@@ -139,8 +137,19 @@ function CompanyStep() {
           Tell us about your roofing business. You can refine everything later in Settings.
         </p>
       </div>
-      <Input label="Company name" placeholder="Summit Roofing Co." {...register('name')} error={errors.name?.message} />
-      <Input label="Business email" type="email" placeholder="office@summitroofing.com" {...register('email')} error={errors.email?.message} />
+      <Input
+        label="Company name"
+        placeholder="Summit Roofing Co."
+        {...register('name')}
+        error={errors.name?.message}
+      />
+      <Input
+        label="Business email"
+        type="email"
+        placeholder="office@summitroofing.com"
+        {...register('email')}
+        error={errors.email?.message}
+      />
       <Input
         label="Business phone number"
         placeholder="+1 512 555 0100"
@@ -149,8 +158,18 @@ function CompanyStep() {
         error={errors.phone?.message}
       />
       <div className="grid grid-cols-2 gap-4">
-        <Input label="City" placeholder="Austin" {...register('city')} error={errors.city?.message} />
-        <Input label="State" placeholder="TX" {...register('state')} error={errors.state?.message} />
+        <Input
+          label="City"
+          placeholder="Austin"
+          {...register('city')}
+          error={errors.city?.message}
+        />
+        <Input
+          label="State"
+          placeholder="TX"
+          {...register('state')}
+          error={errors.state?.message}
+        />
       </div>
       {createCompany.isError && (
         <p className="text-sm text-red-600">{(createCompany.error as Error).message}</p>
@@ -374,7 +393,11 @@ function AiStep() {
           Give it a name, a voice, and the greeting your callers will hear.
         </p>
       </div>
-      <Input label="Assistant name" {...register('assistantName')} error={errors.assistantName?.message} />
+      <Input
+        label="Assistant name"
+        {...register('assistantName')}
+        error={errors.assistantName?.message}
+      />
       <Select label="Voice" {...register('voice')} error={errors.voice?.message}>
         {Object.entries(AiVoice).map(([label, value]) => (
           <option key={value} value={value}>
@@ -396,7 +419,9 @@ function AiStep() {
         error={errors.persona?.message}
       />
       {(updateAi.isError || setStep.isError) && (
-        <p className="text-sm text-red-600">{((updateAi.error ?? setStep.error) as Error).message}</p>
+        <p className="text-sm text-red-600">
+          {((updateAi.error ?? setStep.error) as Error).message}
+        </p>
       )}
       <Button type="submit" className="w-full" loading={updateAi.isPending || setStep.isPending}>
         Continue
@@ -413,7 +438,8 @@ const KNOWLEDGE_PROMPTS: { category: KnowledgeCategory; title: string; placehold
   {
     category: KnowledgeCategory.PRICING,
     title: 'Estimates & pricing',
-    placeholder: 'e.g. We offer free, no-obligation estimates. Typical roof replacements range from…',
+    placeholder:
+      'e.g. We offer free, no-obligation estimates. Typical roof replacements range from…',
   },
   {
     category: KnowledgeCategory.WARRANTY,
@@ -498,7 +524,9 @@ function KnowledgeStep() {
         onClick={() => void onFinish()}
         loading={saveArticle.isPending || complete.isPending}
       >
-        {filled.length > 0 ? `Save ${filled.length} and finish setup` : 'Skip for now and finish setup'}
+        {filled.length > 0
+          ? `Save ${filled.length} and finish setup`
+          : 'Skip for now and finish setup'}
       </Button>
     </div>
   );

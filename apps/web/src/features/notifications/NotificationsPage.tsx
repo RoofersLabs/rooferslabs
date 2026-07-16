@@ -106,7 +106,12 @@ export function NotificationsPage() {
                           >
                             {notification.title}
                           </span>
-                          {unread && <span className="h-2 w-2 rounded-full bg-brand-600" aria-label="Unread" />}
+                          {unread && (
+                            <span
+                              className="h-2 w-2 rounded-full bg-brand-600"
+                              aria-label="Unread"
+                            />
+                          )}
                         </span>
                         <span className="mt-0.5 block text-sm text-slate-600">
                           {notification.message}

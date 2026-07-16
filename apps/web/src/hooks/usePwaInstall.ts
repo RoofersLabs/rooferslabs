@@ -23,8 +23,7 @@ export function usePwaInstall() {
     return choice.outcome === 'accepted';
   }, [deferredPrompt, setDeferredPrompt, setInstalled]);
 
-  const isIos =
-    typeof navigator !== 'undefined' && /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isIos = typeof navigator !== 'undefined' && /iphone|ipad|ipod/i.test(navigator.userAgent);
 
   return { canPrompt: deferredPrompt !== null, installed, promptInstall, isIos };
 }

@@ -9,11 +9,7 @@ import {
 import { ThrottlerException } from '@nestjs/throttler';
 import { Prisma } from '@prisma/client';
 import type { Response } from 'express';
-import {
-  ApiErrorCode,
-  type ApiErrorResponse,
-  type ApiValidationError,
-} from '@rooferslabs/shared';
+import { ApiErrorCode, type ApiErrorResponse, type ApiValidationError } from '@rooferslabs/shared';
 import { DomainException } from '../exceptions/domain.exception';
 import type { AuthenticatedRequest } from '../interfaces/authenticated-request.interface';
 
@@ -40,7 +36,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         exception instanceof Error ? exception.stack : String(exception),
       );
     } else {
-      this.logger.warn(`[${requestId}] ${request.method} ${request.url} → ${status} ${code}: ${message}`);
+      this.logger.warn(
+        `[${requestId}] ${request.method} ${request.url} → ${status} ${code}: ${message}`,
+      );
     }
 
     const body: ApiErrorResponse = {

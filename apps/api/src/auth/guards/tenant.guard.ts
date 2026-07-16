@@ -22,9 +22,7 @@ export class TenantGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     if (!request.authUser?.companyId) {
-      throw new ForbiddenError(
-        'You must create or join a company before accessing this resource.',
-      );
+      throw new ForbiddenError('You must create or join a company before accessing this resource.');
     }
     return true;
   }

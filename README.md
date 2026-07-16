@@ -16,16 +16,16 @@ Production deployment runbook: [`docs/13_Deployment_Guide.md`](./docs/13_Deploym
 
 ## Technology stack
 
-| Layer          | Technology |
-| -------------- | ---------- |
+| Layer          | Technology                                                                                              |
+| -------------- | ------------------------------------------------------------------------------------------------------- |
 | Frontend       | React, TypeScript, Vite, Tailwind CSS, React Router, Zustand, TanStack Query, React Hook Form, Zod, PWA |
-| Backend        | NestJS, Node.js, TypeScript, Prisma ORM |
-| Database       | PostgreSQL (Amazon RDS) · Redis (cache) · Amazon SQS (jobs) |
-| Auth           | Clerk |
-| AI             | OpenAI Realtime API (voice) · OpenAI Responses API (structured outputs) · RAG knowledge base |
-| Telephony      | Twilio Programmable Voice + Media Streams |
-| Infrastructure | AWS (ECS/Fargate, S3, Secrets Manager, CloudWatch), Docker, Cloudflare |
-| Payments       | Stripe (architecture reserved — not implemented in r1 echo) |
+| Backend        | NestJS, Node.js, TypeScript, Prisma ORM                                                                 |
+| Database       | PostgreSQL (Amazon RDS) · Redis (cache) · Amazon SQS (jobs)                                             |
+| Auth           | Clerk                                                                                                   |
+| AI             | OpenAI Realtime API (voice) · OpenAI Responses API (structured outputs) · RAG knowledge base            |
+| Telephony      | Twilio Programmable Voice + Media Streams                                                               |
+| Infrastructure | AWS (ECS/Fargate, S3, Secrets Manager, CloudWatch), Docker, Cloudflare                                  |
+| Payments       | Stripe (architecture reserved — not implemented in r1 echo)                                             |
 
 ---
 
@@ -66,53 +66,53 @@ rooferslabs/
 
 ## Third-party accounts required
 
-| Service | Purpose | Where to sign up |
-| ------- | ------- | ---------------- |
-| **Clerk** | Authentication (register, login, sessions) | https://clerk.com |
-| **OpenAI** | Realtime voice AI + Responses API + embeddings | https://platform.openai.com |
-| **Twilio** | Phone numbers, inbound calls, Media Streams | https://twilio.com |
-| **AWS** | RDS, ECS/Fargate, S3, SQS, Secrets Manager, CloudWatch | https://aws.amazon.com |
-| **Cloudflare** | DNS, TLS, WebSocket proxy, edge caching | https://cloudflare.com |
-| Stripe *(later)* | Billing (not in r1 echo) | https://stripe.com |
+| Service          | Purpose                                                | Where to sign up            |
+| ---------------- | ------------------------------------------------------ | --------------------------- |
+| **Clerk**        | Authentication (register, login, sessions)             | https://clerk.com           |
+| **OpenAI**       | Realtime voice AI + Responses API + embeddings         | https://platform.openai.com |
+| **Twilio**       | Phone numbers, inbound calls, Media Streams            | https://twilio.com          |
+| **AWS**          | RDS, ECS/Fargate, S3, SQS, Secrets Manager, CloudWatch | https://aws.amazon.com      |
+| **Cloudflare**   | DNS, TLS, WebSocket proxy, edge caching                | https://cloudflare.com      |
+| Stripe _(later)_ | Billing (not in r1 echo)                               | https://stripe.com          |
 
 ## Every environment variable
 
 Backend (root `.env` — full annotated reference in [`.env.example`](./.env.example)):
 
-| Variable | Required | Description |
-| -------- | -------- | ----------- |
-| `NODE_ENV` | yes | `development` / `production` |
-| `API_PORT` | yes | API port (default 4000) |
-| `API_PUBLIC_URL` | yes | Public API origin (webhooks, Swagger) |
-| `WEB_PUBLIC_URL` | yes | Public PWA origin |
-| `CORS_ORIGINS` | yes | Comma-separated allowed origins |
-| `DATABASE_URL` | **yes** | PostgreSQL connection string |
-| `REDIS_URL` | yes | Redis connection string |
-| `CLERK_PUBLISHABLE_KEY` | **yes** | Clerk `pk_…` |
-| `CLERK_SECRET_KEY` | **yes** | Clerk `sk_…` (server only) |
-| `CLERK_JWT_KEY` | no | PEM key for offline JWT verification |
-| `CLERK_WEBHOOK_SECRET` | no | Clerk webhook signing secret |
-| `OPENAI_API_KEY` | **yes*** | OpenAI API key (*AI features disabled without it) |
-| `OPENAI_REALTIME_MODEL` | no | default `gpt-realtime` |
-| `OPENAI_RESPONSES_MODEL` | no | default `gpt-4.1` |
-| `OPENAI_EMBEDDING_MODEL` | no | default `text-embedding-3-small` |
-| `TWILIO_ACCOUNT_SID` | **yes*** | Twilio account SID (*telephony) |
-| `TWILIO_AUTH_TOKEN` | **yes*** | Twilio auth token (webhook signatures) |
-| `TWILIO_MEDIA_STREAM_URL` | yes | `wss://…/v1/telephony/media-stream` |
-| `AWS_REGION` | yes | AWS region |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | prod | Omit on ECS (task role) |
-| `S3_BUCKET_RECORDINGS` / `S3_BUCKET_UPLOADS` | prod | S3 bucket names |
-| `SQS_QUEUE_URL` | no | Jobs queue URL |
-| `BACKGROUND_JOBS_INLINE` | no | `true` = process jobs in-process (local dev) |
-| `MIGRATE_ON_START` | no | Container-only: run `migrate deploy` on boot |
-| `LOG_LEVEL` | no | pino level (default `debug` dev / `info` prod) |
+| Variable                                      | Required | Description                                       |
+| --------------------------------------------- | -------- | ------------------------------------------------- |
+| `NODE_ENV`                                    | yes      | `development` / `production`                      |
+| `API_PORT`                                    | yes      | API port (default 4000)                           |
+| `API_PUBLIC_URL`                              | yes      | Public API origin (webhooks, Swagger)             |
+| `WEB_PUBLIC_URL`                              | yes      | Public PWA origin                                 |
+| `CORS_ORIGINS`                                | yes      | Comma-separated allowed origins                   |
+| `DATABASE_URL`                                | **yes**  | PostgreSQL connection string                      |
+| `REDIS_URL`                                   | yes      | Redis connection string                           |
+| `CLERK_PUBLISHABLE_KEY`                       | **yes**  | Clerk `pk_…`                                      |
+| `CLERK_SECRET_KEY`                            | **yes**  | Clerk `sk_…` (server only)                        |
+| `CLERK_JWT_KEY`                               | no       | PEM key for offline JWT verification              |
+| `CLERK_WEBHOOK_SECRET`                        | no       | Clerk webhook signing secret                      |
+| `OPENAI_API_KEY`                              | **yes*** | OpenAI API key (*AI features disabled without it) |
+| `OPENAI_REALTIME_MODEL`                       | no       | default `gpt-realtime`                            |
+| `OPENAI_RESPONSES_MODEL`                      | no       | default `gpt-4.1`                                 |
+| `OPENAI_EMBEDDING_MODEL`                      | no       | default `text-embedding-3-small`                  |
+| `TWILIO_ACCOUNT_SID`                          | **yes*** | Twilio account SID (*telephony)                   |
+| `TWILIO_AUTH_TOKEN`                           | **yes*** | Twilio auth token (webhook signatures)            |
+| `TWILIO_MEDIA_STREAM_URL`                     | yes      | `wss://…/v1/telephony/media-stream`               |
+| `AWS_REGION`                                  | yes      | AWS region                                        |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | prod     | Omit on ECS (task role)                           |
+| `S3_BUCKET_RECORDINGS` / `S3_BUCKET_UPLOADS`  | prod     | S3 bucket names                                   |
+| `SQS_QUEUE_URL`                               | no       | Jobs queue URL                                    |
+| `BACKGROUND_JOBS_INLINE`                      | no       | `true` = process jobs in-process (local dev)      |
+| `MIGRATE_ON_START`                            | no       | Container-only: run `migrate deploy` on boot      |
+| `LOG_LEVEL`                                   | no       | pino level (default `debug` dev / `info` prod)    |
 
 Frontend (`apps/web/.env` — see [`apps/web/.env.example`](./apps/web/.env.example)):
 
-| Variable | Required | Description |
-| -------- | -------- | ----------- |
-| `VITE_CLERK_PUBLISHABLE_KEY` | **yes** | Clerk publishable key (browser-safe) |
-| `VITE_API_BASE_URL` | prod | API origin; empty in dev (Vite proxy) |
+| Variable                     | Required | Description                           |
+| ---------------------------- | -------- | ------------------------------------- |
+| `VITE_CLERK_PUBLISHABLE_KEY` | **yes**  | Clerk publishable key (browser-safe)  |
+| `VITE_API_BASE_URL`          | prod     | API origin; empty in dev (Vite proxy) |
 
 ## Every API key required
 
@@ -236,6 +236,7 @@ which walks the customer through this):
 ## Testing checklist
 
 **Build & boot**
+
 - [ ] `npm install && npm run build` succeeds from a clean clone
 - [ ] `npm run typecheck` passes in all three workspaces
 - [ ] `npm run db:up && npm run prisma:migrate && npm run prisma:seed` initializes the database
@@ -243,17 +244,20 @@ which walks the customer through this):
 - [ ] Swagger renders at `http://localhost:4000/docs`
 
 **Authentication & tenancy**
+
 - [ ] Register a new account (Clerk) → lands on onboarding
 - [ ] Log out / log in → session restored; `GET /v1/auth/me` returns user + company
 - [ ] All `/v1/*` business endpoints reject requests without a bearer token (401)
 - [ ] A second registered company cannot read the first company's data (404/403 on foreign ids)
 
 **Onboarding journey**
+
 - [ ] Create company → Business step (services, areas, emergency) → AI step
       (name, voice, greeting) → Knowledge step → Complete → Dashboard
 - [ ] Refresh mid-wizard → resumes at the saved step
 
 **Dashboard & operations**
+
 - [ ] Dashboard shows today's calls / leads / emergencies / pending appointments (seed data visible for demo tenant)
 - [ ] Calls list renders; conversation detail shows transcript, AI summary, key points, extracted details
 - [ ] Customers: search, create, edit
@@ -263,6 +267,7 @@ which walks the customer through this):
 - [ ] Global header search returns customers / conversations / appointments / articles
 
 **AI receptionist & telephony (requires OpenAI + Twilio keys and a tunnel or deploy)**
+
 - [ ] Inbound call to the Twilio number → AI answers with the configured greeting
 - [ ] Caller question about services → answered from knowledge base content only
 - [ ] Caller gives name/phone/address → customer record created/enriched after the call
@@ -273,6 +278,7 @@ which walks the customer through this):
 - [ ] Invalid Twilio signature is rejected in production mode
 
 **PWA**
+
 - [ ] Lighthouse: installable PWA, no console errors
 - [ ] "Add to Home Screen" appears in the top nav; disappears after install
 - [ ] Installed app opens standalone with the RoofersLabs icon
@@ -281,11 +287,13 @@ which walks the customer through this):
 ## Installing the PWA
 
 **Android (Chrome)**
+
 1. Open `https://app.rooferslabs.com`, sign in.
-2. Tap **Add to Home Screen** in the top navigation (or Chrome menu ⋮ → *Add to Home screen*).
+2. Tap **Add to Home Screen** in the top navigation (or Chrome menu ⋮ → _Add to Home screen_).
 3. Confirm — the RoofersLabs icon appears on the home screen and opens full-screen.
 
 **iPhone / iPad (Safari)**
+
 1. Open `https://app.rooferslabs.com` in **Safari**, sign in.
 2. Tap the top-nav **Install** button to see guided steps, or directly:
    tap **Share** □↑ → **Add to Home Screen** → **Add**.

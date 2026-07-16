@@ -14,11 +14,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentCompanyId } from '../common/decorators/current-company.decorator';
 import { paginated, respond } from '../common/response';
 import { CustomersService } from './customers.service';
-import {
-  CreateCustomerDto,
-  CustomerQueryDto,
-  UpdateCustomerDto,
-} from './dto/customer.dto';
+import { CreateCustomerDto, CustomerQueryDto, UpdateCustomerDto } from './dto/customer.dto';
 
 @ApiTags('Customers')
 @ApiBearerAuth()

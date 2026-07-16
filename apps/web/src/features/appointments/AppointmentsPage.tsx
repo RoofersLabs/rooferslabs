@@ -55,7 +55,10 @@ export function AppointmentsPage() {
           <>
             <ul className="divide-y divide-slate-100">
               {appointments.data.items.map((appointment) => (
-                <li key={appointment.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
+                <li
+                  key={appointment.id}
+                  className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center"
+                >
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-medium text-slate-900">

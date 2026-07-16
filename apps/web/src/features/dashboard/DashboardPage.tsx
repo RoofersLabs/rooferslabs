@@ -74,7 +74,10 @@ export function DashboardPage() {
         <section className="card" aria-label="Recent conversations">
           <header className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
             <h2 className="text-sm font-semibold text-slate-900">Recent conversations</h2>
-            <Link to="/calls" className="focus-ring rounded text-xs font-medium text-brand-700 hover:underline">
+            <Link
+              to="/calls"
+              className="focus-ring rounded text-xs font-medium text-brand-700 hover:underline"
+            >
               View all
             </Link>
           </header>
@@ -172,8 +175,18 @@ export function DashboardPage() {
 
       {/* Secondary stats */}
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-3">
-        <MetricCard icon={Phone} label="Calls this week" value={metrics?.weeklyCalls} tone="slate" />
-        <MetricCard icon={Users} label="Total customers" value={metrics?.totalCustomers} tone="slate" />
+        <MetricCard
+          icon={Phone}
+          label="Calls this week"
+          value={metrics?.weeklyCalls}
+          tone="slate"
+        />
+        <MetricCard
+          icon={Users}
+          label="Total customers"
+          value={metrics?.totalCustomers}
+          tone="slate"
+        />
         <MetricCard
           icon={CalendarClock}
           label="Unread notifications"
@@ -206,7 +219,9 @@ function MetricCard({
 }) {
   return (
     <div className="card flex items-center gap-4 p-4">
-      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${toneStyles[tone]}`}>
+      <span
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${toneStyles[tone]}`}
+      >
         <Icon className="h-5 w-5" aria-hidden />
       </span>
       <span>

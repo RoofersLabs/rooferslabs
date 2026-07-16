@@ -205,9 +205,21 @@ async function main(): Promise<void> {
         'Prefers weekday afternoon appointments',
       ],
       transcript: [
-        { role: 'assistant', text: 'Thanks for calling Summit Roofing! This is Riley. How can I help you with your roof today?', offsetMs: 0 },
-        { role: 'customer', text: 'Hi, we had a storm last week and I think some shingles came off. Can someone take a look?', offsetMs: 5200 },
-        { role: 'assistant', text: 'Absolutely, I’m sorry to hear about the storm damage. We offer free inspections — could I get the property address?', offsetMs: 9800 },
+        {
+          role: 'assistant',
+          text: 'Thanks for calling Summit Roofing! This is Riley. How can I help you with your roof today?',
+          offsetMs: 0,
+        },
+        {
+          role: 'customer',
+          text: 'Hi, we had a storm last week and I think some shingles came off. Can someone take a look?',
+          offsetMs: 5200,
+        },
+        {
+          role: 'assistant',
+          text: 'Absolutely, I’m sorry to hear about the storm damage. We offer free inspections — could I get the property address?',
+          offsetMs: 9800,
+        },
         { role: 'customer', text: 'Sure, it’s 812 Oak Meadow Drive in Austin.', offsetMs: 14000 },
       ],
     },
@@ -253,11 +265,27 @@ async function main(): Promise<void> {
       isEmergency: true,
       summary:
         'James Patel reported an active roof leak at a commercial property in Round Rock during business hours. Flagged as an emergency and routed to the on-call crew.',
-      keyPoints: ['Active leak at a commercial building', 'Water entering the interior', 'Emergency dispatch requested'],
+      keyPoints: [
+        'Active leak at a commercial building',
+        'Water entering the interior',
+        'Emergency dispatch requested',
+      ],
       transcript: [
-        { role: 'assistant', text: 'Thanks for calling Summit Roofing! This is Riley. How can I help you with your roof today?', offsetMs: 0 },
-        { role: 'customer', text: 'We have water pouring into our warehouse right now, we need someone immediately.', offsetMs: 4200 },
-        { role: 'assistant', text: 'That sounds like an emergency — let’s get a crew out right away. What’s the address?', offsetMs: 8100 },
+        {
+          role: 'assistant',
+          text: 'Thanks for calling Summit Roofing! This is Riley. How can I help you with your roof today?',
+          offsetMs: 0,
+        },
+        {
+          role: 'customer',
+          text: 'We have water pouring into our warehouse right now, we need someone immediately.',
+          offsetMs: 4200,
+        },
+        {
+          role: 'assistant',
+          text: 'That sounds like an emergency — let’s get a crew out right away. What’s the address?',
+          offsetMs: 8100,
+        },
       ],
     },
   });

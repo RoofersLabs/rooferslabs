@@ -140,9 +140,11 @@ export function ConversationDetailPage() {
               <DetailRow label="Phone" value={formatPhone(data.customer?.phone)} />
               <DetailRow
                 label="Address"
-                value={(data.customer && 'propertyAddress' in data.customer
-                  ? (data.customer.propertyAddress as string | null)
-                  : null) ?? '—'}
+                value={
+                  (data.customer && 'propertyAddress' in data.customer
+                    ? (data.customer.propertyAddress as string | null)
+                    : null) ?? '—'
+                }
               />
             </dl>
             {call?.recordingUrl && (

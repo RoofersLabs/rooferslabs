@@ -2,12 +2,7 @@
  * TanStack Query hooks — the single data-access layer for the frontend
  * (docs/04_Frontend_Architecture §12/§23). Components never call fetch.
  */
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  keepPreviousData,
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import type { OnboardingStep } from '@rooferslabs/shared';
 import { api, type PaginatedResult } from '@/lib/api-client';
 import { useSessionStore } from '@/state/session.store';
@@ -79,8 +74,13 @@ export function useCompany(enabled = true) {
 export function useCreateCompany() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: { name: string; email?: string; phone?: string; city?: string; state?: string }) =>
-      api.post<Company>('/companies', body),
+    mutationFn: (body: {
+      name: string;
+      email?: string;
+      phone?: string;
+      city?: string;
+      state?: string;
+    }) => api.post<Company>('/companies', body),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.session });
       void qc.invalidateQueries({ queryKey: queryKeys.company });
@@ -300,7 +300,9 @@ export function useDeleteKnowledgeArticle() {
 // Notifications
 // ---------------------------------------------------------------------------
 
-export function useNotifications(params: ListParams): ReturnType<typeof useQuery<PaginatedResult<Notification>>> {
+export function useNotifications(
+  params: ListParams,
+): ReturnType<typeof useQuery<PaginatedResult<Notification>>> {
   return useQuery({
     queryKey: queryKeys.notifications(params),
     queryFn: () => api.getPaginated<Notification>('/notifications', params),

@@ -1,10 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { KnowledgeArticle, Prisma } from '@prisma/client';
-import {
-  ApiErrorCode,
-  KnowledgeStatus,
-  type PaginationMeta,
-} from '@rooferslabs/shared';
+import { ApiErrorCode, KnowledgeStatus, type PaginationMeta } from '@rooferslabs/shared';
 import { NotFoundError } from '../common/exceptions/domain.exception';
 import {
   buildPaginationMeta,
@@ -70,7 +66,10 @@ export class KnowledgeService {
   async getById(companyId: string, id: string): Promise<KnowledgeArticle> {
     const article = await this.repo.findById(companyId, id);
     if (!article) {
-      throw new NotFoundError('Knowledge article not found.', ApiErrorCode.KNOWLEDGE_ARTICLE_NOT_FOUND);
+      throw new NotFoundError(
+        'Knowledge article not found.',
+        ApiErrorCode.KNOWLEDGE_ARTICLE_NOT_FOUND,
+      );
     }
     return article;
   }

@@ -36,7 +36,10 @@ export function CustomersPage() {
       <div className="card overflow-hidden">
         <div className="border-b border-slate-200 p-4">
           <div className="relative max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              aria-hidden
+            />
             <input
               type="search"
               value={search}
@@ -144,8 +147,10 @@ function CustomerModal({
     setForm(customer ?? {});
   }
 
-  const set = (field: keyof Customer) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  const set =
+    (field: keyof Customer) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+      setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();

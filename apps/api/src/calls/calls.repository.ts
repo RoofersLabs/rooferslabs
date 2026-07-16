@@ -53,7 +53,13 @@ export class CallsRepository {
   ) {
     const fullWhere: Prisma.CallWhereInput = { companyId, ...where };
     return this.prisma.$transaction([
-      this.prisma.call.findMany({ where: fullWhere, orderBy, skip, take, include: callListInclude }),
+      this.prisma.call.findMany({
+        where: fullWhere,
+        orderBy,
+        skip,
+        take,
+        include: callListInclude,
+      }),
       this.prisma.call.count({ where: fullWhere }),
     ]);
   }
