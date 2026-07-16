@@ -51,3 +51,11 @@ bun.lockb
 .claude/local/
 .claude/skills/
 .gstack/
+
+# Terraform (the .terraform.lock.hcl provider lock file IS committed)
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log

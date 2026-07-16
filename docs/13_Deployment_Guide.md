@@ -37,84 +37,81 @@ Two DNS names, both proxied through Cloudflare:
 
 ---
 
-## 2. Build & push images
+## 2. Provision AWS with Terraform (one-time)
+
+**The entire AWS environment is Infrastructure as Code** under
+`infra/terraform/` — VPC, ALB (+ACM), ECR, ECS Fargate, RDS PostgreSQL,
+ElastiCache Redis, S3, Secrets Manager, IAM, and CloudWatch. Do not create AWS
+resources by hand; change Terraform and apply.
 
 ```bash
-AWS_ACCOUNT=<account-id>
-REGION=us-east-1
-ECR=$AWS_ACCOUNT.dkr.ecr.$REGION.amazonaws.com
-
-aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ECR
-
-# API
-docker build -f docker/api.Dockerfile -t $ECR/rooferslabs-api:$(git rev-parse --short HEAD) .
-docker push $ECR/rooferslabs-api:$(git rev-parse --short HEAD)
-
-# Web (Vite inlines its env at build time)
-docker build -f docker/web.Dockerfile \
-  --build-arg VITE_CLERK_PUBLISHABLE_KEY=pk_live_xxx \
-  --build-arg VITE_API_BASE_URL=https://api.rooferslabs.com \
-  -t $ECR/rooferslabs-web:$(git rev-parse --short HEAD) .
-docker push $ECR/rooferslabs-web:$(git rev-parse --short HEAD)
+cd infra/terraform/envs/production
+cp terraform.tfvars.example terraform.tfvars   # fill in domain + external keys
+terraform init
+terraform apply                                # phase 1: HTTP
+terraform output acm_validation_records        # add CNAMEs in Cloudflare (DNS-only)
+terraform apply -var 'enable_https=true'       # phase 2: HTTPS once the cert issues
 ```
+
+The complete from-scratch walkthrough — including outputs for Cloudflare,
+Twilio, and day-2 operations — is `infra/terraform/README.md`. The only
+inputs you provide are your domain and external credentials (Clerk, OpenAI,
+Twilio, VAPID); database passwords are generated and stored in Secrets
+Manager automatically.
 
 ---
 
-## 3. AWS provisioning (one-time)
+## 3. What Terraform provisions
 
-1. **VPC** — 2 AZs, public subnets for the ALB, private subnets for ECS/RDS/Redis.
-2. **RDS PostgreSQL 16** — `db.t4g.small` to start, storage autoscaling,
-   automated backups (7-day retention), private subnet, security group that
-   only admits the ECS tasks.
-3. **ElastiCache Redis 7** — `cache.t4g.micro` to start, same network rules.
-4. **S3** — two private buckets: `rooferslabs-recordings-prod`,
-   `rooferslabs-uploads-prod`. Block all public access; server-side encryption.
-5. **SQS** — `rooferslabs-jobs-prod` standard queue + dead-letter queue
-   (set `BACKGROUND_JOBS_INLINE=false` once workers consume it).
-6. **Secrets Manager** — one secret `rooferslabs/prod/api` holding every value
-   from `.env.example` (DATABASE_URL, REDIS_URL, CLERK_*, OPENAI_*, TWILIO_*,
-   S3_*, …). The ECS task definition maps each key to an environment variable.
-7. **ECR** — repositories `rooferslabs-api` and `rooferslabs-web`.
-8. **ECS cluster** (Fargate) with two services behind one ALB:
-   - `api` — task 0.5 vCPU / 1 GB, port 4000, health check
-     `GET /v1/health` (200), desired count ≥ 2.
-     **Target group must have stickiness disabled and support WebSockets**
-     (ALB does by default; idle timeout ≥ 300 s for long calls).
-   - `web` — task 0.25 vCPU / 512 MB, port 80, health check `GET /` (200).
-   - ALB listener rules: host `api.rooferslabs.com` → api target group,
-     host `app.rooferslabs.com` → web target group. HTTPS via ACM certificate
-     for both hosts (or a `*.rooferslabs.com` cert).
-9. **CloudWatch** — the `awslogs` driver on both task definitions
-   (`/ecs/rooferslabs-api`, `/ecs/rooferslabs-web`); alarms on ALB 5xx rate,
-   target health, and API p99 latency.
-10. **IAM** — task role for the api service permitting only: the two S3
-    buckets, the SQS queue, and reading the one secret.
+For reference (all of this is created by `terraform apply`; see the modules
+under `infra/terraform/modules/`):
 
-Production env values that differ from local:
+1. **VPC** — 2 AZs, public subnets for the ALB/NAT, private subnets for
+   ECS/RDS/Redis.
+2. **RDS PostgreSQL 16** — encrypted gp3 storage with autoscaling, 7-day
+   automated backups, deletion protection, generated master password (never
+   leaves Secrets Manager), security group admitting only the API service.
+3. **ElastiCache Redis 7** — single node by default (`replicas_per_node` for
+   failover), same network rules.
+4. **S3** — private `recordings` + `uploads` buckets (KMS encryption, all
+   public access blocked). SQS is deferred until background workers exist
+   (`BACKGROUND_JOBS_INLINE=true` remains the default).
+5. **Secrets Manager** — `rooferslabs-production/database` (generated
+   DATABASE_URL) and `rooferslabs-production/app` (Clerk/OpenAI/Twilio/VAPID),
+   mapped into the task definition via `valueFrom`.
+6. **ECR** — `rooferslabs/api` and `rooferslabs/web` with lifecycle policies.
+7. **ECS Fargate** — one cluster, two services behind one ALB with host-based
+   routing (`api.` → :4000, `app.` → :80), WebSocket-friendly 300 s idle
+   timeout, deployment circuit breaker with automatic rollback, ECS Exec
+   enabled. API health check: `GET /v1/health/ready`.
+8. **CloudWatch** — log groups (`/rooferslabs-production/api|web`, 30-day
+   retention) and alarms on ALB 5xx + API CPU (optional email via
+   `alarm_email`).
+9. **IAM** — execution role limited to pulling images, writing logs, and
+   reading the two secrets; task role limited to the two S3 buckets.
 
-```
-NODE_ENV=production
-API_PUBLIC_URL=https://api.rooferslabs.com
-WEB_PUBLIC_URL=https://app.rooferslabs.com
-CORS_ORIGINS=https://app.rooferslabs.com
-TWILIO_MEDIA_STREAM_URL=wss://api.rooferslabs.com/v1/telephony/media-stream
-MIGRATE_ON_START=true          # single-writer migration on task start
-LOG_LEVEL=info
-```
+All production env values (`API_PUBLIC_URL`, `CORS_ORIGINS`,
+`TWILIO_MEDIA_STREAM_URL`, model names, …) are derived from your domain inside
+Terraform — nothing to assemble by hand.
 
 ---
 
 ## 4. Deploy / release
 
 ```bash
-# Update the task definition image tag, then:
-aws ecs update-service --cluster rooferslabs --service api --force-new-deployment
-aws ecs update-service --cluster rooferslabs --service web --force-new-deployment
+infra/scripts/deploy.sh          # build + push both images, roll both services
+infra/scripts/deploy.sh api      # API only
+infra/scripts/deploy.sh web      # web only
 ```
 
+The script reads every setting from Terraform outputs (ECR URLs, cluster and
+service names, Clerk publishable key, API URL), builds `linux/amd64` images
+tagged `latest` + git SHA, and waits for the services to stabilize.
+
 The api entrypoint runs `prisma migrate deploy` before the server starts
-(`MIGRATE_ON_START=true`). Rolling deployments with a minimum healthy percent
-of 100 give zero-downtime releases; rollback = redeploy the previous image tag.
+(`MIGRATE_ON_START=true`). Rolling deployments with the circuit breaker give
+zero-downtime releases and automatic rollback on failed health checks; manual
+rollback = redeploy the previous image tag.
 
 ---
 

@@ -1,5 +1,9 @@
 # AWS Infrastructure
 
+> **Implementation:** this architecture is realized as Terraform under
+> [`infra/terraform/`](../infra/terraform/README.md). Provision and change AWS
+> resources through Terraform only — never by hand in the console.
+
 ## 1. Document Information
 
 ### Purpose

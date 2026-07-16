@@ -185,10 +185,20 @@ docker build -f docker/web.Dockerfile \
 
 ## Deployment (AWS) & Cloudflare
 
-The complete step-by-step runbook — ECR, RDS, ElastiCache, S3, SQS, Secrets
-Manager, ECS/Fargate services, ALB/WebSocket settings, CloudWatch, releases,
-rollback, and all Cloudflare settings (DNS, Full-strict TLS, **WebSockets ON**,
-cache rules) — is in [`docs/13_Deployment_Guide.md`](./docs/13_Deployment_Guide.md).
+**All AWS infrastructure is Terraform** — VPC, ALB/ACM, ECR, ECS Fargate, RDS,
+ElastiCache, S3, Secrets Manager, IAM, CloudWatch:
+
+```bash
+cd infra/terraform/envs/production
+cp terraform.tfvars.example terraform.tfvars   # domain + Clerk/OpenAI/Twilio/VAPID keys
+terraform init && terraform apply
+../../scripts/deploy.sh                        # build + push + roll both services
+```
+
+From-scratch walkthrough: [`infra/terraform/README.md`](./infra/terraform/README.md).
+The operational runbook — releases, rollback, and all Cloudflare settings
+(DNS, Full-strict TLS, **WebSockets ON**, cache rules) — is in
+[`docs/13_Deployment_Guide.md`](./docs/13_Deployment_Guide.md).
 
 ---
 
@@ -304,10 +314,11 @@ which walks the customer through this):
 ## Remaining manual tasks before production
 
 1. **Credentials** — create production Clerk instance, OpenAI key with billing
-   limit, Twilio account with a purchased number, AWS account, Cloudflare zone;
-   populate Secrets Manager.
-2. **Provision AWS** per `docs/13_Deployment_Guide.md` §3 (RDS, Redis, S3, SQS,
-   ECR, ECS, ALB/ACM, CloudWatch alarms).
+   limit, Twilio account with a purchased number, AWS account, Cloudflare zone.
+   Put them in `infra/terraform/envs/production/terraform.tfvars` — Terraform
+   populates Secrets Manager for you.
+2. **Provision AWS** — `terraform apply` per `infra/terraform/README.md`
+   (VPC, RDS, Redis, S3, ECR, ECS, ALB/ACM, IAM, Secrets, CloudWatch alarms).
 3. **Cloudflare** — DNS, Full (strict) TLS, WebSockets ON, cache rules (§5).
 4. **Twilio** — point each number's webhooks at the production API (§6) and
    assign numbers to tenants.

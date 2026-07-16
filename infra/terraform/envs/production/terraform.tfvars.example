@@ -1,0 +1,39 @@
+# =============================================================================
+# RoofersLabs production — copy to terraform.tfvars and fill in.
+# NEVER commit terraform.tfvars (it is gitignored).
+# =============================================================================
+
+aws_region = "us-east-1"
+
+# Your apex domain (DNS managed in Cloudflare).
+root_domain = "rooferslabs.com"
+
+# Two-phase HTTPS: leave false for the first apply, add the ACM validation
+# CNAMEs from the outputs to Cloudflare, then set true and apply again.
+enable_https = false
+
+# ---- External credentials ----------------------------------------------------
+
+# Clerk → Dashboard → API Keys (use the production instance's live keys)
+clerk_secret_key      = "sk_live_..."
+clerk_publishable_key = "pk_live_..."
+# Clerk → Webhooks (optional)
+# clerk_webhook_secret = "whsec_..."
+
+# OpenAI → platform.openai.com → API keys
+openai_api_key = "sk-..."
+
+# Twilio → Console → Account Info
+twilio_account_sid = "AC..."
+twilio_auth_token  = "..."
+
+# Web Push — generate once with: npx web-push generate-vapid-keys
+vapid_public_key  = ""
+vapid_private_key = ""
+vapid_subject     = "mailto:support@rooferslabs.com"
+
+# ---- Optional tuning -----------------------------------------------------------
+
+# alarm_email       = "founder@rooferslabs.com"
+# api_desired_count = 2
+# db_multi_az       = true
