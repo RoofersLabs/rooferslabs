@@ -16,8 +16,10 @@ import { AppConfigModule } from './config/app-config.module';
 import { AppConfigService } from './config/app-config.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
+import { RedisService } from './redis/redis.service';
 
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { ResilientThrottlerStorage } from './common/resilient-throttler.storage';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { RequestContextMiddleware } from './common/middleware/request-context.middleware';
 
@@ -71,8 +73,14 @@ import { HealthModule } from './health/health.module';
         },
       }),
     }),
-    ThrottlerModule.forRoot({
-      throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }],
+    ThrottlerModule.forRootAsync({
+      inject: [RedisService],
+      useFactory: (redis: RedisService) => ({
+        throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }],
+        // Global limits across all API tasks via Redis, falling back to
+        // per-instance memory when Redis is unavailable (fail-open).
+        storage: new ResilientThrottlerStorage(redis.raw),
+      }),
     }),
     AuthModule,
     UsersModule,
