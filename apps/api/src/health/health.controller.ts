@@ -39,7 +39,9 @@ export class HealthController {
     const status = cache ? 'ready' : 'degraded';
     return respond(
       { status, checks: { database, cache } },
-      status === 'ready' ? 'All dependencies healthy.' : 'Cache is degraded; service remains available.',
+      status === 'ready'
+        ? 'All dependencies healthy.'
+        : 'Cache is degraded; service remains available.',
     );
   }
 

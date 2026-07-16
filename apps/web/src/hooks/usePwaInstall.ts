@@ -24,6 +24,8 @@ export function usePwaInstall() {
   }, [deferredPrompt, setDeferredPrompt, setInstalled]);
 
   const isIos = typeof navigator !== 'undefined' && /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isMobile =
+    typeof navigator !== 'undefined' && /android|iphone|ipad|ipod/i.test(navigator.userAgent);
 
-  return { canPrompt: deferredPrompt !== null, installed, promptInstall, isIos };
+  return { canPrompt: deferredPrompt !== null, installed, promptInstall, isIos, isMobile };
 }

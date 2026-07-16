@@ -32,6 +32,9 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Web Push handlers live in public/push-sw.js (payload display + click
+        // routing); Workbox imports them into the generated service worker.
+        importScripts: ['push-sw.js'],
         navigateFallback: '/index.html',
         // Never cache API calls — always hit the network for fresh business data.
         navigateFallbackDenylist: [/^\/v1\//],

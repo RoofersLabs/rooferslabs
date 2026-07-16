@@ -47,6 +47,11 @@ export interface AppConfig {
     sqsQueueUrl: string | undefined;
     backgroundJobsInline: boolean;
   };
+  push: {
+    vapidPublicKey: string;
+    vapidPrivateKey: string;
+    vapidSubject: string;
+  };
   logLevel: string;
 }
 
@@ -105,6 +110,11 @@ export default (): AppConfig => {
       s3UploadsBucket: process.env.S3_BUCKET_UPLOADS ?? 'rooferslabs-uploads-dev',
       sqsQueueUrl: process.env.SQS_QUEUE_URL || undefined,
       backgroundJobsInline: toBool(process.env.BACKGROUND_JOBS_INLINE, true),
+    },
+    push: {
+      vapidPublicKey: process.env.VAPID_PUBLIC_KEY ?? '',
+      vapidPrivateKey: process.env.VAPID_PRIVATE_KEY ?? '',
+      vapidSubject: process.env.VAPID_SUBJECT ?? 'mailto:support@rooferslabs.com',
     },
     logLevel: process.env.LOG_LEVEL ?? 'info',
   };

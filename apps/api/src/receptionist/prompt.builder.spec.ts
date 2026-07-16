@@ -64,7 +64,12 @@ describe('buildReceptionistInstructions', () => {
 
   it('falls back to sensible defaults with no AI configuration', () => {
     const prompt = buildReceptionistInstructions(
-      makeCompany({ aiConfiguration: null, businessHours: null, roofingServices: [], serviceAreas: [] }),
+      makeCompany({
+        aiConfiguration: null,
+        businessHours: null,
+        roofingServices: [],
+        serviceAreas: [],
+      }),
     );
     expect(prompt).toContain('residential and commercial roofing services');
     expect(prompt).toContain('standard business hours');

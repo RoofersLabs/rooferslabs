@@ -4,14 +4,45 @@ import twilio from 'twilio';
 import { AppConfigService } from '../config/app-config.service';
 
 /**
- * Adapter isolating Twilio. Validates inbound webhook signatures and builds the
- * TwiML that connects a call to the Media Streams WebSocket bridge.
+ * Adapter isolating Twilio. Validates inbound webhook signatures, builds the
+ * TwiML that connects a call to the Media Streams WebSocket bridge, and sends
+ * outbound SMS (post-call lead alerts and customer acknowledgements).
  */
 @Injectable()
 export class TwilioService {
   private readonly logger = new Logger(TwilioService.name);
+  private client: ReturnType<typeof twilio> | null = null;
 
   constructor(private readonly config: AppConfigService) {}
+
+  get isSmsEnabled(): boolean {
+    return Boolean(this.config.twilio.accountSid && this.config.twilio.authToken);
+  }
+
+  /**
+   * Send an SMS. Returns whether the message was accepted by Twilio; failures
+   * are logged and swallowed — SMS is a best-effort notification channel and
+   * must never break the call pipeline.
+   */
+  async sendSms(params: { to: string; from: string; body: string }): Promise<boolean> {
+    if (!this.isSmsEnabled) {
+      this.logger.debug('Twilio credentials not set — skipping SMS.');
+      return false;
+    }
+    if (!params.to || !params.from) return false;
+    try {
+      this.client ??= twilio(this.config.twilio.accountSid, this.config.twilio.authToken);
+      await this.client.messages.create({
+        to: params.to,
+        from: params.from,
+        body: params.body,
+      });
+      return true;
+    } catch (error) {
+      this.logger.warn(`SMS to ${params.to} failed: ${(error as Error).message}`);
+      return false;
+    }
+  }
 
   /**
    * Verify a Twilio webhook signature. In non-production environments without an

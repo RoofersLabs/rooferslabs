@@ -51,6 +51,10 @@ export class AppConfigService {
     return this.root.aws;
   }
 
+  get push(): AppConfig['push'] {
+    return this.root.push;
+  }
+
   get logLevel(): string {
     return this.root.logLevel;
   }

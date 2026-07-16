@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, ShieldAlert, CalendarClock, Flame, Phone } from 'lucide-react';
+import { Bell, BellRing, CheckCheck, ShieldAlert, CalendarClock, Flame, Phone } from 'lucide-react';
 import { NotificationType } from '@rooferslabs/shared';
 import {
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
   useNotifications,
 } from '@/hooks/queries';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import type { Notification } from '@/types/api';
 import { cn, timeAgo } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
@@ -15,6 +16,48 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
+
+/**
+ * Push opt-in/out for this browser. Hidden when the browser lacks Push support
+ * or the server has no VAPID keys; shows guidance when permission is blocked.
+ */
+function PushNotificationsCard() {
+  const { status, busy, subscribe, unsubscribe } = usePushNotifications();
+
+  if (status === 'unsupported' || status === 'loading') return null;
+
+  return (
+    <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50">
+        <BellRing className="h-5 w-5 text-brand-700" aria-hidden />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-slate-900">
+          {status === 'subscribed'
+            ? 'Push notifications are on'
+            : 'Get notified the moment a lead calls'}
+        </p>
+        <p className="text-xs text-slate-500">
+          {status === 'denied'
+            ? 'Notifications are blocked for this site — enable them in your browser settings, then reload.'
+            : status === 'subscribed'
+              ? 'This device receives emergency and lead alerts, even when the app is closed.'
+              : 'Emergencies, new leads, and appointment requests — delivered to this device even when the app is closed.'}
+        </p>
+      </div>
+      {status !== 'denied' && (
+        <Button
+          variant={status === 'subscribed' ? 'secondary' : 'primary'}
+          size="sm"
+          loading={busy}
+          onClick={() => void (status === 'subscribed' ? unsubscribe() : subscribe())}
+        >
+          {status === 'subscribed' ? 'Turn off on this device' : 'Enable push notifications'}
+        </Button>
+      )}
+    </div>
+  );
+}
 
 const typeIcon: Record<string, typeof Bell> = {
   [NotificationType.EMERGENCY]: ShieldAlert,
@@ -60,6 +103,8 @@ export function NotificationsPage() {
           ) : undefined
         }
       />
+
+      <PushNotificationsCard />
 
       <div className="card overflow-hidden">
         {notifications.isLoading ? (

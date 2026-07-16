@@ -1,15 +1,57 @@
-import { Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentCompanyId } from '../common/decorators/current-company.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
 import { paginated, respond } from '../common/response';
 import { NotificationsService } from './notifications.service';
-import { NotificationQueryDto } from './dto/notification.dto';
+import { PushService } from './push.service';
+import {
+  NotificationQueryDto,
+  RemovePushSubscriptionDto,
+  SavePushSubscriptionDto,
+} from './dto/notification.dto';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
 @Controller({ path: 'notifications', version: '1' })
 export class NotificationsController {
-  constructor(private readonly notifications: NotificationsService) {}
+  constructor(
+    private readonly notifications: NotificationsService,
+    private readonly push: PushService,
+  ) {}
+
+  @Get('push/public-key')
+  @ApiOperation({
+    summary: 'Get the Web Push VAPID public key (null when push is not configured)',
+  })
+  getPushPublicKey() {
+    return respond(
+      { publicKey: this.push.publicKey, enabled: this.push.isEnabled },
+      'Push configuration retrieved.',
+    );
+  }
+
+  @Post('push/subscriptions')
+  @ApiOperation({ summary: 'Register this browser for Web Push notifications' })
+  async subscribePush(
+    @CurrentCompanyId() companyId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: SavePushSubscriptionDto,
+  ) {
+    await this.push.saveSubscription(companyId, user.id, dto);
+    return respond({ subscribed: true }, 'Push subscription saved.');
+  }
+
+  @Post('push/unsubscribe')
+  @ApiOperation({ summary: 'Remove this browser’s Web Push subscription' })
+  async unsubscribePush(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: RemovePushSubscriptionDto,
+  ) {
+    await this.push.removeSubscription(user.id, dto.endpoint);
+    return respond({ subscribed: false }, 'Push subscription removed.');
+  }
 
   @Get()
   @ApiOperation({ summary: 'List notifications' })

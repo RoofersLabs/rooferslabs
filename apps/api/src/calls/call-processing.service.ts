@@ -14,6 +14,7 @@ import { ReceptionistService } from '../receptionist/receptionist.service';
 import type { LiveConversationSignals } from '../receptionist/session-state';
 import { CustomersService } from '../customers/customers.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { TwilioService } from '../telephony/twilio.service';
 
 export interface CreateInboundCallInput {
   companyId: string;
@@ -45,6 +46,7 @@ export class CallProcessingService {
     private readonly receptionist: ReceptionistService,
     private readonly customers: CustomersService,
     private readonly notifications: NotificationsService,
+    private readonly twilio: TwilioService,
   ) {}
 
   /** Create the Call record when an inbound call connects. */
@@ -124,6 +126,74 @@ export class CallProcessingService {
 
     // 4. Notify the team (outside the transaction).
     await this.notify(companyId, conversationId, structured);
+
+    // 5. Best-effort SMS: lead alert to the owner, acknowledgement to the caller.
+    await this.sendSmsNotifications(companyId, call.fromNumber, structured);
+  }
+
+  /**
+   * Post-call SMS, sent from the company's dedicated AI number. Both messages
+   * are best-effort: failures are logged and never affect the stored call data.
+   */
+  private async sendSmsNotifications(
+    companyId: string,
+    callerNumber: string | null,
+    structured: ConversationStructuredOutput,
+  ): Promise<void> {
+    if (!this.twilio.isSmsEnabled) return;
+    if (structured.outcome === ConversationOutcome.SPAM) return;
+
+    try {
+      const [company, aiNumber] = await Promise.all([
+        this.prisma.company.findUnique({
+          where: { id: companyId },
+          select: { name: true, phone: true },
+        }),
+        this.prisma.phoneNumber.findFirst({
+          where: { companyId, status: { in: ['ASSIGNED', 'ACTIVE'] } },
+        }),
+      ]);
+      if (!company || !aiNumber) return;
+
+      const actionable =
+        structured.emergency.isEmergency ||
+        structured.appointment.requested ||
+        structured.outcome === ConversationOutcome.LEAD_CAPTURED;
+
+      // Owner alert — only for actionable outcomes, so the owner's phone is
+      // not flooded by every wrong-number call.
+      if (actionable && company.phone && company.phone !== aiNumber.phoneNumber) {
+        const who = structured.customer.fullName ?? structured.customer.phone ?? 'A caller';
+        const kind = structured.emergency.isEmergency
+          ? '🚨 EMERGENCY call'
+          : structured.appointment.requested
+            ? 'New appointment request'
+            : 'New lead';
+        const callback = structured.customer.phone ?? callerNumber;
+        await this.twilio.sendSms({
+          to: company.phone,
+          from: aiNumber.phoneNumber,
+          body:
+            `${kind} — ${who}${callback ? ` (${callback})` : ''}. ` +
+            `${structured.summary}`.slice(0, 480) +
+            ' — via RoofersLabs',
+        });
+      }
+
+      // Caller acknowledgement — confirms their request was received.
+      const ackTo = callerNumber ?? structured.customer.phone;
+      if (actionable && ackTo) {
+        await this.twilio.sendSms({
+          to: ackTo,
+          from: aiNumber.phoneNumber,
+          body:
+            `Thanks for calling ${company.name}! We received your request and ` +
+            `our team will follow up shortly.`,
+        });
+      }
+    } catch (error) {
+      this.logger.warn(`Post-call SMS failed: ${(error as Error).message}`);
+    }
   }
 
   private async persist(

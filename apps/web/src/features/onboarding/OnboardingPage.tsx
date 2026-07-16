@@ -488,6 +488,9 @@ function KnowledgeStep() {
         <p className="mt-2 text-sm text-slate-500">
           Your AI receptionist is ready. Taking you to your dashboard…
         </p>
+        <p className="mt-1 text-xs text-slate-400">
+          Tip: use “Add to Home Screen” in the header to install RoofersLabs on your phone.
+        </p>
       </div>
     );
   }

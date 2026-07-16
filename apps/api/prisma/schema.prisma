@@ -230,10 +230,11 @@ model Company {
   calls            Call[]
   conversations    Conversation[]
   appointments     Appointment[]
-  knowledgeArticle KnowledgeArticle[]
-  notifications    Notification[]
-  auditLogs        AuditLog[]
-  aiConfiguration  AiConfiguration?
+  knowledgeArticle  KnowledgeArticle[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  aiConfiguration   AiConfiguration?
+  pushSubscriptions PushSubscription[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -294,8 +295,9 @@ model User {
   emailNotifications Boolean   @default(true)
   lastActiveAt       DateTime?
 
-  notifications Notification[]
-  auditLogs     AuditLog[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  pushSubscriptions PushSubscription[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -566,6 +568,29 @@ model Notification {
   @@index([companyId, userId, status])
   @@index([companyId, createdAt])
   @@map("notifications")
+}
+
+// A browser's Web Push subscription for an operator (PWA push notifications).
+// One row per browser/device; stale endpoints are pruned when pushes bounce.
+model PushSubscription {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  endpoint  String  @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([userId])
+  @@map("push_subscriptions")
 }
 
 // -----------------------------------------------------------------------------
