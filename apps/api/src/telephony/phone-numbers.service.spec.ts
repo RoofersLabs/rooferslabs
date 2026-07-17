@@ -1,19 +1,19 @@
 import type { PhoneNumber } from '@prisma/client';
+import { ExternalServiceError } from '../common/exceptions/domain.exception';
 import { PhoneNumbersService } from './phone-numbers.service';
 import type { PhoneNumbersRepository } from './phone-numbers.repository';
-import type { AppConfigService } from '../config/app-config.service';
 import type { TwilioService } from './twilio.service';
 
 const COMPANY = 'company_1';
-const NUMBER = '+15125552000';
+const PURCHASED = { sid: 'PN123', phoneNumber: '+15125552000', friendlyName: 'Acme — AI line' };
 
 function makeRecord(overrides: Partial<PhoneNumber> = {}): PhoneNumber {
   return {
     id: 'pn_1',
     companyId: COMPANY,
-    phoneNumber: NUMBER,
-    twilioSid: null,
-    friendlyName: null,
+    phoneNumber: PURCHASED.phoneNumber,
+    twilioSid: PURCHASED.sid,
+    friendlyName: PURCHASED.friendlyName,
     status: 'ACTIVE',
     forwardingVerifiedAt: null,
     createdAt: new Date(),
@@ -22,108 +22,130 @@ function makeRecord(overrides: Partial<PhoneNumber> = {}): PhoneNumber {
   } as PhoneNumber;
 }
 
-function makeService(options: {
-  configuredNumber: string;
-  activeForCompany?: PhoneNumber | null;
-  byNumber?: PhoneNumber | null;
-  lookup?: { sid: string; friendlyName: string } | null;
-}) {
+function makeService(
+  overrides: {
+    configured?: boolean;
+    activeForCompany?: (PhoneNumber | null)[];
+    search?: (string | null)[];
+    purchase?: () => Promise<typeof PURCHASED>;
+    createFails?: boolean;
+  } = {},
+) {
+  const activeResults = overrides.activeForCompany ?? [null, null];
   const repo = {
-    findActiveForCompany: jest.fn().mockResolvedValue(options.activeForCompany ?? null),
-    findByNumber: jest.fn().mockResolvedValue(options.byNumber ?? null),
-    create: jest.fn().mockImplementation((data) => Promise.resolve(makeRecord(data))),
-    update: jest.fn().mockImplementation((_id, data) => Promise.resolve(makeRecord(data))),
+    findActiveForCompany: jest.fn(),
+    findByNumber: jest.fn().mockResolvedValue(null),
+    create: overrides.createFails
+      ? jest.fn().mockRejectedValue(new Error('db down'))
+      : jest.fn().mockImplementation((data) => Promise.resolve(makeRecord(data))),
+    update: jest.fn(),
   } as unknown as jest.Mocked<PhoneNumbersRepository>;
+  for (const result of activeResults) {
+    repo.findActiveForCompany.mockResolvedValueOnce(result);
+  }
 
-  const config = {
-    twilio: { phoneNumber: options.configuredNumber },
-  } as AppConfigService;
+  const search = jest.fn();
+  for (const result of overrides.search ?? [PURCHASED.phoneNumber]) {
+    search.mockResolvedValueOnce(result);
+  }
 
   const twilio = {
-    lookupIncomingNumber: jest.fn().mockResolvedValue(options.lookup ?? null),
+    isConfigured: overrides.configured ?? true,
+    searchAvailableLocalNumber: search,
+    purchaseNumber: jest.fn(overrides.purchase ?? (() => Promise.resolve(PURCHASED))),
+    releaseNumber: jest.fn().mockResolvedValue(undefined),
   } as unknown as jest.Mocked<TwilioService>;
 
-  return { service: new PhoneNumbersService(repo, config, twilio), repo, twilio };
+  return { service: new PhoneNumbersService(repo, twilio), repo, twilio };
 }
 
-describe('autoAssignConfigured', () => {
-  it('assigns the configured number with Twilio metadata on first onboarding', async () => {
-    const { service, repo, twilio } = makeService({
-      configuredNumber: NUMBER,
-      lookup: { sid: 'PN123', friendlyName: 'Main line' },
+describe('provisionForCompany', () => {
+  it('searches (preferring the business area code), purchases, and persists ACTIVE', async () => {
+    const { service, repo, twilio } = makeService();
+
+    const result = await service.provisionForCompany(COMPANY, {
+      companyName: 'Acme Roofing',
+      businessPhone: '+15125550100',
     });
 
-    const result = await service.autoAssignConfigured(COMPANY);
-
-    expect(twilio.lookupIncomingNumber).toHaveBeenCalledWith(NUMBER);
+    expect(twilio.searchAvailableLocalNumber).toHaveBeenCalledWith('512');
+    expect(twilio.purchaseNumber).toHaveBeenCalledWith({
+      phoneNumber: PURCHASED.phoneNumber,
+      friendlyName: 'Acme Roofing — RoofersLabs AI line',
+    });
     expect(repo.create).toHaveBeenCalledWith(
       expect.objectContaining({
         company: { connect: { id: COMPANY } },
-        phoneNumber: NUMBER,
-        twilioSid: 'PN123',
-        friendlyName: 'Main line',
+        phoneNumber: PURCHASED.phoneNumber,
+        twilioSid: PURCHASED.sid,
         status: 'ACTIVE',
       }),
     );
-    expect(result?.status).toBe('ACTIVE');
+    expect(result.status).toBe('ACTIVE');
   });
 
-  it('is idempotent: returns the existing number without creating a duplicate', async () => {
-    const existing = makeRecord();
-    const { service, repo } = makeService({
-      configuredNumber: NUMBER,
-      activeForCompany: existing,
-    });
+  it('falls back to a search without an area code when the preferred one is dry', async () => {
+    const { service, twilio } = makeService({ search: [null, PURCHASED.phoneNumber] });
 
-    const result = await service.autoAssignConfigured(COMPANY);
+    await service.provisionForCompany(COMPANY, { businessPhone: '+15125550100' });
+
+    expect(twilio.searchAvailableLocalNumber).toHaveBeenNthCalledWith(1, '512');
+    expect(twilio.searchAvailableLocalNumber).toHaveBeenNthCalledWith(2);
+  });
+
+  it('is idempotent: returns the existing number without purchasing another', async () => {
+    const existing = makeRecord();
+    const { service, twilio } = makeService({ activeForCompany: [existing] });
+
+    const result = await service.provisionForCompany(COMPANY);
 
     expect(result).toBe(existing);
-    expect(repo.create).not.toHaveBeenCalled();
-    expect(repo.update).not.toHaveBeenCalled();
+    expect(twilio.purchaseNumber).not.toHaveBeenCalled();
   });
 
-  it('does nothing when TWILIO_PHONE_NUMBER is not configured', async () => {
-    const { service, repo } = makeService({ configuredNumber: '' });
+  it('releases the purchased number when persistence fails (clean rollback)', async () => {
+    const { service, repo, twilio } = makeService({ createFails: true });
 
-    const result = await service.autoAssignConfigured(COMPANY);
+    await expect(service.provisionForCompany(COMPANY)).rejects.toThrow(ExternalServiceError);
 
-    expect(result).toBeNull();
+    expect(repo.create).toHaveBeenCalled();
+    expect(twilio.releaseNumber).toHaveBeenCalledWith(PURCHASED.sid);
+  });
+
+  it('releases the purchase when a concurrent provision already won', async () => {
+    const raced = makeRecord({ id: 'pn_other' });
+    const { service, repo, twilio } = makeService({ activeForCompany: [null, raced] });
+
+    const result = await service.provisionForCompany(COMPANY);
+
+    expect(result).toBe(raced);
+    expect(twilio.releaseNumber).toHaveBeenCalledWith(PURCHASED.sid);
     expect(repo.create).not.toHaveBeenCalled();
   });
 
-  it('never steals a number that belongs to another company', async () => {
-    const { service, repo } = makeService({
-      configuredNumber: NUMBER,
-      byNumber: makeRecord({ companyId: 'company_other' }),
-    });
+  it('throws a meaningful error when Twilio is not configured', async () => {
+    const { service } = makeService({ configured: false });
 
-    const result = await service.autoAssignConfigured(COMPANY);
-
-    expect(result).toBeNull();
-    expect(repo.create).not.toHaveBeenCalled();
-    expect(repo.update).not.toHaveBeenCalled();
-  });
-
-  it('assigns without metadata when the Twilio lookup finds nothing', async () => {
-    const { service, repo } = makeService({ configuredNumber: NUMBER, lookup: null });
-
-    await service.autoAssignConfigured(COMPANY);
-
-    expect(repo.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        phoneNumber: NUMBER,
-        twilioSid: null,
-        friendlyName: 'RoofersLabs AI line',
-      }),
+    await expect(service.provisionForCompany(COMPANY)).rejects.toThrow(
+      /Telephony is not configured/,
     );
   });
 
-  it('normalizes the configured number before matching and assigning', async () => {
-    const { service, repo } = makeService({ configuredNumber: '(512) 555-2000' });
+  it('throws a meaningful error when no numbers are available', async () => {
+    const { service, twilio } = makeService({ search: [null, null] });
 
-    await service.autoAssignConfigured(COMPANY);
+    await expect(service.provisionForCompany(COMPANY)).rejects.toThrow(/No local US phone numbers/);
+    expect(twilio.purchaseNumber).not.toHaveBeenCalled();
+  });
 
-    expect(repo.findByNumber).toHaveBeenCalledWith(NUMBER);
-    expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ phoneNumber: NUMBER }));
+  it('throws a meaningful error when the purchase fails, without touching the database', async () => {
+    const { service, repo } = makeService({
+      purchase: () => Promise.reject(new Error('trial account cannot purchase')),
+    });
+
+    await expect(service.provisionForCompany(COMPANY)).rejects.toThrow(
+      /Purchasing your AI phone number/,
+    );
+    expect(repo.create).not.toHaveBeenCalled();
   });
 });

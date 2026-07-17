@@ -166,6 +166,15 @@ export function useVerifyForwarding() {
   });
 }
 
+/** Purchase the company's dedicated AI number (idempotent; retries failures). */
+export function useProvisionPhoneNumber() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<PhoneNumberSummary>('/telephony/phone-number/provision'),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.phoneNumber }),
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Dashboard
 // ---------------------------------------------------------------------------

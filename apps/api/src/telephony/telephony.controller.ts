@@ -9,6 +9,7 @@ import { ForbiddenError } from '../common/exceptions/domain.exception';
 import { respond } from '../common/response';
 import { AppConfigService } from '../config/app-config.service';
 import { CallProcessingService } from '../calls/call-processing.service';
+import { CompaniesService } from '../companies/companies.service';
 import { PhoneNumbersService } from './phone-numbers.service';
 import { TwilioService } from './twilio.service';
 import { AssignPhoneNumberDto } from './dto/phone-number.dto';
@@ -29,6 +30,7 @@ export class TelephonyController {
     private readonly twilio: TwilioService,
     private readonly phoneNumbers: PhoneNumbersService,
     private readonly callProcessing: CallProcessingService,
+    private readonly companies: CompaniesService,
   ) {}
 
   /** Twilio Programmable Voice webhook for inbound calls. Returns TwiML. */
@@ -105,6 +107,23 @@ export class TelephonyController {
   async getPhoneNumber(@CurrentCompanyId() companyId: string) {
     const number = await this.phoneNumbers.getForCompany(companyId);
     return respond(number, number ? 'Phone number retrieved.' : 'No phone number assigned yet.');
+  }
+
+  @Post('phone-number/provision')
+  @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Purchase the company’s dedicated AI phone number',
+    description:
+      'Buys a local US Twilio number (preferring the company’s area code), configures its voice and status webhooks, and assigns it. Idempotent — returns the existing number when one is already assigned. Runs automatically when onboarding completes; this endpoint retries after a failure.',
+  })
+  async provision(@CurrentCompanyId() companyId: string) {
+    const company = await this.companies.getById(companyId);
+    const number = await this.phoneNumbers.provisionForCompany(companyId, {
+      companyName: company.name,
+      businessPhone: company.phone,
+    });
+    return respond(number, 'AI phone number ready.');
   }
 
   @Post('phone-numbers/assign')

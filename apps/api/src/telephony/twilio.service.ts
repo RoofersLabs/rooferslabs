@@ -15,30 +15,65 @@ export class TwilioService {
 
   constructor(private readonly config: AppConfigService) {}
 
-  get isSmsEnabled(): boolean {
+  get isConfigured(): boolean {
     return Boolean(this.config.twilio.accountSid && this.config.twilio.authToken);
   }
 
+  get isSmsEnabled(): boolean {
+    return this.isConfigured;
+  }
+
+  private get rest(): ReturnType<typeof twilio> {
+    this.client ??= twilio(this.config.twilio.accountSid, this.config.twilio.authToken);
+    return this.client;
+  }
+
   /**
-   * Look up a purchased incoming number on the Twilio account to enrich the
-   * PhoneNumber record (SID + friendly name). Returns null when Twilio is not
-   * configured, the number is not owned by the account, or the lookup fails —
-   * callers assign the number regardless.
+   * Find one available local US voice number, preferring the given area code.
+   * Returns null when nothing is available (callers retry without the area
+   * code before giving up).
    */
-  async lookupIncomingNumber(
-    phoneNumber: string,
-  ): Promise<{ sid: string; friendlyName: string } | null> {
-    if (!this.isSmsEnabled) return null;
-    try {
-      this.client ??= twilio(this.config.twilio.accountSid, this.config.twilio.authToken);
-      const [match] = await this.client.incomingPhoneNumbers.list({ phoneNumber, limit: 1 });
-      return match ? { sid: match.sid, friendlyName: match.friendlyName } : null;
-    } catch (error) {
-      this.logger.warn(
-        `Incoming-number lookup for ${phoneNumber} failed: ${(error as Error).message}`,
-      );
-      return null;
-    }
+  async searchAvailableLocalNumber(areaCode?: string): Promise<string | null> {
+    const [match] = await this.rest.availablePhoneNumbers('US').local.list({
+      ...(areaCode ? { areaCode: Number(areaCode) } : {}),
+      voiceEnabled: true,
+      limit: 1,
+    });
+    return match?.phoneNumber ?? null;
+  }
+
+  /**
+   * Purchase an incoming number via the Twilio REST API, configuring its Voice
+   * webhook and status callback in the same call so the number is answerable
+   * the moment it exists. Throws on failure — the caller owns rollback.
+   */
+  async purchaseNumber(params: {
+    phoneNumber: string;
+    friendlyName: string;
+  }): Promise<{ sid: string; phoneNumber: string; friendlyName: string }> {
+    const base = this.config.api.publicUrl;
+    const purchased = await this.rest.incomingPhoneNumbers.create({
+      phoneNumber: params.phoneNumber,
+      friendlyName: params.friendlyName,
+      voiceUrl: `${base}/v1/telephony/incoming`,
+      voiceMethod: 'POST',
+      statusCallback: `${base}/v1/telephony/status`,
+      statusCallbackMethod: 'POST',
+    });
+    return {
+      sid: purchased.sid,
+      phoneNumber: purchased.phoneNumber,
+      friendlyName: purchased.friendlyName,
+    };
+  }
+
+  /**
+   * Release a purchased number (rollback path when persistence fails after a
+   * successful purchase). Best-effort: a failure here is logged by the caller
+   * and the orphaned number surfaces in the Twilio console.
+   */
+  async releaseNumber(sid: string): Promise<void> {
+    await this.rest.incomingPhoneNumbers(sid).remove();
   }
 
   /**

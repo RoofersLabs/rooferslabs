@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { PhoneNumber } from '@prisma/client';
 import { PhoneNumberStatus } from '@rooferslabs/shared';
-import { ConflictError } from '../common/exceptions/domain.exception';
-import { AppConfigService } from '../config/app-config.service';
+import { ConflictError, ExternalServiceError } from '../common/exceptions/domain.exception';
 import { PhoneNumbersRepository } from './phone-numbers.repository';
 import { TwilioService } from './twilio.service';
 
@@ -11,55 +10,114 @@ export interface ResolvedNumber {
   companyId: string;
 }
 
+export interface ProvisionOptions {
+  /** Company name, used for the number's friendly name in Twilio. */
+  companyName?: string | null;
+  /** The company's existing business number — its area code is preferred. */
+  businessPhone?: string | null;
+}
+
 @Injectable()
 export class PhoneNumbersService {
   private readonly logger = new Logger(PhoneNumbersService.name);
 
   constructor(
     private readonly repo: PhoneNumbersRepository,
-    private readonly config: AppConfigService,
     private readonly twilio: TwilioService,
   ) {}
 
   /**
-   * Assign the platform's configured Twilio number (TWILIO_PHONE_NUMBER) to a
-   * company — called automatically when onboarding completes, so no manual
-   * database step is ever required before the AI can answer calls.
+   * Purchase a dedicated Twilio number for a company via the Twilio REST API —
+   * called automatically when onboarding completes, and retryable through
+   * POST /v1/telephony/phone-number/provision.
    *
-   * Idempotent and safe: returns the company's existing number when one is
-   * already assigned, does nothing when no number is configured, and never
-   * steals a number that belongs to another company.
+   * Every company gets its own freshly purchased number (never shared). The
+   * search prefers a local number in the company's own area code. The purchase
+   * configures the Voice webhook and status callback in the same API call.
+   *
+   * Idempotent: returns the existing number when the company already has one.
+   * Atomic: a purchase that cannot be persisted is released again, so no
+   * partial records or orphaned numbers are left behind.
    */
-  async autoAssignConfigured(companyId: string): Promise<PhoneNumber | null> {
-    const existingForCompany = await this.repo.findActiveForCompany(companyId);
-    if (existingForCompany) return existingForCompany;
+  async provisionForCompany(
+    companyId: string,
+    options: ProvisionOptions = {},
+  ): Promise<PhoneNumber> {
+    const existing = await this.repo.findActiveForCompany(companyId);
+    if (existing) return existing;
 
-    const configured = normalize(this.config.twilio.phoneNumber);
-    if (!configured) {
-      this.logger.warn(
-        `Company ${companyId} completed onboarding but TWILIO_PHONE_NUMBER is not set — ` +
-          `no AI phone number assigned. Set it (or assign one via the API) to receive calls.`,
+    if (!this.twilio.isConfigured) {
+      throw new ExternalServiceError(
+        'Telephony is not configured on this server (missing Twilio credentials).',
       );
-      return null;
     }
 
-    const owner = await this.repo.findByNumber(configured);
-    if (owner && owner.companyId !== companyId) {
-      this.logger.warn(
-        `Configured Twilio number ${configured} already belongs to company ${owner.companyId}; ` +
-          `company ${companyId} needs its own number assigned via the API.`,
+    // 1. Find an available local US number, preferring the company's area code.
+    const areaCode = extractUsAreaCode(options.businessPhone);
+    let available: string | null = null;
+    try {
+      if (areaCode) available = await this.twilio.searchAvailableLocalNumber(areaCode);
+      available ??= await this.twilio.searchAvailableLocalNumber();
+    } catch (error) {
+      this.logger.error(`Twilio number search failed: ${(error as Error).message}`);
+      throw new ExternalServiceError(
+        'We could not reach Twilio to find a phone number. Please try again.',
       );
-      return null;
+    }
+    if (!available) {
+      throw new ExternalServiceError(
+        'No local US phone numbers are available right now. Please try again shortly.',
+      );
     }
 
-    // Enrich with the Twilio SID/friendly name when the account owns the number.
-    const meta = await this.twilio.lookupIncomingNumber(configured);
-    const assigned = await this.assign(companyId, configured, {
-      twilioSid: meta?.sid,
-      friendlyName: meta?.friendlyName ?? 'RoofersLabs AI line',
-    });
-    this.logger.log(`Auto-assigned ${configured} to company ${companyId}.`);
-    return assigned;
+    // 2. Purchase it with the voice + status webhooks configured.
+    const friendlyName = options.companyName
+      ? `${options.companyName} — RoofersLabs AI line`
+      : 'RoofersLabs AI line';
+    let purchased: { sid: string; phoneNumber: string; friendlyName: string };
+    try {
+      purchased = await this.twilio.purchaseNumber({ phoneNumber: available, friendlyName });
+    } catch (error) {
+      this.logger.error(`Twilio number purchase failed: ${(error as Error).message}`);
+      throw new ExternalServiceError(
+        'Purchasing your AI phone number from Twilio failed. Please try again.',
+      );
+    }
+
+    // 3. Persist — releasing the purchase again if anything goes wrong, so a
+    //    failure never leaves an orphaned number or a partial record.
+    try {
+      // Guard against a concurrent provision having won in the meantime.
+      const raced = await this.repo.findActiveForCompany(companyId);
+      if (raced) {
+        await this.twilio.releaseNumber(purchased.sid);
+        return raced;
+      }
+
+      const record = await this.repo.create({
+        company: { connect: { id: companyId } },
+        phoneNumber: normalize(purchased.phoneNumber),
+        twilioSid: purchased.sid,
+        friendlyName: purchased.friendlyName,
+        status: PhoneNumberStatus.ACTIVE,
+      });
+      this.logger.log(
+        `Purchased ${purchased.phoneNumber} (${purchased.sid}) for company ${companyId}.`,
+      );
+      return record;
+    } catch (error) {
+      this.logger.error(
+        `Persisting purchased number ${purchased.sid} failed; releasing it: ${(error as Error).message}`,
+      );
+      await this.twilio
+        .releaseNumber(purchased.sid)
+        .catch((releaseError: Error) =>
+          this.logger.error(
+            `Rollback release of ${purchased.sid} failed — release it manually in the Twilio console: ${releaseError.message}`,
+          ),
+        );
+      throw new ExternalServiceError('Your AI phone number could not be saved. Please try again.');
+    }
   }
 
   getForCompany(companyId: string): Promise<PhoneNumber | null> {
@@ -112,6 +170,13 @@ export class PhoneNumbersService {
     if (!record) return null;
     return this.repo.update(record.id, { forwardingVerifiedAt: new Date() });
   }
+}
+
+/** "+15125550100" → "512"; null for anything that isn't a US E.164 number. */
+function extractUsAreaCode(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+  const match = normalize(phone).match(/^\+1(\d{3})\d{7}$/);
+  return match?.[1] ?? null;
 }
 
 /**

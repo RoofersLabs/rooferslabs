@@ -78,12 +78,6 @@ variable "twilio_auth_token" {
   sensitive   = true
 }
 
-variable "twilio_phone_number" {
-  description = "Purchased Twilio number (E.164, e.g. +15125551234) auto-assigned to a company when it completes onboarding."
-  type        = string
-  default     = ""
-}
-
 variable "vapid_public_key" {
   description = "Web Push VAPID public key (npx web-push generate-vapid-keys)."
   type        = string

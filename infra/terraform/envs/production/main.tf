@@ -207,7 +207,6 @@ module "api_service" {
     OPENAI_RESPONSES_MODEL  = var.openai_responses_model
     OPENAI_EMBEDDING_MODEL  = var.openai_embedding_model
     TWILIO_MEDIA_STREAM_URL = "wss://${local.api_domain}/v1/telephony/media-stream"
-    TWILIO_PHONE_NUMBER     = var.twilio_phone_number
     CLERK_PUBLISHABLE_KEY   = var.clerk_publishable_key
     VAPID_PUBLIC_KEY        = var.vapid_public_key
     VAPID_SUBJECT           = var.vapid_subject

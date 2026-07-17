@@ -130,14 +130,17 @@ export class CompaniesService {
     await this.invalidate(companyId);
     this.logger.log(`Onboarding completed for company ${companyId}`);
 
-    // Give the company its AI phone line automatically (idempotent; a failure
-    // is logged inside and never blocks onboarding — the number can still be
-    // assigned via the API).
+    // Purchase the company's dedicated AI phone number (idempotent). A
+    // provisioning failure never blocks onboarding — the dashboard directs
+    // the owner to Phone Setup, where provisioning can be retried.
     try {
-      await this.phoneNumbers.autoAssignConfigured(companyId);
+      await this.phoneNumbers.provisionForCompany(companyId, {
+        companyName: company.name,
+        businessPhone: company.phone,
+      });
     } catch (error) {
       this.logger.warn(
-        `Automatic phone number assignment failed for ${companyId}: ${(error as Error).message}`,
+        `Automatic phone number provisioning failed for ${companyId}: ${(error as Error).message}`,
       );
     }
 

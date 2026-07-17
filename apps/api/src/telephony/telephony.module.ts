@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CallsModule } from '../calls/calls.module';
+import { CompaniesModule } from '../companies/companies.module';
 import { ReceptionistModule } from '../receptionist/receptionist.module';
 import { MediaStreamBridge } from './media-stream.bridge';
 import { PhoneNumbersRepository } from './phone-numbers.repository';
@@ -13,7 +14,7 @@ import { TwilioService } from './twilio.service';
  * HTTP server bootstrap can attach the raw WebSocket upgrade handler.
  */
 @Module({
-  imports: [CallsModule, ReceptionistModule],
+  imports: [CallsModule, ReceptionistModule, CompaniesModule],
   controllers: [TelephonyController],
   providers: [TwilioService, PhoneNumbersService, PhoneNumbersRepository, MediaStreamBridge],
   exports: [MediaStreamBridge, PhoneNumbersService],

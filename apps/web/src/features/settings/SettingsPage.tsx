@@ -10,6 +10,7 @@ import {
   useUpdateAiConfig,
   useUpdateCompany,
   useVerifyForwarding,
+  useProvisionPhoneNumber,
 } from '@/hooks/queries';
 import type { BusinessHour } from '@/types/api';
 import { cn, formatPhone } from '@/lib/utils';
@@ -394,6 +395,7 @@ function AiTab() {
 function PhoneTab() {
   const phone = usePhoneNumber();
   const verify = useVerifyForwarding();
+  const provision = useProvisionPhoneNumber();
   const [copied, setCopied] = useState(false);
 
   if (phone.isLoading) return <LoadingBlock />;
@@ -411,13 +413,21 @@ function PhoneTab() {
       <div className="card p-8 text-center">
         <PhoneForwarded className="mx-auto h-10 w-10 text-slate-300" aria-hidden />
         <h2 className="mt-4 text-base font-semibold text-slate-900">
-          Your AI phone line is being provisioned
+          Get your dedicated AI phone number
         </h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
-          During early access, the RoofersLabs team assigns your dedicated AI phone number within
-          one business day of signup. You’ll see it here — along with forwarding instructions — as
-          soon as it’s ready.
+          We’ll purchase a local number for your business (matching your area code when available),
+          connect it to your AI receptionist, and show forwarding instructions here.
         </p>
+        {provision.isError && (
+          <p className="mx-auto mt-3 max-w-md text-sm text-red-600">
+            {(provision.error as Error).message}
+          </p>
+        )}
+        <Button className="mt-5" loading={provision.isPending} onClick={() => provision.mutate()}>
+          <PhoneForwarded className="h-4 w-4" aria-hidden />
+          Get my AI phone number
+        </Button>
       </div>
     );
   }
