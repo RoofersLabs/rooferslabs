@@ -132,15 +132,17 @@ export class CompaniesService {
 
     // Purchase the company's dedicated AI phone number (idempotent). A
     // provisioning failure never blocks onboarding — the dashboard directs
-    // the owner to Phone Setup, where provisioning can be retried.
+    // the owner to Phone Setup, where the retry surfaces the same error —
+    // but it is logged loudly here with the full stack, never swallowed.
     try {
       await this.phoneNumbers.provisionForCompany(companyId, {
         companyName: company.name,
         businessPhone: company.phone,
       });
     } catch (error) {
-      this.logger.warn(
+      this.logger.error(
         `Automatic phone number provisioning failed for ${companyId}: ${(error as Error).message}`,
+        (error as Error).stack,
       );
     }
 

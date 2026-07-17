@@ -52,7 +52,20 @@ export class PhoneNumbersService {
       );
     }
 
-    // 1. Find an available local US number, preferring the company's area code.
+    const friendlyName = options.companyName
+      ? `${options.companyName} — RoofersLabs AI line`
+      : 'RoofersLabs AI line';
+
+    // 1. Adopt a number the Twilio account already owns but that no company is
+    //    using — this heals a provision interrupted between purchase and
+    //    persistence, and lets trial accounts (hard-capped at one number by
+    //    Twilio, error 21404) serve their company. Adoption never reuses a
+    //    number another company holds: candidates must be absent from the
+    //    phone_numbers table or explicitly RELEASED.
+    const adopted = await this.adoptOwnedNumber(companyId, friendlyName);
+    if (adopted) return adopted;
+
+    // 2. Find an available local US number, preferring the company's area code.
     const areaCode = extractUsAreaCode(options.businessPhone);
     let available: string | null = null;
     try {
@@ -70,21 +83,23 @@ export class PhoneNumbersService {
       );
     }
 
-    // 2. Purchase it with the voice + status webhooks configured.
-    const friendlyName = options.companyName
-      ? `${options.companyName} — RoofersLabs AI line`
-      : 'RoofersLabs AI line';
+    // 3. Purchase it with the voice + status webhooks configured.
     let purchased: { sid: string; phoneNumber: string; friendlyName: string };
     try {
       purchased = await this.twilio.purchaseNumber({ phoneNumber: available, friendlyName });
     } catch (error) {
-      this.logger.error(`Twilio number purchase failed: ${(error as Error).message}`);
+      this.logger.error(
+        `Twilio number purchase failed: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
+      // Surface Twilio's own reason (e.g. the trial-account number limit) —
+      // a generic message hides exactly the detail the operator needs.
       throw new ExternalServiceError(
-        'Purchasing your AI phone number from Twilio failed. Please try again.',
+        `Purchasing your AI phone number from Twilio failed: ${(error as Error).message}`,
       );
     }
 
-    // 3. Persist — releasing the purchase again if anything goes wrong, so a
+    // 4. Persist — releasing the purchase again if anything goes wrong, so a
     //    failure never leaves an orphaned number or a partial record.
     try {
       // Guard against a concurrent provision having won in the meantime.
@@ -117,6 +132,52 @@ export class PhoneNumbersService {
           ),
         );
       throw new ExternalServiceError('Your AI phone number could not be saved. Please try again.');
+    }
+  }
+
+  /**
+   * Adopt an account-owned Twilio number that no company is actively using:
+   * point its webhooks at this API and assign it. Returns null when every
+   * owned number is taken (or the scan fails) — the caller falls back to
+   * purchasing a new number.
+   */
+  private async adoptOwnedNumber(
+    companyId: string,
+    friendlyName: string,
+  ): Promise<PhoneNumber | null> {
+    try {
+      const owned = await this.twilio.listOwnedNumbers();
+      for (const candidate of owned) {
+        const record = await this.repo.findByNumber(normalize(candidate.phoneNumber));
+        const takenByCompany = record && record.status !== PhoneNumberStatus.RELEASED;
+        if (takenByCompany) continue;
+
+        await this.twilio.configureNumberWebhooks(candidate.sid, friendlyName);
+        const saved = record
+          ? await this.repo.update(record.id, {
+              company: { connect: { id: companyId } },
+              twilioSid: candidate.sid,
+              friendlyName,
+              status: PhoneNumberStatus.ACTIVE,
+            })
+          : await this.repo.create({
+              company: { connect: { id: companyId } },
+              phoneNumber: normalize(candidate.phoneNumber),
+              twilioSid: candidate.sid,
+              friendlyName,
+              status: PhoneNumberStatus.ACTIVE,
+            });
+        this.logger.log(
+          `Adopted owned number ${candidate.phoneNumber} (${candidate.sid}) for company ${companyId}.`,
+        );
+        return saved;
+      }
+      return null;
+    } catch (error) {
+      this.logger.warn(
+        `Owned-number adoption failed (falling back to purchase): ${(error as Error).message}`,
+      );
+      return null;
     }
   }
 

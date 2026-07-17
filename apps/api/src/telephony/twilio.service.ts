@@ -42,6 +42,39 @@ export class TwilioService {
     return match?.phoneNumber ?? null;
   }
 
+  private webhookConfig(): {
+    voiceUrl: string;
+    voiceMethod: 'POST';
+    statusCallback: string;
+    statusCallbackMethod: 'POST';
+  } {
+    const base = this.config.api.publicUrl;
+    return {
+      voiceUrl: `${base}/v1/telephony/incoming`,
+      voiceMethod: 'POST',
+      statusCallback: `${base}/v1/telephony/status`,
+      statusCallbackMethod: 'POST',
+    };
+  }
+
+  /** Numbers the Twilio account already owns (used to adopt before purchasing). */
+  async listOwnedNumbers(): Promise<{ sid: string; phoneNumber: string; friendlyName: string }[]> {
+    const owned = await this.rest.incomingPhoneNumbers.list({ limit: 50 });
+    return owned.map((n) => ({
+      sid: n.sid,
+      phoneNumber: n.phoneNumber,
+      friendlyName: n.friendlyName,
+    }));
+  }
+
+  /** Point an owned number's Voice webhook + status callback at this API. */
+  async configureNumberWebhooks(sid: string, friendlyName?: string): Promise<void> {
+    await this.rest.incomingPhoneNumbers(sid).update({
+      ...this.webhookConfig(),
+      ...(friendlyName ? { friendlyName } : {}),
+    });
+  }
+
   /**
    * Purchase an incoming number via the Twilio REST API, configuring its Voice
    * webhook and status callback in the same call so the number is answerable
@@ -51,14 +84,10 @@ export class TwilioService {
     phoneNumber: string;
     friendlyName: string;
   }): Promise<{ sid: string; phoneNumber: string; friendlyName: string }> {
-    const base = this.config.api.publicUrl;
     const purchased = await this.rest.incomingPhoneNumbers.create({
       phoneNumber: params.phoneNumber,
       friendlyName: params.friendlyName,
-      voiceUrl: `${base}/v1/telephony/incoming`,
-      voiceMethod: 'POST',
-      statusCallback: `${base}/v1/telephony/status`,
-      statusCallbackMethod: 'POST',
+      ...this.webhookConfig(),
     });
     return {
       sid: purchased.sid,
