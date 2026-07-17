@@ -52,8 +52,13 @@ export class PhoneNumbersService {
     companyId: string,
     options: ProvisionOptions = {},
   ): Promise<PhoneNumber> {
+    this.logger.log(`[Provisioning] Starting company provisioning for ${companyId}`);
+
     const existing = await this.repo.findActiveForCompany(companyId);
-    if (existing) return existing;
+    if (existing) {
+      this.logger.log(`[Provisioning] Company already has ${existing.phoneNumber} — nothing to do`);
+      return existing;
+    }
 
     if (!this.twilio.isConfigured) {
       throw new ExternalServiceError(
@@ -70,9 +75,15 @@ export class PhoneNumbersService {
     //    persistence, and lets trial accounts (hard-capped at one number by
     //    Twilio, error 21404) serve their company. Adoption never reuses a
     //    number another company holds: candidates must be absent from the
-    //    phone_numbers table or explicitly RELEASED.
+    //    phone_numbers table or explicitly RELEASED. An adoption-scan failure
+    //    aborts provisioning — purchase must never run while a reusable number
+    //    might exist.
     const adopted = await this.adoptOwnedNumber(companyId, friendlyName);
-    if (adopted) return adopted;
+    if (adopted) {
+      this.logger.log(`[Provisioning] Provisioning completed successfully (adopted)`);
+      return adopted;
+    }
+    this.logger.log('[Provisioning] No reusable numbers found');
 
     // 2. Find an available local US number, preferring the company's area code.
     const areaCode = extractUsAreaCode(options.businessPhone);
@@ -93,6 +104,7 @@ export class PhoneNumbersService {
     }
 
     // 3. Purchase it with the voice + status webhooks configured.
+    this.logger.log(`[Provisioning] Purchasing new Twilio number ${available}`);
     let purchased: { sid: string; phoneNumber: string; friendlyName: string };
     try {
       purchased = await this.twilio.purchaseNumber({ phoneNumber: available, friendlyName });
@@ -118,6 +130,7 @@ export class PhoneNumbersService {
         return raced;
       }
 
+      this.logger.log('[Provisioning] Saving phone number to database');
       const record = await this.repo.create({
         company: { connect: { id: companyId } },
         phoneNumber: normalize(purchased.phoneNumber),
@@ -126,7 +139,7 @@ export class PhoneNumbersService {
         status: PhoneNumberStatus.ACTIVE,
       });
       this.logger.log(
-        `Purchased ${purchased.phoneNumber} (${purchased.sid}) for company ${companyId}.`,
+        `[Provisioning] Provisioning completed successfully (purchased ${purchased.phoneNumber} / ${purchased.sid})`,
       );
       return record;
     } catch (error) {
@@ -146,48 +159,67 @@ export class PhoneNumbersService {
 
   /**
    * Adopt an account-owned Twilio number that no company is actively using:
-   * point its webhooks at this API and assign it. Returns null when every
-   * owned number is taken (or the scan fails) — the caller falls back to
-   * purchasing a new number.
+   * point its webhooks at this API and assign it. Order of precedence per
+   * candidate: reclaim a RELEASED record, adopt an orphan (no record at all),
+   * and never touch a number another company holds. Returns null only when
+   * every owned number is genuinely taken — any scan/configure/persist error
+   * aborts provisioning entirely, so a purchase can never happen while a
+   * reusable number might exist.
    */
   private async adoptOwnedNumber(
     companyId: string,
     friendlyName: string,
   ): Promise<PhoneNumber | null> {
+    this.logger.log('[Provisioning] Fetching owned Twilio numbers');
+    let owned: { sid: string; phoneNumber: string; friendlyName: string }[];
     try {
-      const owned = await this.twilio.listOwnedNumbers();
-      for (const candidate of owned) {
-        const record = await this.repo.findByNumber(normalize(candidate.phoneNumber));
-        const takenByCompany = record && record.status !== PhoneNumberStatus.RELEASED;
-        if (takenByCompany) continue;
-
-        await this.twilio.configureNumberWebhooks(candidate.sid, friendlyName);
-        const saved = record
-          ? await this.repo.update(record.id, {
-              company: { connect: { id: companyId } },
-              twilioSid: candidate.sid,
-              friendlyName,
-              status: PhoneNumberStatus.ACTIVE,
-            })
-          : await this.repo.create({
-              company: { connect: { id: companyId } },
-              phoneNumber: normalize(candidate.phoneNumber),
-              twilioSid: candidate.sid,
-              friendlyName,
-              status: PhoneNumberStatus.ACTIVE,
-            });
-        this.logger.log(
-          `Adopted owned number ${candidate.phoneNumber} (${candidate.sid}) for company ${companyId}.`,
-        );
-        return saved;
-      }
-      return null;
+      owned = await this.twilio.listOwnedNumbers();
     } catch (error) {
-      this.logger.warn(
-        `Owned-number adoption failed (falling back to purchase): ${(error as Error).message}`,
+      this.logger.error(
+        `[Provisioning] Could not list owned Twilio numbers: ${(error as Error).message}`,
+        (error as Error).stack,
       );
-      return null;
+      throw new ExternalServiceError(
+        'We could not reach Twilio to check for a reusable phone number. Please try again.',
+      );
     }
+    this.logger.log(`[Provisioning] Found ${owned.length} owned numbers`);
+    this.logger.log('[Provisioning] Searching reusable numbers');
+
+    for (const candidate of owned) {
+      const record = await this.repo.findByNumber(normalize(candidate.phoneNumber));
+      if (record && record.status !== PhoneNumberStatus.RELEASED) {
+        this.logger.log(
+          `[Provisioning] Skipping ${candidate.phoneNumber} — assigned to company ${record.companyId} (${record.status})`,
+        );
+        continue;
+      }
+
+      this.logger.log(
+        `[Provisioning] Reusing existing number ${candidate.phoneNumber} ` +
+          `(${record ? 'reclaiming RELEASED record' : 'adopting orphaned number'})`,
+      );
+      this.logger.log('[Provisioning] Configuring webhooks');
+      await this.twilio.configureNumberWebhooks(candidate.sid, friendlyName);
+
+      this.logger.log('[Provisioning] Saving phone number to database');
+      const saved = record
+        ? await this.repo.update(record.id, {
+            company: { connect: { id: companyId } },
+            twilioSid: candidate.sid,
+            friendlyName,
+            status: PhoneNumberStatus.ACTIVE,
+          })
+        : await this.repo.create({
+            company: { connect: { id: companyId } },
+            phoneNumber: normalize(candidate.phoneNumber),
+            twilioSid: candidate.sid,
+            friendlyName,
+            status: PhoneNumberStatus.ACTIVE,
+          });
+      return saved;
+    }
+    return null;
   }
 
   getForCompany(companyId: string): Promise<PhoneNumber | null> {

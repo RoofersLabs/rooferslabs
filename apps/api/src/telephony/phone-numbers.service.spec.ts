@@ -162,11 +162,12 @@ describe('provisionForCompany', () => {
     expect(repo.create).not.toHaveBeenCalled();
   });
 
-  it('adopts an owned, unassigned number instead of purchasing', async () => {
+  it('trial account with one reusable (orphaned) number: adopts, never purchases', async () => {
     const { service, repo, twilio } = makeService({ owned: [OWNED] });
 
     const result = await service.provisionForCompany(COMPANY, { companyName: 'Acme Roofing' });
 
+    expect(twilio.listOwnedNumbers).toHaveBeenCalled();
     expect(twilio.configureNumberWebhooks).toHaveBeenCalledWith(
       OWNED.sid,
       'Acme Roofing — RoofersLabs AI line',
@@ -179,11 +180,12 @@ describe('provisionForCompany', () => {
         status: 'ACTIVE',
       }),
     );
+    expect(twilio.searchAvailableLocalNumber).not.toHaveBeenCalled();
     expect(twilio.purchaseNumber).not.toHaveBeenCalled();
     expect(result.status).toBe('ACTIVE');
   });
 
-  it('never adopts a number another company actively holds', async () => {
+  it('number already assigned to an ACTIVE company: skipped, purchase attempted', async () => {
     const { service, twilio } = makeService({
       owned: [OWNED],
       ownedRecord: makeRecord({ companyId: 'company_other', phoneNumber: OWNED.phoneNumber }),
@@ -192,10 +194,10 @@ describe('provisionForCompany', () => {
     await service.provisionForCompany(COMPANY);
 
     expect(twilio.configureNumberWebhooks).not.toHaveBeenCalled();
-    expect(twilio.purchaseNumber).toHaveBeenCalled(); // fell through to purchase
+    expect(twilio.purchaseNumber).toHaveBeenCalled(); // no reusable number existed
   });
 
-  it('revives a RELEASED record when adopting its number again', async () => {
+  it('trial account with a RELEASED number: reclaims it, never purchases', async () => {
     const released = makeRecord({
       id: 'pn_released',
       companyId: 'company_old',
@@ -216,14 +218,24 @@ describe('provisionForCompany', () => {
     expect(twilio.purchaseNumber).not.toHaveBeenCalled();
   });
 
-  it('falls back to purchasing when the adoption scan fails', async () => {
-    const { service, twilio } = makeService();
-    (twilio.listOwnedNumbers as jest.Mock).mockRejectedValue(new Error('twilio down'));
+  it('fresh account with no owned numbers: proceeds to purchase', async () => {
+    const { service, twilio } = makeService({ owned: [] });
 
     const result = await service.provisionForCompany(COMPANY);
 
+    expect(twilio.listOwnedNumbers).toHaveBeenCalled();
     expect(twilio.purchaseNumber).toHaveBeenCalled();
     expect(result.status).toBe('ACTIVE');
+  });
+
+  it('aborts (never purchases) when the reusable-number scan fails', async () => {
+    const { service, twilio } = makeService();
+    (twilio.listOwnedNumbers as jest.Mock).mockRejectedValue(new Error('twilio down'));
+
+    await expect(service.provisionForCompany(COMPANY)).rejects.toThrow(
+      /could not reach Twilio to check for a reusable phone number/,
+    );
+    expect(twilio.purchaseNumber).not.toHaveBeenCalled();
   });
 });
 
