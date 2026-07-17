@@ -37,6 +37,8 @@ export interface AppConfig {
     accountSid: string;
     authToken: string;
     mediaStreamUrl: string;
+    /** The purchased Twilio number auto-assigned to a company at onboarding. */
+    phoneNumber: string;
   };
   aws: {
     region: string;
@@ -101,6 +103,7 @@ export default (): AppConfig => {
       authToken: process.env.TWILIO_AUTH_TOKEN ?? '',
       mediaStreamUrl:
         process.env.TWILIO_MEDIA_STREAM_URL ?? 'ws://localhost:4000/v1/telephony/media-stream',
+      phoneNumber: process.env.TWILIO_PHONE_NUMBER ?? '',
     },
     aws: {
       region: process.env.AWS_REGION ?? 'us-east-1',

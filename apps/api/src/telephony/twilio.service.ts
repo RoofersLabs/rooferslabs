@@ -20,6 +20,28 @@ export class TwilioService {
   }
 
   /**
+   * Look up a purchased incoming number on the Twilio account to enrich the
+   * PhoneNumber record (SID + friendly name). Returns null when Twilio is not
+   * configured, the number is not owned by the account, or the lookup fails —
+   * callers assign the number regardless.
+   */
+  async lookupIncomingNumber(
+    phoneNumber: string,
+  ): Promise<{ sid: string; friendlyName: string } | null> {
+    if (!this.isSmsEnabled) return null;
+    try {
+      this.client ??= twilio(this.config.twilio.accountSid, this.config.twilio.authToken);
+      const [match] = await this.client.incomingPhoneNumbers.list({ phoneNumber, limit: 1 });
+      return match ? { sid: match.sid, friendlyName: match.friendlyName } : null;
+    } catch (error) {
+      this.logger.warn(
+        `Incoming-number lookup for ${phoneNumber} failed: ${(error as Error).message}`,
+      );
+      return null;
+    }
+  }
+
+  /**
    * Send an SMS. Returns whether the message was accepted by Twilio; failures
    * are logged and swallowed — SMS is a best-effort notification channel and
    * must never break the call pipeline.

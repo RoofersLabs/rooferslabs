@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import type { PhoneNumber } from '@prisma/client';
 import { PhoneNumberStatus } from '@rooferslabs/shared';
 import { ConflictError } from '../common/exceptions/domain.exception';
+import { AppConfigService } from '../config/app-config.service';
 import { PhoneNumbersRepository } from './phone-numbers.repository';
+import { TwilioService } from './twilio.service';
 
 export interface ResolvedNumber {
   phoneNumberId: string;
@@ -11,7 +13,54 @@ export interface ResolvedNumber {
 
 @Injectable()
 export class PhoneNumbersService {
-  constructor(private readonly repo: PhoneNumbersRepository) {}
+  private readonly logger = new Logger(PhoneNumbersService.name);
+
+  constructor(
+    private readonly repo: PhoneNumbersRepository,
+    private readonly config: AppConfigService,
+    private readonly twilio: TwilioService,
+  ) {}
+
+  /**
+   * Assign the platform's configured Twilio number (TWILIO_PHONE_NUMBER) to a
+   * company — called automatically when onboarding completes, so no manual
+   * database step is ever required before the AI can answer calls.
+   *
+   * Idempotent and safe: returns the company's existing number when one is
+   * already assigned, does nothing when no number is configured, and never
+   * steals a number that belongs to another company.
+   */
+  async autoAssignConfigured(companyId: string): Promise<PhoneNumber | null> {
+    const existingForCompany = await this.repo.findActiveForCompany(companyId);
+    if (existingForCompany) return existingForCompany;
+
+    const configured = normalize(this.config.twilio.phoneNumber);
+    if (!configured) {
+      this.logger.warn(
+        `Company ${companyId} completed onboarding but TWILIO_PHONE_NUMBER is not set — ` +
+          `no AI phone number assigned. Set it (or assign one via the API) to receive calls.`,
+      );
+      return null;
+    }
+
+    const owner = await this.repo.findByNumber(configured);
+    if (owner && owner.companyId !== companyId) {
+      this.logger.warn(
+        `Configured Twilio number ${configured} already belongs to company ${owner.companyId}; ` +
+          `company ${companyId} needs its own number assigned via the API.`,
+      );
+      return null;
+    }
+
+    // Enrich with the Twilio SID/friendly name when the account owns the number.
+    const meta = await this.twilio.lookupIncomingNumber(configured);
+    const assigned = await this.assign(companyId, configured, {
+      twilioSid: meta?.sid,
+      friendlyName: meta?.friendlyName ?? 'RoofersLabs AI line',
+    });
+    this.logger.log(`Auto-assigned ${configured} to company ${companyId}.`);
+    return assigned;
+  }
 
   getForCompany(companyId: string): Promise<PhoneNumber | null> {
     return this.repo.findActiveForCompany(companyId);

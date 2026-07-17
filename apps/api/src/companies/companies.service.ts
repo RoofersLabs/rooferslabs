@@ -9,6 +9,7 @@ import {
 } from '../common/exceptions/domain.exception';
 import { ApiErrorCode } from '@rooferslabs/shared';
 import { RedisService } from '../redis/redis.service';
+import { PhoneNumbersService } from '../telephony/phone-numbers.service';
 import { CompaniesRepository, type CompanyWithRelations } from './companies.repository';
 import type { CreateCompanyDto } from './dto/create-company.dto';
 import type { UpdateBrandingDto, UpdateCompanyDto } from './dto/update-company.dto';
@@ -23,6 +24,7 @@ export class CompaniesService {
   constructor(
     private readonly repo: CompaniesRepository,
     private readonly redis: RedisService,
+    private readonly phoneNumbers: PhoneNumbersService,
   ) {}
 
   private cacheKey(id: string): string {
@@ -127,6 +129,18 @@ export class CompaniesService {
     });
     await this.invalidate(companyId);
     this.logger.log(`Onboarding completed for company ${companyId}`);
+
+    // Give the company its AI phone line automatically (idempotent; a failure
+    // is logged inside and never blocks onboarding — the number can still be
+    // assigned via the API).
+    try {
+      await this.phoneNumbers.autoAssignConfigured(companyId);
+    } catch (error) {
+      this.logger.warn(
+        `Automatic phone number assignment failed for ${companyId}: ${(error as Error).message}`,
+      );
+    }
+
     return this.getById(companyId);
   }
 

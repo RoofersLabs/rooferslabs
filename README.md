@@ -79,33 +79,34 @@ rooferslabs/
 
 Backend (root `.env` — full annotated reference in [`.env.example`](./.env.example)):
 
-| Variable                                      | Required | Description                                       |
-| --------------------------------------------- | -------- | ------------------------------------------------- |
-| `NODE_ENV`                                    | yes      | `development` / `production`                      |
-| `API_PORT`                                    | yes      | API port (default 4000)                           |
-| `API_PUBLIC_URL`                              | yes      | Public API origin (webhooks, Swagger)             |
-| `WEB_PUBLIC_URL`                              | yes      | Public PWA origin                                 |
-| `CORS_ORIGINS`                                | yes      | Comma-separated allowed origins                   |
-| `DATABASE_URL`                                | **yes**  | PostgreSQL connection string                      |
-| `REDIS_URL`                                   | yes      | Redis connection string                           |
-| `CLERK_PUBLISHABLE_KEY`                       | **yes**  | Clerk `pk_…`                                      |
-| `CLERK_SECRET_KEY`                            | **yes**  | Clerk `sk_…` (server only)                        |
-| `CLERK_JWT_KEY`                               | no       | PEM key for offline JWT verification              |
-| `CLERK_WEBHOOK_SECRET`                        | no       | Clerk webhook signing secret                      |
-| `OPENAI_API_KEY`                              | **yes*** | OpenAI API key (*AI features disabled without it) |
-| `OPENAI_REALTIME_MODEL`                       | no       | default `gpt-realtime`                            |
-| `OPENAI_RESPONSES_MODEL`                      | no       | default `gpt-4.1`                                 |
-| `OPENAI_EMBEDDING_MODEL`                      | no       | default `text-embedding-3-small`                  |
-| `TWILIO_ACCOUNT_SID`                          | **yes*** | Twilio account SID (*telephony)                   |
-| `TWILIO_AUTH_TOKEN`                           | **yes*** | Twilio auth token (webhook signatures)            |
-| `TWILIO_MEDIA_STREAM_URL`                     | yes      | `wss://…/v1/telephony/media-stream`               |
-| `AWS_REGION`                                  | yes      | AWS region                                        |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | prod     | Omit on ECS (task role)                           |
-| `S3_BUCKET_RECORDINGS` / `S3_BUCKET_UPLOADS`  | prod     | S3 bucket names                                   |
-| `SQS_QUEUE_URL`                               | no       | Jobs queue URL                                    |
-| `BACKGROUND_JOBS_INLINE`                      | no       | `true` = process jobs in-process (local dev)      |
-| `MIGRATE_ON_START`                            | no       | Container-only: run `migrate deploy` on boot      |
-| `LOG_LEVEL`                                   | no       | pino level (default `debug` dev / `info` prod)    |
+| Variable                                      | Required | Description                                                               |
+| --------------------------------------------- | -------- | ------------------------------------------------------------------------- |
+| `NODE_ENV`                                    | yes      | `development` / `production`                                              |
+| `API_PORT`                                    | yes      | API port (default 4000)                                                   |
+| `API_PUBLIC_URL`                              | yes      | Public API origin (webhooks, Swagger)                                     |
+| `WEB_PUBLIC_URL`                              | yes      | Public PWA origin                                                         |
+| `CORS_ORIGINS`                                | yes      | Comma-separated allowed origins                                           |
+| `DATABASE_URL`                                | **yes**  | PostgreSQL connection string                                              |
+| `REDIS_URL`                                   | yes      | Redis connection string                                                   |
+| `CLERK_PUBLISHABLE_KEY`                       | **yes**  | Clerk `pk_…`                                                              |
+| `CLERK_SECRET_KEY`                            | **yes**  | Clerk `sk_…` (server only)                                                |
+| `CLERK_JWT_KEY`                               | no       | PEM key for offline JWT verification                                      |
+| `CLERK_WEBHOOK_SECRET`                        | no       | Clerk webhook signing secret                                              |
+| `OPENAI_API_KEY`                              | **yes*** | OpenAI API key (*AI features disabled without it)                         |
+| `OPENAI_REALTIME_MODEL`                       | no       | default `gpt-realtime`                                                    |
+| `OPENAI_RESPONSES_MODEL`                      | no       | default `gpt-4.1`                                                         |
+| `OPENAI_EMBEDDING_MODEL`                      | no       | default `text-embedding-3-small`                                          |
+| `TWILIO_ACCOUNT_SID`                          | **yes*** | Twilio account SID (*telephony)                                           |
+| `TWILIO_AUTH_TOKEN`                           | **yes*** | Twilio auth token (webhook signatures)                                    |
+| `TWILIO_PHONE_NUMBER`                         | **yes*** | Purchased Twilio number (E.164), auto-assigned to a company at onboarding |
+| `TWILIO_MEDIA_STREAM_URL`                     | yes      | `wss://…/v1/telephony/media-stream`                                       |
+| `AWS_REGION`                                  | yes      | AWS region                                                                |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | prod     | Omit on ECS (task role)                                                   |
+| `S3_BUCKET_RECORDINGS` / `S3_BUCKET_UPLOADS`  | prod     | S3 bucket names                                                           |
+| `SQS_QUEUE_URL`                               | no       | Jobs queue URL                                                            |
+| `BACKGROUND_JOBS_INLINE`                      | no       | `true` = process jobs in-process (local dev)                              |
+| `MIGRATE_ON_START`                            | no       | Container-only: run `migrate deploy` on boot                              |
+| `LOG_LEVEL`                                   | no       | pino level (default `debug` dev / `info` prod)                            |
 
 Frontend (`apps/web/.env` — see [`apps/web/.env.example`](./apps/web/.env.example)):
 
