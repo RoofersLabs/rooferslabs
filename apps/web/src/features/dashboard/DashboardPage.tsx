@@ -8,8 +8,8 @@ import {
   ArrowRight,
   PhoneForwarded,
 } from 'lucide-react';
-import { useDashboard, usePhoneNumber } from '@/hooks/queries';
-import { formatDuration, formatPhone, humanizeEnum, timeAgo } from '@/lib/utils';
+import { useDashboard, usePhoneNumber, useReceptionistStatus } from '@/hooks/queries';
+import { cn, formatDuration, formatPhone, humanizeEnum, timeAgo } from '@/lib/utils';
 import { EnumBadge } from '@/components/ui/Badge';
 import { ListSkeleton, Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -19,6 +19,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 export function DashboardPage() {
   const dashboard = useDashboard();
   const phone = usePhoneNumber();
+  const receptionist = useReceptionistStatus();
 
   if (dashboard.isError) {
     return (
@@ -41,7 +42,26 @@ export function DashboardPage() {
 
   return (
     <div>
-      <PageHeader title="Dashboard" description="Today’s activity across your front office." />
+      <PageHeader
+        title="Dashboard"
+        description="Today’s activity across your front office."
+        actions={
+          receptionist.data ? (
+            <div className="flex flex-wrap gap-2">
+              <StatusChip
+                good={receptionist.data.enabled}
+                goodLabel="AI Receptionist Active"
+                badLabel="AI Receptionist Disabled"
+              />
+              <StatusChip
+                good={receptionist.data.forwardingVerified}
+                goodLabel="Forwarding Verified"
+                badLabel="Forwarding Required"
+              />
+            </div>
+          ) : undefined
+        }
+      />
 
       {(needsPhoneSetup || needsForwarding) && (
         <Link
@@ -211,6 +231,33 @@ export function DashboardPage() {
         />
       </div>
     </div>
+  );
+}
+
+/** Compact receptionist/forwarding status chip linking to Phone Setup. */
+function StatusChip({
+  good,
+  goodLabel,
+  badLabel,
+}: {
+  good: boolean;
+  goodLabel: string;
+  badLabel: string;
+}) {
+  return (
+    <Link
+      to="/settings/phone"
+      className={cn(
+        'focus-ring inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium',
+        good ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800',
+      )}
+    >
+      <span
+        className={cn('h-1.5 w-1.5 rounded-full', good ? 'bg-emerald-500' : 'bg-amber-500')}
+        aria-hidden
+      />
+      {good ? goodLabel : badLabel}
+    </Link>
   );
 }
 

@@ -214,6 +214,10 @@ model Company {
   // Business hours: array of { day, open, close, closed } — see BusinessHours type
   businessHours Json?
 
+  // Master switch: when false, forwarded calls get a polite unavailable
+  // message instead of an AI session. Nothing is deleted or released.
+  receptionistEnabled Boolean @default(true)
+
   // Emergency service configuration
   emergencyServiceEnabled Boolean @default(true)
   emergencyPhone          String?

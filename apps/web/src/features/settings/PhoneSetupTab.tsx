@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { CheckCircle2, Copy, PhoneForwarded, PhoneCall, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Copy, PhoneForwarded, PhoneCall, Power, ShieldCheck } from 'lucide-react';
 import {
   useCompany,
   usePhoneNumber,
   useProvisionPhoneNumber,
+  useReceptionistStatus,
+  useSetReceptionistEnabled,
   useUpdateCompany,
   useVerifyForwarding,
 } from '@/hooks/queries';
-import { formatPhone } from '@/lib/utils';
+import { cn, formatPhone, humanizeEnum } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
 import { LoadingBlock } from '@/components/ui/Spinner';
@@ -55,6 +57,7 @@ export function PhoneSetupTab() {
 
   return (
     <div className="space-y-6">
+      <ControlCenterCard />
       <NumberCard phoneNumber={number.phoneNumber} verified={verified} />
       <ForwardingCard
         aiNumber={number.phoneNumber}
@@ -62,6 +65,123 @@ export function PhoneSetupTab() {
         carrier={company.data.phoneCarrier}
       />
       {!verified && <VerifyCard />}
+    </div>
+  );
+}
+
+/**
+ * The control center: everything about the receptionist at a glance, plus the
+ * master ON/OFF switch. Off = callers hear a polite unavailable message;
+ * nothing is deleted and the number stays reserved. On = answering resumes
+ * instantly.
+ */
+function ControlCenterCard() {
+  const status = useReceptionistStatus();
+  const toggle = useSetReceptionistEnabled();
+
+  if (status.isLoading || !status.data) return <LoadingBlock />;
+  const s = status.data;
+
+  return (
+    <div className="card p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-base font-semibold text-slate-900">AI Receptionist</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            {s.enabled
+              ? 'Answering forwarded calls, capturing leads, and updating your dashboard.'
+              : 'Off — callers hear a polite unavailable message. Your number stays reserved; turn it back on anytime.'}
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={s.enabled}
+          aria-label={s.enabled ? 'Turn the AI receptionist off' : 'Turn the AI receptionist on'}
+          disabled={toggle.isPending}
+          onClick={() => toggle.mutate(!s.enabled)}
+          className={cn(
+            'focus-ring relative inline-flex h-9 w-[104px] shrink-0 items-center rounded-full transition-colors',
+            s.enabled ? 'bg-emerald-500' : 'bg-slate-300',
+            toggle.isPending && 'opacity-60',
+          )}
+        >
+          <span
+            className={cn(
+              'absolute text-xs font-bold text-white',
+              s.enabled ? 'left-4' : 'right-4',
+            )}
+          >
+            {s.enabled ? 'ON' : 'OFF'}
+          </span>
+          <span
+            className={cn(
+              'inline-block h-7 w-7 transform rounded-full bg-white shadow transition-transform',
+              s.enabled ? 'translate-x-[72px]' : 'translate-x-1',
+            )}
+          >
+            <Power
+              className={cn('m-1.5 h-4 w-4', s.enabled ? 'text-emerald-600' : 'text-slate-400')}
+              aria-hidden
+            />
+          </span>
+        </button>
+      </div>
+
+      {toggle.isError && (
+        <p className="mt-3 text-sm text-red-600">{(toggle.error as Error).message}</p>
+      )}
+
+      <dl className="mt-5 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+        <StatusRow label="Business Phone Number" value={formatPhone(s.businessPhone)} />
+        <StatusRow label="AI Receptionist Number" value={formatPhone(s.aiPhoneNumber)} />
+        <StatusRow
+          label="Carrier"
+          value={
+            s.carrier
+              ? (CARRIER_GUIDES.find((g) => g.id === s.carrier)?.label ?? humanizeEnum(s.carrier))
+              : '—'
+          }
+        />
+        <StatusRow
+          label="Forwarding Status"
+          value={s.forwardingVerified ? 'Verified' : 'Not Verified'}
+          tone={s.forwardingVerified ? 'good' : 'warn'}
+        />
+        <StatusRow
+          label="AI Receptionist Status"
+          value={s.enabled ? 'Active' : 'Disabled'}
+          tone={s.enabled ? 'good' : 'warn'}
+        />
+      </dl>
+    </div>
+  );
+}
+
+function StatusRow({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: 'good' | 'warn';
+}) {
+  return (
+    <div>
+      <dt className="text-xs text-slate-500">{label}</dt>
+      <dd
+        className={cn(
+          'mt-0.5 font-medium',
+          tone === 'good'
+            ? 'text-emerald-700'
+            : tone === 'warn'
+              ? 'text-amber-700'
+              : 'text-slate-900',
+        )}
+      >
+        {value}
+      </dd>
     </div>
   );
 }

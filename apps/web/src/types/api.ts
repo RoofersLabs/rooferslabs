@@ -74,6 +74,16 @@ export interface AiConfiguration {
   transferPhone: string | null;
 }
 
+/** Control-center payload from GET /v1/telephony/receptionist/status. */
+export interface ReceptionistStatus {
+  enabled: boolean;
+  businessPhone: string | null;
+  carrier: string | null;
+  aiPhoneNumber: string | null;
+  forwardingVerifiedAt: string | null;
+  forwardingVerified: boolean;
+}
+
 export interface PhoneNumberSummary {
   id: string;
   phoneNumber: string;
@@ -91,6 +101,7 @@ export interface Company {
   email: string | null;
   phone: string | null;
   phoneCarrier: string | null;
+  receptionistEnabled: boolean;
   website: string | null;
   addressLine1: string | null;
   addressLine2: string | null;

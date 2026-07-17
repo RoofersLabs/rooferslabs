@@ -63,6 +63,21 @@ export class TelephonyController {
       return;
     }
 
+    // Master switch: when the owner has turned the receptionist off, answer
+    // politely and end the call — no session, stream, records, or notifications.
+    const company = await this.companies.getById(resolved.companyId);
+    if (!company.receptionistEnabled) {
+      res
+        .status(200)
+        .type('text/xml')
+        .send(
+          this.twilio.buildRejectTwiml(
+            'Thank you for calling. The receptionist is currently unavailable. Please contact the roofing company directly.',
+          ),
+        );
+      return;
+    }
+
     const call = await this.callProcessing.createInboundCall({
       companyId: resolved.companyId,
       phoneNumberId: resolved.phoneNumberId,
@@ -138,6 +153,57 @@ export class TelephonyController {
       friendlyName: dto.friendlyName,
     });
     return respond(number, 'Phone number assigned.');
+  }
+
+  @Get('receptionist/status')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'AI receptionist control-center status' })
+  async receptionistStatus(@CurrentCompanyId() companyId: string) {
+    return respond(await this.buildReceptionistStatus(companyId), 'Receptionist status.');
+  }
+
+  @Post('receptionist/enable')
+  @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Turn the AI receptionist on (answers forwarded calls immediately)' })
+  async enableReceptionist(@CurrentCompanyId() companyId: string) {
+    await this.companies.setReceptionistEnabled(companyId, true);
+    return respond(
+      await this.buildReceptionistStatus(companyId),
+      'AI receptionist is on — forwarded calls are answered.',
+    );
+  }
+
+  @Post('receptionist/disable')
+  @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Turn the AI receptionist off (callers hear a polite unavailable message)',
+    description:
+      'Nothing is deleted or released: the number stays reserved, and turning it back on resumes instantly.',
+  })
+  async disableReceptionist(@CurrentCompanyId() companyId: string) {
+    await this.companies.setReceptionistEnabled(companyId, false);
+    return respond(
+      await this.buildReceptionistStatus(companyId),
+      'AI receptionist is off. Your number stays reserved.',
+    );
+  }
+
+  /** One payload with everything the control center displays. */
+  private async buildReceptionistStatus(companyId: string) {
+    const [company, number] = await Promise.all([
+      this.companies.getById(companyId),
+      this.phoneNumbers.getForCompany(companyId),
+    ]);
+    return {
+      enabled: company.receptionistEnabled,
+      businessPhone: company.phone,
+      carrier: company.phoneCarrier,
+      aiPhoneNumber: number?.phoneNumber ?? null,
+      forwardingVerifiedAt: number?.forwardingVerifiedAt ?? null,
+      forwardingVerified: Boolean(number?.forwardingVerifiedAt),
+    };
   }
 
   @Post('phone-number/verify-forwarding')

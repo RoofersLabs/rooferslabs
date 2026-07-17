@@ -19,6 +19,7 @@ import type {
   KnowledgeArticle,
   Notification,
   PhoneNumberSummary,
+  ReceptionistStatus,
   Session,
 } from '@/types/api';
 
@@ -39,6 +40,7 @@ export const queryKeys = {
   notifications: (params: object) => ['notifications', params] as const,
   unreadCount: ['notifications', 'unread-count'] as const,
   search: (q: string) => ['search', q] as const,
+  receptionistStatus: ['telephony', 'receptionist-status'] as const,
 };
 
 // ---------------------------------------------------------------------------
@@ -171,7 +173,30 @@ export function useProvisionPhoneNumber() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => api.post<PhoneNumberSummary>('/telephony/phone-number/provision'),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.phoneNumber }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.phoneNumber });
+      void qc.invalidateQueries({ queryKey: queryKeys.receptionistStatus });
+    },
+  });
+}
+
+export function useReceptionistStatus() {
+  return useQuery({
+    queryKey: queryKeys.receptionistStatus,
+    queryFn: () => api.get<ReceptionistStatus>('/telephony/receptionist/status'),
+  });
+}
+
+/** The control-center master switch. */
+export function useSetReceptionistEnabled() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (enabled: boolean) =>
+      api.post<ReceptionistStatus>(`/telephony/receptionist/${enabled ? 'enable' : 'disable'}`),
+    onSuccess: (status) => {
+      qc.setQueryData(queryKeys.receptionistStatus, status);
+      void qc.invalidateQueries({ queryKey: queryKeys.company });
+    },
   });
 }
 

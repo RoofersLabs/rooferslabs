@@ -110,6 +110,18 @@ export class CompaniesService {
     return updated;
   }
 
+  /**
+   * Master switch for the AI receptionist. Disabling changes call handling
+   * only — the company, number, knowledge base, and history are untouched,
+   * and re-enabling restores answering instantly.
+   */
+  async setReceptionistEnabled(companyId: string, enabled: boolean): Promise<CompanyWithRelations> {
+    await this.repo.update(companyId, { receptionistEnabled: enabled });
+    await this.invalidate(companyId);
+    this.logger.log(`AI receptionist ${enabled ? 'enabled' : 'disabled'} for company ${companyId}`);
+    return this.getById(companyId);
+  }
+
   async setOnboardingStep(companyId: string, step: OnboardingStep): Promise<CompanyWithRelations> {
     await this.repo.update(companyId, { onboardingStep: step });
     await this.invalidate(companyId);
