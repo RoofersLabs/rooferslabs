@@ -19,6 +19,12 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiSuccessResp
 
     return next.handle().pipe(
       map((payload) => {
+        // Webhook handlers (Twilio TwiML/status) respond via @Res() directly;
+        // touching headers after that would raise ERR_HTTP_HEADERS_SENT.
+        if (response.headersSent) {
+          return payload as ApiSuccessResponse<T>;
+        }
+
         const isEnvelope = payload instanceof ApiPayload;
         const data = (isEnvelope ? payload.data : payload) as T;
 

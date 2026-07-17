@@ -94,6 +94,7 @@ Backend (root `.env` — full annotated reference in [`.env.example`](./.env.exa
 | `CLERK_WEBHOOK_SECRET`                        | no       | Clerk webhook signing secret                      |
 | `OPENAI_API_KEY`                              | **yes*** | OpenAI API key (*AI features disabled without it) |
 | `OPENAI_REALTIME_MODEL`                       | no       | default `gpt-realtime`                            |
+| `OPENAI_REALTIME_URL`                         | no       | Realtime GA endpoint override (tests/proxies)     |
 | `OPENAI_RESPONSES_MODEL`                      | no       | default `gpt-4.1`                                 |
 | `OPENAI_EMBEDDING_MODEL`                      | no       | default `text-embedding-3-small`                  |
 | `TWILIO_ACCOUNT_SID`                          | **yes*** | Twilio account SID (*telephony)                   |

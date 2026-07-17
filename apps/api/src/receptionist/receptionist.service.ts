@@ -17,13 +17,47 @@ import { buildGreeting, buildReceptionistInstructions } from './prompt.builder';
 import { buildRealtimeTools, CONVERSATION_OUTPUT_SCHEMA, TOOL } from './tools';
 import { type LiveConversationSignals, type ToolExecutionResult } from './session-state';
 
+/**
+ * A fully formed OpenAI Realtime GA session (the `session` payload of
+ * `session.update`). Shaped here so the telephony bridge stays a pure
+ * transport: g711 μ-law in/out for Twilio, server VAD with automatic
+ * response creation and interruption, and low-latency voice settings per
+ * current OpenAI production guidance.
+ */
+export interface RealtimeGaSession {
+  type: 'realtime';
+  output_modalities: ['audio'];
+  instructions: string;
+  audio: {
+    input: {
+      format: { type: 'audio/pcmu' };
+      transcription: { model: string };
+      turn_detection: {
+        type: 'server_vad';
+        threshold: number;
+        prefix_padding_ms: number;
+        silence_duration_ms: number;
+        create_response: boolean;
+        interrupt_response: boolean;
+      };
+    };
+    output: {
+      format: { type: 'audio/pcmu' };
+      voice: string;
+    };
+  };
+  tools: ReturnType<typeof buildRealtimeTools>;
+  tool_choice: 'auto';
+}
+
 export interface RealtimeSessionConfig {
   model: string;
-  voice: string;
-  instructions: string;
   greeting: string;
-  tools: ReturnType<typeof buildRealtimeTools>;
+  session: RealtimeGaSession;
 }
+
+/** Realtime speech-to-text model for caller transcription (GA guidance). */
+const TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
 
 /**
  * The AI receptionist "brain": produces the Realtime session configuration for a
@@ -42,15 +76,37 @@ export class ReceptionistService {
     private readonly rag: RagService,
   ) {}
 
-  /** Build the OpenAI Realtime session configuration for a company. */
+  /** Build the OpenAI Realtime GA session configuration for a company. */
   async buildSessionConfig(companyId: string): Promise<RealtimeSessionConfig> {
     const company = await this.companies.getById(companyId);
     return {
       model: this.config.openai.realtimeModel,
-      voice: company.aiConfiguration?.voice || 'alloy',
-      instructions: buildReceptionistInstructions(company),
       greeting: buildGreeting(company),
-      tools: buildRealtimeTools(company.aiConfiguration),
+      session: {
+        type: 'realtime',
+        output_modalities: ['audio'],
+        instructions: buildReceptionistInstructions(company),
+        audio: {
+          input: {
+            format: { type: 'audio/pcmu' },
+            transcription: { model: TRANSCRIPTION_MODEL },
+            turn_detection: {
+              type: 'server_vad',
+              threshold: 0.5,
+              prefix_padding_ms: 300,
+              silence_duration_ms: 500,
+              create_response: true,
+              interrupt_response: true,
+            },
+          },
+          output: {
+            format: { type: 'audio/pcmu' },
+            voice: company.aiConfiguration?.voice || 'alloy',
+          },
+        },
+        tools: buildRealtimeTools(company.aiConfiguration),
+        tool_choice: 'auto',
+      },
     };
   }
 

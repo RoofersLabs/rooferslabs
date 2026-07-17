@@ -3,22 +3,33 @@ import { WebSocket, type RawData } from 'ws';
 import type { TranscriptEntry } from '@rooferslabs/shared';
 import { CallStatus } from '@rooferslabs/shared';
 import { AppConfigService } from '../config/app-config.service';
-import { ReceptionistService } from '../receptionist/receptionist.service';
+import {
+  ReceptionistService,
+  type RealtimeSessionConfig,
+} from '../receptionist/receptionist.service';
 import { CallProcessingService } from '../calls/call-processing.service';
 import { TwilioService } from './twilio.service';
 import { createEmptySignals, type LiveConversationSignals } from '../receptionist/session-state';
-
-const OPENAI_REALTIME_URL = 'wss://api.openai.com/v1/realtime';
 
 /** Hard safety cap on a single call so a stuck socket can never burn an
  *  unbounded OpenAI Realtime session. Well above any legitimate call length. */
 const MAX_CALL_DURATION_MS = 30 * 60 * 1000;
 
+/** Budget for the OpenAI WebSocket handshake before the call fails over. */
+const OPENAI_CONNECT_TIMEOUT_MS = 10_000;
+
+/** One transparent reconnect if OpenAI drops mid-call; then fail gracefully. */
+const MAX_OPENAI_RECONNECTS = 1;
+
+/** GA error codes that are expected during normal barge-in races. */
+const BENIGN_OPENAI_ERRORS = new Set(['response_cancel_not_active']);
+
 /**
- * Bridges a single Twilio Media Streams WebSocket to an OpenAI Realtime session.
- * Audio flows both ways as g711 μ-law; the model's tool calls are executed
- * against the company knowledge base and structured signals, and the completed
- * call is handed to the call pipeline for persistence.
+ * Bridges a single Twilio Media Streams WebSocket to an OpenAI Realtime GA
+ * session (wss://api.openai.com/v1/realtime, no beta header). Audio flows both
+ * ways as g711 μ-law; the model's tool calls are executed against the company
+ * knowledge base and structured signals, and the completed call is handed to
+ * the call pipeline for persistence.
  */
 @Injectable()
 export class MediaStreamBridge {
@@ -48,12 +59,21 @@ class CallBridgeSession {
   private streamSid: string | null = null;
   private callId: string | null = null;
   private companyId: string | null = null;
+  private sessionConfig: RealtimeSessionConfig | null = null;
   private readonly signals: LiveConversationSignals = createEmptySignals();
   private readonly transcript: TranscriptEntry[] = [];
   private readonly startedAt = Date.now();
   private finalized = false;
   private openaiReady = false;
+  private reconnects = 0;
   private maxDurationTimer: NodeJS.Timeout | null = null;
+
+  // Interruption bookkeeping: Twilio's media timestamp is the playback clock.
+  // When the caller barges in we truncate the assistant's conversation item at
+  // the audio position actually heard, so the model's context matches reality.
+  private latestMediaTimestamp = 0;
+  private activeAssistantItemId: string | null = null;
+  private responseStartTimestamp: number | null = null;
 
   constructor(
     private readonly twilioWs: WebSocket,
@@ -126,7 +146,10 @@ class CallBridgeSession {
 
   private onMedia(message: TwilioInboundMessage): void {
     const payload = message.media?.payload;
-    if (!payload || !this.openaiReady || this.openaiWs?.readyState !== WebSocket.OPEN) return;
+    if (!payload) return;
+    const timestamp = Number(message.media?.timestamp);
+    if (Number.isFinite(timestamp)) this.latestMediaTimestamp = timestamp;
+    if (!this.openaiReady || this.openaiWs?.readyState !== WebSocket.OPEN) return;
     this.sendToOpenAi({ type: 'input_audio_buffer.append', audio: payload });
   }
 
@@ -134,49 +157,86 @@ class CallBridgeSession {
     const apiKey = this.config.openai.apiKey;
     if (!apiKey) {
       this.logger.error('OPENAI_API_KEY not configured; cannot run the AI receptionist.');
-      this.twilioWs.close();
-      await this.callProcessing.markCallEnded(this.callId!, CallStatus.FAILED);
+      await this.failCall();
       return;
     }
 
-    const session = await this.receptionist.buildSessionConfig(companyId);
-    const ws = new WebSocket(`${OPENAI_REALTIME_URL}?model=${encodeURIComponent(session.model)}`, {
-      headers: { Authorization: `Bearer ${apiKey}`, 'OpenAI-Beta': 'realtime=v1' },
+    try {
+      this.sessionConfig ??= await this.receptionist.buildSessionConfig(companyId);
+    } catch (error) {
+      this.logger.error(
+        `Failed to build the realtime session for company ${companyId}: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
+      await this.failCall();
+      return;
+    }
+    const session = this.sessionConfig;
+
+    const url = `${this.config.openai.realtimeUrl}?model=${encodeURIComponent(session.model)}`;
+    const ws = new WebSocket(url, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      handshakeTimeout: OPENAI_CONNECT_TIMEOUT_MS,
     });
     this.openaiWs = ws;
+    const isReconnect = this.reconnects > 0;
 
     ws.on('open', () => {
-      this.sendToOpenAi({
-        type: 'session.update',
-        session: {
-          modalities: ['audio', 'text'],
-          instructions: session.instructions,
-          voice: session.voice,
-          input_audio_format: 'g711_ulaw',
-          output_audio_format: 'g711_ulaw',
-          input_audio_transcription: { model: 'whisper-1' },
-          turn_detection: {
-            type: 'server_vad',
-            threshold: 0.5,
-            prefix_padding_ms: 300,
-            silence_duration_ms: 600,
-          },
-          tools: session.tools,
-          tool_choice: 'auto',
-          temperature: 0.7,
-        },
-      });
-      // Have the AI speak first with the configured greeting.
+      this.sendToOpenAi({ type: 'session.update', session: session.session });
       this.sendToOpenAi({
         type: 'response.create',
-        response: { instructions: `Greet the caller warmly: "${session.greeting}"` },
+        response: {
+          instructions: isReconnect
+            ? 'You briefly lost the line for a moment. Apologize in a few words and ask the caller to continue.'
+            : `Greet the caller warmly with: "${session.greeting}"`,
+        },
       });
       this.openaiReady = true;
     });
 
     ws.on('message', (raw) => void this.onOpenAiMessage(raw));
-    ws.on('close', () => void this.finalize(CallStatus.COMPLETED));
-    ws.on('error', (err) => this.logger.warn(`OpenAI realtime error: ${err.message}`));
+    ws.on('close', () => void this.onOpenAiClosed());
+    ws.on('error', (err) =>
+      this.logger.error(`OpenAI realtime socket error (call ${this.callId}): ${err.message}`),
+    );
+  }
+
+  /**
+   * OpenAI dropped (timeout, 429 close, network, internal error). The Twilio
+   * call must survive: reconnect once with the same session; if that fails,
+   * end the stream so the caller hears the recorded fallback message instead
+   * of dead air (TwiML after <Connect> plays when the stream ends).
+   */
+  private async onOpenAiClosed(): Promise<void> {
+    this.openaiReady = false;
+    if (this.finalized || this.twilioWs.readyState !== WebSocket.OPEN) {
+      void this.finalize(CallStatus.COMPLETED);
+      return;
+    }
+
+    if (this.reconnects < MAX_OPENAI_RECONNECTS && this.companyId) {
+      this.reconnects += 1;
+      this.logger.warn(
+        `OpenAI realtime session dropped mid-call ${this.callId}; reconnecting (attempt ${this.reconnects}).`,
+      );
+      await this.connectOpenAi(this.companyId);
+      return;
+    }
+
+    this.logger.error(
+      `OpenAI realtime session lost for call ${this.callId} and reconnect failed; ending stream gracefully.`,
+    );
+    await this.finalize(CallStatus.COMPLETED);
+  }
+
+  /** Fail the call before any AI audio: end the stream so the TwiML fallback plays. */
+  private async failCall(): Promise<void> {
+    if (this.callId) {
+      await this.callProcessing.markCallEnded(this.callId, CallStatus.FAILED);
+    }
+    this.finalized = true;
+    if (this.maxDurationTimer) clearTimeout(this.maxDurationTimer);
+    this.twilioWs.close();
   }
 
   private async onOpenAiMessage(raw: RawData): Promise<void> {
@@ -188,8 +248,10 @@ class CallBridgeSession {
     }
 
     switch (event.type) {
-      case 'response.audio.delta':
+      case 'response.output_audio.delta':
         if (event.delta && this.streamSid) {
+          if (event.item_id) this.activeAssistantItemId = event.item_id;
+          this.responseStartTimestamp ??= this.latestMediaTimestamp;
           this.sendToTwilio({
             event: 'media',
             streamSid: this.streamSid,
@@ -199,16 +261,27 @@ class CallBridgeSession {
         break;
 
       case 'input_audio_buffer.speech_started':
-        // Barge-in: caller started talking — stop queued AI audio.
+        // Barge-in. The session's interrupt_response cancels generation
+        // server-side; we drop Twilio's queued audio and truncate the
+        // assistant item at the position the caller actually heard.
         if (this.streamSid) this.sendToTwilio({ event: 'clear', streamSid: this.streamSid });
-        this.sendToOpenAi({ type: 'response.cancel' });
+        if (this.activeAssistantItemId && this.responseStartTimestamp !== null) {
+          this.sendToOpenAi({
+            type: 'conversation.item.truncate',
+            item_id: this.activeAssistantItemId,
+            content_index: 0,
+            audio_end_ms: Math.max(0, this.latestMediaTimestamp - this.responseStartTimestamp),
+          });
+        }
+        this.activeAssistantItemId = null;
+        this.responseStartTimestamp = null;
         break;
 
       case 'conversation.item.input_audio_transcription.completed':
         if (event.transcript) this.pushTranscript('customer', event.transcript);
         break;
 
-      case 'response.audio_transcript.done':
+      case 'response.output_audio_transcript.done':
         if (event.transcript) this.pushTranscript('assistant', event.transcript);
         break;
 
@@ -216,12 +289,16 @@ class CallBridgeSession {
         await this.handleFunctionCall(event);
         break;
 
+      case 'response.done':
+        this.activeAssistantItemId = null;
+        this.responseStartTimestamp = null;
+        break;
+
       case 'error':
-        // Benign cancellation races are expected (barge-in with no active
-        // response); anything else is worth surfacing in the logs.
-        if (event.error?.code !== 'response_cancel_not_active') {
+        if (!BENIGN_OPENAI_ERRORS.has(event.error?.code ?? '')) {
           this.logger.warn(
-            `OpenAI realtime error event for call ${this.callId}: ${event.error?.message ?? 'unknown'}`,
+            `OpenAI realtime error event for call ${this.callId}: ` +
+              `${event.error?.code ?? 'unknown'} — ${event.error?.message ?? 'no message'}`,
           );
         }
         break;
@@ -315,15 +392,16 @@ interface TwilioInboundMessage {
     callSid: string;
     customParameters?: Record<string, string>;
   };
-  media?: { payload: string };
+  media?: { payload: string; timestamp?: string };
 }
 
 interface OpenAiRealtimeEvent {
   type: string;
   delta?: string;
+  item_id?: string;
   transcript?: string;
   name?: string;
   call_id?: string;
   arguments?: string;
-  error?: { code?: string; message?: string };
+  error?: { type?: string; code?: string; message?: string };
 }

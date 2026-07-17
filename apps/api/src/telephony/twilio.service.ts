@@ -161,6 +161,14 @@ export class TwilioService {
       name: 'token',
       value: this.signStreamToken(params.callId, params.companyId),
     });
+    // Plays only if the media stream ends while the caller is still on the
+    // line (AI failure/timeouts) — a graceful goodbye instead of dead air.
+    // Normal calls end with the caller hanging up, so this never plays.
+    response.say(
+      { voice: 'Polly.Joanna' },
+      'We are sorry — we are having trouble connecting you right now. Please call back in a few minutes, or leave us a message online.',
+    );
+    response.hangup();
     return response.toString();
   }
 

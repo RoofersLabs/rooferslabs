@@ -28,6 +28,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const request = ctx.getRequest<AuthenticatedRequest>();
     const requestId = request.requestId ?? 'unknown';
 
+    // A handler that responds via @Res() (Twilio webhooks) may have already
+    // sent; attempting a second response would raise ERR_HTTP_HEADERS_SENT.
+    if (response.headersSent) {
+      this.logger.error(
+        `[${requestId}] ${request.method} ${request.url} threw after the response was sent`,
+        exception instanceof Error ? exception.stack : String(exception),
+      );
+      return;
+    }
+
     const { status, code, message, validationErrors } = this.resolve(exception);
 
     if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {

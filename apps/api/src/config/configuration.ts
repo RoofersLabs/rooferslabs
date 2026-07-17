@@ -30,6 +30,8 @@ export interface AppConfig {
   openai: {
     apiKey: string;
     realtimeModel: string;
+    /** Realtime GA WebSocket endpoint; overridable for tests/proxies. */
+    realtimeUrl: string;
     responsesModel: string;
     embeddingModel: string;
   };
@@ -93,6 +95,7 @@ export default (): AppConfig => {
     openai: {
       apiKey: process.env.OPENAI_API_KEY ?? '',
       realtimeModel: process.env.OPENAI_REALTIME_MODEL ?? 'gpt-realtime',
+      realtimeUrl: process.env.OPENAI_REALTIME_URL ?? 'wss://api.openai.com/v1/realtime',
       responsesModel: process.env.OPENAI_RESPONSES_MODEL ?? 'gpt-4.1',
       embeddingModel: process.env.OPENAI_EMBEDDING_MODEL ?? 'text-embedding-3-small',
     },
