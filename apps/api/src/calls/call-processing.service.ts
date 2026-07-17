@@ -7,6 +7,7 @@ import {
   NotificationType,
   type ConversationStructuredOutput,
   type TranscriptEntry,
+  type UrgencyLevel,
 } from '@rooferslabs/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotFoundError } from '../common/exceptions/domain.exception';
@@ -127,7 +128,7 @@ export class CallProcessingService {
     );
 
     // 4. Notify the team (outside the transaction).
-    await this.notify(companyId, conversationId, structured);
+    await this.notify(companyId, conversationId, structured, input.signals);
 
     // 5. Best-effort SMS: lead alert to the owner, acknowledgement to the caller.
     await this.sendSmsNotifications(companyId, call.fromNumber, structured);
@@ -261,9 +262,10 @@ export class CallProcessingService {
     companyId: string,
     conversationId: string,
     structured: ConversationStructuredOutput,
+    signals?: LiveConversationSignals,
   ): Promise<void> {
     const related = { type: 'conversation', id: conversationId };
-    const customerName = structured.customer.fullName ?? 'A caller';
+    const message = buildLeadSummaryMessage(structured, signals);
 
     try {
       if (structured.emergency.isEmergency) {
@@ -271,8 +273,8 @@ export class CallProcessingService {
           companyId,
           type: NotificationType.EMERGENCY,
           priority: NotificationPriority.CRITICAL,
-          title: 'Emergency call',
-          message: `${customerName} reported an emergency: ${structured.emergency.reason ?? 'urgent roofing issue'}.`,
+          title: `🚨 Emergency — ${structured.serviceType ?? structured.emergency.reason ?? 'urgent roofing issue'}`,
+          message,
           relatedEntity: related,
         });
       } else if (structured.appointment.requested) {
@@ -280,8 +282,8 @@ export class CallProcessingService {
           companyId,
           type: NotificationType.APPOINTMENT_REQUEST,
           priority: NotificationPriority.HIGH,
-          title: 'New appointment request',
-          message: `${customerName} requested ${structured.appointment.serviceRequested ?? 'a visit'}.`,
+          title: `Appointment request — ${structured.appointment.serviceRequested ?? 'visit'}`,
+          message,
           relatedEntity: related,
         });
       } else if (structured.outcome === ConversationOutcome.LEAD_CAPTURED) {
@@ -289,8 +291,8 @@ export class CallProcessingService {
           companyId,
           type: NotificationType.NEW_LEAD,
           priority: NotificationPriority.NORMAL,
-          title: 'New lead captured',
-          message: `${customerName}: ${structured.summary}`.slice(0, 240),
+          title: `New lead — ${structured.customer.fullName ?? 'caller'}`,
+          message,
           relatedEntity: related,
         });
       } else {
@@ -307,6 +309,39 @@ export class CallProcessingService {
       this.logger.warn(`Failed to create notification: ${(error as Error).message}`);
     }
   }
+}
+
+/**
+ * A lead summary the owner can act on straight from the notification, without
+ * opening the app. Lines with no data are omitted.
+ */
+export function buildLeadSummaryMessage(
+  structured: ConversationStructuredOutput,
+  signals?: LiveConversationSignals,
+): string {
+  const insurance = signals?.customer.insuranceClaim;
+  const requested = [
+    structured.appointment.preferredDate,
+    structured.appointment.preferredTimeWindow,
+  ]
+    .filter(Boolean)
+    .join(', ');
+
+  const lines: (string | null)[] = [
+    `Customer: ${structured.customer.fullName ?? 'Unknown'}`,
+    structured.customer.phone ? `Phone: ${structured.customer.phone}` : null,
+    structured.serviceType ? `Problem: ${structured.serviceType}` : null,
+    `Priority: ${humanizeUrgency(structured.urgency)}`,
+    structured.appointment.requested ? `Requested visit: ${requested || 'Team to schedule'}` : null,
+    `Insurance: ${insurance ? insurance.charAt(0).toUpperCase() + insurance.slice(1) : 'Unknown'}`,
+    structured.customer.propertyAddress ? `Location: ${structured.customer.propertyAddress}` : null,
+  ];
+  return lines.filter(Boolean).join('\n');
+}
+
+function humanizeUrgency(urgency: UrgencyLevel): string {
+  const lower = String(urgency).toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
 
 function parseDate(value: string | null): Date | null {

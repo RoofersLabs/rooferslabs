@@ -106,6 +106,58 @@ export class TwilioService {
   }
 
   /**
+   * Start recording an in-progress call (dual-channel: caller + AI). Twilio
+   * reports lifecycle transitions to the recording-status webhook. Best-effort:
+   * returns false on failure so a recording problem never touches the call.
+   */
+  async startCallRecording(callSid: string): Promise<boolean> {
+    if (!this.isConfigured) return false;
+    try {
+      await this.rest.calls(callSid).recordings.create({
+        recordingChannels: 'dual',
+        recordingStatusCallback: `${this.config.api.publicUrl}/v1/telephony/recording-status`,
+        recordingStatusCallbackMethod: 'POST',
+        recordingStatusCallbackEvent: ['completed', 'failed', 'absent'],
+      });
+      return true;
+    } catch (error) {
+      this.logger.warn(`Starting recording for ${callSid} failed: ${(error as Error).message}`);
+      return false;
+    }
+  }
+
+  /**
+   * End a live call cleanly via REST (used when the AI wraps up and hangs up).
+   * Returns whether Twilio accepted the hangup — the caller falls back to
+   * closing the media stream when it did not.
+   */
+  async hangupCall(callSid: string): Promise<boolean> {
+    if (!this.isConfigured) return false;
+    try {
+      await this.rest.calls(callSid).update({ status: 'completed' });
+      return true;
+    } catch (error) {
+      this.logger.warn(`Hanging up ${callSid} failed: ${(error as Error).message}`);
+      return false;
+    }
+  }
+
+  /**
+   * Fetch a recording's audio from Twilio (recordings require account auth,
+   * so the dashboard streams them through our API). Returns the raw response
+   * so the controller can pipe status, type, and body straight through.
+   */
+  async fetchRecordingMedia(recordingSid: string): Promise<Response> {
+    const { accountSid, authToken } = this.config.twilio;
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
+    return fetch(url, {
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString('base64')}`,
+      },
+    });
+  }
+
+  /**
    * Send an SMS. Returns whether the message was accepted by Twilio; failures
    * are logged and swallowed — SMS is a best-effort notification channel and
    * must never break the call pipeline.

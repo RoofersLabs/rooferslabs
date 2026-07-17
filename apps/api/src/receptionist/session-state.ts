@@ -41,4 +41,6 @@ export interface ToolExecutionResult {
   output: string;
   /** Set when the tool requests a human transfer, so the bridge can act. */
   transfer?: boolean;
+  /** Set when the AI has wrapped up and the bridge should hang up the call. */
+  endCall?: boolean;
 }

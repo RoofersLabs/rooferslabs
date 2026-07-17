@@ -15,6 +15,7 @@ export const TOOL = {
   REQUEST_APPOINTMENT: 'request_appointment',
   FLAG_EMERGENCY: 'flag_emergency',
   TRANSFER_TO_HUMAN: 'transfer_to_human',
+  END_CALL: 'end_call',
 } as const;
 
 export type ToolName = (typeof TOOL)[keyof typeof TOOL];
@@ -115,6 +116,14 @@ export function buildRealtimeTools(config: AiConfiguration | null): RealtimeTool
       parameters: { type: 'object', properties: {}, additionalProperties: false },
     });
   }
+
+  tools.push({
+    type: 'function',
+    name: TOOL.END_CALL,
+    description:
+      'Hang up the call. Call this ONLY after you have said your full goodbye and the caller has confirmed there is nothing else they need.',
+    parameters: { type: 'object', properties: {}, additionalProperties: false },
+  });
 
   return tools;
 }

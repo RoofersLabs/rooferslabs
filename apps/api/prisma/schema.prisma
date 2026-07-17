@@ -1,13 +1,3 @@
-// =============================================================================
-// RoofersLabs — Prisma schema (r1 echo)
-// =============================================================================
-// Authoritative data model for the multi-tenant platform. Every tenant-owned
-// entity carries a `companyId` and is indexed by it; cross-tenant access is
-// impossible by construction (see docs/08_Database_Design.md §6).
-//
-// Enums mirror `packages/shared/src/enums.ts` exactly — keep them in sync.
-// =============================================================================
-
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = []
@@ -18,9 +8,319 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// -----------------------------------------------------------------------------
-// Enums
-// -----------------------------------------------------------------------------
+model Company {
+  id                      String             @id @default(cuid())
+  name                    String
+  slug                    String             @unique
+  status                  CompanyStatus      @default(ONBOARDING)
+  onboardingStep          OnboardingStep     @default(COMPANY)
+  onboardedAt             DateTime?
+  email                   String?
+  phone                   String?
+  website                 String?
+  addressLine1            String?
+  addressLine2            String?
+  city                    String?
+  state                   String?
+  postalCode              String?
+  timezone                String             @default("America/New_York")
+  serviceAreas            String[]           @default([])
+  roofingServices         String[]           @default([])
+  businessHours           Json?
+  emergencyServiceEnabled Boolean            @default(true)
+  emergencyPhone          String?
+  emergencyInstructions   String?
+  logoUrl                 String?
+  primaryColor            String?            @default("#1E40AF")
+  secondaryColor          String?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+  phoneCarrier            String?
+  receptionistEnabled     Boolean            @default(true)
+  aiConfiguration         AiConfiguration?
+  appointments            Appointment[]
+  auditLogs               AuditLog[]
+  calls                   Call[]
+  conversations           Conversation[]
+  customers               Customer[]
+  knowledgeArticle        KnowledgeArticle[]
+  notifications           Notification[]
+  phoneNumbers            PhoneNumber[]
+  pushSubscriptions       PushSubscription[]
+  users                   User[]
+
+  @@index([status])
+  @@map("companies")
+}
+
+model AiConfiguration {
+  id                  String   @id @default(cuid())
+  companyId           String   @unique
+  voice               String   @default("alloy")
+  assistantName       String   @default("the RoofersLabs assistant")
+  greeting            String   @default("Thanks for calling. How can I help you with your roofing needs today?")
+  persona             String   @default("professional, warm, and efficient")
+  customInstructions  String?
+  captureLeads        Boolean  @default(true)
+  detectEmergencies   Boolean  @default(true)
+  requestAppointments Boolean  @default(true)
+  transferToHuman     Boolean  @default(false)
+  transferPhone       String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  company             Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("ai_configurations")
+}
+
+model User {
+  id                 String             @id @default(cuid())
+  companyId          String?
+  clerkUserId        String             @unique
+  email              String
+  firstName          String?
+  lastName           String?
+  avatarUrl          String?
+  role               UserRole           @default(OWNER)
+  emailNotifications Boolean            @default(true)
+  lastActiveAt       DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  deletedAt          DateTime?
+  auditLogs          AuditLog[]
+  notifications      Notification[]
+  pushSubscriptions  PushSubscription[]
+  company            Company?           @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@index([email])
+  @@map("users")
+}
+
+model PhoneNumber {
+  id                   String            @id @default(cuid())
+  companyId            String
+  phoneNumber          String            @unique
+  twilioSid            String?           @unique
+  friendlyName         String?
+  status               PhoneNumberStatus @default(ASSIGNED)
+  forwardingVerifiedAt DateTime?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  calls                Call[]
+  company              Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("phone_numbers")
+}
+
+model Customer {
+  id              String         @id @default(cuid())
+  companyId       String
+  fullName        String?
+  phone           String?
+  email           String?
+  propertyAddress String?
+  propertyType    PropertyType   @default(UNKNOWN)
+  status          CustomerStatus @default(NEW)
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+  appointments    Appointment[]
+  calls           Call[]
+  conversations   Conversation[]
+  company         Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([companyId, phone])
+  @@index([companyId, status])
+  @@map("customers")
+}
+
+model Call {
+  id              String        @id @default(cuid())
+  companyId       String
+  phoneNumberId   String?
+  customerId      String?
+  twilioCallSid   String?       @unique
+  direction       CallDirection @default(INBOUND)
+  fromNumber      String?
+  toNumber        String?
+  status          CallStatus    @default(INCOMING)
+  startedAt       DateTime?
+  answeredAt      DateTime?
+  endedAt         DateTime?
+  durationSeconds Int?
+  recordingUrl    String?
+  recordingKey    String?
+  // Twilio call recording (started automatically for every answered call).
+  recordingSid      String? @unique
+  recordingStatus   String?
+  recordingDuration Int?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  forwardedFrom   String?
+  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer        Customer?     @relation(fields: [customerId], references: [id])
+  phoneNumber     PhoneNumber?  @relation(fields: [phoneNumberId], references: [id])
+  conversation    Conversation?
+
+  @@index([companyId])
+  @@index([companyId, status])
+  @@index([companyId, createdAt])
+  @@map("calls")
+}
+
+model Conversation {
+  id               String               @id @default(cuid())
+  companyId        String
+  callId           String               @unique
+  customerId       String?
+  status           ConversationStatus   @default(ACTIVE)
+  outcome          ConversationOutcome?
+  intent           ConversationIntent?
+  leadQuality      LeadQuality?
+  urgency          UrgencyLevel?
+  isEmergency      Boolean              @default(false)
+  transcript       Json?
+  summary          String?
+  keyPoints        String[]             @default([])
+  structuredOutput Json?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  appointment      Appointment?
+  call             Call                 @relation(fields: [callId], references: [id], onDelete: Cascade)
+  company          Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer         Customer?            @relation(fields: [customerId], references: [id])
+
+  @@index([companyId])
+  @@index([companyId, outcome])
+  @@index([companyId, isEmergency])
+  @@index([companyId, createdAt])
+  @@map("conversations")
+}
+
+model Appointment {
+  id                  String              @id @default(cuid())
+  companyId           String
+  customerId          String?
+  conversationId      String?             @unique
+  serviceRequested    String?
+  propertyAddress     String?
+  preferredDate       DateTime?
+  preferredTimeWindow String?
+  status              AppointmentStatus   @default(REQUESTED)
+  priority            AppointmentPriority @default(NORMAL)
+  notes               String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  deletedAt           DateTime?
+  company             Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  conversation        Conversation?       @relation(fields: [conversationId], references: [id])
+  customer            Customer?           @relation(fields: [customerId], references: [id])
+
+  @@index([companyId])
+  @@index([companyId, status])
+  @@index([companyId, createdAt])
+  @@map("appointments")
+}
+
+model KnowledgeArticle {
+  id        String            @id @default(cuid())
+  companyId String
+  title     String
+  content   String
+  category  KnowledgeCategory @default(FAQ)
+  keywords  String[]          @default([])
+  status    KnowledgeStatus   @default(PUBLISHED)
+  version   Int               @default(1)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  deletedAt DateTime?
+  company   Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  chunks    KnowledgeChunk[]
+
+  @@index([companyId])
+  @@index([companyId, category])
+  @@index([companyId, status])
+  @@map("knowledge_articles")
+}
+
+model KnowledgeChunk {
+  id        String           @id @default(cuid())
+  companyId String
+  articleId String
+  content   String
+  embedding Float[]          @default([])
+  tokens    Int              @default(0)
+  createdAt DateTime         @default(now())
+  article   KnowledgeArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([articleId])
+  @@map("knowledge_chunks")
+}
+
+model Notification {
+  id            String               @id @default(cuid())
+  companyId     String
+  userId        String?
+  type          NotificationType
+  priority      NotificationPriority @default(NORMAL)
+  channel       NotificationChannel  @default(IN_APP)
+  status        NotificationStatus   @default(UNREAD)
+  title         String
+  message       String
+  relatedEntity Json?
+  readAt        DateTime?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  deletedAt     DateTime?
+  company       Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user          User?                @relation(fields: [userId], references: [id])
+
+  @@index([companyId])
+  @@index([companyId, status])
+  @@index([companyId, userId, status])
+  @@index([companyId, createdAt])
+  @@map("notifications")
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  companyId String
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  companyId  String
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@index([companyId])
+  @@index([companyId, createdAt])
+  @@map("audit_logs")
+}
 
 enum UserRole {
   OWNER
@@ -179,448 +479,4 @@ enum PhoneNumberStatus {
   ASSIGNED
   ACTIVE
   RELEASED
-}
-
-// -----------------------------------------------------------------------------
-// Companies (tenant root)
-// -----------------------------------------------------------------------------
-
-model Company {
-  id     String        @id @default(cuid())
-  name   String
-  slug   String        @unique
-  status CompanyStatus @default(ONBOARDING)
-
-  // Onboarding progress
-  onboardingStep OnboardingStep @default(COMPANY)
-  onboardedAt    DateTime?
-
-  // Business information
-  email        String?
-  phone        String? // the roofer's existing business number (kept by them)
-  phoneCarrier String? // carrier of that number, for forwarding instructions
-  website      String?
-  addressLine1 String?
-  addressLine2 String?
-  city         String?
-  state        String?
-  postalCode   String?
-  timezone     String  @default("America/New_York")
-
-  // Roofing operations
-  serviceAreas    String[] @default([]) // e.g. ["Austin, TX", "78701"]
-  roofingServices String[] @default([]) // e.g. ["Roof Replacement", "Repairs"]
-
-  // Business hours: array of { day, open, close, closed } — see BusinessHours type
-  businessHours Json?
-
-  // Master switch: when false, forwarded calls get a polite unavailable
-  // message instead of an AI session. Nothing is deleted or released.
-  receptionistEnabled Boolean @default(true)
-
-  // Emergency service configuration
-  emergencyServiceEnabled Boolean @default(true)
-  emergencyPhone          String?
-  emergencyInstructions   String?
-
-  // Branding
-  logoUrl        String?
-  primaryColor   String? @default("#1E40AF")
-  secondaryColor String?
-
-  // Relations
-  users            User[]
-  phoneNumbers     PhoneNumber[]
-  customers        Customer[]
-  calls            Call[]
-  conversations    Conversation[]
-  appointments     Appointment[]
-  knowledgeArticle  KnowledgeArticle[]
-  notifications     Notification[]
-  auditLogs         AuditLog[]
-  aiConfiguration   AiConfiguration?
-  pushSubscriptions PushSubscription[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([status])
-  @@map("companies")
-}
-
-// -----------------------------------------------------------------------------
-// AI receptionist configuration (1:1 with Company)
-// -----------------------------------------------------------------------------
-
-model AiConfiguration {
-  id        String  @id @default(cuid())
-  companyId String  @unique
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  // Voice + persona
-  voice              String  @default("alloy") // OpenAI Realtime voice preset
-  assistantName      String  @default("the RoofersLabs assistant")
-  greeting           String  @default("Thanks for calling. How can I help you with your roofing needs today?")
-  persona            String  @default("professional, warm, and efficient")
-  customInstructions String?
-
-  // Behaviour toggles
-  captureLeads        Boolean @default(true)
-  detectEmergencies   Boolean @default(true)
-  requestAppointments Boolean @default(true)
-  transferToHuman     Boolean @default(false)
-  transferPhone       String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("ai_configurations")
-}
-
-// -----------------------------------------------------------------------------
-// Users (authenticated operators — one company per user)
-// -----------------------------------------------------------------------------
-
-model User {
-  id        String   @id @default(cuid())
-  companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
-
-  // Clerk identity link. Business logic never depends on Clerk directly; this
-  // is only a foreign identifier used at the authentication boundary.
-  clerkUserId String @unique
-
-  email     String
-  firstName String?
-  lastName  String?
-  avatarUrl String?
-  role      UserRole @default(OWNER)
-
-  // Notification preferences
-  emailNotifications Boolean   @default(true)
-  lastActiveAt       DateTime?
-
-  notifications     Notification[]
-  auditLogs         AuditLog[]
-  pushSubscriptions PushSubscription[]
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  @@index([companyId])
-  @@index([email])
-  @@map("users")
-}
-
-// -----------------------------------------------------------------------------
-// Phone numbers (Twilio numbers assigned to companies)
-// -----------------------------------------------------------------------------
-
-model PhoneNumber {
-  id        String  @id @default(cuid())
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  // The assigned Twilio number (E.164). Roofers forward their existing business
-  // line to this number.
-  phoneNumber          String            @unique
-  twilioSid            String?           @unique
-  friendlyName         String?
-  status               PhoneNumberStatus @default(ASSIGNED)
-  forwardingVerifiedAt DateTime?
-
-  calls Call[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([companyId])
-  @@map("phone_numbers")
-}
-
-// -----------------------------------------------------------------------------
-// Customers
-// -----------------------------------------------------------------------------
-
-model Customer {
-  id        String  @id @default(cuid())
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  fullName String?
-  phone    String?
-  email    String?
-
-  propertyAddress String?
-  propertyType    PropertyType   @default(UNKNOWN)
-  status          CustomerStatus @default(NEW)
-
-  notes String?
-
-  calls         Call[]
-  conversations Conversation[]
-  appointments  Appointment[]
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  @@index([companyId])
-  @@index([companyId, phone])
-  @@index([companyId, status])
-  @@map("customers")
-}
-
-// -----------------------------------------------------------------------------
-// Calls
-// -----------------------------------------------------------------------------
-
-model Call {
-  id        String  @id @default(cuid())
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  phoneNumberId String?
-  phoneNumber   PhoneNumber? @relation(fields: [phoneNumberId], references: [id], onDelete: SetNull)
-
-  customerId String?
-  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
-
-  // Telephony metadata
-  twilioCallSid String?       @unique
-  direction     CallDirection @default(INBOUND)
-  fromNumber    String?
-  toNumber      String?
-  // The business number the call was forwarded from (Twilio ForwardedFrom).
-  // Presence proves the customer's carrier forwarding is working.
-  forwardedFrom String?
-  status        CallStatus    @default(INCOMING)
-
-  startedAt       DateTime?
-  answeredAt      DateTime?
-  endedAt         DateTime?
-  durationSeconds Int?
-
-  // Recording (stored in S3)
-  recordingUrl String?
-  recordingKey String?
-
-  conversation Conversation?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([companyId])
-  @@index([companyId, status])
-  @@index([companyId, createdAt])
-  @@map("calls")
-}
-
-// -----------------------------------------------------------------------------
-// Conversations (AI interaction attached to a call)
-// -----------------------------------------------------------------------------
-
-model Conversation {
-  id        String  @id @default(cuid())
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  callId String @unique
-  call   Call   @relation(fields: [callId], references: [id], onDelete: Cascade)
-
-  customerId String?
-  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
-
-  status  ConversationStatus   @default(ACTIVE)
-  outcome ConversationOutcome?
-  intent  ConversationIntent?
-
-  // AI-derived signals
-  leadQuality LeadQuality?
-  urgency     UrgencyLevel?
-  isEmergency Boolean       @default(false)
-
-  // Transcript: array of TranscriptEntry ({ role, text, offsetMs })
-  transcript Json?
-
-  // AI summary + full structured output (ConversationStructuredOutput)
-  summary          String?
-  keyPoints        String[] @default([])
-  structuredOutput Json?
-
-  appointment Appointment?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([companyId])
-  @@index([companyId, outcome])
-  @@index([companyId, isEmergency])
-  @@index([companyId, createdAt])
-  @@map("conversations")
-}
-
-// -----------------------------------------------------------------------------
-// Appointments
-// -----------------------------------------------------------------------------
-
-model Appointment {
-  id        String  @id @default(cuid())
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  customerId String?
-  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
-
-  conversationId String?       @unique
-  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
-
-  serviceRequested    String?
-  propertyAddress     String?
-  preferredDate       DateTime?
-  preferredTimeWindow String?
-  status              AppointmentStatus   @default(REQUESTED)
-  priority            AppointmentPriority @default(NORMAL)
-  notes               String?
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  @@index([companyId])
-  @@index([companyId, status])
-  @@index([companyId, createdAt])
-  @@map("appointments")
-}
-
-// -----------------------------------------------------------------------------
-// Knowledge base
-// -----------------------------------------------------------------------------
-
-model KnowledgeArticle {
-  id        String  @id @default(cuid())
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  title    String
-  content  String
-  category KnowledgeCategory @default(FAQ)
-  keywords String[]          @default([])
-  status   KnowledgeStatus   @default(PUBLISHED)
-  version  Int               @default(1)
-
-  chunks KnowledgeChunk[]
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  @@index([companyId])
-  @@index([companyId, category])
-  @@index([companyId, status])
-  @@map("knowledge_articles")
-}
-
-// A chunk of a knowledge article with its embedding vector, used for RAG.
-// Embeddings are stored as a float array; cosine similarity is computed by the
-// retrieval service (pgvector is a documented future enhancement).
-model KnowledgeChunk {
-  id        String           @id @default(cuid())
-  companyId String
-  articleId String
-  article   KnowledgeArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
-
-  content   String
-  embedding Float[] @default([])
-  tokens    Int     @default(0)
-
-  createdAt DateTime @default(now())
-
-  @@index([companyId])
-  @@index([articleId])
-  @@map("knowledge_chunks")
-}
-
-// -----------------------------------------------------------------------------
-// Notifications
-// -----------------------------------------------------------------------------
-
-model Notification {
-  id        String  @id @default(cuid())
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  type     NotificationType
-  priority NotificationPriority @default(NORMAL)
-  channel  NotificationChannel  @default(IN_APP)
-  status   NotificationStatus   @default(UNREAD)
-
-  title   String
-  message String
-
-  // Optional link to the originating entity (e.g. { type: "conversation", id })
-  relatedEntity Json?
-
-  readAt DateTime?
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  @@index([companyId])
-  @@index([companyId, status])
-  @@index([companyId, userId, status])
-  @@index([companyId, createdAt])
-  @@map("notifications")
-}
-
-// A browser's Web Push subscription for an operator (PWA push notifications).
-// One row per browser/device; stale endpoints are pruned when pushes bounce.
-model PushSubscription {
-  id        String  @id @default(cuid())
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  endpoint  String  @unique
-  p256dh    String
-  auth      String
-  userAgent String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([companyId])
-  @@index([userId])
-  @@map("push_subscriptions")
-}
-
-// -----------------------------------------------------------------------------
-// Audit log
-// -----------------------------------------------------------------------------
-
-model AuditLog {
-  id        String  @id @default(cuid())
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  action     String // e.g. "company.updated", "knowledge.created"
-  entityType String
-  entityId   String?
-  metadata   Json?
-
-  createdAt DateTime @default(now())
-
-  @@index([companyId])
-  @@index([companyId, createdAt])
-  @@map("audit_logs")
 }

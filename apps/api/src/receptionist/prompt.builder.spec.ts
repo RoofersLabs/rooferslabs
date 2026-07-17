@@ -76,12 +76,39 @@ describe('buildReceptionistInstructions', () => {
   });
 });
 
+describe('conversation quality instructions', () => {
+  it('covers confirmation, closing loop, and the hang-up tool', () => {
+    const prompt = buildReceptionistInstructions(makeCompany());
+    expect(prompt).toContain('digit by digit');
+    expect(prompt).toContain('Is that correct?');
+    expect(prompt).toContain('anything else I can help you with today');
+    expect(prompt).toContain('end_call');
+    expect(prompt).toContain('answer it fully first');
+  });
+
+  it('keeps empathy-first emergency guidance even when the emergency tool is off', () => {
+    const company = makeCompany();
+    company.aiConfiguration!.detectEmergencies = false;
+    const prompt = buildReceptionistInstructions(company);
+    expect(prompt).toContain('respond with empathy first');
+    expect(prompt).not.toContain('flag_emergency');
+  });
+});
+
 describe('buildGreeting', () => {
   it('uses the configured greeting', () => {
     expect(buildGreeting(makeCompany())).toBe('Thanks for calling Summit Roofing!');
   });
 
-  it('falls back to a company-branded default', () => {
+  it('falls back to a branded default with the assistant name', () => {
+    const company = makeCompany();
+    company.aiConfiguration!.greeting = '';
+    const greeting = buildGreeting(company);
+    expect(greeting).toContain('Summit Roofing Co.');
+    expect(greeting).toContain('This is Riley.');
+  });
+
+  it('falls back to a company-branded default without configuration', () => {
     const greeting = buildGreeting(makeCompany({ aiConfiguration: null }));
     expect(greeting).toContain('Summit Roofing Co.');
   });

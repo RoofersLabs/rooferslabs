@@ -8,6 +8,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { respond } from '../common/response';
 import { AppConfigService } from '../config/app-config.service';
 import { CallProcessingService } from '../calls/call-processing.service';
+import { CallsRepository } from '../calls/calls.repository';
 import { CompaniesService } from '../companies/companies.service';
 import { PhoneNumbersService } from './phone-numbers.service';
 import { TwilioService } from './twilio.service';
@@ -23,6 +24,14 @@ interface TwilioVoiceWebhookBody {
   RecordingUrl?: string;
 }
 
+interface TwilioRecordingWebhookBody {
+  CallSid?: string;
+  RecordingSid?: string;
+  RecordingUrl?: string;
+  RecordingStatus?: string;
+  RecordingDuration?: string;
+}
+
 @ApiTags('Telephony')
 @Controller({ path: 'telephony', version: '1' })
 export class TelephonyController {
@@ -32,6 +41,7 @@ export class TelephonyController {
     private readonly phoneNumbers: PhoneNumbersService,
     private readonly callProcessing: CallProcessingService,
     private readonly companies: CompaniesService,
+    private readonly calls: CallsRepository,
   ) {}
 
   /** Twilio Programmable Voice webhook for inbound calls. Returns TwiML. */
@@ -153,6 +163,35 @@ export class TelephonyController {
       friendlyName: dto.friendlyName,
     });
     return respond(number, 'Phone number assigned.');
+  }
+
+  /** Twilio recording lifecycle callback: persists SID/URL/status/duration. */
+  @Post('recording-status')
+  @Public()
+  @ApiExcludeEndpoint()
+  async recordingStatus(
+    @Res() res: Response,
+    @Headers('x-twilio-signature') signature: string | undefined,
+    @Body() body: TwilioRecordingWebhookBody,
+  ): Promise<void> {
+    const url = `${this.config.api.publicUrl}/v1/telephony/recording-status`;
+    if (!this.twilio.validateSignature(signature, url, body as Record<string, unknown>)) {
+      res.status(403).send();
+      return;
+    }
+
+    if (body.CallSid && body.RecordingSid) {
+      const call = await this.calls.findByTwilioSid(body.CallSid);
+      if (call) {
+        await this.calls.update(call.id, {
+          recordingSid: body.RecordingSid,
+          recordingUrl: body.RecordingUrl ?? null,
+          recordingStatus: body.RecordingStatus ?? null,
+          recordingDuration: body.RecordingDuration ? Number(body.RecordingDuration) : null,
+        });
+      }
+    }
+    res.status(204).send();
   }
 
   @Get('receptionist/status')

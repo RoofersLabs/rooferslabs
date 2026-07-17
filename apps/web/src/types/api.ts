@@ -167,6 +167,9 @@ export interface Call {
   endedAt: string | null;
   durationSeconds: number | null;
   recordingUrl: string | null;
+  recordingSid: string | null;
+  recordingStatus: string | null;
+  recordingDuration: number | null;
   customer: CustomerRef | null;
   conversation: ConversationSummaryRef | null;
   createdAt: string;
@@ -192,6 +195,9 @@ export interface Conversation {
     fromNumber: string | null;
     createdAt: string;
     recordingUrl?: string | null;
+    recordingSid?: string | null;
+    recordingStatus?: string | null;
+    recordingDuration?: number | null;
   } | null;
   appointment?: Appointment | null;
   createdAt: string;

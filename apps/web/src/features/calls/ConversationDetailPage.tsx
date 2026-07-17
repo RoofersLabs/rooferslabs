@@ -15,6 +15,7 @@ import { Badge, EnumBadge } from '@/components/ui/Badge';
 import { LoadingBlock } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
+import { RecordingPlayer } from '@/components/RecordingPlayer';
 
 export function ConversationDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -168,12 +169,7 @@ export function ConversationDetailPage() {
                 }
               />
             </dl>
-            {call?.recordingUrl && (
-              <div className="mt-4">
-                <p className="mb-1.5 text-xs font-medium text-slate-500">Recording</p>
-                <audio controls src={call.recordingUrl} className="w-full" />
-              </div>
-            )}
+            {call?.recordingStatus === 'completed' && <RecordingPlayer callId={call.id} />}
           </section>
 
           {data.appointment && (

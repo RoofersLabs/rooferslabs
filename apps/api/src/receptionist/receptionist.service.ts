@@ -179,6 +179,10 @@ export class ReceptionistService {
         return { output: 'Transferring the caller to a team member.', transfer: true };
       }
 
+      case TOOL.END_CALL: {
+        return { output: 'Ending the call now.', endCall: true };
+      }
+
       default:
         this.logger.warn(`Unknown tool call: ${toolName}`);
         return { output: 'Unable to complete that action.' };

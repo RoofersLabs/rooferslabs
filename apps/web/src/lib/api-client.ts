@@ -139,4 +139,17 @@ export const api = {
   async delete<T>(path: string): Promise<T> {
     return (await request<T>(path, { method: 'DELETE' })).data;
   },
+
+  /** GET binary content (e.g. call recordings) with the same auth handling. */
+  async getBlob(path: string): Promise<Blob> {
+    const token = await getToken();
+    const response = await fetch(`${config.apiBaseUrl}/v1${path}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      signal: AbortSignal.timeout(60_000),
+    });
+    if (!response.ok) {
+      throw new ApiError('NOT_FOUND', 'The file could not be loaded.', response.status);
+    }
+    return response.blob();
+  },
 };

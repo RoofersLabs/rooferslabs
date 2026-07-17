@@ -54,11 +54,15 @@ export class MediaStreamBridge {
   }
 }
 
+/** Grace period after end_call so the farewell audio finishes playing. */
+const HANGUP_GRACE_MS = 2500;
+
 class CallBridgeSession {
   private openaiWs: WebSocket | null = null;
   private streamSid: string | null = null;
   private callId: string | null = null;
   private companyId: string | null = null;
+  private twilioCallSid: string | null = null;
   private sessionConfig: RealtimeSessionConfig | null = null;
   private readonly signals: LiveConversationSignals = createEmptySignals();
   private readonly transcript: TranscriptEntry[] = [];
@@ -124,6 +128,7 @@ class CallBridgeSession {
 
   private onStart(message: TwilioInboundMessage): void {
     this.streamSid = message.start?.streamSid ?? null;
+    this.twilioCallSid = message.start?.callSid ?? null;
     const params = message.start?.customParameters ?? {};
     this.callId = params.callId ?? null;
     this.companyId = params.companyId ?? null;
@@ -141,6 +146,12 @@ class CallBridgeSession {
       this.twilioWs.close();
       return;
     }
+
+    // Record every answered call (dual-channel); best-effort, never blocking.
+    if (this.twilioCallSid) {
+      void this.twilio.startCallRecording(this.twilioCallSid);
+    }
+
     void this.connectOpenAi(this.companyId);
   }
 
@@ -323,6 +334,23 @@ class CallBridgeSession {
       event.name,
       args,
     );
+
+    if (result.endCall) {
+      // The farewell was spoken before the tool call; give trailing audio a
+      // moment to reach the caller, then hang up cleanly via REST (falling
+      // back to closing the stream, which plays the recorded goodbye TwiML).
+      this.logger.log(`AI wrapped up call ${this.callId}; hanging up.`);
+      setTimeout(() => {
+        void (async () => {
+          const hungUp = this.twilioCallSid
+            ? await this.twilio.hangupCall(this.twilioCallSid)
+            : false;
+          if (!hungUp) this.twilioWs.close();
+          await this.finalize(CallStatus.COMPLETED);
+        })();
+      }, HANGUP_GRACE_MS);
+      return;
+    }
 
     this.sendToOpenAi({
       type: 'conversation.item.create',

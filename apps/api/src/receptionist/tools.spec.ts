@@ -18,6 +18,11 @@ describe('buildRealtimeTools', () => {
     expect(names).toContain(TOOL.CAPTURE_CUSTOMER_INFO);
   });
 
+  it('always includes end_call so the AI can hang up after the goodbye', () => {
+    expect(buildRealtimeTools(null).map((t) => t.name)).toContain(TOOL.END_CALL);
+    expect(buildRealtimeTools(makeConfig()).map((t) => t.name)).toContain(TOOL.END_CALL);
+  });
+
   it('honours behaviour toggles', () => {
     const names = buildRealtimeTools(
       makeConfig({ detectEmergencies: false, requestAppointments: false }),
