@@ -30,6 +30,15 @@ export class UpdateCompanyDto {
   @MaxLength(32)
   phone?: string;
 
+  @ApiPropertyOptional({
+    description: 'Phone provider of the business number, used for forwarding instructions.',
+    example: 'verizon',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  phoneCarrier?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsUrl({ require_protocol: false })

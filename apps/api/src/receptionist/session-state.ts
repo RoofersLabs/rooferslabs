@@ -13,6 +13,8 @@ export interface LiveConversationSignals {
     propertyAddress?: string;
     propertyType?: PropertyType;
     reason?: string;
+    /** 'yes' | 'no' | 'unsure' — insurance claim status when it comes up. */
+    insuranceClaim?: string;
   };
   appointment?: {
     requested: boolean;

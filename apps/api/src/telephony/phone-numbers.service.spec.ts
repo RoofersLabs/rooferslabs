@@ -1,7 +1,8 @@
-import type { PhoneNumber } from '@prisma/client';
-import { ExternalServiceError } from '../common/exceptions/domain.exception';
+import type { Call, PhoneNumber } from '@prisma/client';
+import { BusinessRuleError, ExternalServiceError } from '../common/exceptions/domain.exception';
 import { PhoneNumbersService } from './phone-numbers.service';
 import type { PhoneNumbersRepository } from './phone-numbers.repository';
+import type { CallsRepository } from '../calls/calls.repository';
 import type { TwilioService } from './twilio.service';
 
 const COMPANY = 'company_1';
@@ -31,6 +32,7 @@ function makeService(
     search?: (string | null)[];
     purchase?: () => Promise<typeof PURCHASED>;
     createFails?: boolean;
+    forwardingEvidence?: Partial<Call> | null;
   } = {},
 ) {
   const activeResults = overrides.activeForCompany ?? [null, null];
@@ -60,7 +62,11 @@ function makeService(
     releaseNumber: jest.fn().mockResolvedValue(undefined),
   } as unknown as jest.Mocked<TwilioService>;
 
-  return { service: new PhoneNumbersService(repo, twilio), repo, twilio };
+  const calls = {
+    findForwardingEvidence: jest.fn().mockResolvedValue(overrides.forwardingEvidence ?? null),
+  } as unknown as jest.Mocked<CallsRepository>;
+
+  return { service: new PhoneNumbersService(repo, twilio, calls), repo, twilio, calls };
 }
 
 const OWNED = { sid: 'PN_owned', phoneNumber: '+15125551111', friendlyName: 'Old name' };
@@ -218,5 +224,56 @@ describe('provisionForCompany', () => {
 
     expect(twilio.purchaseNumber).toHaveBeenCalled();
     expect(result.status).toBe('ACTIVE');
+  });
+});
+
+describe('verifyForwarding', () => {
+  it('verifies when a forwarded call was received', async () => {
+    const { service, repo } = makeService({
+      activeForCompany: [makeRecord()],
+      forwardingEvidence: { id: 'call_1', forwardedFrom: '+15125550100' },
+    });
+
+    await service.verifyForwarding(COMPANY);
+
+    expect(repo.update).toHaveBeenCalledWith(
+      'pn_1',
+      expect.objectContaining({ forwardingVerifiedAt: expect.any(Date) }),
+    );
+  });
+
+  it('verifies via a recent inbound call when the carrier strips ForwardedFrom', async () => {
+    const { service, repo } = makeService({
+      activeForCompany: [makeRecord()],
+      forwardingEvidence: { id: 'call_1', forwardedFrom: null },
+    });
+
+    await service.verifyForwarding(COMPANY);
+
+    expect(repo.update).toHaveBeenCalled();
+  });
+
+  it('fails with test-call instructions when no call has arrived', async () => {
+    const { service, repo } = makeService({ activeForCompany: [makeRecord()] });
+
+    await expect(service.verifyForwarding(COMPANY)).rejects.toThrow(/call your business number/i);
+    expect(repo.update).not.toHaveBeenCalled();
+  });
+
+  it('is idempotent once verified', async () => {
+    const verified = makeRecord({ forwardingVerifiedAt: new Date() });
+    const { service, repo, calls } = makeService({ activeForCompany: [verified] });
+
+    const result = await service.verifyForwarding(COMPANY);
+
+    expect(result).toBe(verified);
+    expect(calls.findForwardingEvidence).not.toHaveBeenCalled();
+    expect(repo.update).not.toHaveBeenCalled();
+  });
+
+  it('requires a provisioned number first', async () => {
+    const { service } = makeService();
+
+    await expect(service.verifyForwarding(COMPANY)).rejects.toThrow(BusinessRuleError);
   });
 });

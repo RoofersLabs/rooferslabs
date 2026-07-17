@@ -22,6 +22,7 @@ export interface CreateInboundCallInput {
   twilioCallSid?: string | null;
   fromNumber?: string | null;
   toNumber?: string | null;
+  forwardedFrom?: string | null;
 }
 
 export interface FinalizeCallInput {
@@ -59,6 +60,7 @@ export class CallProcessingService {
         direction: 'INBOUND',
         fromNumber: input.fromNumber ?? null,
         toNumber: input.toNumber ?? null,
+        forwardedFrom: input.forwardedFrom ?? null,
         status: CallStatus.IN_PROGRESS,
         startedAt: new Date(),
         answeredAt: new Date(),

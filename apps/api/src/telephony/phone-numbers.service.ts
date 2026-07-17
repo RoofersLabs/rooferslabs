@@ -1,9 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { PhoneNumber } from '@prisma/client';
 import { PhoneNumberStatus } from '@rooferslabs/shared';
-import { ConflictError, ExternalServiceError } from '../common/exceptions/domain.exception';
+import {
+  BusinessRuleError,
+  ConflictError,
+  ExternalServiceError,
+} from '../common/exceptions/domain.exception';
+import { CallsRepository } from '../calls/calls.repository';
 import { PhoneNumbersRepository } from './phone-numbers.repository';
 import { TwilioService } from './twilio.service';
+
+/** How recent a test call must be to count as forwarding evidence. */
+const VERIFICATION_WINDOW_MS = 15 * 60 * 1000;
 
 export interface ResolvedNumber {
   phoneNumberId: string;
@@ -24,6 +32,7 @@ export class PhoneNumbersService {
   constructor(
     private readonly repo: PhoneNumbersRepository,
     private readonly twilio: TwilioService,
+    private readonly calls: CallsRepository,
   ) {}
 
   /**
@@ -226,9 +235,36 @@ export class PhoneNumbersService {
     });
   }
 
-  async markForwardingVerified(companyId: string): Promise<PhoneNumber | null> {
+  /**
+   * Verify that the customer's carrier forwarding actually delivers calls to
+   * the AI number, using real evidence: a received call carrying Twilio's
+   * ForwardedFrom, or any inbound call within the last few minutes (some
+   * carriers strip ForwardedFrom). Idempotent once verified. When there is no
+   * evidence yet, fails with instructions for placing a test call.
+   */
+  async verifyForwarding(companyId: string): Promise<PhoneNumber> {
     const record = await this.repo.findActiveForCompany(companyId);
-    if (!record) return null;
+    if (!record) {
+      throw new BusinessRuleError('Get your AI phone number before verifying forwarding.');
+    }
+    if (record.forwardingVerifiedAt) return record;
+
+    const since = new Date(Date.now() - VERIFICATION_WINDOW_MS);
+    const evidence = await this.calls.findForwardingEvidence(companyId, since);
+    if (!evidence) {
+      throw new BusinessRuleError(
+        'We haven’t received a call on your AI number yet. Turn on forwarding with your ' +
+          'phone provider, call your business number from any phone, then verify again.',
+      );
+    }
+
+    this.logger.log(
+      `Forwarding verified for company ${companyId} via ${
+        evidence.forwardedFrom
+          ? `forwarded call from ${evidence.forwardedFrom}`
+          : 'a recent inbound call'
+      }.`,
+    );
     return this.repo.update(record.id, { forwardingVerifiedAt: new Date() });
   }
 }

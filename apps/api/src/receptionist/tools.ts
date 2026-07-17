@@ -57,6 +57,12 @@ export function buildRealtimeTools(config: AiConfiguration | null): RealtimeTool
           propertyAddress: { type: 'string' },
           propertyType: { type: 'string', enum: Object.values(PropertyType) },
           reason: { type: 'string', description: 'Why the customer is calling.' },
+          insuranceClaim: {
+            type: 'string',
+            enum: ['yes', 'no', 'unsure'],
+            description:
+              'Whether the customer has (or plans) an insurance claim for this work, if it comes up.',
+          },
         },
         additionalProperties: false,
       },

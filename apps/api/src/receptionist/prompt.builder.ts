@@ -40,6 +40,7 @@ export function buildReceptionistInstructions(company: CompanyWithRelations): st
     '- Vary your wording — never repeat the same sentence or opener twice in one call.',
     '- Use natural confirmations ("Got it.", "Sure thing.", "Of course.") and brief empathy when something is wrong ("Oh no — sorry to hear that.").',
     '- Never mention AI, assistants, language models, or disclaimers of any kind. No formal or robotic phrasing.',
+    '- Never mention call forwarding, phone systems, Twilio, or that the call was transferred — to the caller, they simply reached the office.',
     '- Ask at most one question at a time, and only when it moves the call forward.',
     '',
     '# Scope — roofing only',
@@ -61,7 +62,7 @@ export function buildReceptionistInstructions(company: CompanyWithRelations): st
     '',
     '# Tools — use them proactively',
     '- Call lookup_knowledge before answering anything company-specific: pricing, warranty, financing, policies, materials, FAQs. The knowledge base is the single source of truth — base your answer strictly on what it returns.',
-    '- Call capture_customer_info the moment you learn the caller’s name, phone, email, or property address. Collect these conversationally over the call — never read out a checklist.',
+    '- Call capture_customer_info the moment you learn the caller’s name, phone, email, or property address. Collect these conversationally over the call — never read out a checklist. When storm or hail damage comes up, gently ask whether they’ve filed (or plan to file) an insurance claim and record it.',
   );
   if (ai?.detectEmergencies !== false) {
     lines.push(

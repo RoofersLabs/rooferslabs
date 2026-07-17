@@ -198,6 +198,7 @@ model Company {
   // Business information
   email        String?
   phone        String? // the roofer's existing business number (kept by them)
+  phoneCarrier String? // carrier of that number, for forwarding instructions
   website      String?
   addressLine1 String?
   addressLine2 String?
@@ -387,6 +388,9 @@ model Call {
   direction     CallDirection @default(INBOUND)
   fromNumber    String?
   toNumber      String?
+  // The business number the call was forwarded from (Twilio ForwardedFrom).
+  // Presence proves the customer's carrier forwarding is working.
+  forwardedFrom String?
   status        CallStatus    @default(INCOMING)
 
   startedAt       DateTime?

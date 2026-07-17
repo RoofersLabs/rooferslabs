@@ -5,7 +5,6 @@ import { CallStatus, UserRole } from '@rooferslabs/shared';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentCompanyId } from '../common/decorators/current-company.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
-import { ForbiddenError } from '../common/exceptions/domain.exception';
 import { respond } from '../common/response';
 import { AppConfigService } from '../config/app-config.service';
 import { CallProcessingService } from '../calls/call-processing.service';
@@ -18,6 +17,8 @@ interface TwilioVoiceWebhookBody {
   CallSid?: string;
   From?: string;
   To?: string;
+  /** The business number a forwarded call originally rang (carrier-dependent). */
+  ForwardedFrom?: string;
   CallStatus?: string;
   RecordingUrl?: string;
 }
@@ -68,6 +69,7 @@ export class TelephonyController {
       twilioCallSid: body.CallSid ?? null,
       fromNumber: body.From ?? null,
       toNumber,
+      forwardedFrom: body.ForwardedFrom ?? null,
     });
 
     const twiml = this.twilio.buildStreamTwiml({
@@ -141,11 +143,14 @@ export class TelephonyController {
   @Post('phone-number/verify-forwarding')
   @Roles(UserRole.OWNER, UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Mark call forwarding as verified' })
+  @ApiOperation({
+    summary: 'Verify call forwarding',
+    description:
+      'Confirms a real call has reached the AI number (forwarded-call evidence or a recent test call) and activates the receptionist.',
+  })
   async verifyForwarding(@CurrentCompanyId() companyId: string) {
-    const number = await this.phoneNumbers.markForwardingVerified(companyId);
-    if (!number) throw new ForbiddenError('Assign a phone number before verifying forwarding.');
-    return respond(number, 'Forwarding verified.');
+    const number = await this.phoneNumbers.verifyForwarding(companyId);
+    return respond(number, 'Forwarding verified — your AI receptionist is live.');
   }
 }
 

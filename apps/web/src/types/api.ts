@@ -90,6 +90,7 @@ export interface Company {
   onboardedAt: string | null;
   email: string | null;
   phone: string | null;
+  phoneCarrier: string | null;
   website: string | null;
   addressLine1: string | null;
   addressLine2: string | null;

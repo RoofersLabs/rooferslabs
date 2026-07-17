@@ -1,23 +1,21 @@
 import { useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
-import { Building2, Clock, Bot, PhoneForwarded, Palette, CheckCircle2, Copy } from 'lucide-react';
+import { Building2, Clock, Bot, PhoneForwarded, Palette, CheckCircle2 } from 'lucide-react';
 import { AiVoice } from '@rooferslabs/shared';
 import {
   useAiConfig,
   useCompany,
-  usePhoneNumber,
   useSetBusinessHours,
   useUpdateAiConfig,
   useUpdateCompany,
-  useVerifyForwarding,
-  useProvisionPhoneNumber,
 } from '@/hooks/queries';
 import type { BusinessHour } from '@/types/api';
-import { cn, formatPhone } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Input, Select, Textarea } from '@/components/ui/Input';
 import { LoadingBlock } from '@/components/ui/Spinner';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { PhoneSetupTab } from './PhoneSetupTab';
 
 const TABS = [
   { key: 'business', label: 'Business', icon: Building2 },
@@ -57,7 +55,7 @@ export function SettingsPage() {
       {tab === 'business' && <BusinessTab />}
       {tab === 'hours' && <HoursTab />}
       {tab === 'ai' && <AiTab />}
-      {tab === 'phone' && <PhoneTab />}
+      {tab === 'phone' && <PhoneSetupTab />}
       {tab === 'branding' && <BrandingTab />}
     </div>
   );
@@ -385,124 +383,6 @@ function AiTab() {
         error={update.isError ? (update.error as Error).message : undefined}
       />
     </form>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Phone setup tab — forwarding guide
-// ---------------------------------------------------------------------------
-
-function PhoneTab() {
-  const phone = usePhoneNumber();
-  const verify = useVerifyForwarding();
-  const provision = useProvisionPhoneNumber();
-  const [copied, setCopied] = useState(false);
-
-  if (phone.isLoading) return <LoadingBlock />;
-
-  const number = phone.data;
-  const copy = async () => {
-    if (!number) return;
-    await navigator.clipboard.writeText(number.phoneNumber);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  if (!number) {
-    return (
-      <div className="card p-8 text-center">
-        <PhoneForwarded className="mx-auto h-10 w-10 text-slate-300" aria-hidden />
-        <h2 className="mt-4 text-base font-semibold text-slate-900">
-          Get your dedicated AI phone number
-        </h2>
-        <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
-          We’ll purchase a local number for your business (matching your area code when available),
-          connect it to your AI receptionist, and show forwarding instructions here.
-        </p>
-        {provision.isError && (
-          <p className="mx-auto mt-3 max-w-md text-sm text-red-600">
-            {(provision.error as Error).message}
-          </p>
-        )}
-        <Button className="mt-5" loading={provision.isPending} onClick={() => provision.mutate()}>
-          <PhoneForwarded className="h-4 w-4" aria-hidden />
-          Get my AI phone number
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="card p-6">
-        <h2 className="text-base font-semibold text-slate-900">Your AI phone number</h2>
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <span className="rounded-xl bg-brand-50 px-5 py-3 font-mono text-xl font-bold text-brand-800">
-            {formatPhone(number.phoneNumber)}
-          </span>
-          <Button variant="secondary" size="sm" onClick={() => void copy()}>
-            <Copy className="h-4 w-4" aria-hidden />
-            {copied ? 'Copied!' : 'Copy'}
-          </Button>
-          {number.forwardingVerifiedAt ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-800">
-              <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
-              Forwarding verified
-            </span>
-          ) : (
-            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
-              Forwarding not verified yet
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="card p-6">
-        <h2 className="text-base font-semibold text-slate-900">
-          Forward your existing business number
-        </h2>
-        <p className="mt-1 text-sm text-slate-500">
-          You keep your current number — customers keep dialing it. Your carrier forwards calls to
-          your AI line, and the receptionist answers instantly.
-        </p>
-        <ol className="mt-5 space-y-4">
-          {[
-            {
-              title: 'Choose a forwarding mode',
-              body: 'Use unconditional forwarding to send every call to the AI, or conditional (no-answer/busy) forwarding to keep answering yourself and let the AI catch what you miss.',
-            },
-            {
-              title: 'Dial the forwarding code from your business phone',
-              body: `Most US carriers: *72 (unconditional) or *71 / *90 (conditional), followed by ${formatPhone(number.phoneNumber)}. VoIP and business lines: set forwarding to this number in your provider portal.`,
-            },
-            {
-              title: 'Place a test call',
-              body: 'Call your business number from another phone. Your AI receptionist should answer with your configured greeting.',
-            },
-            {
-              title: 'Confirm below',
-              body: 'Once your test call is answered by the AI, mark forwarding as verified.',
-            },
-          ].map((step, index) => (
-            <li key={step.title} className="flex gap-4">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white">
-                {index + 1}
-              </span>
-              <div>
-                <p className="text-sm font-medium text-slate-900">{step.title}</p>
-                <p className="mt-0.5 text-sm text-slate-500">{step.body}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-        {!number.forwardingVerifiedAt && (
-          <Button className="mt-6" loading={verify.isPending} onClick={() => verify.mutate()}>
-            <CheckCircle2 className="h-4 w-4" aria-hidden />
-            My test call was answered — mark as verified
-          </Button>
-        )}
-      </div>
-    </div>
   );
 }
 

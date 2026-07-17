@@ -145,6 +145,7 @@ export class ReceptionistService {
         if (typeof args.propertyType === 'string')
           c.propertyType = normalizeEnum(args.propertyType, PropertyType, PropertyType.UNKNOWN);
         if (typeof args.reason === 'string') c.reason = args.reason;
+        if (typeof args.insuranceClaim === 'string') c.insuranceClaim = args.insuranceClaim;
         return { output: 'Customer details recorded.' };
       }
 
@@ -205,7 +206,8 @@ export class ReceptionistService {
 
     const instructions =
       `You analyze a phone call transcript for ${company.name}, a roofing company, and extract a structured business record. ` +
-      `Base every field strictly on the transcript. Use null for unknown values. Write a concise, factual summary (2-3 sentences) from the roofing company's perspective.`;
+      `Base every field strictly on the transcript. Use null for unknown values. Write a concise, factual summary (2-3 sentences) from the roofing company's perspective. ` +
+      `When insurance claims are discussed, include the claim status in the summary and keyPoints.`;
 
     try {
       return await this.openai.createStructuredResponse<ConversationStructuredOutput>({

@@ -40,6 +40,23 @@ export class CallsRepository {
     return this.prisma.call.findUnique({ where: { twilioCallSid } });
   }
 
+  /**
+   * The most recent inbound call for a company since a given time, preferring
+   * one that carries forwarding evidence (Twilio's ForwardedFrom). Used to
+   * verify that the customer's carrier forwarding actually works.
+   */
+  async findForwardingEvidence(companyId: string, since: Date): Promise<Call | null> {
+    const forwarded = await this.prisma.call.findFirst({
+      where: { companyId, direction: 'INBOUND', forwardedFrom: { not: null } },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (forwarded) return forwarded;
+    return this.prisma.call.findFirst({
+      where: { companyId, direction: 'INBOUND', createdAt: { gte: since } },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   update(id: string, data: Prisma.CallUpdateInput): Promise<Call> {
     return this.prisma.call.update({ where: { id }, data });
   }

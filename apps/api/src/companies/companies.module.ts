@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { CallsRepository } from '../calls/calls.repository';
 import { PhoneNumbersRepository } from '../telephony/phone-numbers.repository';
 import { PhoneNumbersService } from '../telephony/phone-numbers.service';
 import { TwilioService } from '../telephony/twilio.service';
@@ -20,6 +21,7 @@ import { CompaniesService } from './companies.service';
     PhoneNumbersService,
     PhoneNumbersRepository,
     TwilioService,
+    CallsRepository,
   ],
   exports: [CompaniesService],
 })
