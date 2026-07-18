@@ -1,0 +1,280 @@
+/*
+ * RoofersLabs design tokens — ported from the roofers-labs-design skill
+ * (.claude/skills/roofers-labs-design/tokens). This file is the single source
+ * of truth for color, type, spacing, radius, elevation and motion. Tailwind
+ * (tailwind.config.js) maps utilities onto these variables; nothing in the app
+ * should hardcode a raw color/shadow/radius.
+ *
+ * Theming: dark is the design system's hero surface, so :root defaults to dark.
+ * The app shell sets data-theme="light" on <html> (the dashboard reads best in
+ * light all day); dark surfaces (e.g. the marketing hero) opt back in by
+ * wrapping in [data-theme="dark"] / .theme-dark.
+ */
+
+:root {
+  /* ── Primitive scales (theme-independent) ─────────────────────────────── */
+  --clay-50: oklch(0.95 0.018 40);
+  --clay-100: oklch(0.9 0.032 40);
+  --clay-200: oklch(0.83 0.05 39);
+  --clay-300: oklch(0.74 0.07 38);
+  --clay-400: oklch(0.66 0.09 38);
+  --clay-500: oklch(0.58 0.11 37);
+  --clay-600: oklch(0.5 0.12 36);
+  --clay-700: oklch(0.42 0.11 35);
+  --clay-800: oklch(0.34 0.09 35);
+  --clay-900: oklch(0.26 0.07 35);
+
+  --slate-300: oklch(0.76 0.045 253);
+  --slate-400: oklch(0.66 0.06 253);
+  --slate-500: oklch(0.55 0.07 253);
+  --slate-600: oklch(0.46 0.07 253);
+  --slate-700: oklch(0.38 0.06 253);
+
+  --emergency-300: oklch(0.8 0.13 50);
+  --emergency-400: oklch(0.72 0.17 48);
+  --emergency-500: oklch(0.64 0.19 45);
+  --emergency-600: oklch(0.55 0.18 42);
+  --emergency-700: oklch(0.46 0.16 40);
+
+  --warning-300: oklch(0.86 0.12 95);
+  --warning-400: oklch(0.8 0.15 95);
+  --warning-500: oklch(0.72 0.16 92);
+  --warning-600: oklch(0.6 0.15 88);
+
+  --success-300: oklch(0.8 0.11 150);
+  --success-400: oklch(0.72 0.14 150);
+  --success-500: oklch(0.62 0.15 150);
+  --success-600: oklch(0.5 0.13 150);
+
+  --info-300: oklch(0.8 0.08 235);
+  --info-400: oklch(0.72 0.12 235);
+  --info-500: oklch(0.6 0.14 235);
+  --info-600: oklch(0.5 0.13 235);
+
+  /* warm-tinted dark neutrals (hue ~55) */
+  --n-950: oklch(0.14 0.005 55);
+  --n-900: oklch(0.17 0.006 55);
+  --n-850: oklch(0.205 0.007 55);
+  --n-800: oklch(0.245 0.008 55);
+  --n-750: oklch(0.28 0.008 55);
+  --n-700: oklch(0.32 0.008 55);
+  --n-600: oklch(0.4 0.009 55);
+  --n-500: oklch(0.52 0.01 55);
+  --n-400: oklch(0.64 0.01 55);
+  --n-300: oklch(0.76 0.01 55);
+  --n-200: oklch(0.85 0.008 55);
+  --n-100: oklch(0.93 0.006 55);
+  --n-50: oklch(0.98 0.004 55);
+  --n-0: oklch(1 0 0);
+
+  /* warm-tinted light neutrals */
+  --l-25: oklch(0.985 0.003 55);
+  --l-50: oklch(0.97 0.004 55);
+  --l-100: oklch(0.94 0.005 55);
+  --l-200: oklch(0.9 0.006 55);
+  --l-300: oklch(0.84 0.007 55);
+  --l-400: oklch(0.72 0.008 55);
+  --l-500: oklch(0.58 0.009 55);
+  --l-600: oklch(0.46 0.008 55);
+  --l-700: oklch(0.36 0.008 55);
+  --l-800: oklch(0.26 0.006 55);
+  --l-900: oklch(0.18 0.005 55);
+
+  /* ── Typography scale ─────────────────────────────────────────────────── */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --text-display-size: 4.5rem;
+  --text-display-lh: 1.04;
+  --text-display-ls: -0.02em;
+  --text-display-weight: 700;
+  --text-hero-size: 3.5rem;
+  --text-hero-lh: 1.08;
+  --text-hero-ls: -0.02em;
+  --text-hero-weight: 700;
+  --text-h1-size: 2.5rem;
+  --text-h1-lh: 1.15;
+  --text-h1-ls: -0.015em;
+  --text-h1-weight: 700;
+  --text-h2-size: 2rem;
+  --text-h2-lh: 1.2;
+  --text-h2-ls: -0.01em;
+  --text-h2-weight: 600;
+  --text-h3-size: 1.625rem;
+  --text-h3-lh: 1.25;
+  --text-h3-ls: -0.005em;
+  --text-h3-weight: 600;
+  --text-h4-size: 1.3125rem;
+  --text-h4-lh: 1.3;
+  --text-h4-ls: 0em;
+  --text-h4-weight: 600;
+  --text-h5-size: 1.0625rem;
+  --text-h5-lh: 1.4;
+  --text-h5-ls: 0em;
+  --text-h5-weight: 600;
+
+  /* ── Spacing / containers ─────────────────────────────────────────────── */
+  --container-narrow: 720px;
+  --container-marketing: 1200px;
+  --container-dashboard: 1440px;
+
+  /* ── Radius ───────────────────────────────────────────────────────────── */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-full: 999px;
+
+  /* ── Motion ───────────────────────────────────────────────────────────── */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1);
+  --duration-instant: 100ms;
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 450ms;
+
+  /* ── Elevation aliases (reference the theme-aware --shadow-* below) ─────── */
+  --elevation-card: var(--shadow-sm);
+  --elevation-card-hover: var(--shadow-md);
+  --elevation-nav: var(--shadow-xs);
+  --elevation-dropdown: var(--shadow-lg);
+  --elevation-dialog: var(--shadow-2xl);
+  --elevation-floating: var(--shadow-2xl);
+  --elevation-tooltip: var(--shadow-tooltip);
+  --elevation-button: var(--shadow-button);
+}
+
+/* ── Dark semantics (default on :root, and explicitly scopable) ─────────── */
+:root,
+[data-theme='dark'],
+.theme-dark {
+  --bg-base: var(--n-950);
+  --bg-canvas: var(--n-950);
+  --surface-1: var(--n-900);
+  --surface-2: var(--n-850);
+  --surface-3: var(--n-800);
+  --surface-overlay: var(--n-800);
+
+  --border-subtle: var(--n-800);
+  --border-default: var(--n-750);
+  --border-strong: var(--n-600);
+
+  --text-primary: var(--n-50);
+  --text-secondary: var(--n-300);
+  --text-tertiary: var(--n-400);
+  --text-disabled: var(--n-500);
+  --text-on-primary: oklch(0.18 0.03 40);
+  --text-on-emergency: oklch(0.15 0.02 40);
+
+  --color-primary: var(--clay-400);
+  --color-primary-hover: var(--clay-300);
+  --color-primary-active: var(--clay-500);
+  --color-primary-subtle: oklch(0.26 0.04 38);
+  --color-primary-border: oklch(0.4 0.08 38);
+
+  --color-secondary: var(--slate-300);
+  --color-secondary-hover: var(--slate-400);
+  --color-secondary-active: var(--slate-500);
+  --color-secondary-subtle: oklch(0.24 0.03 253);
+
+  --color-emergency: var(--emergency-400);
+  --color-emergency-hover: var(--emergency-300);
+  --color-emergency-active: var(--emergency-500);
+  --color-emergency-subtle: oklch(0.26 0.06 45);
+  --color-emergency-border: oklch(0.42 0.13 44);
+
+  --color-warning: var(--warning-400);
+  --color-warning-subtle: oklch(0.27 0.05 92);
+  --color-warning-border: oklch(0.42 0.1 92);
+
+  --color-success: var(--success-400);
+  --color-success-subtle: oklch(0.24 0.05 150);
+  --color-success-border: oklch(0.38 0.09 150);
+
+  --color-info: var(--info-400);
+  --color-info-subtle: oklch(0.24 0.04 235);
+  --color-info-border: oklch(0.38 0.09 235);
+
+  --focus-ring: oklch(0.72 0.13 38 / 0.5);
+  --state-hover-overlay: oklch(1 0 0 / 0.04);
+  --state-active-overlay: oklch(1 0 0 / 0.07);
+  --state-disabled-opacity: 0.4;
+
+  --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.3);
+  --shadow-sm: 0 2px 8px oklch(0 0 0 / 0.35);
+  --shadow-md: 0 4px 16px oklch(0 0 0 / 0.4);
+  --shadow-lg: 0 12px 32px oklch(0 0 0 / 0.45);
+  --shadow-xl: 0 20px 56px oklch(0 0 0 / 0.55);
+  --shadow-2xl: 0 28px 72px oklch(0 0 0 / 0.6);
+  --shadow-tooltip: 0 4px 12px oklch(0 0 0 / 0.45);
+  --shadow-button: 0 1px 2px oklch(0 0 0 / 0.35);
+}
+
+/* ── Light semantics (app default via <html data-theme="light">) ────────── */
+[data-theme='light'],
+.theme-light {
+  --bg-base: var(--l-25);
+  --bg-canvas: var(--n-0);
+  --surface-1: var(--n-0);
+  --surface-2: var(--l-25);
+  --surface-3: var(--l-50);
+  --surface-overlay: var(--n-0);
+
+  --border-subtle: var(--l-100);
+  --border-default: var(--l-200);
+  --border-strong: var(--l-400);
+
+  --text-primary: var(--l-900);
+  --text-secondary: var(--l-600);
+  --text-tertiary: var(--l-500);
+  --text-disabled: var(--l-400);
+  --text-on-primary: var(--n-0);
+  --text-on-emergency: var(--n-0);
+
+  --color-primary: var(--clay-500);
+  --color-primary-hover: var(--clay-600);
+  --color-primary-active: var(--clay-700);
+  --color-primary-subtle: var(--clay-50);
+  --color-primary-border: var(--clay-200);
+
+  --color-secondary: var(--slate-500);
+  --color-secondary-hover: var(--slate-600);
+  --color-secondary-active: var(--slate-700);
+  --color-secondary-subtle: oklch(0.96 0.015 253);
+
+  --color-emergency: var(--emergency-500);
+  --color-emergency-hover: var(--emergency-600);
+  --color-emergency-active: var(--emergency-700);
+  --color-emergency-subtle: oklch(0.96 0.03 45);
+  --color-emergency-border: oklch(0.85 0.08 46);
+
+  --color-warning: var(--warning-600);
+  --color-warning-subtle: oklch(0.96 0.04 92);
+  --color-warning-border: oklch(0.85 0.1 92);
+
+  --color-success: var(--success-600);
+  --color-success-subtle: oklch(0.95 0.04 150);
+  --color-success-border: oklch(0.83 0.09 150);
+
+  --color-info: var(--info-600);
+  --color-info-subtle: oklch(0.95 0.03 235);
+  --color-info-border: oklch(0.83 0.09 235);
+
+  --focus-ring: oklch(0.58 0.11 37 / 0.35);
+  --state-hover-overlay: oklch(0 0 0 / 0.035);
+  --state-active-overlay: oklch(0 0 0 / 0.06);
+
+  --shadow-xs: 0 1px 2px oklch(0.2 0.02 40 / 0.06);
+  --shadow-sm: 0 2px 4px oklch(0.2 0.02 40 / 0.07), 0 1px 2px oklch(0.2 0.02 40 / 0.04);
+  --shadow-md: 0 4px 12px oklch(0.2 0.02 40 / 0.09), 0 1px 2px oklch(0.2 0.02 40 / 0.05);
+  --shadow-lg: 0 8px 24px oklch(0.2 0.02 40 / 0.12);
+  --shadow-xl: 0 16px 48px oklch(0.2 0.02 40 / 0.16);
+  --shadow-2xl: 0 24px 64px oklch(0.2 0.02 40 / 0.2);
+  --shadow-tooltip: 0 4px 10px oklch(0.2 0.02 40 / 0.14);
+  --shadow-button: 0 1px 2px oklch(0.2 0.02 40 / 0.08);
+}
