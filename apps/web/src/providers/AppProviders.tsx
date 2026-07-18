@@ -40,13 +40,16 @@ function TokenBridge({ children }: { children: ReactNode }) {
 /** Shown when the Clerk publishable key has not been configured yet. */
 function MissingClerkConfig() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6">
-      <div className="max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-8 text-slate-100">
-        <h1 className="text-xl font-bold">Authentication is not configured</h1>
-        <p className="mt-3 text-sm leading-6 text-slate-300">
-          Set <code className="rounded bg-slate-800 px-1.5 py-0.5">VITE_CLERK_PUBLISHABLE_KEY</code>{' '}
-          in <code className="rounded bg-slate-800 px-1.5 py-0.5">apps/web/.env</code> with your
-          Clerk publishable key (Clerk Dashboard → API Keys), then restart the dev server.
+    <div className="flex min-h-screen items-center justify-center bg-base p-6">
+      <div className="max-w-lg rounded-2xl border border-line-subtle bg-surface p-8 text-ink shadow-card">
+        <h1 className="text-h4 text-ink">Authentication is not configured</h1>
+        <p className="mt-3 text-body leading-6 text-ink-muted">
+          Set{' '}
+          <code className="font-num rounded bg-surface-3 px-1.5 py-0.5 text-ink">
+            VITE_CLERK_PUBLISHABLE_KEY
+          </code>{' '}
+          in <code className="font-num rounded bg-surface-3 px-1.5 py-0.5 text-ink">apps/web/.env</code>{' '}
+          with your Clerk publishable key (Clerk Dashboard → API Keys), then restart the dev server.
         </p>
       </div>
     </div>

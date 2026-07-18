@@ -60,7 +60,7 @@ export function AppointmentsPage() {
           />
         ) : (
           <>
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-line-subtle">
               {appointments.data.items.map((appointment) => (
                 <li
                   key={appointment.id}
@@ -68,7 +68,7 @@ export function AppointmentsPage() {
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-medium text-slate-900">
+                      <span className="text-sm font-medium text-ink">
                         {appointment.customer?.fullName ?? 'Customer'}
                       </span>
                       <EnumBadge value={appointment.priority} />
@@ -81,10 +81,10 @@ export function AppointmentsPage() {
                         </Link>
                       )}
                     </div>
-                    <p className="mt-0.5 text-sm text-slate-600">
+                    <p className="mt-0.5 text-sm text-ink-muted">
                       {appointment.serviceRequested ?? 'Service visit'}
                     </p>
-                    <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-slate-400">
+                    <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-ink-faint">
                       <span>
                         {appointment.preferredDate
                           ? formatDateTime(appointment.preferredDate)

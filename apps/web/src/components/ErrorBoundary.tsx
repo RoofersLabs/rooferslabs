@@ -29,10 +29,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (!this.state.error) return this.props.children;
 
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
-        <div className="max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <h1 className="text-lg font-semibold text-slate-900">Something went wrong</h1>
-          <p className="mt-2 text-sm text-slate-500">
+      <div className="flex min-h-screen items-center justify-center bg-surface-2 p-6">
+        <div className="max-w-md rounded-2xl border border-line-subtle bg-surface p-8 text-center shadow-sm">
+          <h1 className="text-lg font-semibold text-ink">Something went wrong</h1>
+          <p className="mt-2 text-sm text-ink-muted">
             An unexpected error occurred. Reloading usually fixes it — your data is safe.
           </p>
           <button

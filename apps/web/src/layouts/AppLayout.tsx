@@ -106,7 +106,7 @@ export function AppLayout() {
 
       <div className="lg:pl-64">
         {/* Header */}
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line-subtle bg-surface/90 px-4 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line-subtle bg-[color-mix(in_oklab,var(--surface-1)_88%,transparent)] px-4 backdrop-blur sm:px-6">
           <button
             onClick={() => setMobileOpen(true)}
             className="focus-ring rounded-md p-2 text-ink-muted transition-colors hover:bg-surface-3 lg:hidden"

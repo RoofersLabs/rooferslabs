@@ -44,13 +44,13 @@ export function OnboardingPage() {
     : OnboardingStep.COMPANY;
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-10">
+    <div className="min-h-screen bg-surface-2 px-4 py-10">
       <div className="mx-auto max-w-2xl">
         <div className="mb-8 flex items-center justify-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-700">
             <HardHat className="h-5 w-5 text-white" aria-hidden />
           </span>
-          <span className="text-lg font-bold text-slate-900">RoofersLabs setup</span>
+          <span className="text-lg font-bold text-ink">RoofersLabs setup</span>
         </div>
 
         <StepIndicator current={currentStep} />
@@ -78,16 +78,16 @@ function StepIndicator({ current }: { current: OnboardingStep }) {
             <span
               className={
                 done
-                  ? 'flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-white'
+                  ? 'flex h-9 w-9 items-center justify-center rounded-full bg-success text-white'
                   : active
                     ? 'flex h-9 w-9 items-center justify-center rounded-full bg-brand-700 text-white'
-                    : 'flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-400'
+                    : 'flex h-9 w-9 items-center justify-center rounded-full border border-line bg-surface text-ink-faint'
               }
             >
               {done ? <Check className="h-4 w-4" /> : <step.icon className="h-4 w-4" />}
             </span>
             <span
-              className={active ? 'text-xs font-semibold text-brand-800' : 'text-xs text-slate-500'}
+              className={active ? 'text-xs font-semibold text-brand-800' : 'text-xs text-ink-muted'}
             >
               {step.label}
             </span>
@@ -132,8 +132,8 @@ function CompanyStep() {
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <div>
-        <h1 className="text-lg font-bold text-slate-900">Create your company</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-lg font-bold text-ink">Create your company</h1>
+        <p className="mt-1 text-sm text-ink-muted">
           Tell us about your roofing business. You can refine everything later in Settings.
         </p>
       </div>
@@ -172,7 +172,7 @@ function CompanyStep() {
         />
       </div>
       {createCompany.isError && (
-        <p className="text-sm text-red-600">{(createCompany.error as Error).message}</p>
+        <p className="text-sm text-emergency">{(createCompany.error as Error).message}</p>
       )}
       <Button type="submit" className="w-full" loading={createCompany.isPending}>
         Create company
@@ -235,14 +235,14 @@ function BusinessStep() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-bold text-slate-900">Configure your business</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-lg font-bold text-ink">Configure your business</h1>
+        <p className="mt-1 text-sm text-ink-muted">
           The AI uses this to answer callers accurately.
         </p>
       </div>
 
       <fieldset>
-        <legend className="mb-2 text-sm font-medium text-slate-700">Services you offer</legend>
+        <legend className="mb-2 text-sm font-medium text-ink">Services you offer</legend>
         <div className="flex flex-wrap gap-2">
           {DEFAULT_SERVICES.map((service) => {
             const active = services.includes(service);
@@ -254,7 +254,7 @@ function BusinessStep() {
                 className={
                   active
                     ? 'focus-ring rounded-full bg-brand-700 px-3.5 py-1.5 text-xs font-medium text-white'
-                    : 'focus-ring rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-600 hover:border-brand-400'
+                    : 'focus-ring rounded-full border border-line bg-surface px-3.5 py-1.5 text-xs font-medium text-ink-muted hover:border-brand-400'
                 }
                 aria-pressed={active}
               >
@@ -266,7 +266,7 @@ function BusinessStep() {
       </fieldset>
 
       <div>
-        <label htmlFor="area-input" className="mb-2 block text-sm font-medium text-slate-700">
+        <label htmlFor="area-input" className="mb-2 block text-sm font-medium text-ink">
           Service areas (cities or ZIP codes)
         </label>
         <div className="flex gap-2">
@@ -281,7 +281,7 @@ function BusinessStep() {
               }
             }}
             placeholder="Austin, TX"
-            className="focus-ring block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="focus-ring block w-full rounded-lg border border-line px-3 py-2 text-sm"
           />
           <Button type="button" variant="secondary" onClick={addArea} aria-label="Add service area">
             <Plus className="h-4 w-4" />
@@ -292,13 +292,13 @@ function BusinessStep() {
             {areas.map((area) => (
               <span
                 key={area}
-                className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700"
+                className="inline-flex items-center gap-1 rounded-full bg-surface-3 px-3 py-1 text-xs text-ink"
               >
                 {area}
                 <button
                   type="button"
                   onClick={() => setAreas((prev) => prev.filter((a) => a !== area))}
-                  className="focus-ring rounded-full text-slate-400 hover:text-slate-600"
+                  className="focus-ring rounded-full text-ink-faint hover:text-ink-muted"
                   aria-label={`Remove ${area}`}
                 >
                   <X className="h-3 w-3" />
@@ -309,11 +309,11 @@ function BusinessStep() {
         )}
       </div>
 
-      <div className="rounded-xl border border-slate-200 p-4">
+      <div className="rounded-xl border border-line-subtle p-4">
         <label className="flex items-center justify-between gap-4">
           <span>
-            <span className="block text-sm font-medium text-slate-800">Emergency service</span>
-            <span className="block text-xs text-slate-500">
+            <span className="block text-sm font-medium text-ink">Emergency service</span>
+            <span className="block text-xs text-ink-muted">
               Prioritize active leaks and storm damage calls.
             </span>
           </span>
@@ -321,7 +321,7 @@ function BusinessStep() {
             type="checkbox"
             checked={emergencyEnabled}
             onChange={(e) => setEmergencyEnabled(e.target.checked)}
-            className="focus-ring h-5 w-5 rounded border-slate-300 text-brand-700"
+            className="focus-ring h-5 w-5 rounded border-line text-brand-700"
           />
         </label>
         {emergencyEnabled && (
@@ -337,7 +337,7 @@ function BusinessStep() {
       </div>
 
       {(updateCompany.isError || setStep.isError) && (
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-emergency">
           {((updateCompany.error ?? setStep.error) as Error).message}
         </p>
       )}
@@ -388,8 +388,8 @@ function AiStep() {
   return (
     <form onSubmit={(e) => void onSubmit(e)} className="space-y-5">
       <div>
-        <h1 className="text-lg font-bold text-slate-900">Set up your AI receptionist</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-lg font-bold text-ink">Set up your AI receptionist</h1>
+        <p className="mt-1 text-sm text-ink-muted">
           Give it a name, a voice, and the greeting your callers will hear.
         </p>
       </div>
@@ -419,7 +419,7 @@ function AiStep() {
         error={errors.persona?.message}
       />
       {(updateAi.isError || setStep.isError) && (
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-emergency">
           {((updateAi.error ?? setStep.error) as Error).message}
         </p>
       )}
@@ -484,11 +484,11 @@ function KnowledgeStep() {
     return (
       <div className="flex flex-col items-center py-8 text-center">
         <PartyPopper className="h-12 w-12 text-brand-600" aria-hidden />
-        <h1 className="mt-4 text-xl font-bold text-slate-900">You’re all set!</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="mt-4 text-xl font-bold text-ink">You’re all set!</h1>
+        <p className="mt-2 text-sm text-ink-muted">
           Your AI receptionist is ready. Taking you to your dashboard…
         </p>
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-ink-faint">
           Tip: use “Add to Home Screen” in the header to install RoofersLabs on your phone.
         </p>
       </div>
@@ -498,8 +498,8 @@ function KnowledgeStep() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-bold text-slate-900">Teach your AI the essentials</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-lg font-bold text-ink">Teach your AI the essentials</h1>
+        <p className="mt-1 text-sm text-ink-muted">
           Answer any of these in your own words — the AI will use them on calls. You can add much
           more later in the Knowledge Base.
         </p>
@@ -517,7 +517,7 @@ function KnowledgeStep() {
       ))}
 
       {(saveArticle.isError || complete.isError) && (
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-emergency">
           {((saveArticle.error ?? complete.error) as Error).message}
         </p>
       )}

@@ -66,53 +66,53 @@ export function DashboardPage() {
       {(needsPhoneSetup || needsForwarding) && (
         <Link
           to="/settings/phone"
-          className="focus-ring mb-6 flex items-center gap-4 rounded-xl border border-brand-200 bg-brand-50 px-5 py-4 transition-colors hover:border-brand-300"
+          className="focus-ring mb-6 flex items-center gap-4 rounded-xl border border-accent-border bg-accent-subtle px-5 py-4 transition-colors duration-fast hover:border-accent"
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-700">
-            <PhoneForwarded className="h-5 w-5 text-white" aria-hidden />
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-ink-on-brand">
+            <PhoneForwarded className="h-5 w-5" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-brand-900">
+            <span className="block text-body font-semibold text-ink">
               {needsPhoneSetup
                 ? 'Finish setup: connect your AI phone line'
                 : 'Almost there: forward your business number'}
             </span>
-            <span className="block text-xs text-brand-700">
+            <span className="block text-small text-ink-muted">
               {needsPhoneSetup
                 ? 'Your AI receptionist needs a phone number before it can answer calls.'
                 : `Forward your business line to ${formatPhone(phone.data?.phoneNumber)} so the AI starts answering.`}
             </span>
           </span>
-          <ArrowRight className="h-4 w-4 shrink-0 text-brand-700" aria-hidden />
+          <ArrowRight className="h-4 w-4 shrink-0 text-accent" aria-hidden />
         </Link>
       )}
 
       {/* KPI tiles */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <MetricCard icon={Phone} label="Calls today" value={metrics?.todaysCalls} tone="brand" />
-        <MetricCard icon={Flame} label="Leads today" value={metrics?.todaysLeads} tone="emerald" />
+        <MetricCard icon={Flame} label="Leads today" value={metrics?.todaysLeads} tone="success" />
         <MetricCard
           icon={ShieldAlert}
           label="Emergencies today"
           value={metrics?.todaysEmergencies}
-          tone="red"
+          tone="emergency"
         />
         <MetricCard
           icon={CalendarClock}
           label="Pending appointments"
           value={metrics?.pendingAppointments}
-          tone="amber"
+          tone="warning"
         />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {/* Recent conversations */}
         <section className="card" aria-label="Recent conversations">
-          <header className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-            <h2 className="text-sm font-semibold text-slate-900">Recent conversations</h2>
+          <header className="flex items-center justify-between border-b border-line-subtle px-5 py-4">
+            <h2 className="text-sm font-semibold text-ink">Recent conversations</h2>
             <Link
               to="/calls"
-              className="focus-ring rounded text-xs font-medium text-brand-700 hover:underline"
+              className="focus-ring rounded text-small font-medium text-accent hover:underline"
             >
               View all
             </Link>
@@ -126,38 +126,38 @@ export function DashboardPage() {
               description="Once your number is forwarded, every answered call will appear here."
             />
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-line-subtle">
               {dashboard.data.recentConversations.map((conversation) => (
                 <li key={conversation.id}>
                   <Link
                     to={`/conversations/${conversation.id}`}
-                    className="focus-ring flex items-start gap-3 px-5 py-3.5 hover:bg-slate-50"
+                    className="focus-ring flex items-start gap-3 px-5 py-3.5 hover:bg-surface-2"
                   >
                     <span
                       className={
                         conversation.isEmergency
-                          ? 'mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-100'
-                          : 'mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50'
+                          ? 'mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emergency-subtle'
+                          : 'mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-subtle'
                       }
                     >
                       {conversation.isEmergency ? (
-                        <ShieldAlert className="h-4 w-4 text-red-600" aria-hidden />
+                        <ShieldAlert className="h-4 w-4 text-emergency" aria-hidden />
                       ) : (
-                        <Phone className="h-4 w-4 text-brand-700" aria-hidden />
+                        <Phone className="h-4 w-4 text-accent" aria-hidden />
                       )}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
-                        <span className="truncate text-sm font-medium text-slate-900">
+                        <span className="truncate text-sm font-medium text-ink">
                           {conversation.customer?.fullName ??
                             formatPhone(conversation.call?.fromNumber)}
                         </span>
                         <EnumBadge value={conversation.outcome} />
                       </span>
-                      <span className="mt-0.5 block truncate text-xs text-slate-500">
+                      <span className="mt-0.5 block truncate text-xs text-ink-muted">
                         {conversation.summary ?? 'Processing summary…'}
                       </span>
-                      <span className="mt-0.5 block text-[11px] text-slate-400">
+                      <span className="mt-0.5 block text-[11px] text-ink-faint">
                         {timeAgo(conversation.createdAt)} ·{' '}
                         {formatDuration(conversation.call?.durationSeconds)}
                       </span>
@@ -171,11 +171,11 @@ export function DashboardPage() {
 
         {/* Appointment requests */}
         <section className="card" aria-label="Appointment requests">
-          <header className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-            <h2 className="text-sm font-semibold text-slate-900">Appointment requests</h2>
+          <header className="flex items-center justify-between border-b border-line-subtle px-5 py-4">
+            <h2 className="text-sm font-semibold text-ink">Appointment requests</h2>
             <Link
               to="/appointments"
-              className="focus-ring rounded text-xs font-medium text-brand-700 hover:underline"
+              className="focus-ring rounded text-small font-medium text-accent hover:underline"
             >
               View all
             </Link>
@@ -189,16 +189,16 @@ export function DashboardPage() {
               description="When callers request estimates or inspections, they’ll show up here."
             />
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-line-subtle">
               {dashboard.data.upcomingAppointments.map((appointment) => (
                 <li key={appointment.id} className="px-5 py-3.5">
                   <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-medium text-slate-900">
+                    <span className="truncate text-sm font-medium text-ink">
                       {appointment.customer?.fullName ?? 'Customer'}
                     </span>
                     <EnumBadge value={appointment.priority} />
                   </div>
-                  <p className="mt-0.5 truncate text-xs text-slate-500">
+                  <p className="mt-0.5 truncate text-xs text-ink-muted">
                     {appointment.serviceRequested ?? 'Service visit'} ·{' '}
                     {appointment.preferredTimeWindow ?? humanizeEnum(appointment.status)}
                   </p>
@@ -248,12 +248,14 @@ function StatusChip({
     <Link
       to="/settings/phone"
       className={cn(
-        'focus-ring inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium',
-        good ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800',
+        'focus-ring inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-caption font-medium',
+        good
+          ? 'border-success-border bg-success-subtle text-success'
+          : 'border-warning-border bg-warning-subtle text-warning',
       )}
     >
       <span
-        className={cn('h-1.5 w-1.5 rounded-full', good ? 'bg-emerald-500' : 'bg-amber-500')}
+        className={cn('h-1.5 w-1.5 rounded-full', good ? 'bg-success' : 'bg-warning')}
         aria-hidden
       />
       {good ? goodLabel : badLabel}
@@ -262,11 +264,11 @@ function StatusChip({
 }
 
 const toneStyles = {
-  brand: 'bg-brand-50 text-brand-700',
-  emerald: 'bg-emerald-50 text-emerald-700',
-  red: 'bg-red-50 text-red-600',
-  amber: 'bg-amber-50 text-amber-700',
-  slate: 'bg-slate-100 text-slate-600',
+  brand: 'bg-accent-subtle text-accent',
+  success: 'bg-success-subtle text-success',
+  emergency: 'bg-emergency-subtle text-emergency',
+  warning: 'bg-warning-subtle text-warning',
+  slate: 'bg-surface-3 text-ink-muted',
 } as const;
 
 function MetricCard({
@@ -291,9 +293,9 @@ function MetricCard({
         {value === undefined ? (
           <Skeleton className="h-7 w-10" />
         ) : (
-          <span className="block text-2xl font-bold text-slate-900">{value}</span>
+          <span className="font-num block text-2xl font-bold text-ink">{value}</span>
         )}
-        <span className="block text-xs text-slate-500">{label}</span>
+        <span className="block text-caption text-ink-muted">{label}</span>
       </span>
     </div>
   );

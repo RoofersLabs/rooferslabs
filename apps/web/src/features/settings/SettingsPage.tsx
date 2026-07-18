@@ -32,7 +32,7 @@ export function SettingsPage() {
     <div>
       <PageHeader title="Settings" description="Configure your company and AI receptionist." />
 
-      <div className="mb-6 flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1">
+      <div className="mb-6 flex gap-1 overflow-x-auto rounded-xl border border-line-subtle bg-surface p-1">
         {TABS.map((item) => (
           <NavLink
             key={item.key}
@@ -42,7 +42,7 @@ export function SettingsPage() {
                 'focus-ring flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium',
                 isActive || (item.key === 'business' && tab === 'business')
                   ? 'bg-brand-50 text-brand-800'
-                  : 'text-slate-600 hover:bg-slate-50',
+                  : 'text-ink-muted hover:bg-surface-2',
               )
             }
           >
@@ -64,9 +64,9 @@ export function SettingsPage() {
 function SaveBar({ saving, saved, error }: { saving: boolean; saved: boolean; error?: string }) {
   return (
     <div className="flex items-center justify-end gap-3">
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-emergency">{error}</p>}
       {saved && !saving && !error && (
-        <p className="flex items-center gap-1 text-sm text-emerald-600">
+        <p className="flex items-center gap-1 text-sm text-success">
           <CheckCircle2 className="h-4 w-4" aria-hidden />
           Saved
         </p>
@@ -221,22 +221,22 @@ function HoursTab() {
 
   return (
     <form onSubmit={onSubmit} className="card space-y-4 p-6">
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-ink-muted">
         The AI tells callers when you’re open and adjusts after-hours behavior.
       </p>
       <div className="space-y-2">
         {current.map((hour, index) => (
           <div
             key={hour.day}
-            className="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-2.5"
+            className="flex items-center gap-3 rounded-lg border border-line-subtle px-4 py-2.5"
           >
-            <span className="w-24 text-sm font-medium capitalize text-slate-800">{hour.day}</span>
-            <label className="flex items-center gap-2 text-xs text-slate-500">
+            <span className="w-24 text-sm font-medium capitalize text-ink">{hour.day}</span>
+            <label className="flex items-center gap-2 text-xs text-ink-muted">
               <input
                 type="checkbox"
                 checked={!hour.closed}
                 onChange={(e) => updateDay(index, { closed: !e.target.checked })}
-                className="focus-ring h-4 w-4 rounded border-slate-300 text-brand-700"
+                className="focus-ring h-4 w-4 rounded border-line text-brand-700"
               />
               Open
             </label>
@@ -246,15 +246,15 @@ function HoursTab() {
                   type="time"
                   value={hour.open}
                   onChange={(e) => updateDay(index, { open: e.target.value })}
-                  className="focus-ring rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+                  className="focus-ring rounded-lg border border-line px-2 py-1.5 text-sm"
                   aria-label={`${hour.day} opening time`}
                 />
-                <span className="text-xs text-slate-400">to</span>
+                <span className="text-xs text-ink-faint">to</span>
                 <input
                   type="time"
                   value={hour.close}
                   onChange={(e) => updateDay(index, { close: e.target.value })}
-                  className="focus-ring rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+                  className="focus-ring rounded-lg border border-line px-2 py-1.5 text-sm"
                   aria-label={`${hour.day} closing time`}
                 />
               </>
@@ -362,17 +362,17 @@ function AiTab() {
         {toggles.map((toggle) => (
           <label
             key={toggle.field}
-            className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-4"
+            className="flex cursor-pointer items-start gap-3 rounded-xl border border-line-subtle p-4"
           >
             <input
               type="checkbox"
               checked={bool(toggle.field, data[toggle.field])}
               onChange={(e) => setForm((p) => ({ ...p, [toggle.field]: e.target.checked }))}
-              className="focus-ring mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-700"
+              className="focus-ring mt-0.5 h-4 w-4 rounded border-line text-brand-700"
             />
             <span>
-              <span className="block text-sm font-medium text-slate-800">{toggle.label}</span>
-              <span className="block text-xs text-slate-500">{toggle.hint}</span>
+              <span className="block text-sm font-medium text-ink">{toggle.label}</span>
+              <span className="block text-xs text-ink-muted">{toggle.hint}</span>
             </span>
           </label>
         ))}
@@ -411,7 +411,7 @@ function BrandingTab() {
     <form onSubmit={onSubmit} className="card space-y-5 p-6">
       <div className="flex items-center gap-4">
         <div>
-          <label htmlFor="brand-color" className="block text-sm font-medium text-slate-700">
+          <label htmlFor="brand-color" className="block text-sm font-medium text-ink">
             Primary brand color
           </label>
           <input
@@ -419,7 +419,7 @@ function BrandingTab() {
             type="color"
             value={primary ?? data.primaryColor ?? '#1E40AF'}
             onChange={(e) => setPrimary(e.target.value)}
-            className="focus-ring mt-1.5 h-10 w-20 cursor-pointer rounded-lg border border-slate-300"
+            className="focus-ring mt-1.5 h-10 w-20 cursor-pointer rounded-lg border border-line"
           />
         </div>
       </div>

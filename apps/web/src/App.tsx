@@ -31,14 +31,14 @@ function Protected({ children }: { children: React.ReactNode }) {
   if (session.isLoading) return <FullScreenSpinner label="Loading your workspace…" />;
   if (session.isError) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-6">
+      <div className="flex min-h-screen items-center justify-center bg-base p-6">
         <div className="card max-w-md p-8 text-center">
-          <h1 className="text-lg font-semibold">We couldn’t load your workspace</h1>
-          <p className="mt-2 text-sm text-slate-500">
+          <h1 className="text-h5 text-ink">We couldn’t load your workspace</h1>
+          <p className="mt-2 text-body text-ink-muted">
             {(session.error as Error).message || 'Please try again in a moment.'}
           </p>
           <button
-            className="focus-ring mt-4 rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
+            className="focus-ring mt-4 rounded-md bg-accent px-4 py-2 text-button font-semibold text-ink-on-brand shadow-button transition-all duration-fast hover:bg-accent-hover active:scale-[0.98]"
             onClick={() => session.refetch()}
           >
             Retry

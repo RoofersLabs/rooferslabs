@@ -55,7 +55,7 @@ export function InstallPwaButton() {
 
 function IosInstructions() {
   return (
-    <ol className="space-y-4 text-sm text-slate-700">
+    <ol className="space-y-4 text-sm text-ink">
       <li className="flex items-start gap-3">
         <Share className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" aria-hidden />
         <span>
@@ -99,8 +99,8 @@ function DesktopInstall({
       <div className="flex items-start gap-4">
         <Smartphone className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" aria-hidden />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-slate-900">On your phone (recommended)</p>
-          <p className="mt-0.5 text-sm text-slate-500">
+          <p className="text-sm font-semibold text-ink">On your phone (recommended)</p>
+          <p className="mt-0.5 text-sm text-ink-muted">
             Scan this code with your phone’s camera, sign in, then add RoofersLabs to your Home
             Screen. You’ll get lead alerts wherever you are — even on the roof.
           </p>
@@ -108,18 +108,18 @@ function DesktopInstall({
             <img
               src={qrDataUrl}
               alt="QR code that opens RoofersLabs on your phone"
-              className="mt-3 h-40 w-40 rounded-lg border border-slate-200"
+              className="mt-3 h-40 w-40 rounded-lg border border-line-subtle"
             />
           )}
         </div>
       </div>
 
       {canPrompt && (
-        <div className="flex items-start gap-4 border-t border-slate-200 pt-5">
+        <div className="flex items-start gap-4 border-t border-line-subtle pt-5">
           <Monitor className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" aria-hidden />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-slate-900">On this computer</p>
-            <p className="mt-0.5 text-sm text-slate-500">
+            <p className="text-sm font-semibold text-ink">On this computer</p>
+            <p className="mt-0.5 text-sm text-ink-muted">
               Install RoofersLabs as a desktop app for quick access from your dock or taskbar.
             </p>
             <Button className="mt-3" size="sm" variant="secondary" onClick={() => void onInstall()}>

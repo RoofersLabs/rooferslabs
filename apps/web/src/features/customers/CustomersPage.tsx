@@ -37,10 +37,10 @@ export function CustomersPage() {
       />
 
       <div className="card overflow-hidden">
-        <div className="border-b border-slate-200 p-4">
+        <div className="border-b border-line-subtle p-4">
           <div className="relative max-w-sm">
             <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
               aria-hidden
             />
             <input
@@ -51,7 +51,7 @@ export function CustomersPage() {
                 setPage(1);
               }}
               placeholder="Search name, phone, email, address…"
-              className="focus-ring h-9 w-full rounded-lg border border-slate-300 pl-9 pr-3 text-sm"
+              className="focus-ring h-9 w-full rounded-lg border border-line pl-9 pr-3 text-sm"
               aria-label="Search customers"
             />
           </div>
@@ -78,7 +78,7 @@ export function CustomersPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-400">
+                  <tr className="border-b border-line-subtle text-xs uppercase tracking-wide text-ink-faint">
                     <th className="px-5 py-3 font-medium">Customer</th>
                     <th className="px-5 py-3 font-medium">Contact</th>
                     <th className="hidden px-5 py-3 font-medium md:table-cell">Property</th>
@@ -86,32 +86,32 @@ export function CustomersPage() {
                     <th className="hidden px-5 py-3 font-medium sm:table-cell">Added</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-line-subtle">
                   {customers.data.items.map((customer) => (
                     <tr
                       key={customer.id}
                       onClick={() => setEditing(customer)}
-                      className="cursor-pointer hover:bg-slate-50"
+                      className="cursor-pointer hover:bg-surface-2"
                     >
-                      <td className="px-5 py-3.5 font-medium text-slate-900">
+                      <td className="px-5 py-3.5 font-medium text-ink">
                         {customer.fullName ?? 'Unknown caller'}
                       </td>
-                      <td className="px-5 py-3.5 text-slate-600">
+                      <td className="px-5 py-3.5 text-ink-muted">
                         <span className="block">{formatPhone(customer.phone)}</span>
                         {customer.email && (
-                          <span className="block text-xs text-slate-400">{customer.email}</span>
+                          <span className="block text-xs text-ink-faint">{customer.email}</span>
                         )}
                       </td>
-                      <td className="hidden max-w-[16rem] truncate px-5 py-3.5 text-slate-600 md:table-cell">
+                      <td className="hidden max-w-[16rem] truncate px-5 py-3.5 text-ink-muted md:table-cell">
                         {customer.propertyAddress ?? '—'}
-                        <span className="block text-xs text-slate-400">
+                        <span className="block text-xs text-ink-faint">
                           {humanizeEnum(customer.propertyType)}
                         </span>
                       </td>
                       <td className="px-5 py-3.5">
                         <EnumBadge value={customer.status} />
                       </td>
-                      <td className="hidden px-5 py-3.5 text-xs text-slate-400 sm:table-cell">
+                      <td className="hidden px-5 py-3.5 text-xs text-ink-faint sm:table-cell">
                         {timeAgo(customer.createdAt)}
                       </td>
                     </tr>
@@ -202,7 +202,7 @@ function CustomerModal({
           ))}
         </Select>
         <Textarea label="Notes" rows={3} value={form.notes ?? ''} onChange={set('notes')} />
-        {save.isError && <p className="text-sm text-red-600">{(save.error as Error).message}</p>}
+        {save.isError && <p className="text-sm text-emergency">{(save.error as Error).message}</p>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel

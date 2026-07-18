@@ -33,15 +33,15 @@ export function PhoneSetupTab() {
     return (
       <div className="card p-8 text-center">
         <PhoneForwarded className="mx-auto h-10 w-10 text-slate-300" aria-hidden />
-        <h2 className="mt-4 text-base font-semibold text-slate-900">
+        <h2 className="mt-4 text-base font-semibold text-ink">
           Get your AI receptionist number
         </h2>
-        <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+        <p className="mx-auto mt-2 max-w-md text-sm text-ink-muted">
           We’ll set up a local number for your business (matching your area code when available) and
           connect it to your AI receptionist.
         </p>
         {provision.isError && (
-          <p className="mx-auto mt-3 max-w-md text-sm text-red-600">
+          <p className="mx-auto mt-3 max-w-md text-sm text-emergency">
             {(provision.error as Error).message}
           </p>
         )}
@@ -86,8 +86,8 @@ function ControlCenterCard() {
     <div className="card p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">AI Receptionist</h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <h2 className="text-base font-semibold text-ink">AI Receptionist</h2>
+          <p className="mt-1 text-sm text-ink-muted">
             {s.enabled
               ? 'Answering forwarded calls, capturing leads, and updating your dashboard.'
               : 'Off — callers hear a polite unavailable message. Your number stays reserved; turn it back on anytime.'}
@@ -102,7 +102,7 @@ function ControlCenterCard() {
           onClick={() => toggle.mutate(!s.enabled)}
           className={cn(
             'focus-ring relative inline-flex h-9 w-[104px] shrink-0 items-center rounded-full transition-colors',
-            s.enabled ? 'bg-emerald-500' : 'bg-slate-300',
+            s.enabled ? 'bg-success' : 'bg-slate-300',
             toggle.isPending && 'opacity-60',
           )}
         >
@@ -116,12 +116,12 @@ function ControlCenterCard() {
           </span>
           <span
             className={cn(
-              'inline-block h-7 w-7 transform rounded-full bg-white shadow transition-transform',
+              'inline-block h-7 w-7 transform rounded-full bg-surface shadow transition-transform',
               s.enabled ? 'translate-x-[72px]' : 'translate-x-1',
             )}
           >
             <Power
-              className={cn('m-1.5 h-4 w-4', s.enabled ? 'text-emerald-600' : 'text-slate-400')}
+              className={cn('m-1.5 h-4 w-4', s.enabled ? 'text-success' : 'text-ink-faint')}
               aria-hidden
             />
           </span>
@@ -129,7 +129,7 @@ function ControlCenterCard() {
       </div>
 
       {toggle.isError && (
-        <p className="mt-3 text-sm text-red-600">{(toggle.error as Error).message}</p>
+        <p className="mt-3 text-sm text-emergency">{(toggle.error as Error).message}</p>
       )}
 
       <dl className="mt-5 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
@@ -169,15 +169,15 @@ function StatusRow({
 }) {
   return (
     <div>
-      <dt className="text-xs text-slate-500">{label}</dt>
+      <dt className="text-xs text-ink-muted">{label}</dt>
       <dd
         className={cn(
           'mt-0.5 font-medium',
           tone === 'good'
-            ? 'text-emerald-700'
+            ? 'text-success'
             : tone === 'warn'
-              ? 'text-amber-700'
-              : 'text-slate-900',
+              ? 'text-warning'
+              : 'text-ink',
         )}
       >
         {value}
@@ -196,7 +196,7 @@ function NumberCard({ phoneNumber, verified }: { phoneNumber: string; verified: 
 
   return (
     <div className="card p-6">
-      <h2 className="text-base font-semibold text-slate-900">Your AI Receptionist Number</h2>
+      <h2 className="text-base font-semibold text-ink">Your AI Receptionist Number</h2>
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <span className="rounded-xl bg-brand-50 px-5 py-3 font-mono text-xl font-bold text-brand-800">
           {formatPhone(phoneNumber)}
@@ -206,17 +206,17 @@ function NumberCard({ phoneNumber, verified }: { phoneNumber: string; verified: 
           {copied ? 'Copied!' : 'Copy'}
         </Button>
         {verified ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-800">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-success-subtle px-3 py-1 text-xs font-medium text-success">
             <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
             AI Receptionist Active
           </span>
         ) : (
-          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
+          <span className="rounded-full bg-warning-subtle px-3 py-1 text-xs font-medium text-warning">
             AI Receptionist Not Yet Activated
           </span>
         )}
       </div>
-      <p className="mt-3 text-sm text-slate-500">
+      <p className="mt-3 text-sm text-ink-muted">
         {verified
           ? 'Calls to your business number are answered by your AI receptionist.'
           : 'Next step: forward your business phone number to this AI receptionist number. Your customers keep dialing the number they already know.'}
@@ -252,8 +252,8 @@ function ForwardingCard({
 
   return (
     <div className="card p-6">
-      <h2 className="text-base font-semibold text-slate-900">Forward your business number</h2>
-      <p className="mt-1 text-sm text-slate-500">
+      <h2 className="text-base font-semibold text-ink">Forward your business number</h2>
+      <p className="mt-1 text-sm text-ink-muted">
         You keep your existing number — customers keep dialing it. Your phone provider sends the
         calls to your AI receptionist, which answers as your office.
       </p>
@@ -282,13 +282,13 @@ function ForwardingCard({
           Save
         </Button>
         {update.isSuccess && !update.isPending && (
-          <span className="flex items-center gap-1 text-sm text-emerald-600">
+          <span className="flex items-center gap-1 text-sm text-success">
             <CheckCircle2 className="h-4 w-4" aria-hidden />
             Saved
           </span>
         )}
         {update.isError && (
-          <span className="text-sm text-red-600">{(update.error as Error).message}</span>
+          <span className="text-sm text-emergency">{(update.error as Error).message}</span>
         )}
       </div>
 
@@ -298,12 +298,12 @@ function ForwardingCard({
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white">
               {index + 1}
             </span>
-            <p className="text-sm text-slate-700">{fill(step)}</p>
+            <p className="text-sm text-ink">{fill(step)}</p>
           </li>
         ))}
       </ol>
       {guide.disable && (
-        <p className="mt-4 text-xs text-slate-400">
+        <p className="mt-4 text-xs text-ink-faint">
           To stop forwarding later: {fill(guide.disable)}
         </p>
       )}
@@ -316,16 +316,16 @@ function VerifyCard() {
 
   return (
     <div className="card p-6">
-      <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
+      <h2 className="flex items-center gap-2 text-base font-semibold text-ink">
         <PhoneCall className="h-4 w-4 text-brand-600" aria-hidden />
         Turn on your AI receptionist
       </h2>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-ink-muted">
         Once forwarding is set up, call your business number from any phone — your AI receptionist
         should answer with your greeting. Then verify below.
       </p>
       {verify.isError && (
-        <p className="mt-3 text-sm text-red-600">{(verify.error as Error).message}</p>
+        <p className="mt-3 text-sm text-emergency">{(verify.error as Error).message}</p>
       )}
       <Button className="mt-4" loading={verify.isPending} onClick={() => verify.mutate()}>
         <CheckCircle2 className="h-4 w-4" aria-hidden />

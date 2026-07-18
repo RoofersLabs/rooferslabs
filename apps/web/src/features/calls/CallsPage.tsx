@@ -25,10 +25,10 @@ export function CallsPage() {
       />
 
       <div className="card overflow-hidden">
-        <div className="border-b border-slate-200 p-4">
+        <div className="border-b border-line-subtle p-4">
           <div className="relative max-w-sm">
             <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
               aria-hidden
             />
             <input
@@ -39,7 +39,7 @@ export function CallsPage() {
                 setPage(1);
               }}
               placeholder="Search by caller or number…"
-              className="focus-ring h-9 w-full rounded-lg border border-slate-300 pl-9 pr-3 text-sm"
+              className="focus-ring h-9 w-full rounded-lg border border-line pl-9 pr-3 text-sm"
               aria-label="Search calls"
             />
           </div>
@@ -61,7 +61,7 @@ export function CallsPage() {
           />
         ) : (
           <>
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-line-subtle">
               {calls.data.items.map((call) => {
                 const row = (
                   <div className="flex items-center gap-4 px-5 py-4">
@@ -70,21 +70,21 @@ export function CallsPage() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-medium text-slate-900">
+                        <span className="text-sm font-medium text-ink">
                           {call.customer?.fullName ?? formatPhone(call.fromNumber)}
                         </span>
                         <EnumBadge value={call.conversation?.outcome ?? call.status} />
                         {call.conversation?.isEmergency && <EnumBadge value="EMERGENCY" />}
                       </div>
-                      <p className="mt-0.5 truncate text-xs text-slate-500">
+                      <p className="mt-0.5 truncate text-xs text-ink-muted">
                         {call.conversation?.summary ?? formatPhone(call.fromNumber)}
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className="text-xs font-medium text-slate-700">
+                      <p className="text-xs font-medium text-ink">
                         {formatDuration(call.durationSeconds)}
                       </p>
-                      <p className="text-[11px] text-slate-400">{formatDateTime(call.createdAt)}</p>
+                      <p className="text-[11px] text-ink-faint">{formatDateTime(call.createdAt)}</p>
                     </div>
                   </div>
                 );
@@ -94,7 +94,7 @@ export function CallsPage() {
                     {call.conversation ? (
                       <Link
                         to={`/conversations/${call.conversation.id}`}
-                        className="focus-ring block hover:bg-slate-50"
+                        className="focus-ring block hover:bg-surface-2"
                       >
                         {row}
                       </Link>

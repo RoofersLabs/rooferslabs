@@ -47,10 +47,10 @@ export function KnowledgePage() {
       />
 
       <div className="card overflow-hidden">
-        <div className="flex flex-col gap-3 border-b border-slate-200 p-4 sm:flex-row">
+        <div className="flex flex-col gap-3 border-b border-line-subtle p-4 sm:flex-row">
           <div className="relative flex-1 sm:max-w-sm">
             <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
               aria-hidden
             />
             <input
@@ -61,7 +61,7 @@ export function KnowledgePage() {
                 setPage(1);
               }}
               placeholder="Search articles…"
-              className="focus-ring h-9 w-full rounded-lg border border-slate-300 pl-9 pr-3 text-sm"
+              className="focus-ring h-9 w-full rounded-lg border border-line pl-9 pr-3 text-sm"
               aria-label="Search knowledge base"
             />
           </div>
@@ -101,28 +101,28 @@ export function KnowledgePage() {
           />
         ) : (
           <>
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-line-subtle">
               {articles.data.items.map((article) => (
                 <li key={article.id}>
                   <button
                     onClick={() => setEditing(article)}
-                    className="focus-ring flex w-full items-start gap-4 px-5 py-4 text-left hover:bg-slate-50"
+                    className="focus-ring flex w-full items-start gap-4 px-5 py-4 text-left hover:bg-surface-2"
                   >
                     <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50">
                       <BookOpen className="h-4 w-4 text-brand-700" aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-medium text-slate-900">{article.title}</span>
+                        <span className="text-sm font-medium text-ink">{article.title}</span>
                         <Badge tone="brand">{humanizeEnum(article.category)}</Badge>
                         {article.status !== 'PUBLISHED' && (
                           <Badge>{humanizeEnum(article.status)}</Badge>
                         )}
                       </span>
-                      <span className="mt-0.5 block truncate text-xs text-slate-500">
+                      <span className="mt-0.5 block truncate text-xs text-ink-muted">
                         {article.content.slice(0, 140)}
                       </span>
-                      <span className="mt-0.5 block text-[11px] text-slate-400">
+                      <span className="mt-0.5 block text-[11px] text-ink-faint">
                         Updated {timeAgo(article.updatedAt)} · v{article.version}
                       </span>
                     </span>
@@ -208,7 +208,7 @@ function ArticleModal({
           required
         />
         {(save.isError || remove.isError) && (
-          <p className="text-sm text-red-600">{((save.error ?? remove.error) as Error).message}</p>
+          <p className="text-sm text-emergency">{((save.error ?? remove.error) as Error).message}</p>
         )}
         <div className="flex items-center justify-between">
           {article ? (
