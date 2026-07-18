@@ -12,7 +12,7 @@
     "apps/*"
   ],
   "scripts": {
-    "prepare": "if [ \"$CI\" != \"true\" ]; then husky; fi",
+    "prepare": "command -v husky >/dev/null 2>&1 && husky || true",
     "build": "npm run build --workspace @rooferslabs/shared && npm run build --workspace @rooferslabs/api && npm run build --workspace @rooferslabs/web",
     "build:shared": "npm run build --workspace @rooferslabs/shared",
     "dev:api": "npm run dev --workspace @rooferslabs/api",
