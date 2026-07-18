@@ -35,3 +35,18 @@ provider "aws" {
     }
   }
 }
+
+# CloudFront ACM certificates must live in us-east-1, regardless of the primary
+# region. Used by the frontend-cdn module for the SPA certificate.
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+
+  default_tags {
+    tags = {
+      Project     = "rooferslabs"
+      Environment = var.environment
+      ManagedBy   = "terraform"
+    }
+  }
+}

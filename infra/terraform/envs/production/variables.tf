@@ -29,7 +29,7 @@ variable "api_subdomain" {
 }
 
 variable "app_subdomain" {
-  description = "Subdomain of the Vercel-hosted frontend; used to derive WEB_PUBLIC_URL and CORS_ORIGINS for the API."
+  description = "Legacy app subdomain, kept as an allowed CORS origin during the apex migration (redirect to the apex)."
   type        = string
   default     = "app"
 }
@@ -38,6 +38,26 @@ variable "enable_https" {
   description = "Serve HTTPS on the ALB. Two-phase: apply with false, add the ACM validation CNAMEs from the outputs to Cloudflare, then apply with true."
   type        = bool
   default     = false
+}
+
+# ---- Frontend (S3 + CloudFront) ----------------------------------------------
+
+variable "enable_web_custom_domain" {
+  description = "Attach the apex + www aliases and ACM cert to the CloudFront distribution. Two-phase, like enable_https: apply false → add the web cert validation CNAMEs in Cloudflare → apply true."
+  type        = bool
+  default     = false
+}
+
+variable "web_price_class" {
+  description = "CloudFront price class for the frontend distribution."
+  type        = string
+  default     = "PriceClass_100"
+}
+
+variable "web_content_security_policy" {
+  description = "Override the generated Content-Security-Policy for the frontend. Empty = use the module's Clerk/fonts/API-aware default. Validate against the live Clerk instance before trusting it."
+  type        = string
+  default     = ""
 }
 
 # ---- External credentials (the only secrets you must provide) ------------------

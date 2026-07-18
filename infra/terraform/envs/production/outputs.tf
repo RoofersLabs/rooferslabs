@@ -3,7 +3,7 @@
 # =============================================================================
 
 output "alb_dns_name" {
-  description = "Create the Cloudflare CNAME: api.<domain> → this hostname. (app.<domain> points at Vercel, not the ALB.)"
+  description = "Create the Cloudflare CNAME: api.<domain> → this hostname. (The apex/www point at CloudFront — see web_cloudfront_domain — not the ALB.)"
   value       = module.alb.alb_dns_name
 }
 
@@ -29,13 +29,35 @@ output "api_url" {
 }
 
 output "web_url" {
-  description = "Canonical public site (apex). Attach this domain in Vercel and set VITE_API_BASE_URL=<api_url> + VITE_CLERK_PUBLISHABLE_KEY there. See docs/PRODUCTION_READINESS.md."
+  description = "Canonical public site (apex), served from CloudFront. Point the Cloudflare CNAME(s) at web_cloudfront_domain."
   value       = "https://${var.root_domain}"
 }
 
 output "app_url" {
   description = "Legacy app subdomain alias (redirect to the apex). Kept in CORS during the domain migration."
   value       = "https://${var.app_subdomain}.${var.root_domain}"
+}
+
+# ---- Frontend (S3 + CloudFront) ----------------------------------------------
+
+output "web_bucket" {
+  description = "S3 bucket for the built SPA (deploy-web.sh syncs here)."
+  value       = module.frontend.bucket_name
+}
+
+output "web_distribution_id" {
+  description = "CloudFront distribution id (deploy-web.sh invalidates this)."
+  value       = module.frontend.distribution_id
+}
+
+output "web_cloudfront_domain" {
+  description = "CloudFront domain — create the Cloudflare CNAMEs for apex + www pointing here."
+  value       = module.frontend.distribution_domain_name
+}
+
+output "web_certificate_validation_records" {
+  description = "Add these CNAMEs in Cloudflare (DNS-only), wait for the cert to issue, then apply with enable_web_custom_domain = true."
+  value       = module.frontend.certificate_validation_records
 }
 
 output "sqs_queue_url" {

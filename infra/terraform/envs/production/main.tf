@@ -5,8 +5,9 @@
 #   VPC → ALB (+ACM) → ECR → RDS → Redis → S3 → SQS → Secrets → IAM
 #   → CloudWatch → ECS Fargate (api)
 #
-# The frontend (apps/web) is hosted on Vercel — see /vercel.json and
-# docs/13_Deployment_Guide.md. This stack serves the API only.
+# The frontend (apps/web) is a static Vite SPA served from S3 + CloudFront
+# (module "frontend" below). This stack owns the full production footprint:
+# frontend CDN + backend API.
 #
 # See infra/terraform/README.md for the from-scratch walkthrough.
 
@@ -23,8 +24,8 @@ locals {
   # The frontend is a single SPA (marketing + authenticated app) served on the
   # apex domain. WEB_PUBLIC_URL is the canonical public origin; CORS accepts the
   # apex, www, and the legacy app.<domain> subdomain so the domain migration is
-  # non-breaking. Applies to the API only — DNS (Cloudflare) and the Vercel
-  # domain attachment are configured out-of-band; see docs/PRODUCTION_READINESS.md.
+  # non-breaking. Applies to the API only — Cloudflare DNS and the CloudFront
+  # domain aliases are configured out-of-band; see docs/PRODUCTION_READINESS.md.
   web_public_url = local.root_url
   cors_origins   = join(",", [local.root_url, "https://www.${var.root_domain}", local.app_url])
 }
@@ -113,6 +114,29 @@ module "s3" {
   source = "../../modules/s3"
 
   name = "${local.name}-${data.aws_caller_identity.current.account_id}"
+}
+
+# ---- Frontend (S3 + CloudFront + OAC) ---------------------------------------
+# The Vite SPA is uploaded by infra/scripts/deploy-web.sh; this owns the CDN.
+
+module "frontend" {
+  source = "../../modules/frontend-cdn"
+
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
+
+  name        = local.name
+  bucket_name = "${local.name}-web-${data.aws_caller_identity.current.account_id}"
+
+  # The SPA serves both the marketing site and the app from the apex + www.
+  domain_aliases          = [var.root_domain, "www.${var.root_domain}"]
+  root_domain             = var.root_domain
+  api_domain              = local.api_domain
+  enable_custom_domain    = var.enable_web_custom_domain
+  price_class             = var.web_price_class
+  content_security_policy = var.web_content_security_policy
 }
 
 module "sqs" {
