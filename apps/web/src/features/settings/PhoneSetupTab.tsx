@@ -33,9 +33,7 @@ export function PhoneSetupTab() {
     return (
       <div className="card p-8 text-center">
         <PhoneForwarded className="mx-auto h-10 w-10 text-ink-faint" aria-hidden />
-        <h2 className="mt-4 text-base font-semibold text-ink">
-          Get your AI receptionist number
-        </h2>
+        <h2 className="mt-4 text-base font-semibold text-ink">Get your AI receptionist number</h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-ink-muted">
           We’ll set up a local number for your business (matching your area code when available) and
           connect it to your AI receptionist.
@@ -173,11 +171,7 @@ function StatusRow({
       <dd
         className={cn(
           'mt-0.5 font-medium',
-          tone === 'good'
-            ? 'text-success'
-            : tone === 'warn'
-              ? 'text-warning'
-              : 'text-ink',
+          tone === 'good' ? 'text-success' : tone === 'warn' ? 'text-warning' : 'text-ink',
         )}
       >
         {value}

@@ -208,7 +208,9 @@ function ArticleModal({
           required
         />
         {(save.isError || remove.isError) && (
-          <p className="text-sm text-emergency">{((save.error ?? remove.error) as Error).message}</p>
+          <p className="text-sm text-emergency">
+            {((save.error ?? remove.error) as Error).message}
+          </p>
         )}
         <div className="flex items-center justify-between">
           {article ? (

@@ -12,9 +12,9 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-accent text-ink-on-brand shadow-button hover:bg-accent-hover active:bg-accent-active',
-  secondary:
-    'border border-line bg-surface-2 text-ink hover:bg-surface-3 hover:border-line-strong',
+  primary:
+    'bg-accent text-ink-on-brand shadow-button hover:bg-accent-hover active:bg-accent-active',
+  secondary: 'border border-line bg-surface-2 text-ink hover:bg-surface-3 hover:border-line-strong',
   ghost:
     'text-ink-muted hover:bg-[var(--state-hover-overlay)] hover:text-ink active:bg-[var(--state-active-overlay)]',
   destructive:

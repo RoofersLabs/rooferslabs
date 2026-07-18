@@ -45,7 +45,9 @@ function ConfigError({ errors }: { errors: string[] }) {
         <h1 className="text-h4 text-ink">Configuration required</h1>
         <p className="mt-3 text-body leading-6 text-ink-muted">
           The app can’t start until these environment variables in{' '}
-          <code className="font-num rounded bg-surface-3 px-1.5 py-0.5 text-ink">apps/web/.env</code>{' '}
+          <code className="font-num rounded bg-surface-3 px-1.5 py-0.5 text-ink">
+            apps/web/.env
+          </code>{' '}
           are fixed, then restart the dev server:
         </p>
         <ul className="mt-4 space-y-2">

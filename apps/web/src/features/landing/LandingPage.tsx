@@ -159,10 +159,7 @@ export function LandingPage() {
               Never lose a roofing job because{' '}
               <span className="text-accent">nobody answered the phone</span>
             </motion.h1>
-            <motion.p
-              variants={reveal}
-              className="mt-6 max-w-xl text-body-lg text-ink-muted"
-            >
+            <motion.p variants={reveal} className="mt-6 max-w-xl text-body-lg text-ink-muted">
               RoofersLabs is the AI front office built exclusively for roofers. It answers every
               inbound call, qualifies the lead, detects emergencies, and books the appointment —
               while you’re on the roof.
@@ -261,9 +258,9 @@ export function LandingPage() {
               Storm damage gets triaged the moment it’s reported
             </h2>
             <p className="mt-4 text-body-lg text-ink-muted">
-              The AI recognizes urgency in the caller’s words and pages your on-call crew immediately
-              — with the address, issue, and callback number already attached. No dispatcher
-              required.
+              The AI recognizes urgency in the caller’s words and pages your on-call crew
+              immediately — with the address, issue, and callback number already attached. No
+              dispatcher required.
             </p>
             <ul className="mt-6 space-y-3">
               {[
@@ -339,8 +336,8 @@ export function LandingPage() {
             ))}
           </div>
           <blockquote className="mt-6 text-balance text-h4 font-medium leading-relaxed text-ink">
-            “We were losing two or three jobs a week to voicemail. Since we switched, every call gets
-            answered and the emergency ones reach me before I’ve even put my tools down.”
+            “We were losing two or three jobs a week to voicemail. Since we switched, every call
+            gets answered and the emergency ones reach me before I’ve even put my tools down.”
           </blockquote>
           <figcaption className="mt-6 text-small text-ink-muted">
             <span className="font-medium text-ink">Marcus Webb</span> · Owner, Webb &amp; Sons
@@ -423,11 +420,7 @@ function HeroCollage() {
         <div className="mt-0.5 text-small text-ink-faint">Austin, TX</div>
         <div className="mt-3 flex h-5 items-end gap-1">
           {[6, 12, 8, 16, 10, 14, 7, 11].map((h, i) => (
-            <span
-              key={i}
-              className="w-1 rounded-sm bg-accent"
-              style={{ height: `${h}px` }}
-            />
+            <span key={i} className="w-1 rounded-sm bg-accent" style={{ height: `${h}px` }} />
           ))}
         </div>
       </motion.div>
@@ -442,7 +435,9 @@ function HeroCollage() {
           Emergency detected
         </span>
         <div className="mt-3.5 space-y-2.5">
-          <Bubble who="C">“My roof is leaking badly — water’s coming into the attic right now.”</Bubble>
+          <Bubble who="C">
+            “My roof is leaking badly — water’s coming into the attic right now.”
+          </Bubble>
           <Bubble who="AI">
             I’m so sorry to hear that. Let’s get someone out today — can I confirm your address?
           </Bubble>
