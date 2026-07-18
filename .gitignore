@@ -59,3 +59,12 @@ bun.lockb
 *.tfvars
 !*.tfvars.example
 crash.log
+
+# design-sync tooling (external claude.ai/design sync; not part of the app build)
+.design-sync/
+.ds-sync/
+ds-bundle/
+apps/web/.ds-sync-styles.css
+
+# Generated deploy state (ECR image digests emitted by the deploy scripts)
+infra/terraform/envs/*/images.json
