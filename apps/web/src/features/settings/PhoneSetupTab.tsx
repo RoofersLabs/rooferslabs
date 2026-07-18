@@ -32,7 +32,7 @@ export function PhoneSetupTab() {
   if (!number) {
     return (
       <div className="card p-8 text-center">
-        <PhoneForwarded className="mx-auto h-10 w-10 text-slate-300" aria-hidden />
+        <PhoneForwarded className="mx-auto h-10 w-10 text-ink-faint" aria-hidden />
         <h2 className="mt-4 text-base font-semibold text-ink">
           Get your AI receptionist number
         </h2>
@@ -102,7 +102,7 @@ function ControlCenterCard() {
           onClick={() => toggle.mutate(!s.enabled)}
           className={cn(
             'focus-ring relative inline-flex h-9 w-[104px] shrink-0 items-center rounded-full transition-colors',
-            s.enabled ? 'bg-success' : 'bg-slate-300',
+            s.enabled ? 'bg-success' : 'bg-line',
             toggle.isPending && 'opacity-60',
           )}
         >

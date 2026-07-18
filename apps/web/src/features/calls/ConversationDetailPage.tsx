@@ -106,7 +106,7 @@ export function ConversationDetailPage() {
                     className={
                       entry.role === 'assistant'
                         ? 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100'
-                        : 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200'
+                        : 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-3'
                     }
                   >
                     {entry.role === 'assistant' ? (

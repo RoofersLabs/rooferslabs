@@ -417,7 +417,7 @@ function BrandingTab() {
           <input
             id="brand-color"
             type="color"
-            value={primary ?? data.primaryColor ?? '#1E40AF'}
+            value={primary ?? data.primaryColor ?? '#9e5a3d'}
             onChange={(e) => setPrimary(e.target.value)}
             className="focus-ring mt-1.5 h-10 w-20 cursor-pointer rounded-lg border border-line"
           />
