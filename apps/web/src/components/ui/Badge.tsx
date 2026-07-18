@@ -2,13 +2,15 @@ import { cn, humanizeEnum } from '@/lib/utils';
 
 type Tone = 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'brand';
 
+// Color is never the only signal: every tone pairs a tint fill with a matching
+// border + text hue (the calling context supplies the label/icon).
 const tones: Record<Tone, string> = {
-  neutral: 'bg-slate-100 text-slate-700',
-  success: 'bg-emerald-100 text-emerald-800',
-  warning: 'bg-amber-100 text-amber-800',
-  danger: 'bg-red-100 text-red-800',
-  info: 'bg-sky-100 text-sky-800',
-  brand: 'bg-brand-100 text-brand-800',
+  neutral: 'bg-surface-3 text-ink-muted border-line',
+  success: 'bg-success-subtle text-success border-success-border',
+  warning: 'bg-warning-subtle text-warning border-warning-border',
+  danger: 'bg-emergency-subtle text-emergency border-emergency-border',
+  info: 'bg-info-subtle text-info border-info-border',
+  brand: 'bg-accent-subtle text-accent border-accent-border',
 };
 
 export function Badge({
@@ -23,7 +25,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-caption font-medium',
         tones[tone],
         className,
       )}

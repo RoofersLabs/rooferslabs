@@ -10,9 +10,11 @@ export function Pagination({
 }) {
   if (pagination.totalPages <= 1) return null;
   return (
-    <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3">
-      <p className="text-xs text-slate-500">
-        Page {pagination.page} of {pagination.totalPages} · {pagination.totalRecords} total
+    <div className="flex items-center justify-between border-t border-line-subtle px-4 py-3">
+      <p className="text-small text-ink-faint">
+        Page <span className="font-num text-ink-muted">{pagination.page}</span> of{' '}
+        <span className="font-num text-ink-muted">{pagination.totalPages}</span> ·{' '}
+        <span className="font-num text-ink-muted">{pagination.totalRecords}</span> total
       </p>
       <div className="flex gap-2">
         <Button

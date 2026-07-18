@@ -2,13 +2,13 @@ import { cn } from '@/lib/utils';
 
 /** Shimmering placeholder block used while content loads. */
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-md bg-slate-200/80', className)} aria-hidden />;
+  return <div className={cn('animate-pulse rounded-md bg-surface-3', className)} aria-hidden />;
 }
 
 /** Placeholder for list/table panels: rows of avatar + text lines. */
 export function ListSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <div role="status" aria-label="Loading content" className="divide-y divide-slate-100">
+    <div role="status" aria-label="Loading content" className="divide-y divide-line-subtle">
       {Array.from({ length: rows }, (_, i) => (
         <div key={i} className="flex items-center gap-4 px-5 py-4">
           <Skeleton className="h-9 w-9 shrink-0 rounded-full" />

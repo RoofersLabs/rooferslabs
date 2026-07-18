@@ -3,7 +3,7 @@ import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes 
 import { cn } from '@/lib/utils';
 
 const baseField =
-  'focus-ring block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 disabled:bg-slate-50';
+  'focus-ring block w-full rounded-md border border-line bg-surface px-3 py-2 text-form-input text-ink placeholder:text-ink-faint transition-colors duration-fast ease-standard hover:border-line-strong disabled:cursor-not-allowed disabled:opacity-60';
 
 interface FieldWrapperProps {
   label?: string;
@@ -17,17 +17,17 @@ function FieldWrapper({ label, hint, error, id, children }: FieldWrapperProps) {
   return (
     <div className="space-y-1.5">
       {label && (
-        <label htmlFor={id} className="block text-sm font-medium text-slate-700">
+        <label htmlFor={id} className="block text-form-label font-medium text-ink-muted">
           {label}
         </label>
       )}
       {children}
       {error ? (
-        <p className="text-xs text-red-600" role="alert">
+        <p className="text-small text-emergency" role="alert">
           {error}
         </p>
       ) : hint ? (
-        <p className="text-xs text-slate-500">{hint}</p>
+        <p className="text-small text-ink-faint">{hint}</p>
       ) : null}
     </div>
   );
@@ -50,7 +50,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       <input
         ref={ref}
         id={id}
-        className={cn(baseField, error && 'border-red-400', className)}
+        className={cn(baseField, error && 'border-emergency-border', className)}
         {...props}
       />
     </FieldWrapper>
@@ -75,7 +75,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
         ref={ref}
         id={id}
         rows={rows}
-        className={cn(baseField, error && 'border-red-400', className)}
+        className={cn(baseField, error && 'border-emergency-border', className)}
         {...props}
       />
     </FieldWrapper>
@@ -99,7 +99,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
       <select
         ref={ref}
         id={id}
-        className={cn(baseField, error && 'border-red-400', className)}
+        className={cn(baseField, error && 'border-emergency-border', className)}
         {...props}
       >
         {children}
