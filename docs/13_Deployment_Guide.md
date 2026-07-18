@@ -5,16 +5,17 @@
 **Prerequisite reading:** `10_AWS_Infrastructure.md`, `00_GStack_Architecture.md`
 
 This is the operational runbook for deploying the RoofersLabs platform to
-production: the frontend on **Vercel**, the backend as a Docker image on
-**Amazon ECS/Fargate**, with Amazon RDS PostgreSQL, ElastiCache Redis, S3,
-SQS, Secrets Manager, CloudWatch, and Cloudflare at the edge.
+production: the frontend as a static SPA on **Amazon S3 + CloudFront**, the
+backend as a Docker image on **Amazon ECS/Fargate**, with Amazon RDS
+PostgreSQL, ElastiCache Redis, S3, SQS, Secrets Manager, CloudWatch, and
+Cloudflare at the edge.
 
 ---
 
 ## 1. Topology
 
 ```text
-Browser / PWA ──► Cloudflare (app.rooferslabs.com) ──► Vercel (static PWA)
+Browser / PWA ──► Cloudflare (rooferslabs.com / www) ──► CloudFront ──► S3 (static SPA)
 
 Customer phone ─► Twilio ─┐
 Browser / PWA ────────────┤► Cloudflare (api.rooferslabs.com)
@@ -27,11 +28,11 @@ Browser / PWA ────────────┤► Cloudflare (api.roofers
             (PostgreSQL) (ElastiCache) (recordings) (jobs+DLQ)      (logs)
 ```
 
-Two DNS names:
+DNS names:
 
 | Host | Serves | Origin |
 | ---- | ------ | ------ |
-| `app.rooferslabs.com` | PWA (static) | Vercel |
+| `rooferslabs.com` / `www` | SPA (static: landing + app) | Cloudflare → CloudFront → S3 |
 | `api.rooferslabs.com` | REST API + Media Streams WebSocket | Cloudflare → ALB → api service |
 
 ---
@@ -84,7 +85,7 @@ under `infra/terraform/modules/`):
    DATABASE_URL) and `rooferslabs-production/app` (Clerk/OpenAI/Twilio/VAPID),
    mapped into the task definition via `valueFrom`.
 7. **ECR** — `rooferslabs/api` with lifecycle policies (the frontend has no
-   production image — it deploys to Vercel).
+   container image — it is a static build on S3 + CloudFront).
 8. **ECS Fargate** — one cluster, the API service behind the ALB,
    WebSocket-friendly 300 s idle timeout, deployment circuit breaker with
    automatic rollback, ECS Exec enabled. Health check: `GET /v1/health/ready`.
@@ -117,15 +118,17 @@ Rolling deployments with the circuit breaker give zero-downtime releases and
 automatic rollback on failed health checks; manual rollback = redeploy the
 previous image tag.
 
-**Frontend (Vercel):** production deploys ride pushes to the production
-branch (`vercel --prod` for manual deploys). `/vercel.json` owns the monorepo
-build, SPA rewrites, and cache/security headers; rollback = "Promote previous
-deployment" in the Vercel dashboard.
+**Frontend (S3 + CloudFront):** `infra/scripts/deploy-web.sh` builds the SPA and
+syncs it to S3 (immutable hashed assets, no-cache `index.html`/service worker),
+then invalidates CloudFront. The `deploy-web.yml` GitHub Actions workflow does
+the same on push to `main` (OIDC into AWS). The `frontend-cdn` Terraform module
+owns SPA routing (403/404 → `index.html`), cache policy, and security headers.
+Rollback: re-run `deploy-web.sh` from the previous commit (the bucket keeps
+object versions), or `aws s3 sync` a prior build.
 
-Required Vercel project settings: import this repository, add the
-`app.rooferslabs.com` domain, and set the environment variables
-`VITE_CLERK_PUBLISHABLE_KEY` (pk_live) and
-`VITE_API_BASE_URL=https://api.rooferslabs.com`.
+Required build-time env (GitHub Actions repo config for the workflow, or exported
+for the script): `VITE_CLERK_PUBLISHABLE_KEY` (pk_live, a **secret**) and
+`VITE_API_BASE_URL=https://api.rooferslabs.com` (a **variable**).
 
 ---
 
@@ -134,12 +137,10 @@ Required Vercel project settings: import this repository, add the
 1. Add the `rooferslabs.com` zone; point the domain's nameservers at Cloudflare.
 2. DNS records:
    - `api` → CNAME → ALB DNS name (**Proxied** ☁️)
-   - `app` → CNAME → `cname.vercel-dns.com` (**DNS only** recommended —
-     Vercel terminates TLS and manages its own edge cache; if proxied, add a
-     cache-bypass rule for `app.rooferslabs.com/sw.js` and
-     `/manifest.webmanifest`)
-   - ACM validation CNAMEs from `terraform output acm_validation_records`
-     (**DNS only**)
+   - `rooferslabs.com` (apex) → CNAME → `terraform output web_cloudfront_domain` (**Proxied** ☁️)
+   - `www` → CNAME → same CloudFront domain (**Proxied** ☁️); add a redirect rule `www → apex`
+   - ACM validation CNAMEs from `terraform output acm_validation_records` **and**
+     `web_certificate_validation_records` (**DNS only**)
    - Clerk production-instance CNAMEs (**DNS only**)
 3. **SSL/TLS → Full (strict)** (the ALB has a valid ACM certificate).
 4. **Network → WebSockets: ON** (required for Twilio Media Streams).
@@ -177,9 +178,9 @@ Customer-side call forwarding instructions live in the product
    set those records to **DNS only**, not proxied).
 2. Enable Email + Password (and optionally Google) sign-in.
 3. Put `sk_live_…` / `pk_live_…` in `terraform.tfvars` (Terraform writes them
-   to Secrets Manager) and set `VITE_CLERK_PUBLISHABLE_KEY=pk_live_…` in the
-   Vercel project.
-4. Allowed redirect origins: `https://app.rooferslabs.com`.
+   to Secrets Manager) and set `VITE_CLERK_PUBLISHABLE_KEY=pk_live_…` as the
+   frontend build-time env (GitHub Actions secret for `deploy-web.yml`).
+4. Allowed redirect origins: `https://rooferslabs.com`.
 
 ---
 

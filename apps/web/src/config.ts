@@ -35,9 +35,10 @@ function validateConfig(): ValidatedConfig {
   }
 
   // ── API base URL — absolute origin in production; empty in dev (Vite proxy)
-  // In production Vercel rewrites every path to index.html, so a same-origin
-  // /v1 call would return the SPA shell rather than the API. The absolute
-  // origin is therefore mandatory for prod builds — never fall back silently.
+  // In production the SPA is served by CloudFront, which maps unknown paths to
+  // index.html (SPA routing), so a same-origin /v1 call would return the SPA
+  // shell rather than the API. The absolute origin (api.<domain>) is therefore
+  // mandatory for prod builds — never fall back silently.
   const rawApiBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim() ?? '';
   let apiBaseUrl = '';
   if (!rawApiBaseUrl) {

@@ -74,6 +74,7 @@ jobs:
       - uses: actions/checkout@v4
 
       # The API is the only production container image; the frontend deploys
-      # via Vercel (web.Dockerfile remains for local docker-compose only).
+      # The frontend deploys to S3 + CloudFront (see deploy-web.yml); web.Dockerfile
+      # remains for the local docker-compose full-stack profile only.
       - name: Build API image
         run: docker build -f docker/api.Dockerfile -t rooferslabs-api:ci .

@@ -1,7 +1,8 @@
 # =============================================================================
 # RoofersLabs Web — LOCAL DEVELOPMENT image (Vite PWA served by nginx)
 #
-# Production frontend hosting is Vercel (see /vercel.json); this image exists
+# Production frontend hosting is S3 + CloudFront (see infra/scripts/deploy-web.sh);
+# this image exists
 # only for the local docker-compose full-stack profile. Vite inlines env vars
 # at build time:
 #   docker build -f docker/web.Dockerfile \

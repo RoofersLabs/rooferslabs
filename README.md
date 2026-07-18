@@ -184,11 +184,13 @@ docker build -f docker/web.Dockerfile \
   -t rooferslabs-web .
 ```
 
-## Deployment (Vercel + AWS + Cloudflare)
+## Deployment (AWS + Cloudflare)
 
-**Frontend → Vercel** (configured by [`/vercel.json`](./vercel.json)): import
-the repo, add the `app.` domain, set `VITE_CLERK_PUBLISHABLE_KEY` and
-`VITE_API_BASE_URL`; production deploys ride pushes to the production branch.
+**Frontend → AWS S3 + CloudFront** (Terraform module `frontend-cdn`): the static
+Vite SPA is uploaded and cached at the edge, served on the apex `rooferslabs.com`.
+Deploy with [`infra/scripts/deploy-web.sh`](./infra/scripts/deploy-web.sh) (build
+→ S3 sync → CloudFront invalidation) or the `deploy-web.yml` GitHub Actions
+pipeline. No Vercel.
 
 **Backend → AWS, all Terraform** — VPC, ALB/ACM, ECR, ECS Fargate, RDS,
 ElastiCache, S3, SQS, Secrets Manager, IAM, CloudWatch:

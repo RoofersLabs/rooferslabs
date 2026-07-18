@@ -1,7 +1,7 @@
 # =============================================================================
 # ALB — public load balancer for the API, listeners, ACM certificate
 # =============================================================================
-# The ALB fronts the API service only (the frontend is hosted on Vercel):
+# The ALB fronts the API service only (the frontend is on S3 + CloudFront):
 #   api.<domain> → API target group (ECS, port 4000)
 #
 # HTTPS is a two-phase setup because ACM DNS validation records live in

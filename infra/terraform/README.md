@@ -1,35 +1,36 @@
 # RoofersLabs — AWS Infrastructure (Terraform)
 
-Everything the RoofersLabs **backend** needs in AWS, provisioned as code. The
-**frontend is hosted on Vercel** (configured by `/vercel.json` at the repo
-root) — this stack serves the API only. A developer with AWS credentials can
-go from an empty account to a running production stack with the steps below —
-no manual console configuration except the external services (Cloudflare DNS,
-Vercel, Clerk, OpenAI, Twilio) that inherently require it.
+Everything RoofersLabs needs in AWS, provisioned as code — **frontend and
+backend**. The frontend is a static Vite SPA served from **S3 + CloudFront**
+(module `frontend-cdn`); the backend API runs on ECS behind an ALB. A developer
+with AWS credentials can go from an empty account to a running production stack
+with the steps below — no manual console configuration except the external
+services (Cloudflare DNS, Clerk, OpenAI, Twilio) that inherently require it.
 
 ## What gets created
 
-| Module          | Resources                                                              |
-| --------------- | ---------------------------------------------------------------------- |
-| `networking`    | VPC, 2×public + 2×private subnets, IGW, NAT gateway, route tables      |
-| `ecr`           | `rooferslabs/api` repository, lifecycle policies                       |
-| `alb`           | Application Load Balancer (API origin), ACM certificate, listeners     |
-| `rds`           | PostgreSQL 16 (encrypted, backups, generated password)                 |
-| `redis`         | ElastiCache Redis 7 (cache + global rate limiting)                     |
-| `s3`            | Private `recordings` + `uploads` buckets (KMS, public access blocked)  |
-| `sqs`           | Background-jobs queue + 14-day DLQ (provisioned for a future release)  |
-| `secrets`       | Secrets Manager entries for the DB URL and external credentials        |
-| `iam`           | ECS execution role (scoped secret reads) + task role (scoped S3 + SQS) |
-| `observability` | CloudWatch log group, ALB 5xx + API CPU alarms, optional SNS email     |
-| `ecs-service`   | Fargate task definition + service (api)                                |
+| Module          | Resources                                                                                                          |
+| --------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `frontend-cdn`  | Private SPA S3 bucket + CloudFront (OAC), ACM cert, cache/security-header policies, SPA error routing, access logs |
+| `networking`    | VPC, 2×public + 2×private subnets, IGW, NAT gateway, route tables                                                  |
+| `ecr`           | `rooferslabs/api` repository, lifecycle policies                                                                   |
+| `alb`           | Application Load Balancer (API origin), ACM certificate, listeners                                                 |
+| `rds`           | PostgreSQL 16 (encrypted, backups, generated password)                                                             |
+| `redis`         | ElastiCache Redis 7 (cache + global rate limiting)                                                                 |
+| `s3`            | Private `recordings` + `uploads` buckets (KMS, public access blocked)                                              |
+| `sqs`           | Background-jobs queue + 14-day DLQ (provisioned for a future release)                                              |
+| `secrets`       | Secrets Manager entries for the DB URL and external credentials                                                    |
+| `iam`           | ECS execution role (scoped secret reads) + task role (scoped S3 + SQS)                                             |
+| `observability` | CloudWatch log group, ALB 5xx + API CPU alarms, optional SNS email                                                 |
+| `ecs-service`   | Fargate task definition + service (api)                                                                            |
 
 Traffic flow:
 
 ```text
-Browser/PWA ── Cloudflare ── app.<domain> ──► Vercel (static frontend)
-Twilio + PWA ─ Cloudflare ── api.<domain> ──► ALB ──► ECS api task (private)
-                                                        │
-                                          RDS · Redis · S3 · SQS · CloudWatch
+Browser/PWA ── Cloudflare ── rooferslabs.com / www ──► CloudFront ──► S3 (SPA)
+Twilio + PWA ─ Cloudflare ── api.<domain> ──────────► ALB ──► ECS api task (private)
+                                                                │
+                                                  RDS · Redis · S3 · SQS · CloudWatch
 ```
 
 WebSockets (Twilio Media Streams) pass through the ALB natively.
@@ -38,7 +39,7 @@ WebSockets (Twilio Media Streams) pass through the ALB natively.
 
 - Terraform ≥ 1.6, Docker, AWS CLI v2 authenticated against the target account
   (`aws sts get-caller-identity` should work)
-- A domain whose DNS is managed in Cloudflare, and a Vercel account
+- A domain whose DNS is managed in Cloudflare
 - Credentials from Clerk (production instance), OpenAI, and Twilio
 - A VAPID key pair for Web Push: `npx web-push generate-vapid-keys`
 
@@ -60,23 +61,26 @@ terraform output acm_validation_records
 #    …wait a few minutes for the certificate to issue, then:
 terraform apply -var 'enable_https=true'     # or set enable_https = true in tfvars
 
-# 4. Cloudflare DNS:
-terraform output alb_dns_name
-#    api.<domain>  CNAME  <alb_dns_name>        (proxied ☁️, WebSockets ON)
-#    app.<domain>  CNAME  cname.vercel-dns.com  (per the Vercel domain wizard)
+# 4. Frontend HTTPS: add the web ACM validation CNAMEs to Cloudflare (DNS-only),
+#    wait for the cert to issue, then attach the apex + www aliases.
+terraform output web_certificate_validation_records
+terraform apply -var 'enable_web_custom_domain=true'
 
-# 5. Deploy the API (database migrations run automatically on boot).
+# 5. Cloudflare DNS:
+terraform output alb_dns_name web_cloudfront_domain
+#    api.<domain>       CNAME  <alb_dns_name>          (proxied ☁️, WebSockets ON)
+#    rooferslabs.com    CNAME  <web_cloudfront_domain> (proxied ☁️)
+#    www.rooferslabs.com CNAME <web_cloudfront_domain> (proxied ☁️, redirect → apex)
+
+# 6. Deploy the API (database migrations run automatically on boot).
 ../../scripts/deploy.sh
 
-# 6. Frontend on Vercel: import this repository (vercel.json drives the
-#    monorepo build), add the domain app.<domain>, and set the env vars:
-#      VITE_CLERK_PUBLISHABLE_KEY = pk_live_…
-#      VITE_API_BASE_URL          = https://api.<domain>
-#    Production deploys ride pushes to the production branch.
+# 7. Deploy the frontend to S3 + CloudFront (builds with VITE_* from TF outputs):
+../../scripts/deploy-web.sh
 
-# 7. Verify.
+# 8. Verify.
 curl https://api.<domain>/v1/health/ready
-open https://app.<domain>
+open https://rooferslabs.com
 ```
 
 ## Wire up external services (one time)
@@ -84,10 +88,10 @@ open https://app.<domain>
 - **Twilio** — on each phone number, set:
   - Voice webhook (POST): `terraform output twilio_voice_webhook`
   - Status callback (POST): `terraform output twilio_status_callback`
-- **Clerk** — production instance with `app.<domain>` as the application
+- **Clerk** — production instance with `rooferslabs.com` as the application
   domain (its DNS records go in Cloudflare as DNS-only).
-- **Cloudflare** — records from step 4; do not enable Rocket Loader or
-  auto-minify on the app host (breaks service-worker precache hashes).
+- **Cloudflare** — records from step 5; do not enable Rocket Loader or
+  auto-minify on the web host (breaks service-worker precache hashes).
 
 That's it: register in the app, complete onboarding, assign the Twilio number
 to the company (`POST /v1/telephony/phone-numbers/assign` as the owner — see
@@ -97,7 +101,7 @@ to the company (`POST /v1/telephony/phone-numbers/assign` as the owner — see
 
 ```bash
 ../../scripts/deploy.sh                # ship a new API build
-git push origin main                   # ship the frontend (Vercel auto-deploys)
+../../scripts/deploy-web.sh            # ship the frontend (S3 + CloudFront)
 terraform apply                        # any infrastructure change
 
 # Rotate an external credential: update terraform.tfvars, then
@@ -118,7 +122,8 @@ aws ecs execute-command --cluster rooferslabs-production \
   `terraform init -migrate-state`.
 - **Cost** (defaults, us-east-1, rough): NAT ~$33/mo, ALB ~$20/mo, API Fargate
   task ~$18/mo, db.t4g.micro ~$12/mo, cache.t4g.micro ~$12/mo, SQS ~$0 idle —
-  ≈ **$95–105/month** before traffic. Vercel frontend: free/Pro tier.
+  ≈ **$95–105/month** before traffic. CloudFront + S3 frontend: ~$1–5/month at
+  low traffic (plus per-GB egress).
 - **RDS deletion protection** is on by default (`db_deletion_protection=false`
   to allow teardown). `terraform destroy` will refuse to delete non-empty
   ECR repos/S3 buckets unless `force_delete`/`force_destroy` are set.

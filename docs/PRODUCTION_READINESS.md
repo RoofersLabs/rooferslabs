@@ -3,7 +3,7 @@
 Operator runbook for first-customer go-live. Covers the deployment topology,
 the apex-domain migration, and the exact steps to reset the platform to a clean,
 never-onboarded state. Anything that touches a live external service (AWS,
-Vercel, Cloudflare, Clerk, Twilio) is a **manual** step here — it cannot be, and
+Cloudflare, Clerk, Twilio) is a **manual** step here — it cannot be, and
 must not be, run blindly from a workstation.
 
 ---
@@ -15,13 +15,14 @@ flowchart TB
   user([Customer browser / PWA])
 
   subgraph CF[Cloudflare — DNS + proxy]
-    dnsRoot["rooferslabs.com / www → Vercel"]
-    dnsApp["app.rooferslabs.com → Vercel (legacy)"]
+    dnsRoot["rooferslabs.com / www → CloudFront"]
     dnsApi["api.rooferslabs.com → ALB (DNS-only)"]
   end
 
-  subgraph Vercel[Vercel — frontend]
-    spa["apps/web — single React SPA\n(landing + authenticated app)"]
+  subgraph AWSF[AWS — frontend, Terraform]
+    cf["CloudFront (OAC, HTTPS, security headers)"]
+    s3web[["S3 — SPA bucket (private)"]]
+    cf --> s3web
   end
 
   subgraph AWS[AWS — backend, all Terraform]
@@ -42,10 +43,10 @@ flowchart TB
   openai{{OpenAI — Realtime + Responses}}
   twilio{{Twilio — telephony}}
 
-  user --> dnsRoot --> spa
-  user -. legacy .-> dnsApp --> spa
-  spa -->|"VITE_API_BASE_URL\nhttps://api.rooferslabs.com/v1"| dnsApi --> alb --> api
-  spa <-->|session token| clerk
+  user --> dnsRoot --> cf
+  cf -.->|"apps/web SPA (build → S3 sync)"| s3web
+  user -->|"VITE_API_BASE_URL\nhttps://api.rooferslabs.com/v1"| dnsApi --> alb --> api
+  user <-->|session token| clerk
   api --> rds
   api --> redis
   api --> s3rec
@@ -62,7 +63,7 @@ flowchart TB
 
 | Layer | Service | Source of truth |
 |---|---|---|
-| Frontend | Vercel (single project, `apps/web`) | `vercel.json`, Vercel dashboard |
+| Frontend | AWS S3 + CloudFront (`apps/web` SPA) | `infra/terraform/modules/frontend-cdn` |
 | Backend API | AWS ECS Fargate (`apps/api`, NestJS) | `infra/terraform` |
 | Edge/HTTPS | AWS ALB + ACM | `infra/terraform/modules/alb` |
 | Database | AWS RDS PostgreSQL (private) | `modules/rds` |
@@ -76,12 +77,12 @@ flowchart TB
 | AI | OpenAI (Realtime + Responses + embeddings) | Secrets Manager |
 | Telephony | Twilio (per-company numbers via API) | Secrets Manager |
 
-**Vercel consolidation:** the repo defines exactly **one** frontend (the SPA
-serves both the marketing landing at `/` and the authenticated app at
-`/dashboard`, `/calls`, …). No second frontend project is required or referenced.
-If the Vercel account contains extra/duplicate projects, delete them in the
-dashboard (Vercel → Project → Settings → Advanced → Delete) and keep the one
-wired to this repo's production branch.
+**Frontend hosting:** the SPA (marketing landing at `/` plus the authenticated
+app at `/dashboard`, `/calls`, …) is a single static build served from a private
+S3 bucket via CloudFront (Origin Access Control) — no Vercel. Deploy with
+`infra/scripts/deploy-web.sh` or the `deploy-web.yml` GitHub Actions pipeline.
+The `frontend-cdn` Terraform module owns the bucket, distribution, ACM cert,
+cache + security-header policies, SPA error routing, and access logs.
 
 **Not integrated (despite appearing on generic go-live checklists):**
 - **Stripe** — there is no Stripe code, dependency, env var, or secret anywhere
@@ -106,19 +107,19 @@ That change only takes effect after **`terraform apply`**.
 
 ### Migration runbook (external — do in this order to avoid an auth outage)
 
-1. **Cloudflare DNS** — add/confirm records:
-   - `A`/`CNAME` `rooferslabs.com` → Vercel (per Vercel's "Add domain" instructions), **Proxied**.
-   - `CNAME` `www` → Vercel, Proxied (used for the redirect).
+1. **Terraform apply (frontend infra + web ACM cert).** `cd infra/terraform/envs/production && terraform apply`. This creates the S3 SPA bucket, CloudFront distribution, and requests the ACM cert (us-east-1). Then `terraform output web_certificate_validation_records` and add those CNAMEs in Cloudflare (**DNS-only**); once the cert issues, `terraform apply -var 'enable_web_custom_domain=true'` to attach the apex + www aliases.
+2. **Deploy the SPA.** `terraform output web_cloudfront_domain` for the distribution domain, then `infra/scripts/deploy-web.sh` (build → S3 sync → CloudFront invalidation). Confirm `https://<dxxx>.cloudfront.net` serves the app before touching DNS.
+3. **Cloudflare DNS:**
+   - `CNAME` `rooferslabs.com` → `web_cloudfront_domain`, **Proxied**.
+   - `CNAME` `www` → `web_cloudfront_domain`, **Proxied**; add a redirect rule `www → apex`.
    - `CNAME` `api` → the ALB DNS name (`terraform output alb_dns_name`), **DNS-only (grey cloud)** — the ALB terminates TLS via ACM.
-2. **Vercel** — Project → Settings → Domains: add `rooferslabs.com` and `www.rooferslabs.com` (set `www` to redirect to apex). Keep `app.rooferslabs.com` attached but set it to redirect to the apex.
-3. **Vercel env** (Production): set `VITE_API_BASE_URL=https://api.rooferslabs.com` and `VITE_CLERK_PUBLISHABLE_KEY=pk_live_…`, then **redeploy** (Vite bakes env at build time).
-4. **Clerk dashboard** (Production instance): set the primary app/home/frontend origin to `https://rooferslabs.com`; add it to **Allowed origins**; update sign-in/sign-up/after-sign-in/after-sign-out URLs to the apex; keep `app.` only if you want the alias to work during transition.
-5. **Terraform** (API CORS/URL): `cd infra/terraform/envs/production && terraform plan` → review the ECS task env diff (CORS_ORIGINS + WEB_PUBLIC_URL) → `terraform apply`. This redeploys the API with the apex allowed.
-6. **Verify**: load `https://rooferslabs.com`, sign in, confirm an authenticated API call succeeds (Network tab → request to `https://api.rooferslabs.com/v1/...` returns JSON, not HTML), and `https://app.rooferslabs.com` + `https://www.rooferslabs.com` both 301 to the apex.
+4. **Clerk dashboard** (Production instance): set the primary app/home/frontend origin to `https://rooferslabs.com`; add it to **Allowed origins**; update sign-in/sign-up/after-sign-in/after-sign-out URLs to the apex.
+5. **API CORS/URL:** already wired to the apex in `main.tf` (`WEB_PUBLIC_URL` + `CORS_ORIGINS`); the step-1 apply picks it up. Confirm via `terraform plan` that no drift remains.
+6. **Verify**: load `https://rooferslabs.com`, sign in, confirm an authenticated API call succeeds (Network tab → request to `https://api.rooferslabs.com/v1/...` returns JSON, not HTML), deep-link a client route (e.g. `/dashboard`) and hard-refresh (SPA routing returns index.html), and `https://www.rooferslabs.com` redirects to the apex.
 
-Why it can't be automated here: steps 1–4 are external dashboard/API actions with
-no local credentials; step 5 mutates live AWS and must be reviewed via `terraform
-plan` by a human with the state and AWS access.
+Why it can't be automated here: `terraform apply`, the S3 upload/CloudFront
+deploy, the Cloudflare records, and the Clerk settings are all
+credentialed/dashboard actions with no access from this workstation.
 
 ---
 
@@ -194,12 +195,13 @@ who owns the account.
 
 ## 4. Environment / secrets checklist (PART 10)
 
-**Frontend (Vercel Production env):**
+**Frontend (build-time env — set as GitHub Actions repo config for `deploy-web.yml`,
+or exported when running `deploy-web.sh`; Vite inlines them at build):**
 
 | Var | Required | Value |
 |---|---|---|
-| `VITE_CLERK_PUBLISHABLE_KEY` | yes | `pk_live_…` (production Clerk) |
-| `VITE_API_BASE_URL` | yes (prod) | `https://api.rooferslabs.com` |
+| `VITE_CLERK_PUBLISHABLE_KEY` | yes | `pk_live_…` (production Clerk) — GitHub **secret** |
+| `VITE_API_BASE_URL` | yes (prod) | `https://api.rooferslabs.com` — GitHub **variable** |
 
 **Backend (Terraform vars → Secrets Manager / ECS env):** `DATABASE_URL`,
 `REDIS_URL`, `CLERK_SECRET_KEY` (`sk_live_…`), `CLERK_PUBLISHABLE_KEY`,
@@ -220,9 +222,10 @@ who owns the account.
 
 ## 5. Go-live checklist
 
-- [ ] `terraform apply` (apex CORS/URL) reviewed and applied
-- [ ] Cloudflare DNS: apex + www → Vercel (proxied), api → ALB (DNS-only)
-- [ ] Vercel: apex attached, www + app redirect to apex, prod env set, redeployed
+- [ ] `terraform apply` (frontend CDN + apex CORS/URL) reviewed and applied
+- [ ] Web ACM cert issued (validation CNAMEs added), `enable_web_custom_domain=true` applied
+- [ ] SPA deployed: `deploy-web.sh` (or `deploy-web.yml`) → CloudFront serves the app
+- [ ] Cloudflare DNS: apex + www → CloudFront (proxied), api → ALB (DNS-only)
 - [ ] Clerk: live keys, apex origins + redirect URLs
 - [ ] Database reset verified empty; migrations intact; seed NOT run
 - [ ] Clerk dev users/orgs deleted

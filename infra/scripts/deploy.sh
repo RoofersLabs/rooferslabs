@@ -5,8 +5,8 @@
 # Usage:
 #   infra/scripts/deploy.sh
 #
-# The frontend deploys via Vercel (push to the production branch or
-# `vercel --prod`); this script handles the backend only.
+# The frontend deploys to S3 + CloudFront via infra/scripts/deploy-web.sh;
+# this script handles the backend (ECS) only.
 #
 # Requires: docker, aws CLI (authenticated), terraform (applied at least once).
 # All configuration is read from Terraform outputs — nothing to edit here.
@@ -43,4 +43,4 @@ aws ecs update-service --region "$AWS_REGION" --cluster "$CLUSTER" \
 echo "==> Waiting for the service to stabilize…"
 aws ecs wait services-stable --region "$AWS_REGION" --cluster "$CLUSTER" --services "$API_SERVICE"
 
-echo "✅ Deployed api ($GIT_SHA). Frontend deploys via Vercel."
+echo "✅ Deployed api ($GIT_SHA). Frontend deploys via infra/scripts/deploy-web.sh."

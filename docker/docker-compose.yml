@@ -6,7 +6,7 @@
 #   docker compose -f docker/docker-compose.yml up -d                  # full stack
 #
 # In production, Postgres → Amazon RDS, Redis → Amazon ElastiCache, the api
-# image runs on Amazon ECS / Fargate, and the frontend is hosted on Vercel
+# image runs on Amazon ECS / Fargate, and the frontend on S3 + CloudFront
 # (see infra/terraform/README.md). The web service below is local-dev only.
 # =============================================================================
 name: rooferslabs
