@@ -28,8 +28,13 @@ output "api_url" {
   value = "https://${var.api_subdomain}.${var.root_domain}"
 }
 
+output "web_url" {
+  description = "Canonical public site (apex). Attach this domain in Vercel and set VITE_API_BASE_URL=<api_url> + VITE_CLERK_PUBLISHABLE_KEY there. See docs/PRODUCTION_READINESS.md."
+  value       = "https://${var.root_domain}"
+}
+
 output "app_url" {
-  description = "Vercel-hosted frontend; set VITE_API_BASE_URL=<api_url> and VITE_CLERK_PUBLISHABLE_KEY in the Vercel project."
+  description = "Legacy app subdomain alias (redirect to the apex). Kept in CORS during the domain migration."
   value       = "https://${var.app_subdomain}.${var.root_domain}"
 }
 

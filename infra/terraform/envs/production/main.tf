@@ -18,6 +18,15 @@ locals {
   app_domain = "${var.app_subdomain}.${var.root_domain}"
   api_url    = "https://${local.api_domain}"
   app_url    = "https://${local.app_domain}"
+  root_url   = "https://${var.root_domain}"
+
+  # The frontend is a single SPA (marketing + authenticated app) served on the
+  # apex domain. WEB_PUBLIC_URL is the canonical public origin; CORS accepts the
+  # apex, www, and the legacy app.<domain> subdomain so the domain migration is
+  # non-breaking. Applies to the API only — DNS (Cloudflare) and the Vercel
+  # domain attachment are configured out-of-band; see docs/PRODUCTION_READINESS.md.
+  web_public_url = local.root_url
+  cors_origins   = join(",", [local.root_url, "https://www.${var.root_domain}", local.app_url])
 }
 
 # ---- Networking -----------------------------------------------------------------
@@ -199,8 +208,8 @@ module "api_service" {
     NODE_ENV                = "production"
     API_PORT                = "4000"
     API_PUBLIC_URL          = local.api_url
-    WEB_PUBLIC_URL          = local.app_url
-    CORS_ORIGINS            = local.app_url
+    WEB_PUBLIC_URL          = local.web_public_url
+    CORS_ORIGINS            = local.cors_origins
     REDIS_URL               = module.redis.redis_url
     LOG_LEVEL               = "info"
     OPENAI_REALTIME_MODEL   = var.openai_realtime_model
