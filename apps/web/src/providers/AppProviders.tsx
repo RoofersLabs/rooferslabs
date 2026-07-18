@@ -37,28 +37,33 @@ function TokenBridge({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-/** Shown when the Clerk publishable key has not been configured yet. */
-function MissingClerkConfig() {
+/** Shown when required frontend environment variables are missing or invalid. */
+function ConfigError({ errors }: { errors: string[] }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-base p-6">
       <div className="max-w-lg rounded-2xl border border-line-subtle bg-surface p-8 text-ink shadow-card">
-        <h1 className="text-h4 text-ink">Authentication is not configured</h1>
+        <h1 className="text-h4 text-ink">Configuration required</h1>
         <p className="mt-3 text-body leading-6 text-ink-muted">
-          Set{' '}
-          <code className="font-num rounded bg-surface-3 px-1.5 py-0.5 text-ink">
-            VITE_CLERK_PUBLISHABLE_KEY
-          </code>{' '}
-          in <code className="font-num rounded bg-surface-3 px-1.5 py-0.5 text-ink">apps/web/.env</code>{' '}
-          with your Clerk publishable key (Clerk Dashboard → API Keys), then restart the dev server.
+          The app can’t start until these environment variables in{' '}
+          <code className="font-num rounded bg-surface-3 px-1.5 py-0.5 text-ink">apps/web/.env</code>{' '}
+          are fixed, then restart the dev server:
         </p>
+        <ul className="mt-4 space-y-2">
+          {errors.map((error) => (
+            <li key={error} className="flex gap-2 text-small leading-6 text-ink-muted">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emergency" aria-hidden />
+              {error}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
 }
 
 export function AppProviders({ children }: { children: ReactNode }) {
-  if (!config.clerkPublishableKey) {
-    return <MissingClerkConfig />;
+  if (config.configErrors.length > 0) {
+    return <ConfigError errors={config.configErrors} />;
   }
 
   return (
