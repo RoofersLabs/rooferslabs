@@ -1,0 +1,102 @@
+name: Deploy Web (S3 + CloudFront)
+
+# Production frontend deploy. Requires (repo Settings → Secrets and variables):
+#   Variables: AWS_REGION, AWS_DEPLOY_ROLE_ARN (GitHub OIDC role),
+#              WEB_BUCKET, WEB_DISTRIBUTION_ID, VITE_API_BASE_URL
+#   Secrets:   VITE_CLERK_PUBLISHABLE_KEY (pk_live_…)
+# The job fails immediately if any step fails.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'packages/shared/**'
+      - '.github/workflows/deploy-web.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # AWS OIDC
+  contents: read
+
+jobs:
+  deploy:
+    name: Build, verify, and deploy the SPA
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared contracts
+        run: npm run build --workspace @rooferslabs/shared
+
+      - name: Typecheck
+        run: npm run typecheck --workspace @rooferslabs/web
+
+      - name: Lint
+        run: npm run lint --workspace @rooferslabs/web
+
+      - name: Test
+        run: npm test --workspaces --if-present
+
+      - name: Build frontend
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+        run: npm run build --workspace @rooferslabs/web
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Upload hashed assets (immutable)
+        run: |
+          aws s3 sync apps/web/dist/ "s3://${{ vars.WEB_BUCKET }}/" --delete \
+            --cache-control "public,max-age=31536000,immutable" \
+            --exclude "index.html" --exclude "*.webmanifest" \
+            --exclude "sw.js" --exclude "push-sw.js" --exclude "registerSW.js"
+
+      - name: Upload entry + service worker (no-cache)
+        run: |
+          aws s3 cp apps/web/dist/index.html "s3://${{ vars.WEB_BUCKET }}/index.html" \
+            --cache-control "no-cache" --content-type "text/html; charset=utf-8"
+          for f in sw.js push-sw.js registerSW.js; do
+            [ -f "apps/web/dist/$f" ] && aws s3 cp "apps/web/dist/$f" "s3://${{ vars.WEB_BUCKET }}/$f" \
+              --cache-control "no-cache" --content-type "application/javascript"
+          done
+          for m in apps/web/dist/*.webmanifest; do
+            [ -f "$m" ] && aws s3 cp "$m" "s3://${{ vars.WEB_BUCKET }}/$(basename "$m")" \
+              --cache-control "no-cache" --content-type "application/manifest+json"
+          done
+
+      - name: Invalidate CloudFront
+        run: |
+          ID=$(aws cloudfront create-invalidation \
+            --distribution-id "${{ vars.WEB_DISTRIBUTION_ID }}" \
+            --paths "/index.html" "/sw.js" "/push-sw.js" "/registerSW.js" "/manifest.webmanifest" \
+            --query 'Invalidation.Id' --output text)
+          aws cloudfront wait invalidation-completed \
+            --distribution-id "${{ vars.WEB_DISTRIBUTION_ID }}" --id "$ID"
+
+      - name: Verify deployment
+        env:
+          # Defaults to the public site; set WEB_VERIFY_URL to the CloudFront
+          # domain to verify before the DNS cutover.
+          VERIFY_URL: ${{ vars.WEB_VERIFY_URL || 'https://rooferslabs.com' }}
+        run: |
+          STATUS=$(curl -s -o /dev/null -w '%{http_code}' "$VERIFY_URL/")
+          echo "GET $VERIFY_URL/ → $STATUS"
+          test "$STATUS" = "200"
