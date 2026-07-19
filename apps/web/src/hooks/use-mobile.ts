@@ -1,6 +1,9 @@
 import * as React from "react"
 
-const MOBILE_BREAKPOINT = 768
+// Matches Tailwind's `lg` breakpoint (1024px) — the threshold the app shell
+// has always used for switching between the persistent sidebar and the
+// mobile slide-over, preserved here rather than shadcn's default `md` (768px).
+const MOBILE_BREAKPOINT = 1024
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean>(
