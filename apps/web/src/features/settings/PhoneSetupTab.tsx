@@ -33,13 +33,13 @@ export function PhoneSetupTab() {
     return (
       <div className="card p-8 text-center">
         <PhoneForwarded className="mx-auto h-10 w-10 text-ink-faint" aria-hidden />
-        <h2 className="mt-4 text-base font-semibold text-ink">Get your AI receptionist number</h2>
-        <p className="mx-auto mt-2 max-w-md text-sm text-ink-muted">
+        <h2 className="mt-4 text-h5 text-ink">Get your AI receptionist number</h2>
+        <p className="mx-auto mt-2 max-w-md text-small text-ink-muted">
           We’ll set up a local number for your business (matching your area code when available) and
           connect it to your AI receptionist.
         </p>
         {provision.isError && (
-          <p className="mx-auto mt-3 max-w-md text-sm text-emergency">
+          <p className="mx-auto mt-3 max-w-md text-small text-emergency">
             {(provision.error as Error).message}
           </p>
         )}
@@ -84,8 +84,8 @@ function ControlCenterCard() {
     <div className="card p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold text-ink">AI Receptionist</h2>
-          <p className="mt-1 text-sm text-ink-muted">
+          <h2 className="text-h5 text-ink">AI Receptionist</h2>
+          <p className="mt-1 text-small text-ink-muted">
             {s.enabled
               ? 'Answering forwarded calls, capturing leads, and updating your dashboard.'
               : 'Off — callers hear a polite unavailable message. Your number stays reserved; turn it back on anytime.'}
@@ -106,7 +106,7 @@ function ControlCenterCard() {
         >
           <span
             className={cn(
-              'absolute text-xs font-bold text-white',
+              'absolute text-caption font-bold text-white',
               s.enabled ? 'left-4' : 'right-4',
             )}
           >
@@ -127,10 +127,10 @@ function ControlCenterCard() {
       </div>
 
       {toggle.isError && (
-        <p className="mt-3 text-sm text-emergency">{(toggle.error as Error).message}</p>
+        <p className="mt-3 text-small text-emergency">{(toggle.error as Error).message}</p>
       )}
 
-      <dl className="mt-5 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+      <dl className="mt-5 grid gap-x-8 gap-y-3 text-small sm:grid-cols-2 lg:grid-cols-3">
         <StatusRow label="Business Phone Number" value={formatPhone(s.businessPhone)} />
         <StatusRow label="AI Receptionist Number" value={formatPhone(s.aiPhoneNumber)} />
         <StatusRow
@@ -167,7 +167,7 @@ function StatusRow({
 }) {
   return (
     <div>
-      <dt className="text-xs text-ink-muted">{label}</dt>
+      <dt className="text-caption text-ink-muted">{label}</dt>
       <dd
         className={cn(
           'mt-0.5 font-medium',
@@ -190,9 +190,9 @@ function NumberCard({ phoneNumber, verified }: { phoneNumber: string; verified: 
 
   return (
     <div className="card p-6">
-      <h2 className="text-base font-semibold text-ink">Your AI Receptionist Number</h2>
+      <h2 className="text-h5 text-ink">Your AI Receptionist Number</h2>
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <span className="rounded-xl bg-brand-50 px-5 py-3 font-mono text-xl font-bold text-brand-800">
+        <span className="font-num rounded-xl bg-accent-subtle px-5 py-3 text-h4 text-accent">
           {formatPhone(phoneNumber)}
         </span>
         <Button variant="secondary" size="sm" onClick={() => void copy()}>
@@ -200,17 +200,17 @@ function NumberCard({ phoneNumber, verified }: { phoneNumber: string; verified: 
           {copied ? 'Copied!' : 'Copy'}
         </Button>
         {verified ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-success-subtle px-3 py-1 text-xs font-medium text-success">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-success-subtle px-3 py-1 text-caption font-medium text-success">
             <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
             AI Receptionist Active
           </span>
         ) : (
-          <span className="rounded-full bg-warning-subtle px-3 py-1 text-xs font-medium text-warning">
+          <span className="rounded-full bg-warning-subtle px-3 py-1 text-caption font-medium text-warning">
             AI Receptionist Not Yet Activated
           </span>
         )}
       </div>
-      <p className="mt-3 text-sm text-ink-muted">
+      <p className="mt-3 text-small text-ink-muted">
         {verified
           ? 'Calls to your business number are answered by your AI receptionist.'
           : 'Next step: forward your business phone number to this AI receptionist number. Your customers keep dialing the number they already know.'}
@@ -246,8 +246,8 @@ function ForwardingCard({
 
   return (
     <div className="card p-6">
-      <h2 className="text-base font-semibold text-ink">Forward your business number</h2>
-      <p className="mt-1 text-sm text-ink-muted">
+      <h2 className="text-h5 text-ink">Forward your business number</h2>
+      <p className="mt-1 text-small text-ink-muted">
         You keep your existing number — customers keep dialing it. Your phone provider sends the
         calls to your AI receptionist, which answers as your office.
       </p>
@@ -276,28 +276,28 @@ function ForwardingCard({
           Save
         </Button>
         {update.isSuccess && !update.isPending && (
-          <span className="flex items-center gap-1 text-sm text-success">
+          <span className="flex items-center gap-1 text-small text-success">
             <CheckCircle2 className="h-4 w-4" aria-hidden />
             Saved
           </span>
         )}
         {update.isError && (
-          <span className="text-sm text-emergency">{(update.error as Error).message}</span>
+          <span className="text-small text-emergency">{(update.error as Error).message}</span>
         )}
       </div>
 
       <ol className="mt-6 space-y-4">
         {guide.steps.map((step, index) => (
           <li key={index} className="flex gap-4">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white">
+            <span className="font-num flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-caption font-bold text-ink-on-brand">
               {index + 1}
             </span>
-            <p className="text-sm text-ink">{fill(step)}</p>
+            <p className="text-small text-ink">{fill(step)}</p>
           </li>
         ))}
       </ol>
       {guide.disable && (
-        <p className="mt-4 text-xs text-ink-faint">
+        <p className="mt-4 text-caption text-ink-faint">
           To stop forwarding later: {fill(guide.disable)}
         </p>
       )}
@@ -310,16 +310,16 @@ function VerifyCard() {
 
   return (
     <div className="card p-6">
-      <h2 className="flex items-center gap-2 text-base font-semibold text-ink">
-        <PhoneCall className="h-4 w-4 text-brand-600" aria-hidden />
+      <h2 className="flex items-center gap-2 text-h5 text-ink">
+        <PhoneCall className="h-4 w-4 text-accent" aria-hidden />
         Turn on your AI receptionist
       </h2>
-      <p className="mt-1 text-sm text-ink-muted">
+      <p className="mt-1 text-small text-ink-muted">
         Once forwarding is set up, call your business number from any phone — your AI receptionist
         should answer with your greeting. Then verify below.
       </p>
       {verify.isError && (
-        <p className="mt-3 text-sm text-emergency">{(verify.error as Error).message}</p>
+        <p className="mt-3 text-small text-emergency">{(verify.error as Error).message}</p>
       )}
       <Button className="mt-4" loading={verify.isPending} onClick={() => verify.mutate()}>
         <CheckCircle2 className="h-4 w-4" aria-hidden />
