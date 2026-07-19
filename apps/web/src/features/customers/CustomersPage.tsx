@@ -76,7 +76,7 @@ export function CustomersPage() {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-body">
+              <table className="w-full text-left text-table-cell">
                 <thead>
                   <tr className="border-b border-line-subtle text-table-header uppercase text-ink-faint">
                     <th className="px-5 py-3 font-medium">Customer</th>

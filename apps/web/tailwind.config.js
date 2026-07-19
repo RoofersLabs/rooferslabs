@@ -165,11 +165,15 @@ export default {
         small: ['0.8125rem', { lineHeight: '1.5' }],
         caption: ['0.75rem', { lineHeight: '1.4', letterSpacing: '0.01em', fontWeight: '500' }],
         label: ['0.8125rem', { lineHeight: '1.3', letterSpacing: '0.01em', fontWeight: '600' }],
+        button: ['0.875rem', { lineHeight: '1', letterSpacing: '0.01em', fontWeight: '600' }],
         metric: ['2rem', { lineHeight: '1.1', fontWeight: '600' }],
         'table-header': [
           '0.75rem',
           { lineHeight: '1.2', letterSpacing: '0.03em', fontWeight: '600' },
         ],
+        'table-cell': ['0.875rem', { lineHeight: '1.5', fontWeight: '400' }],
+        'form-label': ['0.8125rem', { lineHeight: '1.4', fontWeight: '500' }],
+        'form-input': ['0.9375rem', { lineHeight: '1.5', fontWeight: '400' }],
       },
       borderRadius: {
         xs: 'var(--radius-xs)',

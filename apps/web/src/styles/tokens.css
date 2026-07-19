@@ -129,6 +129,15 @@
   --text-button-lh: 1;
   --text-button-ls: 0.01em;
   --text-button-weight: 600;
+  --text-form-label-size: 0.8125rem;
+  --text-form-label-lh: 1.4;
+  --text-form-label-weight: 500;
+  --text-form-input-size: 0.9375rem;
+  --text-form-input-lh: 1.5;
+  --text-form-input-weight: 400;
+  --text-table-cell-size: 0.875rem;
+  --text-table-cell-lh: 1.5;
+  --text-table-cell-weight: 400;
   --text-metric-size: 2rem;
   --text-metric-lh: 1.1;
   --text-metric-weight: 600;
