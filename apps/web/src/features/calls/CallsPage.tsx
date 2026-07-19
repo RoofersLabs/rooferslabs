@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, PhoneMissed, Search } from 'lucide-react';
+import { Phone, PhoneMissed, Search, ShieldAlert } from 'lucide-react';
 import { useCalls } from '@/hooks/queries';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { formatDateTime, formatDuration, formatPhone } from '@/lib/utils';
@@ -39,7 +39,7 @@ export function CallsPage() {
                 setPage(1);
               }}
               placeholder="Search by caller or number…"
-              className="focus-ring h-9 w-full rounded-lg border border-line pl-9 pr-3 text-sm"
+              className="focus-ring h-9 w-full rounded-lg border border-line bg-surface pl-9 pr-3 text-form-input text-ink placeholder:text-ink-faint transition-colors duration-fast hover:border-line-strong"
               aria-label="Search calls"
             />
           </div>
@@ -63,28 +63,41 @@ export function CallsPage() {
           <>
             <ul className="divide-y divide-line-subtle">
               {calls.data.items.map((call) => {
+                const isEmergency = call.conversation?.isEmergency ?? false;
                 const row = (
-                  <div className="flex items-center gap-4 px-5 py-4">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50">
-                      <Phone className="h-4 w-4 text-brand-700" aria-hidden />
+                  <div className="group flex items-center gap-4 px-5 py-4 transition-colors duration-fast hover:bg-surface-2">
+                    <span
+                      className={
+                        isEmergency
+                          ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emergency-subtle'
+                          : 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-subtle'
+                      }
+                    >
+                      {isEmergency ? (
+                        <ShieldAlert className="h-5 w-5 text-emergency" aria-hidden />
+                      ) : (
+                        <Phone className="h-5 w-5 text-accent" aria-hidden />
+                      )}
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-medium text-ink">
+                        <span className="truncate text-body font-medium text-ink">
                           {call.customer?.fullName ?? formatPhone(call.fromNumber)}
                         </span>
                         <EnumBadge value={call.conversation?.outcome ?? call.status} />
-                        {call.conversation?.isEmergency && <EnumBadge value="EMERGENCY" />}
+                        {isEmergency && <EnumBadge value="EMERGENCY" />}
                       </div>
-                      <p className="mt-0.5 truncate text-xs text-ink-muted">
+                      <p className="mt-0.5 truncate text-small text-ink-muted">
                         {call.conversation?.summary ?? formatPhone(call.fromNumber)}
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className="text-xs font-medium text-ink">
+                      <p className="font-num text-small text-ink-muted">
                         {formatDuration(call.durationSeconds)}
                       </p>
-                      <p className="text-[11px] text-ink-faint">{formatDateTime(call.createdAt)}</p>
+                      <p className="mt-0.5 text-caption text-ink-faint">
+                        {formatDateTime(call.createdAt)}
+                      </p>
                     </div>
                   </div>
                 );
@@ -94,7 +107,7 @@ export function CallsPage() {
                     {call.conversation ? (
                       <Link
                         to={`/conversations/${call.conversation.id}`}
-                        className="focus-ring block hover:bg-surface-2"
+                        className="focus-ring block"
                       >
                         {row}
                       </Link>

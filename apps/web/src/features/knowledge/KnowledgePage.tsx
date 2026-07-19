@@ -61,7 +61,7 @@ export function KnowledgePage() {
                 setPage(1);
               }}
               placeholder="Search articles…"
-              className="focus-ring h-9 w-full rounded-lg border border-line pl-9 pr-3 text-sm"
+              className="focus-ring h-9 w-full rounded-lg border border-line bg-surface pl-9 pr-3 text-form-input text-ink placeholder:text-ink-faint transition-colors duration-fast hover:border-line-strong"
               aria-label="Search knowledge base"
             />
           </div>
@@ -106,23 +106,23 @@ export function KnowledgePage() {
                 <li key={article.id}>
                   <button
                     onClick={() => setEditing(article)}
-                    className="focus-ring flex w-full items-start gap-4 px-5 py-4 text-left hover:bg-surface-2"
+                    className="focus-ring flex w-full items-start gap-4 px-5 py-4 text-left transition-colors duration-fast hover:bg-surface-2"
                   >
-                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50">
-                      <BookOpen className="h-4 w-4 text-brand-700" aria-hidden />
+                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-subtle">
+                      <BookOpen className="h-4 w-4 text-accent" aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-medium text-ink">{article.title}</span>
+                        <span className="text-body font-medium text-ink">{article.title}</span>
                         <Badge tone="brand">{humanizeEnum(article.category)}</Badge>
                         {article.status !== 'PUBLISHED' && (
                           <Badge>{humanizeEnum(article.status)}</Badge>
                         )}
                       </span>
-                      <span className="mt-0.5 block truncate text-xs text-ink-muted">
+                      <span className="mt-0.5 block truncate text-small text-ink-muted">
                         {article.content.slice(0, 140)}
                       </span>
-                      <span className="mt-0.5 block text-[11px] text-ink-faint">
+                      <span className="mt-0.5 block text-caption text-ink-faint">
                         Updated {timeAgo(article.updatedAt)} · v{article.version}
                       </span>
                     </span>
@@ -208,7 +208,7 @@ function ArticleModal({
           required
         />
         {(save.isError || remove.isError) && (
-          <p className="text-sm text-emergency">
+          <p className="text-small text-emergency">
             {((save.error ?? remove.error) as Error).message}
           </p>
         )}

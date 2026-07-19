@@ -46,7 +46,7 @@ export function RecordingPlayer({ callId }: { callId: string }) {
 
   return (
     <div className="mt-4">
-      <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-ink-muted">
+      <p className="mb-1.5 flex items-center gap-1.5 text-caption font-medium text-ink-muted">
         <Mic className="h-3.5 w-3.5" aria-hidden />
         Recording
       </p>
@@ -58,7 +58,7 @@ export function RecordingPlayer({ callId }: { callId: string }) {
           </Button>
         </div>
       ) : (
-        <div className="flex items-center gap-2 py-2 text-xs text-ink-faint">
+        <div className="flex items-center gap-2 py-2 text-caption text-ink-faint">
           <Spinner className="h-4 w-4" />
           Loading recording…
         </div>

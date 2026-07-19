@@ -27,17 +27,17 @@ function PushNotificationsCard() {
   if (status === 'unsupported' || status === 'loading') return null;
 
   return (
-    <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl border border-line-subtle bg-surface px-5 py-4">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50">
-        <BellRing className="h-5 w-5 text-brand-700" aria-hidden />
+    <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl border border-line-subtle bg-surface px-5 py-4 shadow-card">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-subtle">
+        <BellRing className="h-5 w-5 text-accent" aria-hidden />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-ink">
+        <p className="text-body font-semibold text-ink">
           {status === 'subscribed'
             ? 'Push notifications are on'
             : 'Get notified the moment a lead calls'}
         </p>
-        <p className="text-xs text-ink-muted">
+        <p className="text-small text-ink-muted">
           {status === 'denied'
             ? 'Notifications are blocked for this site — enable them in your browser settings, then reload.'
             : status === 'subscribed'
@@ -133,8 +133,8 @@ export function NotificationsPage() {
                     <button
                       onClick={() => open(notification)}
                       className={cn(
-                        'focus-ring flex w-full items-start gap-3 px-5 py-4 text-left hover:bg-surface-2',
-                        unread && 'bg-brand-50/40',
+                        'focus-ring flex w-full items-start gap-3 px-5 py-4 text-left transition-colors duration-fast hover:bg-surface-2',
+                        unread && 'bg-accent-subtle/40',
                       )}
                     >
                       <span
@@ -152,23 +152,20 @@ export function NotificationsPage() {
                         <span className="flex items-center gap-2">
                           <span
                             className={cn(
-                              'text-sm text-ink',
+                              'text-body text-ink',
                               unread ? 'font-semibold' : 'font-medium',
                             )}
                           >
                             {notification.title}
                           </span>
                           {unread && (
-                            <span
-                              className="h-2 w-2 rounded-full bg-brand-600"
-                              aria-label="Unread"
-                            />
+                            <span className="h-2 w-2 rounded-full bg-accent" aria-label="Unread" />
                           )}
                         </span>
-                        <span className="mt-0.5 block text-sm text-ink-muted">
+                        <span className="mt-0.5 block text-small text-ink-muted">
                           {notification.message}
                         </span>
-                        <span className="mt-0.5 block text-[11px] text-ink-faint">
+                        <span className="mt-0.5 block text-caption text-ink-faint">
                           {timeAgo(notification.createdAt)}
                         </span>
                       </span>

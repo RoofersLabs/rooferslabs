@@ -58,14 +58,14 @@ export function ConversationDetailPage() {
     <div>
       <Link
         to="/calls"
-        className="focus-ring mb-4 inline-flex items-center gap-1.5 rounded text-sm font-medium text-brand-700 hover:underline"
+        className="focus-ring mb-4 inline-flex items-center gap-1.5 rounded text-small font-medium text-accent hover:underline"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Back to calls
       </Link>
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-bold text-ink">
+        <h1 className="text-h4 text-ink">
           {data.customer?.fullName ?? formatPhone(call?.fromNumber)}
         </h1>
         <EnumBadge value={data.outcome} />
@@ -81,15 +81,15 @@ export function ConversationDetailPage() {
         {/* Transcript */}
         <section className="card lg:col-span-2" aria-label="Transcript">
           <header className="border-b border-line-subtle px-5 py-4">
-            <h2 className="text-sm font-semibold text-ink">Transcript</h2>
-            <p className="text-xs text-ink-muted">
+            <h2 className="text-h5 text-ink">Transcript</h2>
+            <p className="text-small text-ink-muted">
               {formatDateTime(call?.createdAt)} · {formatDuration(call?.durationSeconds)} ·{' '}
               {formatPhone(call?.fromNumber)}
             </p>
           </header>
           <div className="max-h-[32rem] space-y-4 overflow-y-auto p-5">
             {!data.transcript?.length ? (
-              <p className="py-8 text-center text-sm text-ink-muted">
+              <p className="py-8 text-center text-small text-ink-muted">
                 No transcript was captured for this call.
               </p>
             ) : (
@@ -105,12 +105,12 @@ export function ConversationDetailPage() {
                   <span
                     className={
                       entry.role === 'assistant'
-                        ? 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100'
+                        ? 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-subtle'
                         : 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-3'
                     }
                   >
                     {entry.role === 'assistant' ? (
-                      <Bot className="h-4 w-4 text-brand-700" aria-hidden />
+                      <Bot className="h-4 w-4 text-accent" aria-hidden />
                     ) : (
                       <User className="h-4 w-4 text-ink-muted" aria-hidden />
                     )}
@@ -118,14 +118,14 @@ export function ConversationDetailPage() {
                   <div
                     className={
                       entry.role === 'assistant'
-                        ? 'max-w-[80%] rounded-2xl rounded-tl-sm bg-brand-50 px-4 py-2.5'
+                        ? 'max-w-[80%] rounded-2xl rounded-tl-sm bg-accent-subtle px-4 py-2.5'
                         : 'max-w-[80%] rounded-2xl rounded-tr-sm bg-surface-3 px-4 py-2.5'
                     }
                   >
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+                    <p className="text-caption font-semibold uppercase tracking-wide text-ink-faint">
                       {entry.role === 'assistant' ? 'AI receptionist' : 'Caller'}
                     </p>
-                    <p className="mt-0.5 text-sm text-ink">{entry.text}</p>
+                    <p className="mt-0.5 text-small text-ink">{entry.text}</p>
                   </div>
                 </div>
               ))
@@ -136,15 +136,15 @@ export function ConversationDetailPage() {
         {/* Sidebar: summary + extracted info */}
         <div className="space-y-6">
           <section className="card p-5" aria-label="AI summary">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
-              <Sparkles className="h-4 w-4 text-brand-600" aria-hidden />
+            <h2 className="flex items-center gap-2 text-h5 text-ink">
+              <Sparkles className="h-4 w-4 text-accent" aria-hidden />
               AI summary
             </h2>
-            <p className="mt-3 text-sm leading-6 text-ink">
+            <p className="mt-3 text-small leading-6 text-ink">
               {data.summary ?? 'No summary available.'}
             </p>
             {data.keyPoints.length > 0 && (
-              <ul className="mt-3 list-inside list-disc space-y-1 text-xs text-ink-muted">
+              <ul className="mt-3 list-inside list-disc space-y-1 text-small text-ink-muted">
                 {data.keyPoints.map((point) => (
                   <li key={point}>{point}</li>
                 ))}
@@ -153,8 +153,8 @@ export function ConversationDetailPage() {
           </section>
 
           <section className="card p-5" aria-label="Details">
-            <h2 className="text-sm font-semibold text-ink">Details</h2>
-            <dl className="mt-3 space-y-2.5 text-sm">
+            <h2 className="text-h5 text-ink">Details</h2>
+            <dl className="mt-3 space-y-2.5 text-small">
               <DetailRow label="Intent" value={humanizeEnum(data.intent)} />
               <DetailRow label="Lead quality" value={humanizeEnum(data.leadQuality)} />
               <DetailRow label="Urgency" value={humanizeEnum(data.urgency)} />
@@ -174,11 +174,11 @@ export function ConversationDetailPage() {
 
           {data.appointment && (
             <section className="card p-5" aria-label="Appointment request">
-              <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
-                <CalendarClock className="h-4 w-4 text-brand-600" aria-hidden />
+              <h2 className="flex items-center gap-2 text-h5 text-ink">
+                <CalendarClock className="h-4 w-4 text-accent" aria-hidden />
                 Appointment request
               </h2>
-              <dl className="mt-3 space-y-2.5 text-sm">
+              <dl className="mt-3 space-y-2.5 text-small">
                 <DetailRow label="Service" value={data.appointment.serviceRequested ?? '—'} />
                 <DetailRow
                   label="Preferred"
@@ -188,7 +188,7 @@ export function ConversationDetailPage() {
               </dl>
               <Link
                 to="/appointments"
-                className="focus-ring mt-3 inline-block rounded text-xs font-medium text-brand-700 hover:underline"
+                className="focus-ring mt-3 inline-block rounded text-caption font-medium text-accent hover:underline"
               >
                 Manage in Appointments →
               </Link>
@@ -203,7 +203,7 @@ export function ConversationDetailPage() {
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <dt className="shrink-0 text-xs text-ink-muted">{label}</dt>
+      <dt className="shrink-0 text-caption text-ink-muted">{label}</dt>
       <dd className="truncate text-right font-medium text-ink">{value}</dd>
     </div>
   );

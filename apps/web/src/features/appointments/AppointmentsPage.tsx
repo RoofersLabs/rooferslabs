@@ -64,27 +64,27 @@ export function AppointmentsPage() {
               {appointments.data.items.map((appointment) => (
                 <li
                   key={appointment.id}
-                  className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center"
+                  className="flex flex-col gap-3 px-5 py-4 transition-colors duration-fast hover:bg-surface-2 sm:flex-row sm:items-center"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-medium text-ink">
+                      <span className="text-body font-medium text-ink">
                         {appointment.customer?.fullName ?? 'Customer'}
                       </span>
                       <EnumBadge value={appointment.priority} />
                       {appointment.conversationId && (
                         <Link
                           to={`/conversations/${appointment.conversationId}`}
-                          className="focus-ring rounded text-xs font-medium text-brand-700 hover:underline"
+                          className="focus-ring rounded text-caption font-medium text-accent hover:underline"
                         >
                           View call
                         </Link>
                       )}
                     </div>
-                    <p className="mt-0.5 text-sm text-ink-muted">
+                    <p className="mt-0.5 text-small text-ink-muted">
                       {appointment.serviceRequested ?? 'Service visit'}
                     </p>
-                    <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-ink-faint">
+                    <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-caption text-ink-faint">
                       <span>
                         {appointment.preferredDate
                           ? formatDateTime(appointment.preferredDate)

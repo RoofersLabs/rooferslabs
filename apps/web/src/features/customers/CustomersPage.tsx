@@ -51,7 +51,7 @@ export function CustomersPage() {
                 setPage(1);
               }}
               placeholder="Search name, phone, email, address…"
-              className="focus-ring h-9 w-full rounded-lg border border-line pl-9 pr-3 text-sm"
+              className="focus-ring h-9 w-full rounded-lg border border-line bg-surface pl-9 pr-3 text-form-input text-ink placeholder:text-ink-faint transition-colors duration-fast hover:border-line-strong"
               aria-label="Search customers"
             />
           </div>
@@ -76,9 +76,9 @@ export function CustomersPage() {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="w-full text-left text-body">
                 <thead>
-                  <tr className="border-b border-line-subtle text-xs uppercase tracking-wide text-ink-faint">
+                  <tr className="border-b border-line-subtle text-table-header uppercase text-ink-faint">
                     <th className="px-5 py-3 font-medium">Customer</th>
                     <th className="px-5 py-3 font-medium">Contact</th>
                     <th className="hidden px-5 py-3 font-medium md:table-cell">Property</th>
@@ -91,7 +91,7 @@ export function CustomersPage() {
                     <tr
                       key={customer.id}
                       onClick={() => setEditing(customer)}
-                      className="cursor-pointer hover:bg-surface-2"
+                      className="cursor-pointer transition-colors duration-fast hover:bg-surface-2"
                     >
                       <td className="px-5 py-3.5 font-medium text-ink">
                         {customer.fullName ?? 'Unknown caller'}
@@ -99,19 +99,21 @@ export function CustomersPage() {
                       <td className="px-5 py-3.5 text-ink-muted">
                         <span className="block">{formatPhone(customer.phone)}</span>
                         {customer.email && (
-                          <span className="block text-xs text-ink-faint">{customer.email}</span>
+                          <span className="block text-caption text-ink-faint">
+                            {customer.email}
+                          </span>
                         )}
                       </td>
                       <td className="hidden max-w-[16rem] truncate px-5 py-3.5 text-ink-muted md:table-cell">
                         {customer.propertyAddress ?? '—'}
-                        <span className="block text-xs text-ink-faint">
+                        <span className="block text-caption text-ink-faint">
                           {humanizeEnum(customer.propertyType)}
                         </span>
                       </td>
                       <td className="px-5 py-3.5">
                         <EnumBadge value={customer.status} />
                       </td>
-                      <td className="hidden px-5 py-3.5 text-xs text-ink-faint sm:table-cell">
+                      <td className="hidden px-5 py-3.5 text-caption text-ink-faint sm:table-cell">
                         {timeAgo(customer.createdAt)}
                       </td>
                     </tr>
@@ -202,7 +204,9 @@ function CustomerModal({
           ))}
         </Select>
         <Textarea label="Notes" rows={3} value={form.notes ?? ''} onChange={set('notes')} />
-        {save.isError && <p className="text-sm text-emergency">{(save.error as Error).message}</p>}
+        {save.isError && (
+          <p className="text-small text-emergency">{(save.error as Error).message}</p>
+        )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
