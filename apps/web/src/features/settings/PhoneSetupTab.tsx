@@ -109,8 +109,8 @@ function ControlCenterCard() {
         >
           <span
             className={cn(
-              'absolute text-caption font-bold text-white',
-              s.enabled ? 'left-4' : 'right-4',
+              'absolute text-caption font-bold',
+              s.enabled ? 'left-4 text-ink-on-brand' : 'right-4 text-ink-muted',
             )}
           >
             {s.enabled ? 'ON' : 'OFF'}

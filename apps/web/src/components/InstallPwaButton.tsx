@@ -55,22 +55,28 @@ export function InstallPwaButton() {
 
 function IosInstructions() {
   return (
-    <ol className="space-y-4 text-sm text-ink">
+    <ol className="space-y-4 text-body text-ink">
       <li className="flex items-start gap-3">
-        <Share className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" aria-hidden />
-        <span>
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-accent">
+          <Share className="h-4 w-4" aria-hidden />
+        </span>
+        <span className="pt-1">
           Tap the <strong>Share</strong> button in Safari’s toolbar.
         </span>
       </li>
       <li className="flex items-start gap-3">
-        <PlusSquare className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" aria-hidden />
-        <span>
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-accent">
+          <PlusSquare className="h-4 w-4" aria-hidden />
+        </span>
+        <span className="pt-1">
           Scroll down and tap <strong>Add to Home Screen</strong>.
         </span>
       </li>
       <li className="flex items-start gap-3">
-        <Download className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" aria-hidden />
-        <span>
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-accent">
+          <Download className="h-4 w-4" aria-hidden />
+        </span>
+        <span className="pt-1">
           Tap <strong>Add</strong>. RoofersLabs will appear on your Home Screen like a native app.
         </span>
       </li>
@@ -97,10 +103,12 @@ function DesktopInstall({
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-4">
-        <Smartphone className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" aria-hidden />
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-accent">
+          <Smartphone className="h-4 w-4" aria-hidden />
+        </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-ink">On your phone (recommended)</p>
-          <p className="mt-0.5 text-sm text-ink-muted">
+          <p className="text-body font-semibold text-ink">On your phone (recommended)</p>
+          <p className="mt-0.5 text-small text-ink-muted">
             Scan this code with your phone’s camera, sign in, then add RoofersLabs to your Home
             Screen. You’ll get lead alerts wherever you are — even on the roof.
           </p>
@@ -116,10 +124,12 @@ function DesktopInstall({
 
       {canPrompt && (
         <div className="flex items-start gap-4 border-t border-line-subtle pt-5">
-          <Monitor className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" aria-hidden />
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-accent">
+            <Monitor className="h-4 w-4" aria-hidden />
+          </span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-ink">On this computer</p>
-            <p className="mt-0.5 text-sm text-ink-muted">
+            <p className="text-body font-semibold text-ink">On this computer</p>
+            <p className="mt-0.5 text-small text-ink-muted">
               Install RoofersLabs as a desktop app for quick access from your dock or taskbar.
             </p>
             <Button className="mt-3" size="sm" variant="secondary" onClick={() => void onInstall()}>
