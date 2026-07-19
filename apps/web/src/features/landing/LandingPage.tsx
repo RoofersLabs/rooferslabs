@@ -14,6 +14,7 @@ import {
   Clock,
   ShieldCheck,
 } from 'lucide-react';
+import { BorderBeam } from '@/components/ui/border-beam';
 
 /* ── Motion helpers (respect prefers-reduced-motion via useReducedMotion) ── */
 function useReveal(): Variants {
@@ -91,6 +92,7 @@ const steps = [
 export function LandingPage() {
   const { isSignedIn, isLoaded } = useAuth();
   const reveal = useReveal();
+  const reducedMotion = useReducedMotion();
   if (isLoaded && isSignedIn) return <Navigate to="/dashboard" replace />;
 
   return (
@@ -355,6 +357,7 @@ export function LandingPage() {
           variants={reveal}
           className="relative mx-auto max-w-marketing overflow-hidden rounded-2xl border border-line bg-surface-1 px-6 py-16 text-center"
         >
+          {!reducedMotion && <BorderBeam size={140} duration={10} borderWidth={1.5} />}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-x-0 -top-24 mx-auto h-64 w-[520px] rounded-full opacity-50 blur-2xl"
