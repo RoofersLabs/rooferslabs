@@ -65,10 +65,10 @@ const features = [
 ];
 
 const stats = [
-  { value: '24/7', label: 'Calls answered' },
-  { value: '0.8s', label: 'Avg. pickup time' },
-  { value: '100%', label: 'Leads documented' },
-  { value: '0', label: 'Missed jobs' },
+  { icon: Phone, value: '24/7', label: 'Calls answered' },
+  { icon: Zap, value: '0.8s', label: 'Avg. pickup time' },
+  { icon: CheckCircle2, value: '100%', label: 'Leads documented' },
+  { icon: ShieldCheck, value: '0', label: 'Missed jobs' },
 ];
 
 const steps = [
@@ -186,17 +186,24 @@ export function LandingPage() {
       </section>
 
       {/* Stats strip */}
-      <section className="border-y border-line-subtle bg-surface-1">
+      <section className="border-y border-line-subtle bg-surface-1 py-14">
         <motion.div
           initial="hidden"
           whileInView="show"
           viewport={revealViewport}
           variants={stagger}
-          className="mx-auto grid max-w-marketing grid-cols-2 gap-px px-6 py-10 sm:grid-cols-4"
+          className="mx-auto grid max-w-marketing grid-cols-2 gap-4 px-6 sm:grid-cols-4"
         >
           {stats.map((s) => (
-            <motion.div key={s.label} variants={reveal} className="px-2 text-center">
-              <div className="font-num text-h2 text-ink">{s.value}</div>
+            <motion.div
+              key={s.label}
+              variants={reveal}
+              className="rounded-xl border border-line-subtle bg-surface p-5 text-center shadow-card transition-shadow duration-base ease-standard hover:shadow-card-hover"
+            >
+              <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-accent-subtle text-accent">
+                <s.icon className="h-4 w-4" aria-hidden />
+              </span>
+              <div className="font-num mt-3 text-h2 text-ink">{s.value}</div>
               <div className="mt-1 text-small text-ink-faint">{s.label}</div>
             </motion.div>
           ))}

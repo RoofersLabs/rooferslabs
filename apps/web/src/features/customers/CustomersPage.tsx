@@ -7,6 +7,7 @@ import type { Customer } from '@/types/api';
 import { formatPhone, humanizeEnum, timeAgo } from '@/lib/utils';
 import { EnumBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Input, Select, Textarea } from '@/components/ui/input';
 import { Modal } from '@/components/ui/Modal';
 import { ListSkeleton } from '@/components/ui/skeleton';
@@ -14,6 +15,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/pagination';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export function CustomersPage() {
   const [page, setPage] = useState(1);
@@ -36,7 +38,7 @@ export function CustomersPage() {
         }
       />
 
-      <div className="card overflow-hidden">
+      <Card className="overflow-hidden">
         <div className="border-b border-line-subtle p-4">
           <div className="relative max-w-sm">
             <Search
@@ -75,56 +77,54 @@ export function CustomersPage() {
           />
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-table-cell">
-                <thead>
-                  <tr className="border-b border-line-subtle text-table-header uppercase text-ink-faint">
-                    <th className="px-5 py-3 font-medium">Customer</th>
-                    <th className="px-5 py-3 font-medium">Contact</th>
-                    <th className="hidden px-5 py-3 font-medium md:table-cell">Property</th>
-                    <th className="px-5 py-3 font-medium">Status</th>
-                    <th className="hidden px-5 py-3 font-medium sm:table-cell">Added</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line-subtle">
-                  {customers.data.items.map((customer) => (
-                    <tr
-                      key={customer.id}
-                      onClick={() => setEditing(customer)}
-                      className="cursor-pointer transition-colors duration-fast hover:bg-surface-2"
-                    >
-                      <td className="px-5 py-3.5 font-medium text-ink">
-                        {customer.fullName ?? 'Unknown caller'}
-                      </td>
-                      <td className="px-5 py-3.5 text-ink-muted">
-                        <span className="block">{formatPhone(customer.phone)}</span>
-                        {customer.email && (
-                          <span className="block text-caption text-ink-faint">
-                            {customer.email}
-                          </span>
-                        )}
-                      </td>
-                      <td className="hidden max-w-[16rem] truncate px-5 py-3.5 text-ink-muted md:table-cell">
-                        {customer.propertyAddress ?? '—'}
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead className="hidden md:table-cell">Property</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="hidden sm:table-cell">Added</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {customers.data.items.map((customer) => (
+                  <TableRow
+                    key={customer.id}
+                    onClick={() => setEditing(customer)}
+                    className="cursor-pointer"
+                  >
+                    <TableCell className="font-medium">
+                      {customer.fullName ?? 'Unknown caller'}
+                    </TableCell>
+                    <TableCell className="text-ink-muted">
+                      <span className="block">{formatPhone(customer.phone)}</span>
+                      {customer.email && (
                         <span className="block text-caption text-ink-faint">
-                          {humanizeEnum(customer.propertyType)}
+                          {customer.email}
                         </span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <EnumBadge value={customer.status} />
-                      </td>
-                      <td className="hidden px-5 py-3.5 text-caption text-ink-faint sm:table-cell">
-                        {timeAgo(customer.createdAt)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="hidden max-w-[16rem] truncate text-ink-muted md:table-cell">
+                      {customer.propertyAddress ?? '—'}
+                      <span className="block text-caption text-ink-faint">
+                        {humanizeEnum(customer.propertyType)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <EnumBadge value={customer.status} />
+                    </TableCell>
+                    <TableCell className="hidden text-caption text-ink-faint sm:table-cell">
+                      {timeAgo(customer.createdAt)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
             <Pagination pagination={customers.data.pagination} onPageChange={setPage} />
           </>
         )}
-      </div>
+      </Card>
 
       <CustomerModal
         open={creating || editing !== null}

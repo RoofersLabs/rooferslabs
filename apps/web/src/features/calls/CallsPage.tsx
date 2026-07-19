@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, PhoneMissed, Search, ShieldAlert } from 'lucide-react';
+import { ChevronRight, Phone, PhoneMissed, Search, ShieldAlert } from 'lucide-react';
 import { useCalls } from '@/hooks/queries';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { formatDateTime, formatDuration, formatPhone } from '@/lib/utils';
 import { EnumBadge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -24,7 +25,7 @@ export function CallsPage() {
         description="Every inbound call answered by your AI receptionist."
       />
 
-      <div className="card overflow-hidden">
+      <Card className="overflow-hidden">
         <div className="border-b border-line-subtle p-4">
           <div className="relative max-w-sm">
             <Search
@@ -99,6 +100,12 @@ export function CallsPage() {
                         {formatDateTime(call.createdAt)}
                       </p>
                     </div>
+                    {call.conversation && (
+                      <ChevronRight
+                        className="h-4 w-4 shrink-0 text-ink-faint opacity-0 transition-opacity duration-fast group-hover:opacity-100"
+                        aria-hidden
+                      />
+                    )}
                   </div>
                 );
 
@@ -121,7 +128,7 @@ export function CallsPage() {
             <Pagination pagination={calls.data.pagination} onPageChange={setPage} />
           </>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

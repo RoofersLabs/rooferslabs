@@ -5,6 +5,7 @@ import { AppointmentStatus } from '@rooferslabs/shared';
 import { useAppointments, useUpdateAppointment } from '@/hooks/queries';
 import { formatDateTime, humanizeEnum, timeAgo } from '@/lib/utils';
 import { EnumBadge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Select } from '@/components/ui/input';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -43,7 +44,7 @@ export function AppointmentsPage() {
         }
       />
 
-      <div className="card overflow-hidden">
+      <Card className="overflow-hidden">
         {appointments.isLoading ? (
           <ListSkeleton />
         ) : appointments.isError ? (
@@ -66,6 +67,9 @@ export function AppointmentsPage() {
                   key={appointment.id}
                   className="flex flex-col gap-3 px-5 py-4 transition-colors duration-fast hover:bg-surface-2 sm:flex-row sm:items-center"
                 >
+                  <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-subtle sm:flex">
+                    <CalendarClock className="h-5 w-5 text-accent" aria-hidden />
+                  </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-body font-medium text-ink">
@@ -124,7 +128,7 @@ export function AppointmentsPage() {
             <Pagination pagination={appointments.data.pagination} onPageChange={setPage} />
           </>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

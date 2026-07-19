@@ -69,8 +69,18 @@ export function OnboardingPage() {
 
 function StepIndicator({ current }: { current: OnboardingStep }) {
   const currentIndex = STEPS.findIndex((s) => s.key === current);
+  const progress = (currentIndex / (STEPS.length - 1)) * 100;
   return (
-    <ol className="flex items-center justify-between gap-2" aria-label="Setup progress">
+    <ol className="relative flex items-start justify-between gap-2" aria-label="Setup progress">
+      <div
+        aria-hidden
+        className="absolute left-0 right-0 top-[18px] -z-10 mx-[18px] h-0.5 bg-line-subtle"
+      >
+        <div
+          className="h-full bg-success transition-[width] duration-slow ease-standard"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
       {STEPS.map((step, index) => {
         const done = index < currentIndex;
         const active = index === currentIndex;

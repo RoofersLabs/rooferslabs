@@ -31,16 +31,31 @@ export function MetricCard({
   hint?: string;
 }) {
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-line-subtle bg-surface p-5 shadow-card">
+    <div className="group relative flex flex-col gap-4 overflow-hidden rounded-xl border border-line-subtle bg-surface p-5 shadow-card transition-shadow duration-base ease-standard hover:shadow-card-hover">
+      <Icon
+        className={cn(
+          '-mr-4 -mt-4 absolute right-0 top-0 h-24 w-24 opacity-[0.05] transition-transform duration-slow ease-standard group-hover:scale-110',
+          tone === 'brand'
+            ? 'text-accent'
+            : tone === 'success'
+              ? 'text-success'
+              : tone === 'emergency'
+                ? 'text-emergency'
+                : tone === 'warning'
+                  ? 'text-warning'
+                  : 'text-ink',
+        )}
+        aria-hidden
+      />
       <span
         className={cn(
-          'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+          'relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
           toneStyles[tone],
         )}
       >
         <Icon className="h-5 w-5" aria-hidden />
       </span>
-      <div>
+      <div className="relative">
         {value === undefined ? (
           <Skeleton className="h-9 w-14" />
         ) : (

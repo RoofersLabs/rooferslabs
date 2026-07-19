@@ -46,52 +46,56 @@ export function KnowledgePage() {
         }
       />
 
-      <div className="card overflow-hidden">
-        <div className="flex flex-col gap-3 border-b border-line-subtle p-4 sm:flex-row">
-          <div className="relative flex-1 sm:max-w-sm">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
-              aria-hidden
-            />
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Search articles…"
-              className="focus-ring h-9 w-full rounded-lg border border-line bg-surface pl-9 pr-3 text-form-input text-ink placeholder:text-ink-faint transition-colors duration-fast hover:border-line-strong"
-              aria-label="Search knowledge base"
-            />
-          </div>
-          <Select
-            value={category}
+      <div className="card mb-6 flex flex-col gap-3 p-4 sm:flex-row">
+        <div className="relative flex-1 sm:max-w-sm">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
+            aria-hidden
+          />
+          <input
+            type="search"
+            value={search}
             onChange={(e) => {
-              setCategory(e.target.value);
+              setSearch(e.target.value);
               setPage(1);
             }}
-            aria-label="Filter by category"
-            className="sm:w-52"
-          >
-            <option value="">All categories</option>
-            {Object.values(KnowledgeCategory).map((value) => (
-              <option key={value} value={value}>
-                {humanizeEnum(value)}
-              </option>
-            ))}
-          </Select>
+            placeholder="Search articles…"
+            className="focus-ring h-9 w-full rounded-lg border border-line bg-surface pl-9 pr-3 text-form-input text-ink placeholder:text-ink-faint transition-colors duration-fast hover:border-line-strong"
+            aria-label="Search knowledge base"
+          />
         </div>
+        <Select
+          value={category}
+          onChange={(e) => {
+            setCategory(e.target.value);
+            setPage(1);
+          }}
+          aria-label="Filter by category"
+          className="sm:w-52"
+        >
+          <option value="">All categories</option>
+          {Object.values(KnowledgeCategory).map((value) => (
+            <option key={value} value={value}>
+              {humanizeEnum(value)}
+            </option>
+          ))}
+        </Select>
+      </div>
 
-        {articles.isLoading ? (
+      {articles.isLoading ? (
+        <div className="card">
           <ListSkeleton />
-        ) : articles.isError ? (
+        </div>
+      ) : articles.isError ? (
+        <div className="card">
           <ErrorState
             title="Couldn’t load the knowledge base"
             message={(articles.error as Error).message}
             onRetry={() => void articles.refetch()}
           />
-        ) : !articles.data?.items.length ? (
+        </div>
+      ) : !articles.data?.items.length ? (
+        <div className="card">
           <EmptyState
             icon={BookOpen}
             title="No articles yet"
@@ -99,41 +103,40 @@ export function KnowledgePage() {
             actionLabel="Write your first article"
             onAction={() => setCreating(true)}
           />
-        ) : (
-          <>
-            <ul className="divide-y divide-line-subtle">
-              {articles.data.items.map((article) => (
-                <li key={article.id}>
-                  <button
-                    onClick={() => setEditing(article)}
-                    className="focus-ring flex w-full items-start gap-4 px-5 py-4 text-left transition-colors duration-fast hover:bg-surface-2"
-                  >
-                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-subtle">
-                      <BookOpen className="h-4 w-4 text-accent" aria-hidden />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex flex-wrap items-center gap-2">
-                        <span className="text-body font-medium text-ink">{article.title}</span>
-                        <Badge tone="brand">{humanizeEnum(article.category)}</Badge>
-                        {article.status !== 'PUBLISHED' && (
-                          <Badge>{humanizeEnum(article.status)}</Badge>
-                        )}
-                      </span>
-                      <span className="mt-0.5 block truncate text-small text-ink-muted">
-                        {article.content.slice(0, 140)}
-                      </span>
-                      <span className="mt-0.5 block text-caption text-ink-faint">
-                        Updated {timeAgo(article.updatedAt)} · v{article.version}
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {articles.data.items.map((article) => (
+              <button
+                key={article.id}
+                onClick={() => setEditing(article)}
+                className="card-interactive flex flex-col items-start p-5 text-left"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-subtle">
+                  <BookOpen className="h-4 w-4 text-accent" aria-hidden />
+                </span>
+                <span className="mt-3.5 line-clamp-2 text-body font-medium text-ink">
+                  {article.title}
+                </span>
+                <span className="mt-2 line-clamp-3 text-small text-ink-muted">
+                  {article.content.slice(0, 140)}
+                </span>
+                <span className="mt-4 flex flex-wrap items-center gap-1.5">
+                  <Badge tone="brand">{humanizeEnum(article.category)}</Badge>
+                  {article.status !== 'PUBLISHED' && <Badge>{humanizeEnum(article.status)}</Badge>}
+                </span>
+                <span className="mt-3 block text-caption text-ink-faint">
+                  Updated {timeAgo(article.updatedAt)} · v{article.version}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="card mt-4">
             <Pagination pagination={articles.data.pagination} onPageChange={setPage} />
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
 
       <ArticleModal
         open={creating || editing !== null}

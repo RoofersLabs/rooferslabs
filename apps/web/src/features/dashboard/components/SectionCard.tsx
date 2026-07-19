@@ -25,7 +25,7 @@ export function SectionCard({
     <section
       aria-label={title}
       className={cn(
-        'flex flex-col overflow-hidden rounded-xl border border-line-subtle bg-surface shadow-card',
+        'flex flex-col overflow-hidden rounded-xl border border-line-subtle bg-surface shadow-card transition-shadow duration-base ease-standard hover:shadow-card-hover',
         className,
       )}
     >

@@ -32,31 +32,38 @@ export function SettingsPage() {
     <div>
       <PageHeader title="Settings" description="Configure your company and AI receptionist." />
 
-      <div className="mb-6 flex gap-1 overflow-x-auto rounded-xl border border-line-subtle bg-surface p-1">
-        {TABS.map((item) => (
-          <NavLink
-            key={item.key}
-            to={`/settings/${item.key}`}
-            className={({ isActive }) =>
-              cn(
-                'focus-ring flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-body font-medium transition-colors duration-fast',
-                isActive || (item.key === 'business' && tab === 'business')
-                  ? 'bg-accent-subtle text-accent'
-                  : 'text-ink-muted hover:bg-surface-2',
-              )
-            }
-          >
-            <item.icon className="h-4 w-4" aria-hidden />
-            {item.label}
-          </NavLink>
-        ))}
-      </div>
+      <div className="grid gap-8 lg:grid-cols-[220px_1fr]">
+        <nav
+          aria-label="Settings sections"
+          className="flex gap-1 overflow-x-auto lg:sticky lg:top-20 lg:flex-col lg:self-start lg:overflow-visible"
+        >
+          {TABS.map((item) => (
+            <NavLink
+              key={item.key}
+              to={`/settings/${item.key}`}
+              className={({ isActive }) =>
+                cn(
+                  'focus-ring flex shrink-0 items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-body font-medium transition-colors duration-fast lg:w-full',
+                  isActive || (item.key === 'business' && tab === 'business')
+                    ? 'bg-accent-subtle text-accent'
+                    : 'text-ink-muted hover:bg-surface-2 hover:text-ink',
+                )
+              }
+            >
+              <item.icon className="h-4 w-4 shrink-0" aria-hidden />
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
 
-      {tab === 'business' && <BusinessTab />}
-      {tab === 'hours' && <HoursTab />}
-      {tab === 'ai' && <AiTab />}
-      {tab === 'phone' && <PhoneSetupTab />}
-      {tab === 'branding' && <BrandingTab />}
+        <div className="min-w-0">
+          {tab === 'business' && <BusinessTab />}
+          {tab === 'hours' && <HoursTab />}
+          {tab === 'ai' && <AiTab />}
+          {tab === 'phone' && <PhoneSetupTab />}
+          {tab === 'branding' && <BrandingTab />}
+        </div>
+      </div>
     </div>
   );
 }
