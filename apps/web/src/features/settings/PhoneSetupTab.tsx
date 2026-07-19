@@ -11,6 +11,7 @@ import {
 } from '@/hooks/queries';
 import { cn, formatPhone, humanizeEnum } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Input, Select } from '@/components/ui/input';
 import { LoadingBlock } from '@/components/ui/spinner';
 import { CARRIER_GUIDES } from './forwarding';
@@ -31,10 +32,12 @@ export function PhoneSetupTab() {
   const number = phone.data;
   if (!number) {
     return (
-      <div className="card p-8 text-center">
-        <PhoneForwarded className="mx-auto h-10 w-10 text-ink-faint" aria-hidden />
-        <h2 className="mt-4 text-h5 text-ink">Get your AI receptionist number</h2>
-        <p className="mx-auto mt-2 max-w-md text-small text-ink-muted">
+      <Card className="p-8 text-center">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-subtle text-accent">
+          <PhoneForwarded className="h-6 w-6" aria-hidden />
+        </span>
+        <h2 className="mt-5 text-h5 text-ink">Get your AI receptionist number</h2>
+        <p className="mx-auto mt-1.5 max-w-md text-small leading-6 text-ink-muted">
           We’ll set up a local number for your business (matching your area code when available) and
           connect it to your AI receptionist.
         </p>
@@ -47,7 +50,7 @@ export function PhoneSetupTab() {
           <PhoneForwarded className="h-4 w-4" aria-hidden />
           Get my AI receptionist number
         </Button>
-      </div>
+      </Card>
     );
   }
 
@@ -81,7 +84,7 @@ function ControlCenterCard() {
   const s = status.data;
 
   return (
-    <div className="card p-6">
+    <Card className="p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-h5 text-ink">AI Receptionist</h2>
@@ -152,7 +155,14 @@ function ControlCenterCard() {
           tone={s.enabled ? 'good' : 'warn'}
         />
       </dl>
-    </div>
+    </Card>
+  );
+}
+
+/** Small caps eyebrow marking a card's place in the 3-step activation journey. */
+function StepEyebrow({ step }: { step: number }) {
+  return (
+    <p className="mb-1 text-label uppercase tracking-wider text-accent">Step {step} of 3</p>
   );
 }
 
@@ -189,7 +199,8 @@ function NumberCard({ phoneNumber, verified }: { phoneNumber: string; verified: 
   };
 
   return (
-    <div className="card p-6">
+    <Card className="p-6">
+      <StepEyebrow step={1} />
       <h2 className="text-h5 text-ink">Your AI Receptionist Number</h2>
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <span className="font-num rounded-xl bg-accent-subtle px-5 py-3 text-h4 text-accent">
@@ -215,7 +226,7 @@ function NumberCard({ phoneNumber, verified }: { phoneNumber: string; verified: 
           ? 'Calls to your business number are answered by your AI receptionist.'
           : 'Next step: forward your business phone number to this AI receptionist number. Your customers keep dialing the number they already know.'}
       </p>
-    </div>
+    </Card>
   );
 }
 
@@ -245,7 +256,8 @@ function ForwardingCard({
   };
 
   return (
-    <div className="card p-6">
+    <Card className="p-6">
+      <StepEyebrow step={2} />
       <h2 className="text-h5 text-ink">Forward your business number</h2>
       <p className="mt-1 text-small text-ink-muted">
         You keep your existing number — customers keep dialing it. Your phone provider sends the
@@ -301,7 +313,7 @@ function ForwardingCard({
           To stop forwarding later: {fill(guide.disable)}
         </p>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -309,7 +321,8 @@ function VerifyCard() {
   const verify = useVerifyForwarding();
 
   return (
-    <div className="card p-6">
+    <Card className="p-6">
+      <StepEyebrow step={3} />
       <h2 className="flex items-center gap-2 text-h5 text-ink">
         <PhoneCall className="h-4 w-4 text-accent" aria-hidden />
         Turn on your AI receptionist
@@ -325,6 +338,6 @@ function VerifyCard() {
         <CheckCircle2 className="h-4 w-4" aria-hidden />
         Verify forwarding
       </Button>
-    </div>
+    </Card>
   );
 }

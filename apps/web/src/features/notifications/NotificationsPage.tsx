@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, BellRing, CheckCheck, ShieldAlert, CalendarClock, Flame, Phone } from 'lucide-react';
+import {
+  Bell,
+  BellRing,
+  CheckCheck,
+  ShieldAlert,
+  CalendarClock,
+  Flame,
+  Phone,
+  ChevronRight,
+} from 'lucide-react';
 import { NotificationType } from '@rooferslabs/shared';
 import {
   useMarkAllNotificationsRead,
@@ -11,6 +20,7 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import type { Notification } from '@/types/api';
 import { cn, timeAgo } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -106,7 +116,7 @@ export function NotificationsPage() {
 
       <PushNotificationsCard />
 
-      <div className="card overflow-hidden">
+      <Card className="overflow-hidden">
         {notifications.isLoading ? (
           <ListSkeleton />
         ) : notifications.isError ? (
@@ -133,8 +143,8 @@ export function NotificationsPage() {
                     <button
                       onClick={() => open(notification)}
                       className={cn(
-                        'focus-ring flex w-full items-start gap-3 px-5 py-4 text-left transition-colors duration-fast hover:bg-surface-2',
-                        unread && 'bg-accent-subtle/40',
+                        'group focus-ring flex w-full items-start gap-3 border-l-2 py-4 pl-4 pr-5 text-left transition-colors duration-fast hover:bg-surface-2',
+                        unread ? 'border-accent bg-accent-subtle/40' : 'border-transparent',
                       )}
                     >
                       <span
@@ -169,6 +179,10 @@ export function NotificationsPage() {
                           {timeAgo(notification.createdAt)}
                         </span>
                       </span>
+                      <ChevronRight
+                        className="mt-1 h-4 w-4 shrink-0 self-center text-ink-faint opacity-0 transition-opacity duration-fast group-hover:opacity-100"
+                        aria-hidden
+                      />
                     </button>
                   </li>
                 );
@@ -177,7 +191,7 @@ export function NotificationsPage() {
             <Pagination pagination={notifications.data.pagination} onPageChange={setPage} />
           </>
         )}
-      </div>
+      </Card>
     </div>
   );
 }
