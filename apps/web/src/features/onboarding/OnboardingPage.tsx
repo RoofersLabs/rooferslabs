@@ -16,6 +16,7 @@ import {
   useSessionQuery,
 } from '@/hooks/queries';
 import { useSessionStore } from '@/state/session.store';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input, Select, Textarea } from '@/components/ui/input';
 import { FullScreenSpinner } from '@/components/ui/spinner';
@@ -47,10 +48,10 @@ export function OnboardingPage() {
     <div className="min-h-screen bg-surface-2 px-4 py-10">
       <div className="mx-auto max-w-2xl">
         <div className="mb-8 flex items-center justify-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-700">
-            <HardHat className="h-5 w-5 text-white" aria-hidden />
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent shadow-button">
+            <HardHat className="h-5 w-5 text-ink-on-brand" aria-hidden />
           </span>
-          <span className="text-lg font-bold text-ink">RoofersLabs setup</span>
+          <span className="text-h5 text-ink">RoofersLabs setup</span>
         </div>
 
         <StepIndicator current={currentStep} />
@@ -76,18 +77,22 @@ function StepIndicator({ current }: { current: OnboardingStep }) {
         return (
           <li key={step.key} className="flex flex-1 flex-col items-center gap-1.5">
             <span
-              className={
+              className={cn(
+                'flex h-9 w-9 items-center justify-center rounded-full transition-colors duration-base',
                 done
-                  ? 'flex h-9 w-9 items-center justify-center rounded-full bg-success text-white'
+                  ? 'bg-success text-ink-on-brand'
                   : active
-                    ? 'flex h-9 w-9 items-center justify-center rounded-full bg-brand-700 text-white'
-                    : 'flex h-9 w-9 items-center justify-center rounded-full border border-line bg-surface text-ink-faint'
-              }
+                    ? 'bg-accent text-ink-on-brand'
+                    : 'border border-line bg-surface text-ink-faint',
+              )}
             >
               {done ? <Check className="h-4 w-4" /> : <step.icon className="h-4 w-4" />}
             </span>
             <span
-              className={active ? 'text-xs font-semibold text-brand-800' : 'text-xs text-ink-muted'}
+              className={cn(
+                'text-caption',
+                active ? 'font-semibold text-accent' : 'text-ink-muted',
+              )}
             >
               {step.label}
             </span>
@@ -132,8 +137,8 @@ function CompanyStep() {
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <div>
-        <h1 className="text-lg font-bold text-ink">Create your company</h1>
-        <p className="mt-1 text-sm text-ink-muted">
+        <h1 className="text-h5 text-ink">Create your company</h1>
+        <p className="mt-1 text-small text-ink-muted">
           Tell us about your roofing business. You can refine everything later in Settings.
         </p>
       </div>
@@ -172,7 +177,7 @@ function CompanyStep() {
         />
       </div>
       {createCompany.isError && (
-        <p className="text-sm text-emergency">{(createCompany.error as Error).message}</p>
+        <p className="text-small text-emergency">{(createCompany.error as Error).message}</p>
       )}
       <Button type="submit" className="w-full" loading={createCompany.isPending}>
         Create company
@@ -235,14 +240,14 @@ function BusinessStep() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-bold text-ink">Configure your business</h1>
-        <p className="mt-1 text-sm text-ink-muted">
+        <h1 className="text-h5 text-ink">Configure your business</h1>
+        <p className="mt-1 text-small text-ink-muted">
           The AI uses this to answer callers accurately.
         </p>
       </div>
 
       <fieldset>
-        <legend className="mb-2 text-sm font-medium text-ink">Services you offer</legend>
+        <legend className="mb-2 text-body font-medium text-ink">Services you offer</legend>
         <div className="flex flex-wrap gap-2">
           {DEFAULT_SERVICES.map((service) => {
             const active = services.includes(service);
@@ -251,11 +256,12 @@ function BusinessStep() {
                 key={service}
                 type="button"
                 onClick={() => toggleService(service)}
-                className={
+                className={cn(
+                  'focus-ring rounded-full px-3.5 py-1.5 text-caption font-medium transition-colors duration-fast',
                   active
-                    ? 'focus-ring rounded-full bg-brand-700 px-3.5 py-1.5 text-xs font-medium text-white'
-                    : 'focus-ring rounded-full border border-line bg-surface px-3.5 py-1.5 text-xs font-medium text-ink-muted hover:border-brand-400'
-                }
+                    ? 'bg-accent text-ink-on-brand'
+                    : 'border border-line bg-surface text-ink-muted hover:border-line-strong',
+                )}
                 aria-pressed={active}
               >
                 {service}
@@ -266,7 +272,7 @@ function BusinessStep() {
       </fieldset>
 
       <div>
-        <label htmlFor="area-input" className="mb-2 block text-sm font-medium text-ink">
+        <label htmlFor="area-input" className="mb-2 block text-body font-medium text-ink">
           Service areas (cities or ZIP codes)
         </label>
         <div className="flex gap-2">
@@ -281,7 +287,7 @@ function BusinessStep() {
               }
             }}
             placeholder="Austin, TX"
-            className="focus-ring block w-full rounded-lg border border-line px-3 py-2 text-sm"
+            className="focus-ring block w-full rounded-lg border border-line bg-surface px-3 py-2 text-form-input text-ink placeholder:text-ink-faint transition-colors duration-fast hover:border-line-strong"
           />
           <Button type="button" variant="secondary" onClick={addArea} aria-label="Add service area">
             <Plus className="h-4 w-4" />
@@ -292,7 +298,7 @@ function BusinessStep() {
             {areas.map((area) => (
               <span
                 key={area}
-                className="inline-flex items-center gap-1 rounded-full bg-surface-3 px-3 py-1 text-xs text-ink"
+                className="inline-flex items-center gap-1 rounded-full bg-surface-3 px-3 py-1 text-caption text-ink"
               >
                 {area}
                 <button
@@ -309,11 +315,11 @@ function BusinessStep() {
         )}
       </div>
 
-      <div className="rounded-xl border border-line-subtle p-4">
+      <div className="rounded-xl border border-line-subtle p-4 transition-colors duration-fast hover:border-line-strong">
         <label className="flex items-center justify-between gap-4">
           <span>
-            <span className="block text-sm font-medium text-ink">Emergency service</span>
-            <span className="block text-xs text-ink-muted">
+            <span className="block text-body font-medium text-ink">Emergency service</span>
+            <span className="block text-small text-ink-muted">
               Prioritize active leaks and storm damage calls.
             </span>
           </span>
@@ -321,7 +327,7 @@ function BusinessStep() {
             type="checkbox"
             checked={emergencyEnabled}
             onChange={(e) => setEmergencyEnabled(e.target.checked)}
-            className="focus-ring h-5 w-5 rounded border-line text-brand-700"
+            className="focus-ring h-5 w-5 rounded border-line text-accent"
           />
         </label>
         {emergencyEnabled && (
@@ -337,7 +343,7 @@ function BusinessStep() {
       </div>
 
       {(updateCompany.isError || setStep.isError) && (
-        <p className="text-sm text-emergency">
+        <p className="text-small text-emergency">
           {((updateCompany.error ?? setStep.error) as Error).message}
         </p>
       )}
@@ -388,8 +394,8 @@ function AiStep() {
   return (
     <form onSubmit={(e) => void onSubmit(e)} className="space-y-5">
       <div>
-        <h1 className="text-lg font-bold text-ink">Set up your AI receptionist</h1>
-        <p className="mt-1 text-sm text-ink-muted">
+        <h1 className="text-h5 text-ink">Set up your AI receptionist</h1>
+        <p className="mt-1 text-small text-ink-muted">
           Give it a name, a voice, and the greeting your callers will hear.
         </p>
       </div>
@@ -419,7 +425,7 @@ function AiStep() {
         error={errors.persona?.message}
       />
       {(updateAi.isError || setStep.isError) && (
-        <p className="text-sm text-emergency">
+        <p className="text-small text-emergency">
           {((updateAi.error ?? setStep.error) as Error).message}
         </p>
       )}
@@ -483,12 +489,12 @@ function KnowledgeStep() {
   if (finished) {
     return (
       <div className="flex flex-col items-center py-8 text-center">
-        <PartyPopper className="h-12 w-12 text-brand-600" aria-hidden />
-        <h1 className="mt-4 text-xl font-bold text-ink">You’re all set!</h1>
-        <p className="mt-2 text-sm text-ink-muted">
+        <PartyPopper className="h-12 w-12 text-accent" aria-hidden />
+        <h1 className="mt-4 text-h4 text-ink">You’re all set!</h1>
+        <p className="mt-2 text-small text-ink-muted">
           Your AI receptionist is ready. Taking you to your dashboard…
         </p>
-        <p className="mt-1 text-xs text-ink-faint">
+        <p className="mt-1 text-caption text-ink-faint">
           Tip: use “Add to Home Screen” in the header to install RoofersLabs on your phone.
         </p>
       </div>
@@ -498,8 +504,8 @@ function KnowledgeStep() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-bold text-ink">Teach your AI the essentials</h1>
-        <p className="mt-1 text-sm text-ink-muted">
+        <h1 className="text-h5 text-ink">Teach your AI the essentials</h1>
+        <p className="mt-1 text-small text-ink-muted">
           Answer any of these in your own words — the AI will use them on calls. You can add much
           more later in the Knowledge Base.
         </p>
@@ -517,7 +523,7 @@ function KnowledgeStep() {
       ))}
 
       {(saveArticle.isError || complete.isError) && (
-        <p className="text-sm text-emergency">
+        <p className="text-small text-emergency">
           {((saveArticle.error ?? complete.error) as Error).message}
         </p>
       )}
