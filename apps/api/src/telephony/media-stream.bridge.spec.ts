@@ -35,6 +35,11 @@ jest.mock('ws', () => ({ WebSocket: MockWebSocket }));
 // Imported after the mock so the bridge binds to MockWebSocket.
 import { MediaStreamBridge } from './media-stream.bridge';
 
+/** The bridge's real constructor dependency types, derived from its signature. */
+type BridgeDeps = ConstructorParameters<typeof MediaStreamBridge>;
+/** The `ws` WebSocket type `handleConnection` expects. */
+type BridgeSocket = Parameters<MediaStreamBridge['handleConnection']>[0];
+
 const flush = async (): Promise<void> => {
   await Promise.resolve();
   await Promise.resolve();
@@ -66,12 +71,11 @@ function buildBridge() {
     startCallRecording: jest.fn().mockResolvedValue(true),
     hangupCall: jest.fn().mockResolvedValue(true),
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bridge = new MediaStreamBridge(
-    config as any,
-    receptionist as any,
-    callProcessing as any,
-    twilio as any,
+    config as unknown as BridgeDeps[0],
+    receptionist as unknown as BridgeDeps[1],
+    callProcessing as unknown as BridgeDeps[2],
+    twilio as unknown as BridgeDeps[3],
   );
   return { bridge, receptionist };
 }
@@ -81,8 +85,7 @@ async function startSession() {
   MockWebSocket.instances = [];
   const { bridge } = buildBridge();
   const twilioWs = new MockWebSocket();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  bridge.handleConnection(twilioWs as any);
+  bridge.handleConnection(twilioWs as unknown as BridgeSocket);
 
   twilioWs.deliver({
     event: 'start',
