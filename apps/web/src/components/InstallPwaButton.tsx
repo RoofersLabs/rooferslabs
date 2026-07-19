@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { Download, Share, PlusSquare, Smartphone, Monitor } from 'lucide-react';
 import { usePwaInstall } from '@/hooks/usePwaInstall';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/Modal';
 
 /**

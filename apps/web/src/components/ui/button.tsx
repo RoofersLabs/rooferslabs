@@ -2,8 +2,8 @@ import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'destructive';
-type Size = 'sm' | 'md' | 'lg';
+type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
+type Size = 'sm' | 'md' | 'lg' | 'icon-sm' | 'icon' | 'icon-lg';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
@@ -15,6 +15,7 @@ const variants: Record<Variant, string> = {
   primary:
     'bg-accent text-ink-on-brand shadow-button hover:bg-accent-hover active:bg-accent-active',
   secondary: 'border border-line bg-surface-2 text-ink hover:bg-surface-3 hover:border-line-strong',
+  outline: 'border border-line bg-transparent text-ink hover:bg-surface-3 hover:border-line-strong',
   ghost:
     'text-ink-muted hover:bg-[var(--state-hover-overlay)] hover:text-ink active:bg-[var(--state-active-overlay)]',
   destructive:
@@ -25,6 +26,9 @@ const sizes: Record<Size, string> = {
   sm: 'h-8 gap-1.5 px-3 text-small',
   md: 'h-10 gap-2 px-4 text-button',
   lg: 'h-12 gap-2 px-5 text-body-lg',
+  'icon-sm': 'h-8 w-8 shrink-0',
+  icon: 'h-10 w-10 shrink-0',
+  'icon-lg': 'h-12 w-12 shrink-0',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(

@@ -22,6 +22,12 @@
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
   }
+  /* shadcn/ui components reference a bare `border` utility without a color —
+     default it to our token instead of Tailwind's stock gray. Focus rings are
+     handled by the .focus-ring component class below, not a global reset. */
+  * {
+    @apply border-border;
+  }
 }
 
 @layer components {

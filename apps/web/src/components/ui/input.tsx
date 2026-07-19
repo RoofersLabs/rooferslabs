@@ -3,7 +3,7 @@ import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes 
 import { cn } from '@/lib/utils';
 
 const baseField =
-  'focus-ring block w-full rounded-md border border-line bg-surface px-3 py-2 text-form-input text-ink placeholder:text-ink-faint transition-colors duration-fast ease-standard hover:border-line-strong disabled:cursor-not-allowed disabled:opacity-60';
+  'focus-ring block w-full rounded-lg border border-line bg-surface px-3 py-2 text-form-input text-ink placeholder:text-ink-faint transition-colors duration-fast ease-standard hover:border-line-strong disabled:cursor-not-allowed disabled:opacity-60';
 
 interface FieldWrapperProps {
   label?: string;

@@ -4,12 +4,12 @@ import { Phone, PhoneMissed, Search } from 'lucide-react';
 import { useCalls } from '@/hooks/queries';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { formatDateTime, formatDuration, formatPhone } from '@/lib/utils';
-import { EnumBadge } from '@/components/ui/Badge';
-import { ListSkeleton } from '@/components/ui/Skeleton';
+import { EnumBadge } from '@/components/ui/badge';
+import { ListSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Pagination } from '@/components/ui/Pagination';
+import { Pagination } from '@/components/ui/pagination';
 
 export function CallsPage() {
   const [page, setPage] = useState(1);

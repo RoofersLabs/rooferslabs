@@ -8,45 +8,39 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primitive terracotta/clay scale — also re-themes legacy `brand-*`.
+        // Primitive RoofersLabs blue scale — also re-themes legacy `brand-*`.
         brand: {
-          50: 'var(--clay-50)',
-          100: 'var(--clay-100)',
-          200: 'var(--clay-200)',
-          300: 'var(--clay-300)',
-          400: 'var(--clay-400)',
-          500: 'var(--clay-500)',
-          600: 'var(--clay-600)',
-          700: 'var(--clay-700)',
-          800: 'var(--clay-800)',
-          900: 'var(--clay-900)',
+          50: 'var(--brand-50)',
+          100: 'var(--brand-100)',
+          200: 'var(--brand-200)',
+          300: 'var(--brand-300)',
+          400: 'var(--brand-400)',
+          500: 'var(--brand-500)',
+          600: 'var(--brand-600)',
+          700: 'var(--brand-700)',
+          800: 'var(--brand-800)',
+          900: 'var(--brand-900)',
         },
-        clay: {
-          50: 'var(--clay-50)',
-          100: 'var(--clay-100)',
-          200: 'var(--clay-200)',
-          300: 'var(--clay-300)',
-          400: 'var(--clay-400)',
-          500: 'var(--clay-500)',
-          600: 'var(--clay-600)',
-          700: 'var(--clay-700)',
-          800: 'var(--clay-800)',
-          900: 'var(--clay-900)',
+        // Teal — the brand's secondary accent.
+        teal: {
+          DEFAULT: 'var(--brand-teal)',
+          dark: 'var(--brand-teal-dark)',
+          subtle: 'var(--brand-teal-subtle)',
         },
-        // Transitional: warm-tinted neutrals (hue ~55) so legacy `slate-*`
-        // reads warm/on-brand. New code should use ink/surface/line instead.
+        // Transitional: cool neutrals mapped onto the token gray scale so any
+        // legacy `slate-*` reads on-brand. New code should use ink/surface/line.
         slate: {
-          50: 'oklch(0.985 0.003 55)',
-          100: 'oklch(0.97 0.004 55)',
-          200: 'oklch(0.93 0.005 55)',
-          300: 'oklch(0.87 0.006 55)',
-          400: 'oklch(0.72 0.008 55)',
-          500: 'oklch(0.58 0.009 55)',
-          600: 'oklch(0.46 0.008 55)',
-          700: 'oklch(0.37 0.008 55)',
-          800: 'oklch(0.27 0.006 55)',
-          900: 'oklch(0.19 0.005 55)',
-          950: 'oklch(0.14 0.005 55)',
+          50: 'var(--gray-50)',
+          100: 'var(--gray-100)',
+          200: 'var(--gray-200)',
+          300: 'var(--gray-300)',
+          400: 'var(--gray-400)',
+          500: 'var(--gray-500)',
+          600: 'var(--gray-600)',
+          700: 'var(--gray-700)',
+          800: 'var(--gray-800)',
+          900: 'var(--gray-900)',
+          950: 'var(--n-950)',
         },
         // Theme-aware semantic surfaces & text.
         canvas: 'var(--bg-canvas)',
@@ -78,12 +72,6 @@ export default {
           subtle: 'var(--color-primary-subtle)',
           border: 'var(--color-primary-border)',
         },
-        secondary: {
-          DEFAULT: 'var(--color-secondary)',
-          hover: 'var(--color-secondary-hover)',
-          active: 'var(--color-secondary-active)',
-          subtle: 'var(--color-secondary-subtle)',
-        },
         emergency: {
           DEFAULT: 'var(--color-emergency)',
           hover: 'var(--color-emergency-hover)',
@@ -105,6 +93,59 @@ export default {
           DEFAULT: 'var(--color-info)',
           subtle: 'var(--color-info-subtle)',
           border: 'var(--color-info-border)',
+        },
+
+        // ── shadcn/ui compatibility aliases ────────────────────────────────
+        // shadcn-generated components read these exact utility names. They're
+        // mapped onto our existing tokens above (never shadcn's stock palette)
+        // so new components render on-brand immediately. `accent` is
+        // deliberately NOT aliased here — it already means "solid brand blue"
+        // in this codebase (Button primary, active nav, etc.), which conflicts
+        // with shadcn's convention of `accent` as a subtle hover/selected
+        // highlight. Any shadcn component using bare `bg-accent` /
+        // `text-accent-foreground` for a hover state must be hand-patched to
+        // `bg-surface-3` / `text-ink` when it's added.
+        background: 'var(--bg-canvas)',
+        foreground: 'var(--text-primary)',
+        card: {
+          DEFAULT: 'var(--surface-1)',
+          foreground: 'var(--text-primary)',
+        },
+        popover: {
+          DEFAULT: 'var(--surface-overlay)',
+          foreground: 'var(--text-primary)',
+        },
+        primary: {
+          DEFAULT: 'var(--color-primary)',
+          foreground: 'var(--text-on-primary)',
+        },
+        // Neutral bordered surface — matches the existing hand-rolled
+        // Button's "secondary" variant (bg-surface-2/text-ink), not a brand hue.
+        secondary: {
+          DEFAULT: 'var(--surface-2)',
+          foreground: 'var(--text-primary)',
+          hover: 'var(--surface-3)',
+        },
+        muted: {
+          DEFAULT: 'var(--surface-3)',
+          foreground: 'var(--text-tertiary)',
+        },
+        destructive: {
+          DEFAULT: 'var(--color-emergency)',
+          foreground: 'var(--text-on-emergency)',
+        },
+        border: 'var(--border-default)',
+        input: 'var(--border-default)',
+        ring: 'var(--focus-ring)',
+        sidebar: {
+          DEFAULT: 'var(--surface-1)',
+          foreground: 'var(--text-primary)',
+          primary: 'var(--color-primary)',
+          'primary-foreground': 'var(--text-on-primary)',
+          accent: 'var(--color-primary-subtle)',
+          'accent-foreground': 'var(--color-primary)',
+          border: 'var(--border-subtle)',
+          ring: 'var(--focus-ring)',
         },
       },
       fontFamily: {

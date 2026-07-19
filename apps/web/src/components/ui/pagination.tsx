@@ -1,5 +1,6 @@
 import type { PaginationMeta } from '@rooferslabs/shared';
-import { Button } from './Button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from './button';
 
 export function Pagination({
   pagination,
@@ -10,7 +11,10 @@ export function Pagination({
 }) {
   if (pagination.totalPages <= 1) return null;
   return (
-    <div className="flex items-center justify-between border-t border-line-subtle px-4 py-3">
+    <nav
+      aria-label="Pagination"
+      className="flex items-center justify-between border-t border-line-subtle px-4 py-3"
+    >
       <p className="text-small text-ink-faint">
         Page <span className="font-num text-ink-muted">{pagination.page}</span> of{' '}
         <span className="font-num text-ink-muted">{pagination.totalPages}</span> ·{' '}
@@ -23,6 +27,7 @@ export function Pagination({
           disabled={!pagination.hasPreviousPage}
           onClick={() => onPageChange(pagination.page - 1)}
         >
+          <ChevronLeft className="h-4 w-4" aria-hidden />
           Previous
         </Button>
         <Button
@@ -32,8 +37,9 @@ export function Pagination({
           onClick={() => onPageChange(pagination.page + 1)}
         >
           Next
+          <ChevronRight className="h-4 w-4" aria-hidden />
         </Button>
       </div>
-    </div>
+    </nav>
   );
 }

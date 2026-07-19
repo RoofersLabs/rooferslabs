@@ -10,9 +10,9 @@ import {
   useVerifyForwarding,
 } from '@/hooks/queries';
 import { cn, formatPhone, humanizeEnum } from '@/lib/utils';
-import { Button } from '@/components/ui/Button';
-import { Input, Select } from '@/components/ui/Input';
-import { LoadingBlock } from '@/components/ui/Spinner';
+import { Button } from '@/components/ui/button';
+import { Input, Select } from '@/components/ui/input';
+import { LoadingBlock } from '@/components/ui/spinner';
 import { CARRIER_GUIDES } from './forwarding';
 
 /**

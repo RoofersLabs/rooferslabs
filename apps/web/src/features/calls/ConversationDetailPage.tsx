@@ -11,8 +11,8 @@ import {
 import { useConversation } from '@/hooks/queries';
 import { ApiError } from '@/lib/api-client';
 import { formatDateTime, formatDuration, formatPhone, humanizeEnum } from '@/lib/utils';
-import { Badge, EnumBadge } from '@/components/ui/Badge';
-import { LoadingBlock } from '@/components/ui/Spinner';
+import { Badge, EnumBadge } from '@/components/ui/badge';
+import { LoadingBlock } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { RecordingPlayer } from '@/components/RecordingPlayer';

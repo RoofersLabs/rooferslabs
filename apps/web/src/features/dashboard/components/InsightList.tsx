@@ -1,5 +1,5 @@
 import { BarChart3 } from 'lucide-react';
-import { ListSkeleton } from '@/components/ui/Skeleton';
+import { ListSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { InsightRow } from '../insights';
 import { SectionCard } from './SectionCard';

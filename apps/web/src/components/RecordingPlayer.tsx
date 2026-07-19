@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Download, Mic } from 'lucide-react';
 import { api } from '@/lib/api-client';
-import { Button } from '@/components/ui/Button';
-import { Spinner } from '@/components/ui/Spinner';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 
 /**
  * Plays a call recording through the authenticated API proxy (Twilio

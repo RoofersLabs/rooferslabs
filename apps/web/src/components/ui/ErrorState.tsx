@@ -1,5 +1,5 @@
 import { AlertTriangle } from 'lucide-react';
-import { Button } from './Button';
+import { Button } from './button';
 
 /**
  * Inline failure state for panels and lists — the counterpart of EmptyState,

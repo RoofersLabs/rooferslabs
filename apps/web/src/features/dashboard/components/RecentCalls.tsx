@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom';
 import { Phone, ShieldAlert, Play } from 'lucide-react';
 import type { Conversation } from '@/types/api';
 import { formatDuration, formatPhone, humanizeEnum, timeAgo } from '@/lib/utils';
-import { EnumBadge } from '@/components/ui/Badge';
-import { ListSkeleton } from '@/components/ui/Skeleton';
+import { EnumBadge } from '@/components/ui/badge';
+import { ListSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SectionCard } from './SectionCard';
 

@@ -10,12 +10,12 @@ import {
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import type { Notification } from '@/types/api';
 import { cn, timeAgo } from '@/lib/utils';
-import { Button } from '@/components/ui/Button';
-import { ListSkeleton } from '@/components/ui/Skeleton';
+import { Button } from '@/components/ui/button';
+import { ListSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Pagination } from '@/components/ui/Pagination';
+import { Pagination } from '@/components/ui/pagination';
 
 /**
  * Push opt-in/out for this browser. Hidden when the browser lacks Push support

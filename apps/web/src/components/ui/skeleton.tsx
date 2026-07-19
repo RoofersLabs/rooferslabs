@@ -1,8 +1,14 @@
 import { cn } from '@/lib/utils';
 
 /** Shimmering placeholder block used while content loads. */
-export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-md bg-surface-3', className)} aria-hidden />;
+export function Skeleton({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      className={cn('animate-pulse rounded-md bg-surface-3', className)}
+      aria-hidden
+      {...props}
+    />
+  );
 }
 
 /** Placeholder for list/table panels: rows of avatar + text lines. */

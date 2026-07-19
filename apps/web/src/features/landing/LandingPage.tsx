@@ -135,12 +135,12 @@ export function LandingPage() {
 
       {/* Hero */}
       <section className="relative overflow-hidden">
-        {/* clay glow */}
+        {/* brand glow */}
         <div
           aria-hidden
           className="pointer-events-none absolute -right-40 -top-40 h-[560px] w-[560px] rounded-full opacity-60 blur-2xl"
           style={{
-            background: 'radial-gradient(circle, oklch(0.58 0.11 37 / 0.35), transparent 70%)',
+            background: 'radial-gradient(circle, oklch(0.55 0.2 262 / 0.35), transparent 70%)',
           }}
         />
         <div className="mx-auto grid max-w-marketing items-center gap-12 px-6 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:py-24">
@@ -359,7 +359,7 @@ export function LandingPage() {
             aria-hidden
             className="pointer-events-none absolute inset-x-0 -top-24 mx-auto h-64 w-[520px] rounded-full opacity-50 blur-2xl"
             style={{
-              background: 'radial-gradient(circle, oklch(0.58 0.11 37 / 0.4), transparent 70%)',
+              background: 'radial-gradient(circle, oklch(0.55 0.2 262 / 0.4), transparent 70%)',
             }}
           />
           <h2 className="relative text-balance text-h2 text-ink">
@@ -393,7 +393,7 @@ export function LandingPage() {
   );
 }
 
-/* ── Hero collage: floating product cards over the clay glow ─────────────── */
+/* ── Hero collage: floating product cards over the brand glow ────────────── */
 function HeroCollage() {
   const reduced = useReducedMotion();
   const float = (delay: number) =>

@@ -16,9 +16,9 @@ import {
   useSessionQuery,
 } from '@/hooks/queries';
 import { useSessionStore } from '@/state/session.store';
-import { Button } from '@/components/ui/Button';
-import { Input, Select, Textarea } from '@/components/ui/Input';
-import { FullScreenSpinner } from '@/components/ui/Spinner';
+import { Button } from '@/components/ui/button';
+import { Input, Select, Textarea } from '@/components/ui/input';
+import { FullScreenSpinner } from '@/components/ui/spinner';
 
 const STEPS = [
   { key: OnboardingStep.COMPANY, label: 'Company', icon: Building2 },

@@ -11,9 +11,9 @@ import {
 } from '@/hooks/queries';
 import type { BusinessHour } from '@/types/api';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/Button';
-import { Input, Select, Textarea } from '@/components/ui/Input';
-import { LoadingBlock } from '@/components/ui/Spinner';
+import { Button } from '@/components/ui/button';
+import { Input, Select, Textarea } from '@/components/ui/input';
+import { LoadingBlock } from '@/components/ui/spinner';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PhoneSetupTab } from './PhoneSetupTab';
 
@@ -417,7 +417,7 @@ function BrandingTab() {
           <input
             id="brand-color"
             type="color"
-            value={primary ?? data.primaryColor ?? '#9e5a3d'}
+            value={primary ?? data.primaryColor ?? '#0E3996'}
             onChange={(e) => setPrimary(e.target.value)}
             className="focus-ring mt-1.5 h-10 w-20 cursor-pointer rounded-lg border border-line"
           />

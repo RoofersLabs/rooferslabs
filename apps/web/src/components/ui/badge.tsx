@@ -24,8 +24,9 @@ export function Badge({
 }) {
   return (
     <span
+      data-slot="badge"
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-caption font-medium',
+        'inline-flex h-5 w-fit shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-caption font-medium',
         tones[tone],
         className,
       )}

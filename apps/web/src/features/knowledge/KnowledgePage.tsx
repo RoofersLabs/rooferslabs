@@ -9,15 +9,15 @@ import {
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import type { KnowledgeArticle } from '@/types/api';
 import { humanizeEnum, timeAgo } from '@/lib/utils';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { Input, Select, Textarea } from '@/components/ui/Input';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input, Select, Textarea } from '@/components/ui/input';
 import { Modal } from '@/components/ui/Modal';
-import { ListSkeleton } from '@/components/ui/Skeleton';
+import { ListSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Pagination } from '@/components/ui/Pagination';
+import { Pagination } from '@/components/ui/pagination';
 
 export function KnowledgePage() {
   const [page, setPage] = useState(1);

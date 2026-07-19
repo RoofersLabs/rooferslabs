@@ -1,4 +1,4 @@
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import type { SummaryTile } from '../insights';
 import { SectionCard } from './SectionCard';
 

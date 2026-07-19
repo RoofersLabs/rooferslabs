@@ -2,7 +2,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import { OnboardingStep } from '@rooferslabs/shared';
 import { useSessionQuery } from '@/hooks/queries';
-import { FullScreenSpinner } from '@/components/ui/Spinner';
+import { FullScreenSpinner } from '@/components/ui/spinner';
 import { AppLayout } from '@/layouts/AppLayout';
 import { LandingPage } from '@/features/landing/LandingPage';
 import { SignInPage, SignUpPage } from '@/features/auth/AuthPages';

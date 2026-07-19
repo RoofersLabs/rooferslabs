@@ -4,13 +4,13 @@ import { CalendarClock, MapPin } from 'lucide-react';
 import { AppointmentStatus } from '@rooferslabs/shared';
 import { useAppointments, useUpdateAppointment } from '@/hooks/queries';
 import { formatDateTime, humanizeEnum, timeAgo } from '@/lib/utils';
-import { EnumBadge } from '@/components/ui/Badge';
-import { Select } from '@/components/ui/Input';
-import { ListSkeleton } from '@/components/ui/Skeleton';
+import { EnumBadge } from '@/components/ui/badge';
+import { Select } from '@/components/ui/input';
+import { ListSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Pagination } from '@/components/ui/Pagination';
+import { Pagination } from '@/components/ui/pagination';
 
 const STATUS_FILTERS = ['', ...Object.values(AppointmentStatus)] as const;
 

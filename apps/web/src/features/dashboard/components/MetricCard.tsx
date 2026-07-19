@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 /** Icon-tile tone palette, mapped onto the shared semantic tokens. */
 const toneStyles = {
