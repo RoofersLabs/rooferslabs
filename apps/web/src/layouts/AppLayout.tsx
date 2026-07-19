@@ -20,7 +20,6 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
@@ -67,18 +66,18 @@ export function AppLayout() {
                     asChild
                     isActive={isActive}
                     size="lg"
-                    className="text-body font-medium text-ink-muted data-active:bg-accent-subtle data-active:text-accent data-active:hover:bg-accent-subtle data-active:hover:text-accent hover:bg-surface-3 hover:text-ink"
+                    className="text-body font-medium text-ink-muted data-[active=true]:bg-accent-subtle data-[active=true]:text-accent data-[active=true]:hover:bg-accent-subtle data-[active=true]:hover:text-accent hover:bg-surface-3 hover:text-ink"
                   >
                     <NavLink to={item.to}>
                       <item.icon className="h-5 w-5 shrink-0" aria-hidden />
-                      <span>{item.label}</span>
+                      <span className="flex-1">{item.label}</span>
+                      {item.to === '/notifications' && unreadCount > 0 && (
+                        <span className="font-num ml-auto rounded-full bg-accent px-2 py-0.5 text-caption font-semibold text-ink-on-brand">
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
-                  {item.to === '/notifications' && unreadCount > 0 && (
-                    <SidebarMenuBadge className="font-num static ml-auto rounded-full bg-accent px-2 py-0.5 text-caption font-semibold text-ink-on-brand">
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </SidebarMenuBadge>
-                  )}
                 </SidebarMenuItem>
               );
             })}
