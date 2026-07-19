@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, Flame, CalendarClock, ShieldAlert, ArrowRight, PhoneForwarded } from 'lucide-react';
+import { ArrowRight, PhoneForwarded } from 'lucide-react';
 import { useDashboard, usePhoneNumber, useReceptionistStatus } from '@/hooks/queries';
 import { useSessionStore } from '@/state/session.store';
 import { formatPhone } from '@/lib/utils';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { DashboardHeader } from './components/DashboardHeader';
-import { MetricCard } from './components/MetricCard';
+import { AnalyticsPanel } from './components/AnalyticsPanel';
 import { RecentCalls } from './components/RecentCalls';
 import { AppointmentList } from './components/AppointmentList';
 import { ReceptionistSummary } from './components/ReceptionistSummary';
@@ -77,23 +77,8 @@ export function DashboardPage() {
         </Link>
       )}
 
-      {/* Section 1 — KPI tiles */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <MetricCard icon={Phone} label="Calls today" value={metrics?.todaysCalls} tone="brand" />
-        <MetricCard icon={Flame} label="Leads today" value={metrics?.todaysLeads} tone="success" />
-        <MetricCard
-          icon={ShieldAlert}
-          label="Emergencies today"
-          value={metrics?.todaysEmergencies}
-          tone="emergency"
-        />
-        <MetricCard
-          icon={CalendarClock}
-          label="Pending appointments"
-          value={metrics?.pendingAppointments}
-          tone="warning"
-        />
-      </div>
+      {/* Section 1 — analytics panel */}
+      <AnalyticsPanel metrics={metrics} />
 
       {/* Sections 2 & 3 — Recent calls (primary) + Upcoming appointments */}
       <div className="grid gap-6 lg:grid-cols-5">
