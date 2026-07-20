@@ -194,13 +194,6 @@ export default {
             soft: 'var(--mkt-warn-soft)',
           },
           focus: 'var(--mkt-focus)',
-          // Primary CTA fill: a solid neutral that inverts with the theme
-          // (near-black on light, white on dark). Not part of the blue family.
-          solid: {
-            DEFAULT: 'var(--mkt-solid)',
-            hover: 'var(--mkt-solid-hover)',
-            ink: 'var(--mkt-solid-ink)',
-          },
           // Raw ramps, for gradient stops and glows that need a specific step.
           blue: {
             50: 'var(--mkt-blue-50)',
@@ -230,27 +223,27 @@ export default {
             600: 'var(--mkt-emerald-600)',
             700: 'var(--mkt-emerald-700)',
           },
-          gray: {
-            0: 'var(--mkt-gray-0)',
-            25: 'var(--mkt-gray-25)',
-            50: 'var(--mkt-gray-50)',
-            100: 'var(--mkt-gray-100)',
-            200: 'var(--mkt-gray-200)',
-            300: 'var(--mkt-gray-300)',
-            400: 'var(--mkt-gray-400)',
-            500: 'var(--mkt-gray-500)',
-            600: 'var(--mkt-gray-600)',
-            700: 'var(--mkt-gray-700)',
-            800: 'var(--mkt-gray-800)',
-            900: 'var(--mkt-gray-900)',
+          warm: {
+            0: 'var(--mkt-warm-0)',
+            25: 'var(--mkt-warm-25)',
+            50: 'var(--mkt-warm-50)',
+            100: 'var(--mkt-warm-100)',
+            200: 'var(--mkt-warm-200)',
+            300: 'var(--mkt-warm-300)',
+            400: 'var(--mkt-warm-400)',
+            500: 'var(--mkt-warm-500)',
+            600: 'var(--mkt-warm-600)',
+            700: 'var(--mkt-warm-700)',
+            800: 'var(--mkt-warm-800)',
+            900: 'var(--mkt-warm-900)',
           },
         },
       },
       // Marketing-only gradients — `bg-mkt-hero`, `bg-mkt-cta`, etc.
       backgroundImage: {
         'mkt-hero': 'var(--mkt-grad-hero)',
-        'mkt-vignette': 'var(--mkt-grad-vignette)',
         'mkt-cta': 'var(--mkt-grad-cta)',
+        'mkt-cta-hover': 'var(--mkt-grad-cta-hover)',
         'mkt-card-hover': 'var(--mkt-grad-card-hover)',
         'mkt-headline': 'var(--mkt-grad-headline)',
         'mkt-rule': 'var(--mkt-grad-rule)',
@@ -281,29 +274,6 @@ export default {
         'table-cell': ['0.875rem', { lineHeight: '1.5', fontWeight: '400' }],
         'form-label': ['0.8125rem', { lineHeight: '1.4', fontWeight: '500' }],
         'form-input': ['0.9375rem', { lineHeight: '1.5', fontWeight: '400' }],
-
-        // ── Marketing display scale (landing page ONLY) ────────────────────
-        // Three deliberate steps, not a fluid clamp: each one is composed for
-        // its breakpoint so the headline breaks lines where it should. Weight
-        // is 600 at every step — a display headline set in 700 reads as loud
-        // rather than large. Tracking tightens as size grows, which is what
-        // keeps 88px from looking like a stretched 48px.
-        'mkt-display': [
-          '5.5rem',
-          { lineHeight: '1.02', letterSpacing: '-0.032em', fontWeight: '600' },
-        ],
-        'mkt-display-md': [
-          '4rem',
-          { lineHeight: '1.05', letterSpacing: '-0.028em', fontWeight: '600' },
-        ],
-        'mkt-display-sm': [
-          '2.75rem',
-          { lineHeight: '1.08', letterSpacing: '-0.024em', fontWeight: '600' },
-        ],
-        // Hero supporting paragraph. Larger and looser than body copy — it has
-        // to survive being read from across the room at the top of the page.
-        'mkt-lede': ['1.25rem', { lineHeight: '1.6', letterSpacing: '-0.008em' }],
-        'mkt-lede-sm': ['1.0625rem', { lineHeight: '1.6', letterSpacing: '-0.006em' }],
       },
       borderRadius: {
         xs: 'var(--radius-xs)',
@@ -336,7 +306,7 @@ export default {
         'mkt-lg': 'var(--mkt-shadow-lg)',
         'mkt-xl': 'var(--mkt-shadow-xl)',
         'mkt-mockup': 'var(--mkt-shadow-mockup)',
-        'mkt-solid': 'var(--mkt-shadow-solid)',
+        'mkt-cta': 'var(--mkt-shadow-cta)',
       },
       ringColor: {
         focus: 'var(--focus-ring)',

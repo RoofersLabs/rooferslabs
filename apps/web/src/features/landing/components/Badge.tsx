@@ -29,3 +29,16 @@ export function MktBadge({
     </span>
   );
 }
+
+/** Badge with a live pulse dot — used only where something is genuinely live. */
+export function LiveBadge({ children }: { children: ReactNode }) {
+  return (
+    <MktBadge tone="accent" className="backdrop-blur-sm">
+      <span className="relative flex h-1.5 w-1.5" aria-hidden>
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mkt-success opacity-75" />
+        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-mkt-success" />
+      </span>
+      {children}
+    </MktBadge>
+  );
+}
