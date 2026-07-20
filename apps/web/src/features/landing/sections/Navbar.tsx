@@ -15,7 +15,13 @@ const LINKS = [
   { href: '#faq', label: 'FAQ' },
 ];
 
-export function Navbar({ theme, onToggleTheme }: { theme: MarketingTheme; onToggleTheme: () => void }) {
+export function Navbar({
+  theme,
+  onToggleTheme,
+}: {
+  theme: MarketingTheme;
+  onToggleTheme: () => void;
+}) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -50,7 +56,7 @@ export function Navbar({ theme, onToggleTheme }: { theme: MarketingTheme; onTogg
       )}
     >
       <nav
-        className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-6"
+        className="mx-auto flex h-16 max-w-marketing-bleed items-center justify-between gap-4 px-5 sm:px-6"
         aria-label="Main"
       >
         <Link
@@ -100,17 +106,18 @@ export function Navbar({ theme, onToggleTheme }: { theme: MarketingTheme; onTogg
             aria-label={open ? 'Close menu' : 'Open menu'}
             className="mkt-focus-ring inline-flex h-9 w-9 items-center justify-center rounded-lg border border-mkt-line text-mkt-ink-muted lg:hidden"
           >
-            {open ? <X className="h-4 w-4" aria-hidden /> : <Menu className="h-4 w-4" aria-hidden />}
+            {open ? (
+              <X className="h-4 w-4" aria-hidden />
+            ) : (
+              <Menu className="h-4 w-4" aria-hidden />
+            )}
           </button>
         </div>
       </nav>
 
       {open && (
-        <div
-          id="mobile-nav"
-          className="mkt-glass border-t border-mkt-line-subtle lg:hidden"
-        >
-          <ul className="mx-auto flex max-w-6xl flex-col gap-1 px-5 py-4">
+        <div id="mobile-nav" className="mkt-glass border-t border-mkt-line-subtle lg:hidden">
+          <ul className="mx-auto flex max-w-marketing-bleed flex-col gap-1 px-5 py-4">
             {LINKS.map((l) => (
               <li key={l.href}>
                 <a

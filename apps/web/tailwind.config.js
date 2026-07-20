@@ -315,6 +315,11 @@ export default {
         narrow: 'var(--container-narrow)',
         marketing: 'var(--container-marketing)',
         dashboard: 'var(--container-dashboard)',
+        // The marketing container plus its own gutters. For chrome that carries
+        // its own horizontal padding (the navbar) but whose CONTENT must land on
+        // the same left edge as an unpadded `max-w-marketing` shell. Derived, so
+        // changing --container-marketing keeps the navbar aligned with the hero.
+        'marketing-bleed': 'calc(var(--container-marketing) + 3rem)',
       },
       transitionTimingFunction: {
         standard: 'var(--ease-standard)',
