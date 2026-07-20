@@ -147,6 +147,106 @@ export default {
           border: 'var(--border-subtle)',
           ring: 'var(--focus-ring)',
         },
+
+        // ── Marketing palette (landing page ONLY) ──────────────────────────
+        // Backed by src/features/landing/styles/marketing.css, where every
+        // variable is scoped under `.mkt`. Namespaced so it can never collide
+        // with a product token: `bg-mkt-surface`, `text-mkt-ink`, etc.
+        // Outside a `.mkt` subtree these variables are undefined — which is
+        // the point. Do not use them in the dashboard.
+        mkt: {
+          bg: 'var(--mkt-bg)',
+          'bg-subtle': 'var(--mkt-bg-subtle)',
+          'bg-inset': 'var(--mkt-bg-inset)',
+          surface: 'var(--mkt-surface)',
+          'surface-2': 'var(--mkt-surface-2)',
+          'surface-raised': 'var(--mkt-surface-raised)',
+          line: {
+            DEFAULT: 'var(--mkt-line)',
+            subtle: 'var(--mkt-line-subtle)',
+            strong: 'var(--mkt-line-strong)',
+          },
+          ink: {
+            DEFAULT: 'var(--mkt-ink)',
+            body: 'var(--mkt-ink-body)',
+            muted: 'var(--mkt-ink-muted)',
+            faint: 'var(--mkt-ink-faint)',
+            inverse: 'var(--mkt-ink-inverse)',
+          },
+          accent: {
+            DEFAULT: 'var(--mkt-accent)',
+            hover: 'var(--mkt-accent-hover)',
+            active: 'var(--mkt-accent-active)',
+            soft: 'var(--mkt-accent-soft)',
+            border: 'var(--mkt-accent-border)',
+            ink: 'var(--mkt-accent-ink)',
+          },
+          accent2: {
+            DEFAULT: 'var(--mkt-accent-2)',
+            soft: 'var(--mkt-accent-2-soft)',
+          },
+          success: {
+            DEFAULT: 'var(--mkt-success)',
+            soft: 'var(--mkt-success-soft)',
+          },
+          warn: {
+            DEFAULT: 'var(--mkt-warn)',
+            soft: 'var(--mkt-warn-soft)',
+          },
+          focus: 'var(--mkt-focus)',
+          // Raw ramps, for gradient stops and glows that need a specific step.
+          blue: {
+            50: 'var(--mkt-blue-50)',
+            100: 'var(--mkt-blue-100)',
+            200: 'var(--mkt-blue-200)',
+            300: 'var(--mkt-blue-300)',
+            400: 'var(--mkt-blue-400)',
+            500: 'var(--mkt-blue-500)',
+            600: 'var(--mkt-blue-600)',
+            700: 'var(--mkt-blue-700)',
+            800: 'var(--mkt-blue-800)',
+            900: 'var(--mkt-blue-900)',
+          },
+          indigo: {
+            100: 'var(--mkt-indigo-100)',
+            200: 'var(--mkt-indigo-200)',
+            300: 'var(--mkt-indigo-300)',
+            400: 'var(--mkt-indigo-400)',
+            500: 'var(--mkt-indigo-500)',
+            600: 'var(--mkt-indigo-600)',
+            700: 'var(--mkt-indigo-700)',
+          },
+          emerald: {
+            100: 'var(--mkt-emerald-100)',
+            300: 'var(--mkt-emerald-300)',
+            500: 'var(--mkt-emerald-500)',
+            600: 'var(--mkt-emerald-600)',
+            700: 'var(--mkt-emerald-700)',
+          },
+          warm: {
+            0: 'var(--mkt-warm-0)',
+            25: 'var(--mkt-warm-25)',
+            50: 'var(--mkt-warm-50)',
+            100: 'var(--mkt-warm-100)',
+            200: 'var(--mkt-warm-200)',
+            300: 'var(--mkt-warm-300)',
+            400: 'var(--mkt-warm-400)',
+            500: 'var(--mkt-warm-500)',
+            600: 'var(--mkt-warm-600)',
+            700: 'var(--mkt-warm-700)',
+            800: 'var(--mkt-warm-800)',
+            900: 'var(--mkt-warm-900)',
+          },
+        },
+      },
+      // Marketing-only gradients — `bg-mkt-hero`, `bg-mkt-cta`, etc.
+      backgroundImage: {
+        'mkt-hero': 'var(--mkt-grad-hero)',
+        'mkt-cta': 'var(--mkt-grad-cta)',
+        'mkt-cta-hover': 'var(--mkt-grad-cta-hover)',
+        'mkt-card-hover': 'var(--mkt-grad-card-hover)',
+        'mkt-headline': 'var(--mkt-grad-headline)',
+        'mkt-rule': 'var(--mkt-grad-rule)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
@@ -198,6 +298,15 @@ export default {
         dialog: 'var(--elevation-dialog)',
         tooltip: 'var(--elevation-tooltip)',
         button: 'var(--elevation-button)',
+        // Marketing-only elevation. Warm-tinted in light, near-invisible in
+        // dark (where depth comes from surface luminance and glow instead).
+        'mkt-xs': 'var(--mkt-shadow-xs)',
+        'mkt-sm': 'var(--mkt-shadow-sm)',
+        'mkt-md': 'var(--mkt-shadow-md)',
+        'mkt-lg': 'var(--mkt-shadow-lg)',
+        'mkt-xl': 'var(--mkt-shadow-xl)',
+        'mkt-mockup': 'var(--mkt-shadow-mockup)',
+        'mkt-cta': 'var(--mkt-shadow-cta)',
       },
       ringColor: {
         focus: 'var(--focus-ring)',
