@@ -20,7 +20,7 @@ const ROWS: Row[] = [
 
 export function Comparison() {
   return (
-    <Section>
+    <Section glow="right">
       <Container size="narrow">
         <SectionHeading
           eyebrow="Comparison"
@@ -36,7 +36,10 @@ export function Comparison() {
               </caption>
               <thead>
                 <tr className="border-b border-mkt-line-subtle">
-                  <th scope="col" className="px-5 py-4 text-[0.8125rem] font-medium text-mkt-ink-faint">
+                  <th
+                    scope="col"
+                    className="px-5 py-4 text-[0.8125rem] font-medium text-mkt-ink-faint"
+                  >
                     &nbsp;
                   </th>
                   <th

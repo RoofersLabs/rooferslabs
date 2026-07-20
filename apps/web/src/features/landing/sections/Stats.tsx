@@ -15,7 +15,7 @@ const STATS = [
 
 export function Stats() {
   return (
-    <Section className="py-16 sm:py-20 lg:py-24">
+    <Section glow="right" className="py-16 sm:py-20 lg:py-24">
       <Container>
         <RevealGroup className="grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4">
           {STATS.map((s) => (

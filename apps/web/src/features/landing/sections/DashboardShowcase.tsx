@@ -1,13 +1,5 @@
 import { useState } from 'react';
-import {
-  BarChart3,
-  Bell,
-  BookOpen,
-  CalendarClock,
-  Phone,
-  Settings,
-  Users,
-} from 'lucide-react';
+import { BarChart3, Bell, BookOpen, CalendarClock, Phone, Settings, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Container, Section, SectionHeading } from '../components/Section';
 import { Reveal } from '../components/Reveal';
@@ -15,20 +7,48 @@ import { BrowserFrame, MockupFrame } from '../components/Mockup';
 import { DashboardMock } from '../components/DashboardMock';
 
 const AREAS = [
-  { icon: Phone, label: 'Calls', body: 'Every conversation with a recording, transcript and a summary you can read in ten seconds.' },
-  { icon: Users, label: 'Customers', body: 'Each caller becomes a contact with full history — no duplicate entry, no lost numbers.' },
-  { icon: CalendarClock, label: 'Appointments', body: 'Inspections and estimates on one schedule, synced to the calendar your crew already uses.' },
-  { icon: BookOpen, label: 'Knowledge base', body: 'Teach the AI your services, service area, pricing rules and the answers you give every day.' },
-  { icon: BarChart3, label: 'Analytics', body: 'Call volume, booking rate, response time and where your leads are actually coming from.' },
-  { icon: Bell, label: 'Notifications', body: 'Emergencies reach you instantly by push and SMS. Routine leads wait quietly in the queue.' },
-  { icon: Settings, label: 'Settings', body: 'Voice, greeting, hours, escalation rules and who gets woken up — all under your control.' },
+  {
+    icon: Phone,
+    label: 'Calls',
+    body: 'Every conversation with a recording, transcript and a summary you can read in ten seconds.',
+  },
+  {
+    icon: Users,
+    label: 'Customers',
+    body: 'Each caller becomes a contact with full history — no duplicate entry, no lost numbers.',
+  },
+  {
+    icon: CalendarClock,
+    label: 'Appointments',
+    body: 'Inspections and estimates on one schedule, synced to the calendar your crew already uses.',
+  },
+  {
+    icon: BookOpen,
+    label: 'Knowledge base',
+    body: 'Teach the AI your services, service area, pricing rules and the answers you give every day.',
+  },
+  {
+    icon: BarChart3,
+    label: 'Analytics',
+    body: 'Call volume, booking rate, response time and where your leads are actually coming from.',
+  },
+  {
+    icon: Bell,
+    label: 'Notifications',
+    body: 'Emergencies reach you instantly by push and SMS. Routine leads wait quietly in the queue.',
+  },
+  {
+    icon: Settings,
+    label: 'Settings',
+    body: 'Voice, greeting, hours, escalation rules and who gets woken up — all under your control.',
+  },
 ];
 
 export function DashboardShowcase() {
   const [active, setActive] = useState(0);
 
   return (
-    <Section id="product" tone="subtle" bordered>
+    <Section id="product" tone="subtle" bordered glow="center">
       <Container>
         <SectionHeading
           eyebrow="Your front office, in one place"

@@ -40,12 +40,9 @@ export const FAQS = [
 
 export function Faq() {
   return (
-    <Section id="faq">
+    <Section id="faq" glow="left">
       <Container size="narrow">
-        <SectionHeading
-          eyebrow="FAQ"
-          title="The questions roofers actually ask."
-        />
+        <SectionHeading eyebrow="FAQ" title="The questions roofers actually ask." />
         <Reveal className="mt-12">
           <Accordion.Root type="single" collapsible className="flex flex-col gap-3">
             {FAQS.map((item, i) => (

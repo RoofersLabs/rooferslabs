@@ -3,6 +3,13 @@ import { cn } from '@/lib/utils';
 import { Reveal } from './Reveal';
 
 /**
+ * Where the section's ambient blue wash is centred. `none` is for the two
+ * sections that already own a `<Glow>` behind their panel — a second light
+ * source in the same box just muddies the first.
+ */
+type GlowPlacement = 'top' | 'left' | 'right' | 'center' | 'bottom' | 'none';
+
+/**
  * Vertical rhythm for the whole page. Every section uses this, so spacing is
  * changed in one place rather than drifting per-section.
  *
@@ -15,6 +22,7 @@ export function Section({
   id,
   tone = 'base',
   bordered = false,
+  glow = 'top',
 }: {
   children: ReactNode;
   className?: string;
@@ -22,6 +30,11 @@ export function Section({
   /** `subtle` is the alternating band used to separate adjacent sections. */
   tone?: 'base' | 'subtle';
   bordered?: boolean;
+  /**
+   * Ambient lighting, on by default so a new section is lit without opting in.
+   * Placements alternate down the page; see `.mkt-ambient` in marketing.css.
+   */
+  glow?: GlowPlacement;
 }) {
   return (
     <section
@@ -35,6 +48,7 @@ export function Section({
         'relative overflow-x-clip px-5 py-20 sm:px-6 sm:py-24 lg:py-32',
         tone === 'subtle' && 'bg-mkt-bg-subtle',
         bordered && 'border-t border-mkt-line-subtle',
+        glow !== 'none' && ['mkt-ambient', `mkt-ambient-${glow}`],
         className,
       )}
     >

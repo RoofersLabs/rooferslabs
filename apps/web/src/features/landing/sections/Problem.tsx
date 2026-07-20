@@ -28,7 +28,7 @@ const PROBLEMS = [
 
 export function Problem() {
   return (
-    <Section tone="subtle" bordered id="problem">
+    <Section tone="subtle" bordered glow="left" id="problem">
       <Container>
         <SectionHeading
           eyebrow="The cost of a ringing phone"

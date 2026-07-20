@@ -8,17 +8,41 @@ import { RevealGroup, RevealItem } from '../components/Reveal';
  * information rather than decorating the layout.
  */
 const STEPS = [
-  { icon: PhoneCall, title: 'A homeowner calls', body: 'Day, night, weekend or mid-storm. The line is answered before the second ring.' },
-  { icon: Sparkles, title: 'The AI answers', body: 'A natural voice greets them with your company name and your tone — not a phone tree.' },
-  { icon: ClipboardList, title: 'The lead is qualified', body: 'Name, address, roof type, damage, urgency and insurance status — captured while they talk.' },
-  { icon: CalendarCheck, title: 'The appointment is booked', body: 'It checks your real availability and offers the inspection slots you actually want to fill.' },
-  { icon: Database, title: 'Your CRM updates', body: 'Contact, transcript, summary and job details sync automatically. Nobody retypes anything.' },
-  { icon: Bell, title: 'Your team is notified', body: 'Emergencies page you instantly. Everything else is waiting in the dashboard when you come down.' },
+  {
+    icon: PhoneCall,
+    title: 'A homeowner calls',
+    body: 'Day, night, weekend or mid-storm. The line is answered before the second ring.',
+  },
+  {
+    icon: Sparkles,
+    title: 'The AI answers',
+    body: 'A natural voice greets them with your company name and your tone — not a phone tree.',
+  },
+  {
+    icon: ClipboardList,
+    title: 'The lead is qualified',
+    body: 'Name, address, roof type, damage, urgency and insurance status — captured while they talk.',
+  },
+  {
+    icon: CalendarCheck,
+    title: 'The appointment is booked',
+    body: 'It checks your real availability and offers the inspection slots you actually want to fill.',
+  },
+  {
+    icon: Database,
+    title: 'Your CRM updates',
+    body: 'Contact, transcript, summary and job details sync automatically. Nobody retypes anything.',
+  },
+  {
+    icon: Bell,
+    title: 'Your team is notified',
+    body: 'Emergencies page you instantly. Everything else is waiting in the dashboard when you come down.',
+  },
 ];
 
 export function Timeline() {
   return (
-    <Section id="how">
+    <Section id="how" glow="right">
       <Container size="narrow">
         <SectionHeading
           eyebrow="What happens on every call"

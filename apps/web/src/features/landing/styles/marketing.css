@@ -162,6 +162,15 @@
   --mkt-glow-indigo: color-mix(in oklab, var(--mkt-indigo-500) 22%, transparent);
   --mkt-glow-strength: 0.55;
 
+  /* Section ambience — the hero wash, restated quietly for every section below
+     it, so the page reads as one lit surface rather than a stack of bands.
+     Weaker than the hero on purpose: the hero is the light source, everything
+     after it is spill. On the warm light page this is barely a tint — enough to
+     cool the ground under a card, not enough to look like a coloured band. */
+  --mkt-ambient-blue: color-mix(in oklab, var(--mkt-blue-400) 13%, transparent);
+  --mkt-ambient-indigo: color-mix(in oklab, var(--mkt-indigo-400) 9%, transparent);
+  --mkt-ambient-strength: 0.9;
+
   /* Card hover wash — a whisper, not a color change. */
   --mkt-grad-card-hover: linear-gradient(
     180deg,
@@ -342,6 +351,14 @@
   --mkt-glow-indigo: color-mix(in oklab, var(--mkt-indigo-500) 33%, transparent);
   --mkt-glow-strength: 0.75;
 
+  /* Dark carries the ambience further than light — charcoal has the headroom
+     for it, and it is what stops the lower half of the page going flat black.
+     Still well under the hero: if a mid-page section can out-glow the hero, the
+     page has two light sources and neither reads as intentional. */
+  --mkt-ambient-blue: color-mix(in oklab, var(--mkt-blue-500) 17%, transparent);
+  --mkt-ambient-indigo: color-mix(in oklab, var(--mkt-indigo-500) 13%, transparent);
+  --mkt-ambient-strength: 1;
+
   --mkt-grad-card-hover: linear-gradient(
     180deg,
     color-mix(in oklab, var(--mkt-blue-400) 10%, transparent) 0%,
@@ -421,6 +438,88 @@
   -webkit-backdrop-filter: blur(var(--mkt-glass-blur)) saturate(180%);
   backdrop-filter: blur(var(--mkt-glass-blur)) saturate(180%);
   box-shadow: var(--mkt-shadow-md), inset 0 1px 0 var(--mkt-glass-highlight);
+}
+
+/* ── Section ambience ────────────────────────────────────────────────────
+   One utility lights any section; the placement modifiers only move the two
+   radials, so there is exactly one gradient definition on the page.
+
+   Three details make this safe to put on every section at once:
+
+   1. `z-index: -1` + `isolation: isolate` — the wash paints above the
+      section's own background but below every child, so cards, panels and
+      tables keep their solid surfaces and their contrast ratios. Isolating
+      keeps the negative layer trapped inside the section instead of sliding
+      behind the page.
+   2. The radials fade out (~68%) well inside the box, so the glow is already
+      at zero when it reaches the section boundary. That is what makes
+      adjacent sections blend instead of seaming — no bleed needed, which
+      matters because the alternating `bg-mkt-bg-subtle` band would paint over
+      any bleed anyway.
+   3. No animation. The hero's single drifting glow is an accent; fifteen
+      animated blur layers is a scroll-jank generator. These are static. */
+.mkt-ambient {
+  position: relative;
+  isolation: isolate;
+
+  /* Primary (blue) and secondary (indigo) radial centres. */
+  --mkt-ambient-x: 50%;
+  --mkt-ambient-y: 0%;
+  --mkt-ambient-x2: 78%;
+  --mkt-ambient-y2: 34%;
+}
+
+.mkt-ambient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--mkt-ambient-strength);
+  background:
+    radial-gradient(
+      58% 46% at var(--mkt-ambient-x) var(--mkt-ambient-y),
+      var(--mkt-ambient-blue) 0%,
+      transparent 68%
+    ),
+    radial-gradient(
+      46% 40% at var(--mkt-ambient-x2) var(--mkt-ambient-y2),
+      var(--mkt-ambient-indigo) 0%,
+      transparent 70%
+    );
+}
+
+/* Placement modifiers. Alternating these down the page is what keeps fifteen
+   lit sections from reading as one repeated stamp. */
+.mkt-ambient-top {
+  --mkt-ambient-x: 50%;
+  --mkt-ambient-y: 0%;
+  --mkt-ambient-x2: 78%;
+  --mkt-ambient-y2: 34%;
+}
+.mkt-ambient-left {
+  --mkt-ambient-x: 12%;
+  --mkt-ambient-y: 24%;
+  --mkt-ambient-x2: 58%;
+  --mkt-ambient-y2: 92%;
+}
+.mkt-ambient-right {
+  --mkt-ambient-x: 88%;
+  --mkt-ambient-y: 24%;
+  --mkt-ambient-x2: 42%;
+  --mkt-ambient-y2: 92%;
+}
+.mkt-ambient-center {
+  --mkt-ambient-x: 50%;
+  --mkt-ambient-y: 46%;
+  --mkt-ambient-x2: 16%;
+  --mkt-ambient-y2: 18%;
+}
+.mkt-ambient-bottom {
+  --mkt-ambient-x: 50%;
+  --mkt-ambient-y: 100%;
+  --mkt-ambient-x2: 24%;
+  --mkt-ambient-y2: 58%;
 }
 
 /* ── Gradient hairline border (the "premium edge") ──────────────────────── */

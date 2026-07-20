@@ -28,7 +28,7 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <Section id="how-it-works" tone="subtle" bordered>
+    <Section id="how-it-works" tone="subtle" bordered glow="left">
       <Container>
         <SectionHeading
           eyebrow="How it works"

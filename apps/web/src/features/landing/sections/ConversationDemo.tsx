@@ -11,14 +11,26 @@ type Turn = { from: 'caller' | 'ai'; text: string };
 /** A real qualification flow: urgency, then address, then the booking. */
 const SCRIPT: Turn[] = [
   { from: 'ai', text: 'Summit Roofing, this is the front desk — how can I help?' },
-  { from: 'caller', text: 'Hi, I’ve got water coming through my ceiling after last night’s storm.' },
+  {
+    from: 'caller',
+    text: 'Hi, I’ve got water coming through my ceiling after last night’s storm.',
+  },
   { from: 'ai', text: 'That sounds urgent — is it still actively dripping right now?' },
   { from: 'caller', text: 'Yeah, into a bucket in the back bedroom.' },
-  { from: 'ai', text: 'Understood. I’m flagging this as an emergency. What’s the property address?' },
+  {
+    from: 'ai',
+    text: 'Understood. I’m flagging this as an emergency. What’s the property address?',
+  },
   { from: 'caller', text: '4418 Oak Ridge Drive, Cedar Park.' },
-  { from: 'ai', text: 'Got it. I can have an inspector out at 7:30 this morning — does that work?' },
+  {
+    from: 'ai',
+    text: 'Got it. I can have an inspector out at 7:30 this morning — does that work?',
+  },
   { from: 'caller', text: 'That would be great, thank you.' },
-  { from: 'ai', text: 'Booked. You’ll get a text confirmation, and I’ve alerted the on-call crew.' },
+  {
+    from: 'ai',
+    text: 'Booked. You’ll get a text confirmation, and I’ve alerted the on-call crew.',
+  },
 ];
 
 const OUTCOMES = [
@@ -68,7 +80,7 @@ export function ConversationDemo() {
   const visible = reduced ? SCRIPT.length : shown;
 
   return (
-    <Section id="demo">
+    <Section id="demo" glow="left">
       <Container size="narrow">
         <SectionHeading
           eyebrow="Live demo"

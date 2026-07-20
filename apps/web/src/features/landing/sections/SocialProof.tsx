@@ -19,17 +19,14 @@ const CLAIMS = [
 
 export function SocialProof() {
   return (
-    <Section tone="subtle" bordered className="py-14 sm:py-16 lg:py-20">
+    <Section tone="subtle" bordered glow="top" className="py-14 sm:py-16 lg:py-20">
       <Container>
         <p className="text-center text-xs font-semibold uppercase tracking-[0.16em] text-mkt-ink-faint">
           Purpose-built for the trade
         </p>
         <RevealGroup className="mt-8 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3 lg:grid-cols-5">
           {CLAIMS.map(({ icon: Icon, label }) => (
-            <RevealItem
-              key={label}
-              className="flex flex-col items-center gap-2.5 text-center"
-            >
+            <RevealItem key={label} className="flex flex-col items-center gap-2.5 text-center">
               <Icon className="h-5 w-5 text-mkt-accent" aria-hidden />
               <span className="text-[0.8125rem] font-medium leading-snug text-mkt-ink-muted">
                 {label}

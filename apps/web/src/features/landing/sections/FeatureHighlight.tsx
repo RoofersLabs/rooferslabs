@@ -21,8 +21,10 @@ const POINTS = [
  * per-element overrides and no colour hardcoded here.
  */
 export function FeatureHighlight() {
+  // glow="none": the panel below already sits on its own centred <Glow>, and
+  // stacking a second wash behind it only greys the first.
   return (
-    <Section className="py-8 sm:py-10 lg:py-12">
+    <Section glow="none" className="py-8 sm:py-10 lg:py-12">
       <Container>
         <Reveal>
           <div
@@ -44,7 +46,10 @@ export function FeatureHighlight() {
                 </p>
                 <ul className="flex flex-col gap-3">
                   {POINTS.map(({ icon: Icon, text }) => (
-                    <li key={text} className="flex items-center gap-3 text-[0.9375rem] text-mkt-ink-body">
+                    <li
+                      key={text}
+                      className="flex items-center gap-3 text-[0.9375rem] text-mkt-ink-body"
+                    >
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-mkt-accent-border bg-mkt-accent-soft text-mkt-accent">
                         <Icon className="h-3.5 w-3.5" aria-hidden />
                       </span>
@@ -88,8 +93,8 @@ function CallScreen() {
         AI receptionist
       </p>
       <p className="mt-2 text-pretty text-sm leading-relaxed text-mkt-ink-body">
-        “Thanks for calling Summit Roofing — I can get someone out to look at that leak.
-        Is the water still coming in right now?”
+        “Thanks for calling Summit Roofing — I can get someone out to look at that leak. Is the
+        water still coming in right now?”
       </p>
 
       <div className="mt-auto space-y-2 pt-8">

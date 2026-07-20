@@ -12,8 +12,9 @@ const POINTS = ['14-day free trial', 'No credit card', 'Live this afternoon'];
  * page rather than another light band.
  */
 export function FinalCta() {
+  // glow="none": lit by the centred <Glow> behind the CTA panel below.
   return (
-    <Section className="py-10 sm:py-14 lg:py-16">
+    <Section glow="none" className="py-10 sm:py-14 lg:py-16">
       <Container>
         <Reveal>
           <div

@@ -64,7 +64,7 @@ const PLANS = [
 
 export function Pricing() {
   return (
-    <Section id="pricing" tone="subtle" bordered>
+    <Section id="pricing" tone="subtle" bordered glow="center">
       <Container>
         <SectionHeading
           eyebrow="Pricing"
@@ -96,9 +96,7 @@ export function Pricing() {
                   <span className="text-4xl font-semibold tracking-[-0.03em] text-mkt-ink">
                     {p.price}
                   </span>
-                  {p.cadence && (
-                    <span className="text-sm text-mkt-ink-faint">{p.cadence}</span>
-                  )}
+                  {p.cadence && <span className="text-sm text-mkt-ink-faint">{p.cadence}</span>}
                 </p>
 
                 <MktLinkButton
@@ -112,7 +110,10 @@ export function Pricing() {
 
                 <ul className="mt-7 flex flex-col gap-3 border-t border-mkt-line-subtle pt-7">
                   {p.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-[0.875rem] text-mkt-ink-body">
+                    <li
+                      key={f}
+                      className="flex items-start gap-2.5 text-[0.875rem] text-mkt-ink-body"
+                    >
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-mkt-success" aria-hidden />
                       {f}
                     </li>

@@ -1,11 +1,4 @@
-import {
-  BarChart3,
-  BookOpen,
-  CalendarClock,
-  Database,
-  Headphones,
-  PhoneCall,
-} from 'lucide-react';
+import { BarChart3, BookOpen, CalendarClock, Database, Headphones, PhoneCall } from 'lucide-react';
 import { Container, Section, SectionHeading } from '../components/Section';
 import { RevealGroup, RevealItem } from '../components/Reveal';
 import { MktCard, IconTile } from '../components/Card';
@@ -45,7 +38,7 @@ const FEATURES = [
 
 export function FeatureGrid() {
   return (
-    <Section id="features" tone="subtle" bordered>
+    <Section id="features" tone="subtle" bordered glow="right">
       <Container>
         <SectionHeading
           eyebrow="Features"

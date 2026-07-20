@@ -21,7 +21,7 @@ const INTEGRATIONS = [
 
 export function Integrations() {
   return (
-    <Section id="integrations">
+    <Section id="integrations" glow="center">
       <Container>
         <SectionHeading
           eyebrow="Integrations"
