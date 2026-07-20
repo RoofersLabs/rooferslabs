@@ -67,26 +67,35 @@ export function PhoneFrame({ children, className }: { children: ReactNode; class
  * Wrapper that lifts a mockup off the page with a glow and an optional float.
  * The float is decorative, so it is disabled under prefers-reduced-motion by
  * the `mkt-animate-float` rule in marketing.css.
+ *
+ * `glow` is opt-out for the hero specifically: further down the page a halo
+ * marks the mockup as the subject of its section, but in the hero the headline
+ * is the subject and the product should arrive quietly beneath it.
  */
 export function MockupFrame({
   children,
   className,
   float = false,
+  glow = true,
 }: {
   children: ReactNode;
   className?: string;
   float?: boolean;
+  glow?: boolean;
 }) {
   return (
     <div className={cn('relative', className)}>
-      <div
-        aria-hidden
-        className="mkt-animate-glow pointer-events-none absolute -inset-x-8 -bottom-6 top-8 rounded-[100%] blur-[70px]"
-        style={{
-          background: 'radial-gradient(ellipse at center, var(--mkt-glow-blue) 0%, transparent 66%)',
-          opacity: 'var(--mkt-glow-strength)',
-        }}
-      />
+      {glow && (
+        <div
+          aria-hidden
+          className="mkt-animate-glow pointer-events-none absolute -inset-x-8 -bottom-6 top-8 rounded-[100%] blur-[70px]"
+          style={{
+            background:
+              'radial-gradient(ellipse at center, var(--mkt-glow-blue) 0%, transparent 66%)',
+            opacity: 'var(--mkt-glow-strength)',
+          }}
+        />
+      )}
       <div className={cn('relative', float && 'mkt-animate-float')}>{children}</div>
     </div>
   );

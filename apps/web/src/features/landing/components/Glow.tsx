@@ -63,12 +63,28 @@ export function Glow({
   );
 }
 
-/** Full-bleed hero atmosphere: the layered radial wash from the token file. */
+/**
+ * Hero lighting. Two flat layers, no animation, no blur radius to composite:
+ *
+ *   1. a single cool radial falling from above the fold, and
+ *   2. a vignette that darkens the outer corners.
+ *
+ * Together they seat the headline in the middle of the frame without ever
+ * becoming the subject. Both are tokens, so light and dark are lit
+ * independently while the markup stays identical.
+ *
+ * It bleeds one navbar-height (80px) above its container so the lighting
+ * passes behind the transparent bar. Stopped at the section edge, the gradient
+ * would draw a visible seam along the navbar's bottom.
+ */
 export function HeroAtmosphere({ className }: { className?: string }) {
   return (
     <div
       aria-hidden
-      className={cn('pointer-events-none absolute inset-0 z-0 bg-mkt-hero', className)}
-    />
+      className={cn('pointer-events-none absolute -top-20 bottom-0 left-0 right-0 z-0', className)}
+    >
+      <div className="absolute inset-0 bg-mkt-hero" />
+      <div className="absolute inset-0 bg-mkt-vignette" />
+    </div>
   );
 }
