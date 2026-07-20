@@ -15,7 +15,14 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/pagination';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 export function CustomersPage() {
   const [page, setPage] = useState(1);
@@ -100,9 +107,7 @@ export function CustomersPage() {
                     <TableCell className="text-ink-muted">
                       <span className="block">{formatPhone(customer.phone)}</span>
                       {customer.email && (
-                        <span className="block text-caption text-ink-faint">
-                          {customer.email}
-                        </span>
+                        <span className="block text-caption text-ink-faint">{customer.email}</span>
                       )}
                     </TableCell>
                     <TableCell className="hidden max-w-[16rem] truncate text-ink-muted md:table-cell">

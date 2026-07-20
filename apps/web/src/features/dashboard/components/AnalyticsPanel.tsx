@@ -61,11 +61,7 @@ function MetricColumn({ icon: Icon, label, value, tone }: Metric) {
  * two columns on tablet and a single stacked column on mobile. A single hover
  * elevation applies to the whole container, keeping it one cohesive component.
  */
-export function AnalyticsPanel({
-  metrics,
-}: {
-  metrics: DashboardOverview['metrics'] | undefined;
-}) {
+export function AnalyticsPanel({ metrics }: { metrics: DashboardOverview['metrics'] | undefined }) {
   const items: Metric[] = [
     { icon: Phone, label: 'Calls today', value: metrics?.todaysCalls, tone: 'brand' },
     { icon: Flame, label: 'Leads today', value: metrics?.todaysLeads, tone: 'success' },

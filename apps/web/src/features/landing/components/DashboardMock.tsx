@@ -74,9 +74,7 @@ export function DashboardMock({ compact = false }: { compact?: boolean }) {
               key={label}
               className={cn(
                 'flex items-center gap-2 rounded-lg px-2 py-1.5 text-[0.6875rem]',
-                active
-                  ? 'bg-mkt-accent-soft font-medium text-mkt-accent'
-                  : 'text-mkt-ink-faint',
+                active ? 'bg-mkt-accent-soft font-medium text-mkt-accent' : 'text-mkt-ink-faint',
               )}
             >
               <Icon className="h-3.5 w-3.5" aria-hidden />

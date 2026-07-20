@@ -75,7 +75,9 @@ export function Footer() {
           <p className="text-[0.8125rem] text-mkt-ink-faint">
             © {year} RoofersLabs. All rights reserved.
           </p>
-          <p className="text-[0.8125rem] text-mkt-ink-faint">Built for roofing contractors in the USA.</p>
+          <p className="text-[0.8125rem] text-mkt-ink-faint">
+            Built for roofing contractors in the USA.
+          </p>
         </div>
       </Container>
     </footer>

@@ -83,7 +83,8 @@ export function MockupFrame({
         aria-hidden
         className="mkt-animate-glow pointer-events-none absolute -inset-x-8 -bottom-6 top-8 rounded-[100%] blur-[70px]"
         style={{
-          background: 'radial-gradient(ellipse at center, var(--mkt-glow-blue) 0%, transparent 66%)',
+          background:
+            'radial-gradient(ellipse at center, var(--mkt-glow-blue) 0%, transparent 66%)',
           opacity: 'var(--mkt-glow-strength)',
         }}
       />

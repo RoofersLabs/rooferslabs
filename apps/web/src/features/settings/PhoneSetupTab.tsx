@@ -161,9 +161,7 @@ function ControlCenterCard() {
 
 /** Small caps eyebrow marking a card's place in the 3-step activation journey. */
 function StepEyebrow({ step }: { step: number }) {
-  return (
-    <p className="mb-1 text-label uppercase tracking-wider text-accent">Step {step} of 3</p>
-  );
+  return <p className="mb-1 text-label uppercase tracking-wider text-accent">Step {step} of 3</p>;
 }
 
 function StatusRow({

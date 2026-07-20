@@ -3,18 +3,12 @@
     "magicuidesign-mcp": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "-y",
-        "@magicuidesign/mcp@latest"
-      ],
+      "args": ["-y", "@magicuidesign/mcp@latest"],
       "env": {}
     },
     "shadcn": {
       "command": "npx",
-      "args": [
-        "shadcn@latest",
-        "mcp"
-      ]
+      "args": ["shadcn@latest", "mcp"]
     }
   }
 }
