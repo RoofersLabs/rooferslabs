@@ -29,34 +29,37 @@ export function Hero() {
   });
 
   return (
-    <section className="relative overflow-hidden px-5 pb-20 pt-14 sm:px-6 sm:pb-24 sm:pt-20">
+    <section className="relative overflow-hidden px-5 pb-24 pt-20 sm:px-6 sm:pb-28 sm:pt-28 lg:pb-32 lg:pt-32">
       <HeroAtmosphere />
 
       <div className="relative z-10 mx-auto w-full max-w-marketing">
         {/* Copy column is narrower than the shell it sits in — the shell sets
-            the left edge, this width sets the measure. */}
-        <div className="max-w-3xl">
+            the left edge, this width sets the measure. The headline gets a
+            wider measure than the body copy: at display sizes a 3xl cap left
+            most of the row empty at ≥1280, while body copy set that wide would
+            run past a comfortable line length. Two different jobs, two widths. */}
+        <div className="max-w-4xl">
           <motion.div {...rise(0)}>
             <LiveBadge>Answering roofing calls right now</LiveBadge>
           </motion.div>
 
           <motion.h1
             {...rise(0.08)}
-            className="mkt-headline-grad mt-6 text-balance text-4xl font-semibold leading-[1.08] tracking-[-0.035em] sm:text-5xl lg:text-6xl"
+            className="mkt-headline-grad mt-7 text-balance text-[2.75rem] font-semibold leading-[1.04] tracking-[-0.04em] sm:text-6xl lg:text-[4.5rem]"
           >
             Never miss another roofing lead.
           </motion.h1>
 
           <motion.p
             {...rise(0.16)}
-            className="mt-6 max-w-2xl text-pretty text-base leading-relaxed text-mkt-ink-body sm:text-lg"
+            className="mt-7 max-w-xl text-pretty text-lg leading-[1.65] text-mkt-ink-body"
           >
             Every missed call is lost revenue. RoofersLabs answers 24/7, qualifies the homeowner,
             books the appointment, updates your CRM, and sounds just like the receptionist you wish
             you could afford.
           </motion.p>
 
-          <motion.div {...rise(0.24)} className="mt-8">
+          <motion.div {...rise(0.24)} className="mt-10">
             <MktLinkButton to="/sign-up" size="lg" className="group">
               Start free trial
               <ArrowRight
@@ -66,9 +69,12 @@ export function Hero() {
             </MktLinkButton>
           </motion.div>
 
-          <motion.ul {...rise(0.32)} className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2.5">
+          <motion.ul
+            {...rise(0.32)}
+            className="mt-10 flex flex-wrap items-center gap-x-7 gap-y-2.5"
+          >
             {TRUST.map((t) => (
-              <li key={t} className="flex items-center gap-1.5 text-sm text-mkt-ink-muted">
+              <li key={t} className="flex items-center gap-2 text-sm text-mkt-ink-muted">
                 <CheckCircle2 className="h-4 w-4 text-mkt-success" aria-hidden />
                 {t}
               </li>
@@ -76,7 +82,7 @@ export function Hero() {
           </motion.ul>
         </div>
 
-        <motion.div {...rise(0.4)} className="mt-12 sm:mt-14">
+        <motion.div {...rise(0.4)} className="mt-16 sm:mt-20">
           <MockupFrame>
             <BrowserFrame>
               <DashboardMock />

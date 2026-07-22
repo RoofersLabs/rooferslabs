@@ -72,28 +72,36 @@ export function Pricing() {
           lede="One booked roof usually covers the year. Every plan starts with a 14-day free trial — no credit card."
         />
 
-        <RevealGroup className="mt-14 grid items-start gap-6 lg:grid-cols-3">
+        <RevealGroup className="mt-16 grid items-stretch gap-5 lg:grid-cols-3">
           {PLANS.map((p) => (
             <RevealItem key={p.name}>
               <div
                 className={cn(
-                  'relative flex h-full flex-col rounded-2xl border p-7 transition-all duration-300',
+                  'relative flex h-full flex-col rounded-2xl border p-7',
                   p.featured
-                    ? 'mkt-grad-edge border-mkt-accent-border bg-mkt-surface shadow-mkt-xl lg:-my-3 lg:py-10'
-                    : 'border-mkt-line-subtle bg-mkt-surface shadow-mkt-sm hover:border-mkt-line hover:shadow-mkt-md',
+                    ? // The featured plan is distinguished by surface and edge,
+                      // not by size. It previously also grew via `lg:-my-3`,
+                      // which broke the top alignment of the three cards and
+                      // left a ragged row across the section.
+                      'mkt-grad-edge border-mkt-accent-border bg-mkt-surface-2 shadow-mkt-xl'
+                    : 'mkt-card-interactive border-mkt-line bg-mkt-surface shadow-mkt-sm',
                 )}
               >
-                {p.featured && (
-                  <MktBadge className="absolute -top-3 left-7 shadow-mkt-sm">Most popular</MktBadge>
-                )}
+                {/* Badge sits INSIDE the card, on the header row. Hanging it off
+                    the top edge (`absolute -top-3`) put the card's own border
+                    straight through it and clipped it against the rounded
+                    corner — a detail that reads as unfinished at any size. */}
+                <div className="flex min-h-[1.75rem] items-center justify-between gap-3">
+                  <h3 className="text-base font-semibold text-mkt-ink">{p.name}</h3>
+                  {p.featured && <MktBadge>Most popular</MktBadge>}
+                </div>
 
-                <h3 className="text-base font-semibold text-mkt-ink">{p.name}</h3>
-                <p className="mt-1.5 min-h-[2.75rem] text-[0.8125rem] leading-relaxed text-mkt-ink-muted">
+                <p className="mt-2 min-h-[2.75rem] text-[0.8125rem] leading-relaxed text-mkt-ink-muted">
                   {p.blurb}
                 </p>
 
-                <p className="mt-5 flex items-baseline gap-1">
-                  <span className="text-4xl font-semibold tracking-[-0.03em] text-mkt-ink">
+                <p className="mt-6 flex items-baseline gap-1">
+                  <span className="text-[2.5rem] font-semibold leading-none tracking-[-0.035em] text-mkt-ink">
                     {p.price}
                   </span>
                   {p.cadence && <span className="text-sm text-mkt-ink-faint">{p.cadence}</span>}
@@ -108,7 +116,7 @@ export function Pricing() {
                   {p.cta}
                 </MktLinkButton>
 
-                <ul className="mt-7 flex flex-col gap-3 border-t border-mkt-line-subtle pt-7">
+                <ul className="mt-7 flex flex-col gap-3 border-t border-mkt-line pt-7">
                   {p.features.map((f) => (
                     <li
                       key={f}
@@ -124,7 +132,7 @@ export function Pricing() {
           ))}
         </RevealGroup>
 
-        <p className="mt-10 text-center text-sm text-mkt-ink-faint">
+        <p className="mt-12 text-center text-sm text-mkt-ink-muted">
           Prices in USD. Cancel any time — no contracts, no cancellation fees.
         </p>
       </Container>

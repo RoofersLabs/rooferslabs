@@ -227,11 +227,7 @@ export function Navbar({
             <div className="rl-nav__sheet-foot">
               <div className="rl-nav__sheet-row">
                 <GithubStars />
-                <Link
-                  to="/sign-in"
-                  onClick={() => setOpen(false)}
-                  className="rl-nav__ghost"
-                >
+                <Link to="/sign-in" onClick={() => setOpen(false)} className="rl-nav__ghost">
                   Log in
                 </Link>
               </div>
@@ -253,7 +249,12 @@ export function Navbar({
 function MenuGlyph() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
-      <path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path
+        d="M4 7h16M4 12h16M4 17h10"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

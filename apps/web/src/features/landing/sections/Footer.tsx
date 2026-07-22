@@ -72,10 +72,10 @@ export function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-mkt-line-subtle pt-8 sm:flex-row sm:items-center">
-          <p className="text-[0.8125rem] text-mkt-ink-faint">
+          <p className="text-[0.8125rem] text-mkt-ink-muted">
             © {year} RoofersLabs. All rights reserved.
           </p>
-          <p className="text-[0.8125rem] text-mkt-ink-faint">
+          <p className="text-[0.8125rem] text-mkt-ink-muted">
             Built for roofing contractors in the USA.
           </p>
         </div>

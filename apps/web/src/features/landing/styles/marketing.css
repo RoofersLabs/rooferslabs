@@ -31,6 +31,30 @@
 .mkt {
   color-scheme: light;
 
+  /* ── Motion curves ───────────────────────────────────────────────────────
+     Theme-independent, defined once here because `.mkt` is the only root the
+     landing page has. The stock CSS easings are too weak to read as
+     intentional; these are the strong variants.
+
+       enter   — anything appearing or arriving. Starts fast, so the eye sees
+                 movement at the exact moment it is looking hardest.
+       move    — something already on screen travelling from A to B.
+       exit    — leaving. Always quicker than entering: the user has already
+                 decided, so the interface should get out of the way.
+
+     `ease-in` is deliberately absent. It delays the first frame, which is the
+     one that decides whether an interface feels responsive. */
+  --mkt-ease-enter: cubic-bezier(0.23, 1, 0.32, 1);
+  --mkt-ease-move: cubic-bezier(0.77, 0, 0.175, 1);
+  --mkt-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  /* Durations. UI stays under 300ms; only scroll reveals, which are read
+     rather than operated, are allowed to run longer. */
+  --mkt-dur-press: 140ms;
+  --mkt-dur-hover: 200ms;
+  --mkt-dur-panel: 240ms;
+  --mkt-dur-reveal: 620ms;
+
   /* ── Blue: the primary accent ────────────────────────────────────────────
      Anchored to the RoofersLabs brand hue, raised in chroma so it holds its
      own against a warm background without tipping into "startup neon". */
@@ -185,17 +209,6 @@
     transparent 55%
   );
 
-  /* Section divider that fades at both ends. */
-  --mkt-grad-rule: linear-gradient(90deg, transparent, var(--mkt-line) 18%, var(--mkt-line) 82%, transparent);
-
-  /* ── Glass ───────────────────────────────────────────────────────────────
-     Light mode glass is mostly opaque white — real translucency over a warm
-     page turns grey. The blur is what sells it. */
-  --mkt-glass-bg: color-mix(in oklab, #ffffff 78%, transparent);
-  --mkt-glass-border: color-mix(in oklab, var(--mkt-warm-900) 8%, transparent);
-  --mkt-glass-blur: 16px;
-  --mkt-glass-highlight: color-mix(in oklab, #ffffff 90%, transparent);
-
   /* ── Shadows ─────────────────────────────────────────────────────────────
      Tinted with the warm neutral, never neutral black — black shadows on a
      warm bg look like dirt. Multi-layer for a soft, physical falloff. */
@@ -258,48 +271,50 @@
   --mkt-amber-500: #e0a54a;
   --mkt-amber-600: #edb862;
 
-  /* Neutral near-black ramp (zinc). Achromatic on purpose — the RoofersLabs
-     blue is the only colour on the page, so the layers read as one material lit
-     from different distances rather than as a tinted surface. */
-  --mkt-warm-0: #09090b;
-  --mkt-warm-25: #0c0c0e;
-  --mkt-warm-50: #111113;
-  --mkt-warm-100: #17171a;
-  --mkt-warm-200: #1c1c21;
-  --mkt-warm-300: #26262b;
-  --mkt-warm-400: #3f3f46;
-  --mkt-warm-500: #52525b;
-  --mkt-warm-600: #71717a;
-  --mkt-warm-700: #a1a1aa;
-  --mkt-warm-800: #d4d4d8;
-  --mkt-warm-900: #fafafa;
+  /* Near-black ramp, very slightly cool. The hue is barely there (a couple of
+     points of blue in the low steps) — enough that the greys read as considered
+     rather than default-grey, not enough to look tinted. The RoofersLabs blue
+     stays the only actual colour on the page. */
+  --mkt-warm-0: #08090a;
+  --mkt-warm-25: #0b0d10;
+  --mkt-warm-50: #0e1013;
+  --mkt-warm-100: #131619;
+  --mkt-warm-200: #181b1f;
+  --mkt-warm-300: #22262b;
+  --mkt-warm-400: #363b43;
+  --mkt-warm-500: #4c525c;
+  --mkt-warm-600: #6b727e;
+  --mkt-warm-700: #8a919d;
+  --mkt-warm-800: #b5bcc8;
+  --mkt-warm-900: #ffffff;
 
-  /* Surfaces genuinely step up in luminance — this is what "layered" means.
-     Never fake elevation with borders alone. Values are the approved brief
-     palette: page → secondary → elevated → card, extended one step for chrome. */
-  --mkt-bg: #0a0a0b; /* page — near-black neutral, never #000 */
-  --mkt-bg-subtle: #111113; /* secondary surface — alternating band */
-  --mkt-bg-inset: #060608; /* wells sink BELOW the page in dark mode */
-  --mkt-surface: #17171a; /* elevated surface — the workhorse card */
-  --mkt-surface-2: #1c1c21; /* card surface — nested, lifts above its parent */
-  --mkt-surface-raised: #212127; /* popovers, floating chrome */
+  /* Surfaces step up in luminance — this is what "layered" means. Never fake
+     elevation with borders alone. The steps are close together on purpose: a
+     card should read as the same material as the page, lit slightly more, not
+     as a lighter-coloured box sitting on top of it. */
+  --mkt-bg: #08090a; /* page — near-black, never #000 */
+  --mkt-bg-subtle: #0b0d10; /* alternating band */
+  --mkt-bg-inset: #060708; /* wells sink BELOW the page in dark mode */
+  --mkt-surface: #0e1013; /* the workhorse card */
+  --mkt-surface-2: #131619; /* nested — lifts above its parent card */
+  --mkt-surface-raised: #181b1f; /* popovers, floating chrome */
 
   /* Translucent hairlines — they pick up whatever they sit on, which is what
      makes layered dark surfaces cohere. */
-  --mkt-line-subtle: rgba(255, 255, 255, 0.06);
-  --mkt-line: rgba(255, 255, 255, 0.08); /* the brief's hairline weight */
+  --mkt-line-subtle: rgba(255, 255, 255, 0.05);
+  --mkt-line: rgba(255, 255, 255, 0.08);
   --mkt-line-strong: rgba(255, 255, 255, 0.14);
 
-  /* Approved brief text ramp. Worst case in dark is --mkt-surface-raised
-     (#212127), not the page: the luminance ramp means the LIGHTEST surface is
-     the hardest ground here, inverting which surface to check against in light
-     mode. ink/body/muted clear AA comfortably; --mkt-ink-faint is reserved for
+  /* Text ramp. Worst case in dark is --mkt-surface-raised (#181b1f), not the
+     page: the luminance ramp means the LIGHTEST surface is the hardest ground
+     here, inverting which surface to check against in light mode. ink/body/
+     muted all clear AA on every surface; --mkt-ink-faint is reserved for
      non-essential meta and sits at ~AA-large, so never put running copy on it. */
-  --mkt-ink: #fafafa; /* primary text      ~18:1 on page */
-  --mkt-ink-body: #d4d4d8; /* body copy         ~12:1 on page */
-  --mkt-ink-muted: #a1a1aa; /* secondary text    ~7:1 on page */
-  --mkt-ink-faint: #71717a; /* muted text — meta/labels only */
-  --mkt-ink-inverse: #0a0a0b;
+  --mkt-ink: #ffffff; /* headlines, primary text */
+  --mkt-ink-body: #b5bcc8; /* body copy         ~11:1 on page */
+  --mkt-ink-muted: #8a919d; /* secondary text    ~6.6:1 on page */
+  --mkt-ink-faint: #6b727e; /* meta/labels only */
+  --mkt-ink-inverse: #08090a;
 
   --mkt-accent: var(--mkt-blue-400);
   --mkt-accent-hover: var(--mkt-blue-300);
@@ -316,93 +331,102 @@
 
   --mkt-focus: var(--mkt-blue-300);
 
-  /* Headline resolves into light blue rather than dark. */
+  /* Headlines are white that cools off toward the end of the line, rather than
+     white that turns blue. The old version resolved into blue-300 → indigo-300,
+     which coloured the last third of every headline and competed with the CTA
+     for the eye. This keeps the identity (the tail is still on the blue axis)
+     while letting the headline read as typography rather than as a gradient. */
   --mkt-grad-headline: linear-gradient(
-    135deg,
-    var(--mkt-ink) 0%,
-    var(--mkt-ink) 34%,
-    var(--mkt-blue-300) 76%,
-    var(--mkt-indigo-300) 100%
+    168deg,
+    #ffffff 0%,
+    #ffffff 46%,
+    color-mix(in oklab, var(--mkt-blue-100) 62%, #ffffff) 82%,
+    color-mix(in oklab, var(--mkt-blue-200) 78%, var(--mkt-ink-body)) 100%
   );
 
   --mkt-grad-cta: linear-gradient(180deg, var(--mkt-blue-400) 0%, var(--mkt-blue-600) 100%);
   --mkt-grad-cta-hover: linear-gradient(180deg, var(--mkt-blue-300) 0%, var(--mkt-blue-500) 100%);
 
-  /* Dark mode carries more atmosphere than light, but the glow lights the page
-     rather than being the subject of it — Stripe/Vercel restraint with a little
-     Linear depth. Held ~25% below full strength: at full, the radials pull focus
-     off the headline and the mockup stops being the brightest thing on screen.
-     All four glow surfaces below move together; changing one in isolation is
-     what makes a dark hero look blotchy. */
+  /* ONE light source, at the top of the page, and it is dim.
+
+     The previous values (19/18/12%, plus a full-strength indigo radial on every
+     section) put a visible blue-violet bloom on all fifteen sections. Reading
+     down the page that stops looking like lighting and starts looking like a
+     gradient template — the exact thing this brief is trying to get away from.
+
+     What replaces it: a single blue radial at the top, roughly half the old
+     strength, and NO second hue. The indigo stop is gone from the hero entirely.
+     Two hues at 45° in the same wash is what produced the purple cast; one hue
+     reads as light falling on a neutral surface, which is the Linear/Vercel
+     move. Depth in the rest of the page now comes from surface luminance,
+     hairlines and shadow — not from colour. */
   --mkt-grad-hero: radial-gradient(
-      65% 55% at 50% 0%,
-      color-mix(in oklab, var(--mkt-blue-500) 19%, transparent) 0%,
-      transparent 70%
-    ),
-    radial-gradient(
-      45% 45% at 82% 10%,
-      color-mix(in oklab, var(--mkt-indigo-500) 18%, transparent) 0%,
+      72% 52% at 50% -8%,
+      color-mix(in oklab, var(--mkt-blue-500) 11%, transparent) 0%,
       transparent 72%
     ),
     radial-gradient(
-      50% 40% at 12% 30%,
-      color-mix(in oklab, var(--mkt-blue-600) 12%, transparent) 0%,
-      transparent 75%
+      42% 36% at 84% 4%,
+      color-mix(in oklab, var(--mkt-blue-400) 5%, transparent) 0%,
+      transparent 76%
     );
 
-  --mkt-glow-blue: color-mix(in oklab, var(--mkt-blue-500) 40%, transparent);
-  --mkt-glow-indigo: color-mix(in oklab, var(--mkt-indigo-500) 33%, transparent);
-  --mkt-glow-strength: 0.75;
+  --mkt-glow-blue: color-mix(in oklab, var(--mkt-blue-500) 26%, transparent);
+  --mkt-glow-indigo: color-mix(in oklab, var(--mkt-blue-600) 16%, transparent);
+  --mkt-glow-strength: 0.5;
 
-  /* Dark carries the ambience further than light — charcoal has the headroom
-     for it, and it is what stops the lower half of the page going flat black.
-     Still well under the hero: if a mid-page section can out-glow the hero, the
-     page has two light sources and neither reads as intentional. */
-  --mkt-ambient-blue: color-mix(in oklab, var(--mkt-blue-500) 17%, transparent);
-  --mkt-ambient-indigo: color-mix(in oklab, var(--mkt-indigo-500) 13%, transparent);
-  --mkt-ambient-strength: 1;
+  /* Section ambience is now a whisper — roughly a third of what it was. It
+     exists to stop large dark areas going flat, and to give the eye a reason to
+     keep moving down the page. If you can point at it and call it "the blue
+     bit", it is too strong. */
+  --mkt-ambient-blue: color-mix(in oklab, var(--mkt-blue-500) 6%, transparent);
+  --mkt-ambient-indigo: color-mix(in oklab, var(--mkt-blue-600) 3.5%, transparent);
+  --mkt-ambient-strength: 0.85;
 
+  /* Hover is light arriving on the card, not the card changing colour. Mostly
+     white with a trace of blue so it stays on-brand without tinting. */
   --mkt-grad-card-hover: linear-gradient(
     180deg,
-    color-mix(in oklab, var(--mkt-blue-400) 10%, transparent) 0%,
-    transparent 60%
+    rgba(255, 255, 255, 0.045) 0%,
+    color-mix(in oklab, var(--mkt-blue-400) 3%, transparent) 38%,
+    transparent 70%
   );
 
   --mkt-grad-border: linear-gradient(
     180deg,
-    color-mix(in oklab, var(--mkt-blue-300) 34%, transparent),
-    transparent 55%
+    rgba(255, 255, 255, 0.14),
+    color-mix(in oklab, var(--mkt-blue-300) 12%, transparent) 40%,
+    transparent 70%
   );
 
-  --mkt-grad-rule: linear-gradient(
-    90deg,
-    transparent,
-    var(--mkt-line) 18%,
-    var(--mkt-line) 82%,
-    transparent
-  );
-
-  /* Dark glass is additive light, not subtractive — a pale film over blur. */
-  --mkt-glass-bg: color-mix(in oklab, #ffffff 6%, transparent);
-  --mkt-glass-border: rgba(255, 255, 255, 0.1);
-  --mkt-glass-blur: 20px;
-  --mkt-glass-highlight: rgba(255, 255, 255, 0.14);
-
-  /* Shadows do little work on charcoal — depth comes from surface luminance
-     and glow. Kept for physical grounding of floating elements only. */
-  --mkt-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --mkt-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
-  --mkt-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.35), 0 6px 16px rgba(0, 0, 0, 0.35);
-  --mkt-shadow-lg: 0 4px 10px rgba(0, 0, 0, 0.4), 0 16px 40px rgba(0, 0, 0, 0.45);
-  --mkt-shadow-xl: 0 8px 20px rgba(0, 0, 0, 0.45), 0 32px 70px rgba(0, 0, 0, 0.55);
+  /* On near-black a pure drop shadow is nearly invisible, so each step pairs
+     the shadow with a 1px top INSET highlight. That hairline of light on the
+     upper edge is what actually sells elevation in a dark UI — it reads as the
+     surface catching the page's light source. The shadow then grounds it.
+     Both halves scale together; a shadow without the highlight just looks like
+     a darker smudge. */
+  --mkt-shadow-xs: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 1px 2px rgba(0, 0, 0, 0.5);
+  --mkt-shadow-sm:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.35);
+  --mkt-shadow-md:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 6px rgba(0, 0, 0, 0.45),
+    0 8px 24px rgba(0, 0, 0, 0.4);
+  --mkt-shadow-lg:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 6px 16px rgba(0, 0, 0, 0.5),
+    0 20px 48px rgba(0, 0, 0, 0.45);
+  --mkt-shadow-xl:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 12px 28px rgba(0, 0, 0, 0.55),
+    0 36px 80px rgba(0, 0, 0, 0.55);
   --mkt-shadow-mockup:
-    0 16px 32px rgba(0, 0, 0, 0.5), 0 48px 96px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 20px 40px rgba(0, 0, 0, 0.55),
+    0 56px 110px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.07);
   /* The CTA halo is glow too — pulled back in step with the radials above so
      the button doesn't become the one thing still running at full brightness. */
-  --mkt-shadow-cta: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(74, 120, 255, 0.26);
+  --mkt-shadow-cta:
+    0 1px 2px rgba(0, 0, 0, 0.5), 0 6px 20px rgba(74, 120, 255, 0.2);
 
-  --mkt-inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  --mkt-inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -425,23 +449,6 @@
    The Tailwind v4 `@utility` blocks Launch UI ships are rewritten here as
    plain classes, which v3 handles natively. Behaviour is equivalent.
    ═══════════════════════════════════════════════════════════════════════════ */
-
-/* ── Glass ──────────────────────────────────────────────────────────────── */
-.mkt-glass {
-  background-color: var(--mkt-glass-bg);
-  border: 1px solid var(--mkt-glass-border);
-  -webkit-backdrop-filter: blur(var(--mkt-glass-blur)) saturate(180%);
-  backdrop-filter: blur(var(--mkt-glass-blur)) saturate(180%);
-}
-
-/* Glass with a lit top edge — for floating chrome like the navbar. */
-.mkt-glass-raised {
-  background-color: var(--mkt-glass-bg);
-  border: 1px solid var(--mkt-glass-border);
-  -webkit-backdrop-filter: blur(var(--mkt-glass-blur)) saturate(180%);
-  backdrop-filter: blur(var(--mkt-glass-blur)) saturate(180%);
-  box-shadow: var(--mkt-shadow-md), inset 0 1px 0 var(--mkt-glass-highlight);
-}
 
 /* ── Section ambience ────────────────────────────────────────────────────
    One utility lights any section; the placement modifiers only move the two
@@ -525,6 +532,40 @@
   --mkt-ambient-y2: 58%;
 }
 
+/* ── Interactive card ────────────────────────────────────────────────────
+   Hover is light arriving on the card, not the card changing colour: a wash
+   from the top edge, a brighter hairline, a deeper shadow, and a 2px lift.
+
+   Gated behind a real cursor for the same reason as `.mkt-pressable` — a
+   latched hover on touch leaves a whole grid of cards sitting raised. Scoped
+   under `.mkt` to out-rank the theme-transition rule. */
+.mkt .mkt-card-interactive {
+  transition:
+    transform var(--mkt-dur-hover) var(--mkt-ease-enter),
+    border-color var(--mkt-dur-hover) var(--mkt-ease-enter),
+    box-shadow var(--mkt-dur-hover) var(--mkt-ease-enter);
+}
+.mkt .mkt-card-wash {
+  transition: opacity var(--mkt-dur-hover) var(--mkt-ease-enter);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mkt .mkt-card-interactive:hover {
+    transform: translateY(-2px);
+    border-color: var(--mkt-line-strong);
+    box-shadow: var(--mkt-shadow-lg);
+  }
+  .mkt .mkt-card-interactive:hover .mkt-card-wash {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mkt .mkt-card-interactive:hover {
+    transform: none;
+  }
+}
+
 /* ── Gradient hairline border (the "premium edge") ──────────────────────── */
 .mkt-grad-edge {
   position: relative;
@@ -547,24 +588,6 @@
   pointer-events: none;
 }
 
-/* ── Mask fades (Launch UI's fade-* utilities) ─────────────────────────── */
-.mkt-fade-x {
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
-  mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
-}
-.mkt-fade-bottom {
-  -webkit-mask-image: linear-gradient(to top, transparent, #000 35%);
-  mask-image: linear-gradient(to top, transparent, #000 35%);
-}
-.mkt-fade-bottom-lg {
-  -webkit-mask-image: linear-gradient(to top, transparent 12%, #000 100%);
-  mask-image: linear-gradient(to top, transparent 12%, #000 100%);
-}
-.mkt-fade-top {
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 35%);
-  mask-image: linear-gradient(to bottom, transparent, #000 35%);
-}
-
 /* ── Text treatments ────────────────────────────────────────────────────── */
 .mkt-headline-grad {
   background-image: var(--mkt-grad-headline);
@@ -575,30 +598,55 @@
   padding-bottom: 0.08em;
 }
 
-/* ── Fading section rule ────────────────────────────────────────────────── */
-.mkt-rule {
-  height: 1px;
-  border: 0;
-  background: var(--mkt-grad-rule);
-}
-
-/* ── Dot / grid field for section backgrounds ───────────────────────────── */
-.mkt-dots {
-  background-image: radial-gradient(var(--mkt-line-strong) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-.mkt-grid-field {
-  background-image:
-    linear-gradient(var(--mkt-line-subtle) 1px, transparent 1px),
-    linear-gradient(90deg, var(--mkt-line-subtle) 1px, transparent 1px);
-  background-size: 64px 64px;
-}
-
 /* ── Focus ring — one definition, used by every interactive element ─────── */
 .mkt-focus-ring:focus-visible {
   outline: 2px solid var(--mkt-focus);
   outline-offset: 2px;
   border-radius: inherit;
+}
+
+/* ── Pressable ───────────────────────────────────────────────────────────
+   Every button and CTA link on the page. Two jobs:
+
+   1. A press scales to 0.97. This is the cheapest possible win in perceived
+      responsiveness — the interface visibly acknowledging the click at the
+      moment of the click, rather than only once navigation resolves.
+   2. The hover lift is gated behind a real cursor. On touch, :hover fires on
+      tap and then STAYS applied until the next tap elsewhere, which left
+      buttons stuck 1px high on mobile.
+
+   Transitions name their properties. `all` here would animate the gradient
+   background swap on the primary variant into a muddy crossfade.
+
+   Scoped `.mkt .mkt-pressable` rather than bare `.mkt-pressable` to match the
+   (0,2,0) specificity of the `[data-mkt-animate]` theme-transition rule above.
+   At (0,1,0) that rule wins, replacing this transition list with one that has
+   no `transform` in it — which silently kills the press feedback and retimes
+   the rest to the 320ms theme crossfade. Same trick navbar.css uses. */
+.mkt .mkt-pressable {
+  transition:
+    transform var(--mkt-dur-press) var(--mkt-ease-enter),
+    box-shadow var(--mkt-dur-hover) var(--mkt-ease-enter),
+    background-color var(--mkt-dur-hover) var(--mkt-ease-enter),
+    border-color var(--mkt-dur-hover) var(--mkt-ease-enter),
+    color var(--mkt-dur-hover) var(--mkt-ease-enter);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mkt .mkt-pressable:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.mkt .mkt-pressable:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mkt .mkt-pressable:hover,
+  .mkt .mkt-pressable:active {
+    transform: none;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -661,15 +709,6 @@
   }
 }
 
-@keyframes mkt-marquee {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
-}
-
 .mkt-animate-glow {
   animation: mkt-glow-drift 14s ease-in-out infinite;
   will-change: transform, opacity;
@@ -678,17 +717,11 @@
   animation: mkt-float 7s ease-in-out infinite;
   will-change: transform;
 }
-.mkt-animate-marquee {
-  animation: mkt-marquee var(--mkt-marquee-duration, 40s) linear infinite;
-  will-change: transform;
-}
-
 /* Honour the OS setting. Static glows stay visible — they are decoration that
    carries the design, not motion that carries meaning. */
 @media (prefers-reduced-motion: reduce) {
   .mkt-animate-glow,
-  .mkt-animate-float,
-  .mkt-animate-marquee {
+  .mkt-animate-float {
     animation: none;
   }
   .mkt[data-mkt-animate] :is(*, *::before, *::after) {

@@ -1,17 +1,26 @@
 import type { ReactNode } from 'react';
 import { motion, useReducedMotion, type Variants } from 'framer-motion';
 
-const EASE = [0.16, 1, 0.3, 1] as const;
+/**
+ * The strong ease-out from the marketing token file, restated here because
+ * Framer takes a curve array rather than a CSS variable. Keep the two in sync:
+ * this is `--mkt-ease-enter`.
+ */
+const EASE = [0.23, 1, 0.32, 1] as const;
 
 /**
  * Scroll-triggered entrance. Animates transform + opacity only — both are
  * GPU-composited, so a page with ~40 of these still holds 60fps and never
  * triggers layout.
+ *
+ * A reveal is read, not operated, so it is allowed to run longer than the
+ * <300ms an interactive element gets. It still errs short: the content is
+ * already legible the moment it starts, and a slow fade just delays reading.
  */
 export function Reveal({
   children,
   delay = 0,
-  y = 16,
+  y = 14,
   className,
   as = 'div',
 }: {
@@ -27,10 +36,13 @@ export function Reveal({
   return (
     <MotionTag
       className={className}
+      // Reduced motion keeps the fade and drops the travel. Opacity aids
+      // comprehension (it marks the element as newly arrived); the Y movement
+      // is the part that causes discomfort.
       initial={{ opacity: 0, y: reduced ? 0 : y }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-80px' }}
-      transition={{ duration: 0.6, delay: reduced ? 0 : delay, ease: EASE }}
+      transition={{ duration: reduced ? 0.2 : 0.5, delay: reduced ? 0 : delay, ease: EASE }}
     >
       {children}
     </MotionTag>
@@ -41,7 +53,10 @@ export function Reveal({
 export function RevealGroup({
   children,
   className,
-  stagger = 0.07,
+  // 55ms. Long enough to read as a cascade, short enough that the last card in
+  // a six-item grid isn't still arriving after the user has started reading the
+  // first — which is what a 70ms+ stagger felt like on the wider rows.
+  stagger = 0.055,
 }: {
   children: ReactNode;
   className?: string;
@@ -68,8 +83,8 @@ export function RevealGroup({
 export function RevealItem({ children, className }: { children: ReactNode; className?: string }) {
   const reduced = useReducedMotion();
   const variants: Variants = {
-    hidden: { opacity: 0, y: reduced ? 0 : 18 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: EASE } },
+    hidden: { opacity: 0, y: reduced ? 0 : 14 },
+    show: { opacity: 1, y: 0, transition: { duration: reduced ? 0.2 : 0.5, ease: EASE } },
   };
   return (
     <motion.div className={className} variants={variants}>

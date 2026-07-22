@@ -24,7 +24,7 @@ export function Stats() {
                 <Counter to={s.to} suffix={s.suffix} decimals={s.decimals ?? 0} />
               </p>
               <p className="mt-2.5 text-sm font-medium text-mkt-ink">{s.label}</p>
-              <p className="mt-1 text-[0.8125rem] text-mkt-ink-faint">{s.sub}</p>
+              <p className="mt-1.5 text-[0.8125rem] text-mkt-ink-muted">{s.sub}</p>
             </RevealItem>
           ))}
         </RevealGroup>

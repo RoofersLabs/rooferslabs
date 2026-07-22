@@ -38,7 +38,7 @@ export function Comparison() {
                 <tr className="border-b border-mkt-line-subtle">
                   <th
                     scope="col"
-                    className="px-5 py-4 text-[0.8125rem] font-medium text-mkt-ink-faint"
+                    className="px-5 py-4 text-[0.8125rem] font-medium text-mkt-ink-muted"
                   >
                     &nbsp;
                   </th>

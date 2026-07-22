@@ -10,15 +10,19 @@ export type MktSize = 'sm' | 'md' | 'lg';
  * this one is gradient-filled and glow-shadowed, which would be wrong inside
  * the dashboard, and it reads from `mkt-*` tokens that don't exist there.
  */
+/**
+ * Hover lifts are wrapped in `hover:` + the `mkt-pressable` class gates them
+ * behind `(hover: hover)` in CSS, so a tap on a touch device doesn't leave the
+ * button latched in its hover state.
+ */
 const variants: Record<MktVariant, string> = {
   // The single loudest element on the page — gradient fill, lit top edge, halo.
-  primary:
-    'bg-mkt-cta text-mkt-accent-ink shadow-mkt-cta hover:bg-mkt-cta-hover hover:-translate-y-px active:translate-y-0',
+  primary: 'bg-mkt-cta text-mkt-accent-ink shadow-mkt-cta hover:bg-mkt-cta-hover',
   secondary:
     'bg-mkt-surface text-mkt-ink-body border border-mkt-line shadow-mkt-xs hover:border-mkt-line-strong hover:text-mkt-ink',
   ghost: 'text-mkt-ink-muted hover:text-mkt-ink hover:bg-mkt-accent-soft',
   // For use on the dark CTA band, where the page ground is already dark.
-  inverse: 'bg-white text-[#101218] shadow-mkt-md hover:-translate-y-px active:translate-y-0',
+  inverse: 'bg-white text-[#08090a] shadow-mkt-md',
 };
 
 const sizes: Record<MktSize, string> = {
@@ -29,8 +33,11 @@ const sizes: Record<MktSize, string> = {
 
 function base(variant: MktVariant, size: MktSize, className?: string) {
   return cn(
-    'mkt-focus-ring inline-flex select-none items-center justify-center whitespace-nowrap',
-    'rounded-xl font-medium transition-all duration-200 ease-out',
+    'mkt-focus-ring mkt-pressable inline-flex select-none items-center justify-center whitespace-nowrap',
+    // Named properties rather than `transition-all`: `all` would also animate
+    // the background-image swap on the gradient variants, which reads as a
+    // muddy crossfade rather than a clean state change.
+    'rounded-xl font-medium',
     'disabled:pointer-events-none disabled:opacity-50',
     variants[variant],
     sizes[size],

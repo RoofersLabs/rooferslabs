@@ -163,18 +163,26 @@ export function DashboardMock({ compact = false }: { compact?: boolean }) {
             <div className="rounded-xl border border-mkt-line-subtle bg-mkt-surface p-3 lg:col-span-2">
               <p className="mb-1 text-[0.6875rem] font-medium text-mkt-ink">Call volume</p>
               <p className="mb-3 text-[0.625rem] text-mkt-ink-faint">Last 7 days</p>
+              {/* The columns must be h-full: each bar sizes itself with a
+                  percentage height, and a percentage resolves against the
+                  PARENT's height. The column previously had auto height (it
+                  shrank to its own content), so every bar resolved to 0 and the
+                  chart rendered as nothing but a row of day labels. */}
               <div
-                className="flex h-20 items-end gap-1.5"
+                className="flex h-24 items-stretch gap-1.5"
                 role="img"
                 aria-label="Call volume over the last seven days, trending upward"
               >
                 {VOLUME.map(({ day, height }, i) => (
-                  <span key={`${day}-${i}`} className="flex flex-1 flex-col items-center gap-1">
+                  <span
+                    key={`${day}-${i}`}
+                    className="flex h-full flex-1 flex-col items-center justify-end gap-1"
+                  >
                     <span
                       className="w-full rounded-t bg-mkt-cta"
                       style={{ height: `${height}%`, opacity: 0.55 + (i / VOLUME.length) * 0.45 }}
                     />
-                    <span className="text-[0.5rem] text-mkt-ink-faint">{day}</span>
+                    <span className="text-[0.5rem] leading-none text-mkt-ink-faint">{day}</span>
                   </span>
                 ))}
               </div>

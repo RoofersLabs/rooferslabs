@@ -49,7 +49,10 @@ export function HowItWorks() {
                 </div>
                 <h3 className="mt-5 text-lg font-semibold text-mkt-ink">{title}</h3>
                 <p className="mt-2 text-[0.9375rem] leading-relaxed text-mkt-ink-muted">{body}</p>
-                <p className="mt-5 text-xs font-medium uppercase tracking-wide text-mkt-accent">
+                {/* mt-auto pins the timing meta to the card's bottom edge, so
+                    the three cards agree on a baseline even though their body
+                    copy runs to different lengths. */}
+                <p className="mt-auto pt-6 text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-mkt-accent">
                   {meta}
                 </p>
               </MktCard>

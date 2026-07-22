@@ -18,19 +18,24 @@ export function MktCard({
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-2xl border border-mkt-line-subtle bg-mkt-surface shadow-mkt-sm',
-        interactive &&
-          'group transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-mkt-accent-border hover:shadow-mkt-lg',
+        'relative overflow-hidden rounded-2xl border border-mkt-line bg-mkt-surface shadow-mkt-sm',
+        // `mkt-card-hover` carries the lift + timing; the border and shadow
+        // changes ride along on it. Kept in CSS rather than Tailwind `hover:`
+        // utilities so the whole thing can be gated behind `(hover: hover)`.
+        interactive && 'mkt-card-interactive group',
         className,
       )}
     >
       {interactive && (
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-mkt-card-hover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          className="mkt-card-wash pointer-events-none absolute inset-0 bg-mkt-card-hover opacity-0"
         />
       )}
-      <div className="relative">{children}</div>
+      {/* Full-height flex column so cards in a row can push trailing content
+          (a meta line, a footer link) to the bottom with `mt-auto` and stay
+          aligned across the row regardless of body-copy length. */}
+      <div className="relative flex h-full flex-col">{children}</div>
     </div>
   );
 }

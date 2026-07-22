@@ -40,12 +40,19 @@ export function Section({
     <section
       id={id}
       className={cn(
+        // Two things are load-bearing here.
+        //
         // `overflow-x-clip`, not `overflow-hidden`: glows and mockup halos are
         // deliberately wider than the viewport (120vw, negative insets) and
         // would otherwise push the page sideways on mobile. Clip rather than
         // hidden because clip doesn't create a scroll container, so any
         // `position: sticky` descendant keeps working.
-        'relative overflow-x-clip px-5 py-20 sm:px-6 sm:py-24 lg:py-32',
+        //
+        // The vertical padding is deliberately generous. On a dark page
+        // whitespace is the main thing separating one idea from the next: the
+        // tonal step between bands is only a few points of luminance and can't
+        // do that work on its own.
+        'relative overflow-x-clip px-5 py-24 sm:px-6 sm:py-28 lg:py-36',
         tone === 'subtle' && 'bg-mkt-bg-subtle',
         bordered && 'border-t border-mkt-line-subtle',
         glow !== 'none' && ['mkt-ambient', `mkt-ambient-${glow}`],
@@ -101,24 +108,26 @@ export function SectionHeading({
 }) {
   return (
     <Reveal
-      className={cn(
-        'flex flex-col gap-4',
-        align === 'center' && 'items-center text-center',
-        className,
-      )}
+      className={cn('flex flex-col', align === 'center' && 'items-center text-center', className)}
     >
       {eyebrow && (
-        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-mkt-accent">
+        // Wider tracking and a smaller size than the old step: an eyebrow's job
+        // is to label the section quietly, so it reads as a caption rather than
+        // as a second, competing headline.
+        <span className="mb-5 text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-mkt-accent">
           {eyebrow}
         </span>
       )}
-      <h2 className="max-w-3xl text-balance text-3xl font-semibold leading-[1.12] tracking-[-0.03em] text-mkt-ink sm:text-4xl lg:text-[2.75rem]">
+      <h2 className="max-w-3xl text-balance text-[1.875rem] font-semibold leading-[1.1] tracking-[-0.032em] text-mkt-ink sm:text-4xl lg:text-[2.625rem]">
         {title}
       </h2>
       {lede && (
         <p
           className={cn(
-            'max-w-2xl text-pretty text-base leading-relaxed text-mkt-ink-muted sm:text-lg',
+            // Narrower measure than the headline. A lede set as wide as a
+            // display heading runs past a comfortable line length and stops
+            // being scannable.
+            'mt-5 max-w-xl text-pretty text-[1.0625rem] leading-[1.65] text-mkt-ink-muted',
             align === 'center' && 'mx-auto',
           )}
         >
