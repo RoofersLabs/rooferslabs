@@ -7,8 +7,7 @@ import { useMarketingTheme } from './useMarketingTheme';
 import { Seo } from './components/Seo';
 import { Navbar } from './sections/Navbar';
 import { Hero } from './sections/Hero';
-import { SocialProof } from './sections/SocialProof';
-import { Stats } from './sections/Stats';
+import { TradeShowcase } from './sections/TradeShowcase';
 import { FeatureHighlight } from './sections/FeatureHighlight';
 import { Problem } from './sections/Problem';
 import { Timeline } from './sections/Timeline';
@@ -57,8 +56,7 @@ export function LandingPage() {
 
       <main id="main">
         <Hero />
-        <SocialProof />
-        <Stats />
+        <TradeShowcase />
         <FeatureHighlight />
         <Problem />
         <Timeline />
