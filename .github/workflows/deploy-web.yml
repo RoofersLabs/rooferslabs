@@ -8,7 +8,7 @@ name: Deploy Web (S3 + CloudFront)
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - 'apps/web/**'
       - 'packages/shared/**'
@@ -47,8 +47,10 @@ jobs:
       - name: Lint
         run: npm run lint --workspace @rooferslabs/web
 
-      - name: Test
-        run: npm test --workspaces --if-present
+      # Frontend deploy — gate only on the web workspace. The API has its own
+      # pipeline; a Prisma/API test failure must never block a web release.
+      - name: Test (web only)
+        run: npm test --workspace @rooferslabs/web --if-present
 
       - name: Build frontend
         env:

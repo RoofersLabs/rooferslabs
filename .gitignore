@@ -37,9 +37,6 @@ coverage/
 # TypeScript
 *.tsbuildinfo
 
-# Vercel
-.vercel/
-
 # Temporary files
 tmp/
 temp/

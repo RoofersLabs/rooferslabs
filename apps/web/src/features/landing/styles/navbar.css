@@ -1,0 +1,317 @@
+/*
+ * RoofersLabs marketing navbar — a self-contained black identity.
+ * ---------------------------------------------------------------------------
+ * Deliberately isolated from marketing.css and the .mkt page theme. Every value
+ * here resolves from a --rl-nav-* token defined on `.rl-nav`, and none of them
+ * read `data-mkt-theme`. The bar is #000 / #fff whether the page is light or
+ * dark — it is brand chrome, not a page section, so it never inverts.
+ *
+ * Reference: the proportions and interaction quality of the Warp navigation —
+ * an 80px black bar, a tight three-cluster balance, dimmed menu labels that
+ * resolve to full white on hover, and a white pill CTA that lifts a hair on
+ * hover. Recreated from tokens, not copied.
+ */
+
+.rl-nav {
+  /* ── Dimensions ─────────────────────────────────────────────────────────── */
+  --rl-nav-h: 80px;
+  --rl-nav-max: 1280px;
+  --rl-nav-pad: clamp(20px, 4vw, 40px);
+
+  /* ── Fixed identity — never themed ──────────────────────────────────────── */
+  --rl-nav-bg: #000000;
+  --rl-nav-bg-scrolled: rgba(0, 0, 0, 0.64);
+  --rl-nav-fg: #ffffff;
+  --rl-nav-border: rgba(255, 255, 255, 0.1);
+  --rl-nav-chip: rgba(255, 255, 255, 0.06);
+  --rl-nav-chip-hover: rgba(255, 255, 255, 0.12);
+  --rl-nav-cta-bg: #ffffff;
+  --rl-nav-cta-fg: #000000;
+  /* The brand mark keeps the RoofersLabs blue, but from fixed stops so it can't
+     drift with the page theme the way an --mkt-* token would. */
+  --rl-nav-brand-from: #5b86ff;
+  --rl-nav-brand-to: #2e5ae0;
+
+  /* ── Radius + motion ────────────────────────────────────────────────────── */
+  --rl-nav-radius: 12px;
+  --rl-nav-radius-sm: 10px;
+  --rl-nav-dur: 200ms;
+  --rl-nav-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background-color: var(--rl-nav-bg);
+  border-bottom: 1px solid transparent;
+}
+
+/* Scrolled: stay black, add a hair of translucency + blur + one hairline. */
+.rl-nav[data-scrolled='true'] {
+  background-color: var(--rl-nav-bg-scrolled);
+  border-bottom-color: var(--rl-nav-border);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+  backdrop-filter: saturate(160%) blur(14px);
+}
+/* Where blur is unsupported, fall back to fully opaque black — never a
+   see-through bar. */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .rl-nav[data-scrolled='true'] {
+    background-color: var(--rl-nav-bg);
+  }
+}
+
+/* ── Row ──────────────────────────────────────────────────────────────────── */
+.rl-nav__inner {
+  display: flex;
+  height: var(--rl-nav-h);
+  max-width: var(--rl-nav-max);
+  margin-inline: auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding-inline: var(--rl-nav-pad);
+}
+.rl-nav__cluster {
+  display: flex;
+  align-items: center;
+}
+.rl-nav__cluster--right {
+  gap: 6px;
+}
+
+/* ── Brand lockup ─────────────────────────────────────────────────────────── */
+.rl-nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: var(--rl-nav-radius-sm);
+  color: var(--rl-nav-fg);
+}
+.rl-nav__mark {
+  display: inline-flex;
+  height: 32px;
+  width: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background-image: linear-gradient(180deg, var(--rl-nav-brand-from), var(--rl-nav-brand-to));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+}
+.rl-nav__wordmark {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--rl-nav-fg);
+}
+
+/* ── Center menu ──────────────────────────────────────────────────────────── */
+.rl-nav__menu {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.rl-nav__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--rl-nav-fg);
+  opacity: 0.72; /* dimmed at rest; full white on hover — the Warp register */
+}
+.rl-nav__link:hover {
+  opacity: 1;
+}
+.rl-nav__chev {
+  height: 14px;
+  width: 14px;
+  opacity: 0.6;
+}
+
+/* ── GitHub stars ─────────────────────────────────────────────────────────── */
+.rl-nav__github {
+  display: inline-flex;
+  height: 40px;
+  align-items: center;
+  gap: 8px;
+  border-radius: var(--rl-nav-radius-sm);
+  padding: 0 12px;
+  color: var(--rl-nav-fg);
+}
+.rl-nav__github:hover {
+  background-color: var(--rl-nav-chip);
+}
+.rl-nav__github-icon {
+  height: 18px;
+  width: 18px;
+}
+.rl-nav__github-count {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.rl-nav__github-star {
+  height: 13px;
+  width: 13px;
+  opacity: 0.85;
+}
+
+/* ── Contact Sales (ghost) ────────────────────────────────────────────────── */
+.rl-nav__ghost {
+  display: inline-flex;
+  height: 40px;
+  align-items: center;
+  border-radius: var(--rl-nav-radius-sm);
+  padding: 0 12px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--rl-nav-fg);
+  opacity: 0.82;
+}
+.rl-nav__ghost:hover {
+  opacity: 1;
+}
+
+/* ── Primary CTA ──────────────────────────────────────────────────────────── */
+.rl-nav__cta {
+  display: inline-flex;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: var(--rl-nav-radius);
+  padding: 0 24px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  color: var(--rl-nav-cta-fg);
+  background-color: var(--rl-nav-cta-bg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  will-change: transform;
+}
+.rl-nav__cta:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+}
+.rl-nav__cta:active {
+  transform: translateY(0) scale(1);
+}
+
+/* ── Icon buttons (theme toggle, mobile trigger) ──────────────────────────── */
+.rl-nav__icon-btn {
+  display: inline-flex;
+  height: 40px;
+  width: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--rl-nav-radius-sm);
+  color: var(--rl-nav-fg);
+  opacity: 0.72;
+}
+.rl-nav__icon-btn:hover {
+  background-color: var(--rl-nav-chip);
+  opacity: 1;
+}
+
+/* ── Focus — one visible ring for every interactive element ───────────────── */
+.rl-nav :is(a, button):focus-visible,
+.rl-nav__sheet :is(a, button):focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.78);
+  outline-offset: 2px;
+  border-radius: var(--rl-nav-radius-sm);
+  opacity: 1;
+}
+
+/* Interactive timing. The page-wide `.mkt[data-mkt-animate]` rule in
+   marketing.css retimes descendant colour transitions to 320ms and drops
+   transform from the property list; this (0,3,0) selector out-ranks its
+   (0,2,1) so the navbar keeps its own 200ms opacity/transform feel. */
+.mkt
+  .rl-nav
+  :is(
+    .rl-nav__brand,
+    .rl-nav__link,
+    .rl-nav__github,
+    .rl-nav__ghost,
+    .rl-nav__cta,
+    .rl-nav__icon-btn
+  ) {
+  transition:
+    color var(--rl-nav-dur) var(--rl-nav-ease),
+    opacity var(--rl-nav-dur) var(--rl-nav-ease),
+    background-color var(--rl-nav-dur) var(--rl-nav-ease),
+    border-color var(--rl-nav-dur) var(--rl-nav-ease),
+    transform var(--rl-nav-dur) var(--rl-nav-ease),
+    box-shadow var(--rl-nav-dur) var(--rl-nav-ease);
+}
+
+/* ── Mobile sheet — a full-screen black panel, Linear-style ───────────────── */
+.rl-nav__sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--rl-nav-bg);
+  padding: 20px var(--rl-nav-pad) max(24px, env(safe-area-inset-bottom));
+}
+.rl-nav__sheet-top {
+  display: flex;
+  height: calc(var(--rl-nav-h) - 20px);
+  align-items: center;
+  justify-content: space-between;
+}
+.rl-nav__sheet-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 16px;
+  overflow-y: auto;
+}
+.rl-nav__sheet-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--rl-nav-border);
+  padding: 18px 4px;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--rl-nav-fg);
+}
+.rl-nav__sheet-link .rl-nav__chev {
+  height: 18px;
+  width: 18px;
+}
+.rl-nav__sheet-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 24px;
+}
+.rl-nav__sheet-foot .rl-nav__cta {
+  width: 100%;
+}
+.rl-nav__sheet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mkt .rl-nav :is(.rl-nav__brand, .rl-nav__link, .rl-nav__github, .rl-nav__ghost, .rl-nav__cta, .rl-nav__icon-btn) {
+    transition-duration: 1ms;
+  }
+  .rl-nav__cta:hover {
+    transform: none;
+  }
+}
