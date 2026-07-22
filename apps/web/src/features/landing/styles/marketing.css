@@ -258,45 +258,48 @@
   --mkt-amber-500: #e0a54a;
   --mkt-amber-600: #edb862;
 
-  /* Cool charcoal ramp. Hue held constant so the layers read as one material
-     lit from different distances. */
-  --mkt-warm-0: #0a0b0d;
-  --mkt-warm-25: #0d0e11;
-  --mkt-warm-50: #111319;
-  --mkt-warm-100: #171921;
-  --mkt-warm-200: #1e212a;
-  --mkt-warm-300: #272b36;
-  --mkt-warm-400: #3a3f4d;
-  --mkt-warm-500: #5b6273;
-  --mkt-warm-600: #838a9b;
-  --mkt-warm-700: #a7adba;
-  --mkt-warm-800: #ccd0d9;
-  --mkt-warm-900: #f2f4f8;
+  /* Neutral near-black ramp (zinc). Achromatic on purpose — the RoofersLabs
+     blue is the only colour on the page, so the layers read as one material lit
+     from different distances rather than as a tinted surface. */
+  --mkt-warm-0: #09090b;
+  --mkt-warm-25: #0c0c0e;
+  --mkt-warm-50: #111113;
+  --mkt-warm-100: #17171a;
+  --mkt-warm-200: #1c1c21;
+  --mkt-warm-300: #26262b;
+  --mkt-warm-400: #3f3f46;
+  --mkt-warm-500: #52525b;
+  --mkt-warm-600: #71717a;
+  --mkt-warm-700: #a1a1aa;
+  --mkt-warm-800: #d4d4d8;
+  --mkt-warm-900: #fafafa;
 
   /* Surfaces genuinely step up in luminance — this is what "layered" means.
-     Never fake elevation with borders alone. */
-  --mkt-bg: #0c0d10; /* page — rich charcoal, never #000 */
-  --mkt-bg-subtle: #101218; /* alternating band */
-  --mkt-bg-inset: #08090b; /* wells sink BELOW the page in dark mode */
-  --mkt-surface: #15171e; /* cards */
-  --mkt-surface-2: #1b1e27; /* nested surface */
-  --mkt-surface-raised: #21242f; /* popovers, floating chrome */
+     Never fake elevation with borders alone. Values are the approved brief
+     palette: page → secondary → elevated → card, extended one step for chrome. */
+  --mkt-bg: #0a0a0b; /* page — near-black neutral, never #000 */
+  --mkt-bg-subtle: #111113; /* secondary surface — alternating band */
+  --mkt-bg-inset: #060608; /* wells sink BELOW the page in dark mode */
+  --mkt-surface: #17171a; /* elevated surface — the workhorse card */
+  --mkt-surface-2: #1c1c21; /* card surface — nested, lifts above its parent */
+  --mkt-surface-raised: #212127; /* popovers, floating chrome */
 
   /* Translucent hairlines — they pick up whatever they sit on, which is what
      makes layered dark surfaces cohere. */
   --mkt-line-subtle: rgba(255, 255, 255, 0.06);
-  --mkt-line: rgba(255, 255, 255, 0.1);
-  --mkt-line-strong: rgba(255, 255, 255, 0.16);
+  --mkt-line: rgba(255, 255, 255, 0.08); /* the brief's hairline weight */
+  --mkt-line-strong: rgba(255, 255, 255, 0.14);
 
-  /* Text stops short of pure white — #fff on charcoal vibrates.
-     Worst case in dark is --mkt-surface-raised (#21242f), not the page: the
-     luminance ramp means the LIGHTEST surface is the hardest ground here,
-     exactly inverting which surface to check against in light mode. */
-  --mkt-ink: #f3f5f9; /* headlines        14.17:1 */
-  --mkt-ink-body: #c8ccd6; /* body copy         9.62:1 */
-  --mkt-ink-muted: #9aa1b0; /* secondary         5.96:1 */
-  --mkt-ink-faint: #868d9e; /* labels, meta      4.65:1 — AA at any size */
-  --mkt-ink-inverse: #0c0d10;
+  /* Approved brief text ramp. Worst case in dark is --mkt-surface-raised
+     (#212127), not the page: the luminance ramp means the LIGHTEST surface is
+     the hardest ground here, inverting which surface to check against in light
+     mode. ink/body/muted clear AA comfortably; --mkt-ink-faint is reserved for
+     non-essential meta and sits at ~AA-large, so never put running copy on it. */
+  --mkt-ink: #fafafa; /* primary text      ~18:1 on page */
+  --mkt-ink-body: #d4d4d8; /* body copy         ~12:1 on page */
+  --mkt-ink-muted: #a1a1aa; /* secondary text    ~7:1 on page */
+  --mkt-ink-faint: #71717a; /* muted text — meta/labels only */
+  --mkt-ink-inverse: #0a0a0b;
 
   --mkt-accent: var(--mkt-blue-400);
   --mkt-accent-hover: var(--mkt-blue-300);

@@ -1,7 +1,8 @@
-import { CheckCircle2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { LiveBadge } from '../components/Badge';
 import { HeroAtmosphere } from '../components/Glow';
+import { MktLinkButton } from '../components/MktButton';
 import { BrowserFrame, MockupFrame } from '../components/Mockup';
 import { DashboardMock } from '../components/DashboardMock';
 
@@ -55,7 +56,17 @@ export function Hero() {
             you could afford.
           </motion.p>
 
-          <motion.ul {...rise(0.24)} className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2.5">
+          <motion.div {...rise(0.24)} className="mt-8">
+            <MktLinkButton to="/sign-up" size="lg" className="group">
+              Start free trial
+              <ArrowRight
+                className="h-4 w-4 transition-transform duration-200 ease-out group-hover:translate-x-0.5"
+                aria-hidden
+              />
+            </MktLinkButton>
+          </motion.div>
+
+          <motion.ul {...rise(0.32)} className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2.5">
             {TRUST.map((t) => (
               <li key={t} className="flex items-center gap-1.5 text-sm text-mkt-ink-muted">
                 <CheckCircle2 className="h-4 w-4 text-mkt-success" aria-hidden />
@@ -65,7 +76,7 @@ export function Hero() {
           </motion.ul>
         </div>
 
-        <motion.div {...rise(0.32)} className="mt-12 sm:mt-14">
+        <motion.div {...rise(0.4)} className="mt-12 sm:mt-14">
           <MockupFrame>
             <BrowserFrame>
               <DashboardMock />
