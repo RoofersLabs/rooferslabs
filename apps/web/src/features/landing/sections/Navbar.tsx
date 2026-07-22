@@ -99,6 +99,9 @@ export function Navbar({
   // to the trigger when it closes.
   useEffect(() => {
     if (!open) return;
+    // Capture the trigger node now; the ref is stable, but reading `.current` in
+    // the cleanup trips react-hooks/exhaustive-deps (and the CI is max-warnings 0).
+    const trigger = triggerRef.current;
     document.body.style.overflow = 'hidden';
     closeRef.current?.focus();
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
@@ -106,7 +109,7 @@ export function Navbar({
     return () => {
       document.body.style.overflow = '';
       window.removeEventListener('keydown', onKey);
-      triggerRef.current?.focus();
+      trigger?.focus();
     };
   }, [open]);
 
