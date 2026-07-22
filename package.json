@@ -20,8 +20,8 @@
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format": "prettier --write \"{apps,packages,infra}/**/*.{ts,tsx,js,jsx,json,md}\" \"*.{json,md}\" \".*.json\"",
+    "format:check": "prettier --check \"{apps,packages,infra}/**/*.{ts,tsx,js,jsx,json,md}\" \"*.{json,md}\" \".*.json\"",
     "prisma:generate": "npm run prisma:generate --workspace @rooferslabs/api",
     "prisma:migrate": "npm run prisma:migrate --workspace @rooferslabs/api",
     "prisma:seed": "npm run prisma:seed --workspace @rooferslabs/api",
@@ -35,7 +35,6 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.0.8",
     "prettier": "^3.4.2",
-    "shadcn": "^4.13.1",
     "typescript": "^5.7.3"
   },
   "lint-staged": {

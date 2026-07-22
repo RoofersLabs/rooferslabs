@@ -1,4 +1,5 @@
 node_modules
+.nm-trash
 dist
 build
 coverage

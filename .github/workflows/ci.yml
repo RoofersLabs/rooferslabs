@@ -6,6 +6,16 @@ on:
   pull_request:
     branches: [main, develop]
 
+# CI only ever reads the repo. No job here publishes an image or assumes an AWS
+# role — deploys live in deploy-web.yml, which grants its own id-token scope.
+permissions:
+  contents: read
+
+# A newer push to the same ref makes the in-flight run irrelevant.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     name: Typecheck, build, and test
@@ -73,8 +83,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # The API is the only production container image; the frontend deploys
-      # The frontend deploys to S3 + CloudFront (see deploy-web.yml); web.Dockerfile
-      # remains for the local docker-compose full-stack profile only.
+      # The API is the only production container image. The frontend deploys to
+      # S3 + CloudFront (see deploy-web.yml); web.Dockerfile remains for the
+      # local docker-compose full-stack profile only.
       - name: Build API image
         run: docker build -f docker/api.Dockerfile -t rooferslabs-api:ci .

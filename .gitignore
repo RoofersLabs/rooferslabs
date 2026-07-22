@@ -1,5 +1,8 @@
 # Dependencies
 node_modules/
+# node_modules renamed aside for a clean reinstall (iCloud-synced Desktop makes
+# `rm -rf node_modules` unsafe, so we move it here instead)
+.nm-trash/
 
 # Build output
 .next/
@@ -48,6 +51,10 @@ bun.lockb
 .claude/local/
 .claude/skills/
 .gstack/
+# Agent skill packs installed per-developer via `npx skills add`. Vendoring
+# third-party skill content into the product repo is a separate decision.
+.agents/
+skills-lock.json
 
 # Terraform (the .terraform.lock.hcl provider lock file IS committed)
 **/.terraform/
