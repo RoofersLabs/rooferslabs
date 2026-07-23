@@ -71,9 +71,7 @@ function LeadStatus({ qualified }: { qualified: boolean }) {
         </AnimatePresence>
       </span>
 
-      <span className="ml-auto shrink-0 font-mono text-[0.625rem] text-ink-quaternary">
-        02:14
-      </span>
+      <span className="ml-auto shrink-0 font-mono text-[0.625rem] text-ink-quaternary">02:14</span>
     </div>
   );
 }

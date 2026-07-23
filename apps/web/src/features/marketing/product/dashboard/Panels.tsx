@@ -90,9 +90,7 @@ export function SchedulePanel({ booked }: { booked: boolean }) {
     <Panel
       title="Today"
       action={
-        <span className="font-mono text-[0.625rem] text-ink-quaternary">
-          {items.length} jobs
-        </span>
+        <span className="font-mono text-[0.625rem] text-ink-quaternary">{items.length} jobs</span>
       }
     >
       <ul className="space-y-1.5 p-2">
@@ -111,9 +109,7 @@ export function SchedulePanel({ booked }: { booked: boolean }) {
                 <div
                   className={cn(
                     'flex items-start gap-2.5 rounded-md border px-2.5 py-2 transition-colors duration-200 ease-out',
-                    isNew
-                      ? 'border-accent/25 bg-accent/[0.06]'
-                      : 'border-subtle bg-white/[0.02]',
+                    isNew ? 'border-accent/25 bg-accent/[0.06]' : 'border-subtle bg-white/[0.02]',
                   )}
                 >
                   <span

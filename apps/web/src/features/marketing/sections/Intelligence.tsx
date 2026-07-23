@@ -99,9 +99,7 @@ export function Intelligence() {
                 <span className="font-mono text-[0.6875rem] uppercase tracking-wider text-ink-tertiary">
                   Reasoning trace
                 </span>
-                <span className="font-mono text-[0.6875rem] text-ink-quaternary">
-                  call_8f21c4
-                </span>
+                <span className="font-mono text-[0.6875rem] text-ink-quaternary">call_8f21c4</span>
               </div>
 
               {/* Fixed height so trace lines arriving never push the page. */}

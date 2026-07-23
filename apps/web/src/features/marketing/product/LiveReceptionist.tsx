@@ -59,9 +59,17 @@ const TURNS: Turn[] = [
   { id: 'v2', from: 'caller', text: 'Hi — I think yesterday’s storm damaged my roof.' },
   { id: 'v3', from: 'ai', text: 'Sorry to hear that. Are you seeing any water inside the house?' },
   { id: 'v4', from: 'caller', text: 'No, just missing shingles.' },
-  { id: 'v5', from: 'ai', text: 'Then this is a standard inspection — I can have someone out tomorrow morning. Does that work?' },
+  {
+    id: 'v5',
+    from: 'ai',
+    text: 'Then this is a standard inspection — I can have someone out tomorrow morning. Does that work?',
+  },
   { id: 'v6', from: 'caller', text: 'That works.' },
-  { id: 'v7', from: 'ai', text: 'Perfect. You’re booked tomorrow, 9:00 to 11:00 AM — confirmation text on its way.' },
+  {
+    id: 'v7',
+    from: 'ai',
+    text: 'Perfect. You’re booked tomorrow, 9:00 to 11:00 AM — confirmation text on its way.',
+  },
 ];
 
 const EVENTS = [

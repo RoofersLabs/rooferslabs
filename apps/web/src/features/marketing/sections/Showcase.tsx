@@ -43,15 +43,18 @@ export function Showcase() {
             <Reveal variant="up" index={2}>
               <p className="mt-6 max-w-prose text-lead text-ink-secondary">
                 RoofersLabs answers every incoming call, understands the homeowner, qualifies the
-                lead, books the appointment, and keeps your CRM current — following your
-                company’s call flow automatically.
+                lead, books the appointment, and keeps your CRM current — following your company’s
+                call flow automatically.
               </p>
             </Reveal>
 
             <Reveal variant="up" index={3}>
               <ul className="mt-9 grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
                 {FEATURES.map((feature) => (
-                  <li key={feature} className="flex items-center gap-2.5 text-sm text-ink-secondary">
+                  <li
+                    key={feature}
+                    className="flex items-center gap-2.5 text-sm text-ink-secondary"
+                  >
                     <CheckIcon width={15} height={15} className="shrink-0 text-accent" />
                     {feature}
                   </li>

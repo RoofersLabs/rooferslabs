@@ -60,9 +60,7 @@ export function HeroDashboard() {
   // pushed through state, so there is never an intermediate render showing the
   // empty starting position.
   const shownTurn = reduced ? CONVERSATION.length : turn;
-  const shown = reduced
-    ? { incoming: true, qualified: true, booked: true, logged: true }
-    : stage;
+  const shown = reduced ? { incoming: true, qualified: true, booked: true, logged: true } : stage;
 
   return (
     <div className="flex h-full min-h-0 flex-col">

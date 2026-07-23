@@ -85,9 +85,7 @@ export function Pricing() {
             <Eyebrow>Pricing</Eyebrow>
           </Reveal>
           <Reveal variant="up" index={1}>
-            <h2 className="mt-5 text-headline font-medium">
-              One missed job pays for it.
-            </h2>
+            <h2 className="mt-5 text-headline font-medium">One missed job pays for it.</h2>
           </Reveal>
           <Reveal variant="up" index={2}>
             <p className="mt-6 text-lead text-ink-secondary">
@@ -121,7 +119,9 @@ export function Pricing() {
                 onClick={() => setAnnual(option.value)}
                 className={cn(
                   'relative z-10 w-28 rounded-md py-1.5 text-sm font-medium transition-colors duration-200 ease-out',
-                  annual === option.value ? 'text-ink' : 'text-ink-tertiary hover:text-ink-secondary',
+                  annual === option.value
+                    ? 'text-ink'
+                    : 'text-ink-tertiary hover:text-ink-secondary',
                 )}
               >
                 {option.label}
@@ -188,11 +188,7 @@ export function Pricing() {
                 <ul className="mt-8 space-y-3 border-t border-subtle pt-7">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex gap-2.5 text-sm text-ink-secondary">
-                      <CheckIcon
-                        width={16}
-                        height={16}
-                        className="mt-0.5 shrink-0 text-accent"
-                      />
+                      <CheckIcon width={16} height={16} className="mt-0.5 shrink-0 text-accent" />
                       {feature}
                     </li>
                   ))}

@@ -41,12 +41,7 @@ export function Section({
 /** Small monospaced label that sits above a headline. */
 export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <p
-      className={cn(
-        'font-mono text-eyebrow font-medium uppercase text-ink-tertiary',
-        className,
-      )}
-    >
+    <p className={cn('font-mono text-eyebrow font-medium uppercase text-ink-tertiary', className)}>
       {children}
     </p>
   );

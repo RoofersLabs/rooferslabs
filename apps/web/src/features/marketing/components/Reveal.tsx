@@ -8,15 +8,7 @@ import { observeReveal } from '../lib/reveal';
  * Deliberately several: an entire page where everything fades up the same way
  * announces itself as a template. Neighbouring sections should never share one.
  */
-export type RevealVariant =
-  | 'fade'
-  | 'up'
-  | 'blur'
-  | 'mask'
-  | 'wipe'
-  | 'scale'
-  | 'left'
-  | 'right';
+export type RevealVariant = 'fade' | 'up' | 'blur' | 'mask' | 'wipe' | 'scale' | 'left' | 'right';
 
 type RevealProps = {
   children: ReactNode;

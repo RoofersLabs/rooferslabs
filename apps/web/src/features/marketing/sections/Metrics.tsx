@@ -11,9 +11,21 @@ import { useInView } from '../lib/hooks';
  */
 const METRICS = [
   { value: 2.4, decimals: 1, suffix: 'M', label: 'Calls answered', sub: 'Since launch' },
-  { value: 186, decimals: 0, suffix: 'K', label: 'Appointments booked', sub: 'Straight to the calendar' },
+  {
+    value: 186,
+    decimals: 0,
+    suffix: 'K',
+    label: 'Appointments booked',
+    sub: 'Straight to the calendar',
+  },
   { value: 94, decimals: 0, suffix: 'K', label: 'Hours saved', sub: 'Nobody had to work them' },
-  { value: 1.2, decimals: 1, suffix: 's', label: 'Average response time', sub: 'First ring, every time' },
+  {
+    value: 1.2,
+    decimals: 1,
+    suffix: 's',
+    label: 'Average response time',
+    sub: 'First ring, every time',
+  },
 ];
 
 /**

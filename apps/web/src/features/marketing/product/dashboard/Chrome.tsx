@@ -28,7 +28,9 @@ const NAV: NavItem[] = [
 function NavGlyph({ label }: { label: string }) {
   const paths: Record<string, JSX.Element> = {
     CRM: <path d="M2 12.5V4a1 1 0 0 1 1-1h4v9.5M7 6.5h4a1 1 0 0 1 1 1v5" />,
-    Calls: <path d="M3 3h2l1 2.5-1.2.8a7 7 0 0 0 3 3l.8-1.2L11 9v2a1 1 0 0 1-1.1 1A9 9 0 0 1 2 4.1 1 1 0 0 1 3 3Z" />,
+    Calls: (
+      <path d="M3 3h2l1 2.5-1.2.8a7 7 0 0 0 3 3l.8-1.2L11 9v2a1 1 0 0 1-1.1 1A9 9 0 0 1 2 4.1 1 1 0 0 1 3 3Z" />
+    ),
     Customers: (
       <>
         <circle cx="5.5" cy="5" r="2" />
@@ -41,7 +43,9 @@ function NavGlyph({ label }: { label: string }) {
         <path d="M2 6.5h10M5 2v2M9 2v2" />
       </>
     ),
-    'Knowledge Base': <path d="M2 3.5A1 1 0 0 1 3 2.5h2.5A1.5 1.5 0 0 1 7 4a1.5 1.5 0 0 1 1.5-1.5H11a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H8.5A1.5 1.5 0 0 0 7 13a1.5 1.5 0 0 0-1.5-1.5H3a1 1 0 0 1-1-1ZM7 4v9" />,
+    'Knowledge Base': (
+      <path d="M2 3.5A1 1 0 0 1 3 2.5h2.5A1.5 1.5 0 0 1 7 4a1.5 1.5 0 0 1 1.5-1.5H11a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H8.5A1.5 1.5 0 0 0 7 13a1.5 1.5 0 0 0-1.5-1.5H3a1 1 0 0 1-1-1ZM7 4v9" />
+    ),
     Analytics: <path d="M2 12.5h10M4 12.5V8M7 12.5V4.5M10 12.5V6.5" />,
     Settings: (
       <>

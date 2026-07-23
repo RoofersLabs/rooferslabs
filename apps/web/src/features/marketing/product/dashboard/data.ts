@@ -79,7 +79,13 @@ export type Appointment = {
 
 export const SCHEDULE: Appointment[] = [
   { id: 's1', time: '10:30', customer: 'Denise Okafor', job: 'Emergency tarp', crew: 'Crew C' },
-  { id: 's2', time: '13:00', customer: 'Ray Whitfield', job: 'Replacement estimate', crew: 'Crew A' },
+  {
+    id: 's2',
+    time: '13:00',
+    customer: 'Ray Whitfield',
+    job: 'Replacement estimate',
+    crew: 'Crew A',
+  },
 ];
 
 /** Slides into the schedule once the call on screen books it. */
