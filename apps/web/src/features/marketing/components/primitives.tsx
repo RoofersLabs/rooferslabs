@@ -64,21 +64,24 @@ type CtaProps = {
 /**
  * The only two button styles on the site, in two sizes.
  *
- * Both scale to 0.97 on press. It is the cheapest way to make an interface feel
- * like it is listening, and its absence is felt even when its presence is not
- * noticed. Radii stay at 8px — the oversized pill reads as consumer app, not as
- * enterprise software.
+ * The system is deliberately rectangular: 6px radius, a 1px border on both
+ * variants, and a little extra height. Feedback is carried entirely by
+ * background colour — hover lightens, press darkens — over a 150ms ease.
+ * No scale on press and no motion of any kind: at this level of restraint a
+ * button that physically squashes reads as consumer app, and colour change is
+ * feedback enough.
  */
 export function Cta({ children, to, variant = 'primary', size = 'md', className }: CtaProps) {
   const base = cn(
-    'pressable inline-flex items-center justify-center gap-2 rounded-lg font-medium',
-    size === 'sm' ? 'h-9 px-3.5 text-[0.8125rem]' : 'h-11 px-5 text-[0.9375rem]',
+    'inline-flex items-center justify-center gap-2 rounded-md border font-medium',
+    'transition-[background-color,border-color] duration-150 ease-out',
+    size === 'sm' ? 'h-10 px-4 text-[0.8125rem]' : 'h-12 px-6 text-[0.9375rem]',
   );
 
   const styles =
     variant === 'primary'
-      ? 'bg-accent text-white hover:bg-accent-hover active:bg-accent-press'
-      : 'border border-subtle bg-white/[0.02] text-ink hover:border-strong hover:bg-white/[0.05]';
+      ? 'border-white/10 bg-accent text-white hover:bg-accent-hover active:bg-accent-press'
+      : 'border-strong bg-transparent text-ink hover:bg-white/[0.05] active:bg-white/[0.08]';
 
   const isInternal = to.startsWith('/');
 

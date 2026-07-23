@@ -102,7 +102,7 @@ export function Pricing() {
           <div
             role="radiogroup"
             aria-label="Billing period"
-            className="relative inline-flex rounded-lg border border-subtle bg-white/[0.03] p-1"
+            className="relative inline-flex rounded-md border border-subtle bg-white/[0.03] p-1"
           >
             <span
               aria-hidden="true"
