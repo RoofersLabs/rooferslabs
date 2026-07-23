@@ -40,8 +40,8 @@ export default {
           bg: '#000000',
           card: 'rgba(255,255,255,0.03)',
           'card-hover': 'rgba(255,255,255,0.05)',
-          line: 'rgba(255,255,255,0.08)',
-          'line-strong': 'rgba(255,255,255,0.14)',
+          line: 'rgba(255,255,255,0.11)',
+          'line-strong': 'rgba(255,255,255,0.16)',
           // Text — `muted` measures 4.43:1 on black, marginally under the AA
           // body threshold, so it is reserved for micro-labels and timestamps.
           // All running copy uses `secondary` (10.02:1).

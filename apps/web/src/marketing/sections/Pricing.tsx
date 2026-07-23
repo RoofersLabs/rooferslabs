@@ -76,7 +76,7 @@ function Check() {
 
 export function Pricing() {
   return (
-    <section id="pricing" className="scroll-mt-24 py-[72px] sm:py-24">
+    <section id="pricing" className="scroll-mt-24 py-[72px] sm:py-28">
       <Container>
         <Reveal>
           <h2 className="max-w-[20ch] text-balance text-[clamp(1.75rem,4.2vw,3.25rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-white">
@@ -95,7 +95,7 @@ export function Pricing() {
             that gives depth without ever stopping reading as black. */}
         <Reveal
           delay={0.08}
-          className="mt-12 overflow-hidden rounded-2xl border-[1.5px] border-white/[0.16] bg-[radial-gradient(115%_120%_at_50%_0%,rgba(255,255,255,0.03)_0%,rgba(255,255,255,0.012)_40%,#000000_78%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_28px_60px_-34px_rgba(0,0,0,0.9)] sm:mt-14"
+          className="mt-12 overflow-hidden rounded-2xl border border-mk-line-strong bg-[radial-gradient(115%_120%_at_50%_0%,rgba(255,255,255,0.03)_0%,rgba(255,255,255,0.012)_40%,#000000_78%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_28px_60px_-34px_rgba(0,0,0,0.9)] sm:mt-14"
         >
           {/* One table in the DOM at every width. Below `md` the rows become
               blocks and each value carries its own label, because three columns
@@ -107,7 +107,7 @@ export function Pricing() {
             className="w-full border-collapse text-left max-md:block"
           >
             <thead className="max-md:hidden">
-              <tr className="border-b border-white/[0.12]">
+              <tr className="border-b border-mk-line">
                 <th
                   scope="col"
                   className="w-[36%] px-4 py-4 text-[11px] font-medium uppercase tracking-[0.07em] text-mk-muted sm:px-6"
@@ -122,7 +122,7 @@ export function Pricing() {
                 </th>
                 <th
                   scope="col"
-                  className="border-x border-white/[0.12] bg-white/[0.03] px-4 py-4 text-[12.5px] font-medium text-white sm:px-6 sm:text-[13.5px]"
+                  className="border-x border-mk-line bg-white/[0.03] px-4 py-4 text-[12.5px] font-medium text-white sm:px-6 sm:text-[13.5px]"
                 >
                   RoofersLabs AI
                 </th>
@@ -132,7 +132,7 @@ export function Pricing() {
               {COMPARISON.map((row) => (
                 <tr
                   key={row.capability}
-                  className="border-b border-white/[0.12] transition-colors duration-300 ease-smooth last:border-b-0 hover:bg-white/[0.045] max-md:block max-md:px-5 max-md:py-5"
+                  className="border-b border-mk-line transition-colors duration-300 ease-smooth last:border-b-0 hover:bg-white/[0.045] max-md:block max-md:px-5 max-md:py-5"
                 >
                   <th
                     scope="row"
@@ -146,7 +146,7 @@ export function Pricing() {
                     </span>
                     {row.human}
                   </td>
-                  <td className="border-x border-white/[0.12] bg-white/[0.03] px-4 py-4 align-top sm:px-6 max-md:mt-3 max-md:block max-md:rounded-lg max-md:border-x-0 max-md:bg-white/[0.05] max-md:p-3">
+                  <td className="border-x border-mk-line bg-white/[0.03] px-4 py-4 align-top sm:px-6 max-md:mt-3 max-md:block max-md:rounded-lg max-md:border-x-0 max-md:bg-white/[0.05] max-md:p-3">
                     <span className="mb-1 hidden text-[11px] uppercase tracking-[0.06em] text-mk-accent-fg max-md:block">
                       RoofersLabs AI
                     </span>

@@ -156,15 +156,15 @@ export function CapabilitiesTimeline() {
   };
 
   return (
-    <section id="capabilities" className="scroll-mt-24 py-[72px] sm:py-32">
+    <section id="capabilities" className="scroll-mt-24 py-[72px] sm:py-28">
       <Container>
         <Reveal>
           <div className="max-w-[760px]">
-            <h2 className="text-balance text-[clamp(1.85rem,4.8vw,4rem)] font-semibold leading-[1.04] tracking-[-0.035em]">
+            <h2 className="text-balance text-[clamp(1.75rem,4.2vw,3.25rem)] font-semibold leading-[1.08] tracking-[-0.03em]">
               <span className="block text-white">Calls answered</span>
               <span className="block text-white/70">Leads captured</span>
             </h2>
-            <p className="mt-6 max-w-[52ch] text-[15px] leading-[1.65] text-mk-secondary sm:text-[17px]">
+            <p className="mt-6 max-w-[58ch] text-[15px] leading-[1.65] text-mk-secondary sm:text-[16.5px]">
               RoofersLabs turns calls into booked work, emergency context, and clean follow-up
               records without adding another person to the phones.
             </p>

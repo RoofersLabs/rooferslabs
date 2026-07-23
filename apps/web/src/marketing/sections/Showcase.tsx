@@ -33,7 +33,7 @@ const SIGNALS = [
 
 export function Showcase() {
   return (
-    <section id="product" className="scroll-mt-24 py-[72px] sm:py-32">
+    <section id="product" className="scroll-mt-24 py-[72px] sm:py-28">
       <Container>
         <div className="grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20">
           <Reveal>
