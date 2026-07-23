@@ -1,5 +1,4 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { AlertTriangle } from 'lucide-react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -30,18 +29,16 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (!this.state.error) return this.props.children;
 
     return (
-      <div className="flex min-h-screen items-center justify-center bg-surface-2 p-6">
-        <div className="max-w-md rounded-2xl border border-line-subtle bg-surface p-8 text-center shadow-card">
-          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emergency-subtle text-emergency">
-            <AlertTriangle className="h-6 w-6" aria-hidden />
-          </span>
-          <h1 className="mt-5 text-h5 text-ink">Something went wrong</h1>
-          <p className="mt-1.5 text-body leading-6 text-ink-muted">
+      <div className="flex min-h-screen items-center justify-center p-6">
+        <div className="max-w-md rounded border border-gray-200 bg-white p-8 text-center">
+          <h1 className="text-xl font-bold">Something went wrong</h1>
+          <p className="mt-2 text-sm text-gray-600">
             An unexpected error occurred. Reloading usually fixes it — your data is safe.
           </p>
           <button
+            type="button"
             onClick={() => window.location.reload()}
-            className="focus-ring mt-5 rounded-lg bg-accent px-4 py-2 text-button font-semibold text-ink-on-brand shadow-button transition-all duration-fast hover:bg-accent-hover active:scale-[0.98]"
+            className="mt-5 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white"
           >
             Reload the app
           </button>

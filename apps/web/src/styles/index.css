@@ -1,57 +1,9 @@
-@import './tokens.css';
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  html {
-    -webkit-tap-highlight-color: transparent;
-  }
   body {
-    @apply bg-base text-ink antialiased;
-    font-family: var(--font-sans);
-  }
-  ::selection {
-    background: var(--color-primary-subtle);
-    color: var(--text-primary);
-  }
-  /* Numeric data (counts, times, currency, table figures) reads as data. */
-  .font-num {
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.01em;
-  }
-  /* shadcn/ui components reference a bare `border` utility without a color —
-     default it to our token instead of Tailwind's stock gray. Focus rings are
-     handled by the .focus-ring component class below, not a global reset. */
-  * {
-    @apply border-border;
-  }
-}
-
-@layer components {
-  /* Standard surface container: flat surface, hairline border, small shadow. */
-  .card {
-    @apply rounded-lg border border-line-subtle bg-surface shadow-card;
-  }
-  /* Card that lifts on hover (dashboard widgets, list rows, feature blocks). */
-  .card-interactive {
-    @apply card transition-shadow duration-base ease-standard hover:shadow-card-hover;
-  }
-  /* Focus ring shared by all interactive elements — never removed, only restyled. */
-  .focus-ring {
-    @apply outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-canvas;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+    @apply bg-gray-50 text-gray-900 antialiased;
   }
 }

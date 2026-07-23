@@ -3,7 +3,7 @@
  * (docs/04_Frontend_Architecture §12/§23). Components never call fetch.
  */
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import type { OnboardingStep } from '@rooferslabs/shared';
+import type { OnboardingStep, SubscriptionPlan } from '@rooferslabs/shared';
 import { api, type PaginatedResult } from '@/lib/api-client';
 import { useSessionStore } from '@/state/session.store';
 import type {
@@ -21,20 +21,20 @@ import type {
   PhoneNumberSummary,
   ReceptionistStatus,
   Session,
+  SubscriptionSummary,
 } from '@/types/api';
 
 export const queryKeys = {
   session: ['session'] as const,
   company: ['company'] as const,
+  subscription: ['billing', 'subscription'] as const,
   aiConfig: ['company', 'ai-config'] as const,
   phoneNumber: ['company', 'phone-number'] as const,
   dashboard: ['dashboard'] as const,
   calls: (params: object) => ['calls', params] as const,
   call: (id: string) => ['calls', 'detail', id] as const,
-  conversations: (params: object) => ['conversations', params] as const,
   conversation: (id: string) => ['conversations', 'detail', id] as const,
   customers: (params: object) => ['customers', params] as const,
-  customer: (id: string) => ['customers', 'detail', id] as const,
   appointments: (params: object) => ['appointments', params] as const,
   knowledge: (params: object) => ['knowledge', params] as const,
   notifications: (params: object) => ['notifications', params] as const,
@@ -150,6 +150,60 @@ export function useCompleteOnboarding() {
 }
 
 // ---------------------------------------------------------------------------
+// Billing (Stripe)
+// ---------------------------------------------------------------------------
+
+/**
+ * The tenant's live subscription state. Polled briefly after returning from
+ * Stripe Checkout, because activation arrives asynchronously by webhook.
+ */
+export function useSubscription(options: { pollUntilActive?: boolean } = {}) {
+  return useQuery({
+    queryKey: queryKeys.subscription,
+    queryFn: () => api.get<SubscriptionSummary>('/billing/subscription'),
+    refetchInterval: (query) =>
+      options.pollUntilActive && !query.state.data?.isActive ? 2_000 : false,
+  });
+}
+
+/** Start Stripe Checkout; the caller redirects the browser to the returned URL. */
+export function useCreateCheckoutSession() {
+  return useMutation({
+    mutationFn: (plan: SubscriptionPlan) =>
+      api.post<{ url: string }>('/billing/checkout-session', { plan }),
+  });
+}
+
+/** Open the Stripe Customer Portal (payment methods, invoices, plan changes). */
+export function useCreatePortalSession() {
+  return useMutation({
+    mutationFn: () => api.post<{ url: string }>('/billing/portal-session'),
+  });
+}
+
+export function useCancelSubscription() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<SubscriptionSummary>('/billing/subscription/cancel'),
+    onSuccess: (subscription) => {
+      qc.setQueryData(queryKeys.subscription, subscription);
+      void qc.invalidateQueries({ queryKey: queryKeys.session });
+    },
+  });
+}
+
+export function useResumeSubscription() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<SubscriptionSummary>('/billing/subscription/resume'),
+    onSuccess: (subscription) => {
+      qc.setQueryData(queryKeys.subscription, subscription);
+      void qc.invalidateQueries({ queryKey: queryKeys.session });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Telephony
 // ---------------------------------------------------------------------------
 
@@ -230,14 +284,6 @@ export function useCalls(params: ListParams) {
   });
 }
 
-export function useConversations(params: ListParams) {
-  return useQuery({
-    queryKey: queryKeys.conversations(params),
-    queryFn: () => api.getPaginated<Conversation>('/conversations', params),
-    placeholderData: keepPreviousData,
-  });
-}
-
 export function useConversation(id: string | undefined) {
   return useQuery({
     queryKey: queryKeys.conversation(id ?? ''),
@@ -255,14 +301,6 @@ export function useCustomers(params: ListParams) {
     queryKey: queryKeys.customers(params),
     queryFn: () => api.getPaginated<Customer>('/customers', params),
     placeholderData: keepPreviousData,
-  });
-}
-
-export function useCustomer(id: string | undefined) {
-  return useQuery({
-    queryKey: queryKeys.customer(id ?? ''),
-    enabled: Boolean(id),
-    queryFn: () => api.get<Customer>(`/customers/${id}`),
   });
 }
 

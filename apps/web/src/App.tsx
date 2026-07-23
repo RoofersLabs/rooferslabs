@@ -1,59 +1,73 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
-import { OnboardingStep } from '@rooferslabs/shared';
 import { useSessionQuery } from '@/hooks/queries';
-import { FullScreenSpinner } from '@/components/ui/spinner';
 import { AppLayout } from '@/layouts/AppLayout';
-import { LandingPage } from '@/features/landing/LandingPage';
-import { SignInPage, SignUpPage } from '@/features/auth/AuthPages';
-import { OnboardingPage } from '@/features/onboarding/OnboardingPage';
-import { DashboardPage } from '@/features/dashboard/DashboardPage';
-import { CallsPage } from '@/features/calls/CallsPage';
-import { ConversationDetailPage } from '@/features/calls/ConversationDetailPage';
-import { CustomersPage } from '@/features/customers/CustomersPage';
-import { AppointmentsPage } from '@/features/appointments/AppointmentsPage';
-import { KnowledgePage } from '@/features/knowledge/KnowledgePage';
-import { NotificationsPage } from '@/features/notifications/NotificationsPage';
-import { SettingsPage } from '@/features/settings/SettingsPage';
-import { NotFoundPage } from '@/features/misc/NotFoundPage';
+import { LandingPage } from '@/pages/LandingPage';
+import { SignInPage, SignUpPage } from '@/pages/AuthPages';
+import { OnboardingPage } from '@/pages/OnboardingPage';
+import { PaymentPage } from '@/pages/PaymentPage';
+import { BillingPage } from '@/pages/BillingPage';
+import { DashboardPage } from '@/pages/DashboardPage';
+import { SettingsPage } from '@/pages/SettingsPage';
+import { NotFoundPage } from '@/pages/NotFoundPage';
+
+function Loading({ label = 'Loading…' }: { label?: string }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center text-sm text-gray-600">
+      {label}
+    </div>
+  );
+}
 
 /**
- * Guards the authenticated area: loads the session, then routes users without a
- * completed company through onboarding (the guided customer journey).
+ * Guards the authenticated area and enforces the onboarding flow:
+ * authenticate → create organization → pay → use the application.
+ *
+ * The payment wall here is a convenience, not the enforcement point: the API
+ * rejects every gated request from an unsubscribed tenant regardless of what
+ * the client does.
  */
-function Protected({ children }: { children: React.ReactNode }) {
+function Protected({
+  children,
+  requireSubscription = true,
+}: {
+  children: React.ReactNode;
+  requireSubscription?: boolean;
+}) {
   const { isSignedIn, isLoaded } = useAuth();
   const location = useLocation();
   const session = useSessionQuery(Boolean(isLoaded && isSignedIn));
 
-  if (!isLoaded) return <FullScreenSpinner />;
+  if (!isLoaded) return <Loading />;
   if (!isSignedIn) return <Navigate to="/sign-in" replace />;
-  if (session.isLoading) return <FullScreenSpinner label="Loading your workspace…" />;
+  if (session.isLoading) return <Loading label="Loading your workspace…" />;
   if (session.isError) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-base p-6">
-        <div className="card max-w-md p-8 text-center">
-          <h1 className="text-h5 text-ink">We couldn’t load your workspace</h1>
-          <p className="mt-2 text-body text-ink-muted">
-            {(session.error as Error).message || 'Please try again in a moment.'}
-          </p>
-          <button
-            className="focus-ring mt-4 rounded-md bg-accent px-4 py-2 text-button font-semibold text-ink-on-brand shadow-button transition-all duration-fast hover:bg-accent-hover active:scale-[0.98]"
-            onClick={() => session.refetch()}
-          >
-            Retry
-          </button>
-        </div>
+      <div className="mx-auto max-w-md px-6 py-24 text-center">
+        <h1 className="text-xl font-bold">We couldn’t load your workspace</h1>
+        <p className="mt-2 text-sm text-gray-600">
+          {(session.error as Error).message || 'Please try again in a moment.'}
+        </p>
+        <button
+          type="button"
+          className="mt-4 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white"
+          onClick={() => void session.refetch()}
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
-  const company = session.data?.company ?? null;
-  const onboardingComplete = company?.onboardingStep === OnboardingStep.COMPLETE;
-  const onOnboardingRoute = location.pathname.startsWith('/onboarding');
+  const hasCompany = Boolean(session.data?.company);
+  const isSubscribed = session.data?.subscription?.isActive ?? false;
+  const onOnboarding = location.pathname === '/onboarding';
 
-  if (!onboardingComplete && !onOnboardingRoute) return <Navigate to="/onboarding" replace />;
-  if (onboardingComplete && onOnboardingRoute) return <Navigate to="/dashboard" replace />;
+  if (!hasCompany && !onOnboarding) return <Navigate to="/onboarding" replace />;
+  if (hasCompany && onOnboarding) {
+    return <Navigate to={isSubscribed ? '/dashboard' : '/payment'} replace />;
+  }
+  if (requireSubscription && !isSubscribed) return <Navigate to="/payment" replace />;
 
   return <>{children}</>;
 }
@@ -65,15 +79,33 @@ export function App() {
       <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/sign-up/*" element={<SignUpPage />} />
 
+      {/* Reachable before payment — this is where a blocked tenant subscribes. */}
       <Route
         path="/onboarding"
         element={
-          <Protected>
+          <Protected requireSubscription={false}>
             <OnboardingPage />
           </Protected>
         }
       />
+      <Route
+        path="/payment"
+        element={
+          <Protected requireSubscription={false}>
+            <PaymentPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/billing"
+        element={
+          <Protected requireSubscription={false}>
+            <BillingPage />
+          </Protected>
+        }
+      />
 
+      {/* Requires an active subscription. */}
       <Route
         element={
           <Protected>
@@ -82,14 +114,7 @@ export function App() {
         }
       >
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/calls" element={<CallsPage />} />
-        <Route path="/conversations/:id" element={<ConversationDetailPage />} />
-        <Route path="/customers" element={<CustomersPage />} />
-        <Route path="/appointments" element={<AppointmentsPage />} />
-        <Route path="/knowledge" element={<KnowledgePage />} />
-        <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/settings/:tab" element={<SettingsPage />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

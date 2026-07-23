@@ -22,6 +22,8 @@ import type {
   OnboardingStep,
   PhoneNumberStatus,
   PropertyType,
+  SubscriptionPlan,
+  SubscriptionStatus,
   TranscriptEntry,
   UrgencyLevel,
   UserRole,
@@ -54,9 +56,22 @@ export interface SessionCompany {
   primaryColor: string | null;
 }
 
+/** Billing state for the tenant, mirrored from Stripe by the backend. */
+export interface SubscriptionSummary {
+  status: SubscriptionStatus;
+  plan: SubscriptionPlan | null;
+  /** True when the tenant may use the application right now. */
+  isActive: boolean;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  trialEndsAt: string | null;
+  hasStripeCustomer: boolean;
+}
+
 export interface Session {
   user: SessionUser;
   company: SessionCompany | null;
+  subscription: SubscriptionSummary | null;
 }
 
 export interface AiConfiguration {

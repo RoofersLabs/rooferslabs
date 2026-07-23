@@ -17,6 +17,21 @@ export class ApiError extends Error {
 /** Generous client-side cap so a hung request never hangs the UI forever. */
 const REQUEST_TIMEOUT_MS = 30_000;
 
+/** Where a tenant without an active subscription is sent to pay. */
+const BILLING_ROUTE = '/payment';
+
+/**
+ * The backend answers 402 SUBSCRIPTION_REQUIRED for every gated endpoint once a
+ * subscription lapses. A tab that was open when that happened would otherwise
+ * sit on a dead screen, so send it to billing — guarded against a redirect loop
+ * on the billing routes themselves.
+ */
+function redirectToBilling(): void {
+  const { pathname } = window.location;
+  if (pathname === BILLING_ROUTE || pathname === '/billing') return;
+  window.location.assign(BILLING_ROUTE);
+}
+
 type TokenGetter = () => Promise<string | null>;
 
 let getToken: TokenGetter = async () => null;
@@ -92,6 +107,7 @@ async function request<T>(
 
   if (!payload.success) {
     const err = payload.error;
+    if (response.status === 402) redirectToBilling();
     throw new ApiError(err.code, err.message, response.status, err.validationErrors);
   }
   return payload;
