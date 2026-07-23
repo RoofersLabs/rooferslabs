@@ -1,9 +1,9 @@
+import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { useScrollOffset } from '../lib/hooks';
 import { Logomark } from '../components/icons';
 import { Cta, Shell } from '../components/primitives';
+import { useScrollOffset } from '../lib/hooks';
 
 const LINKS = [
   { label: 'Product', href: '#showcase' },
@@ -63,10 +63,7 @@ export function Nav({ signedIn }: { signedIn: boolean }) {
           {/* Centred independently of the logo and actions, so the link group
               sits on the page's optical centre rather than wherever the two
               side clusters happen to leave room. */}
-          <nav
-            aria-label="Main"
-            className="absolute left-1/2 hidden -translate-x-1/2 xl:block"
-          >
+          <nav aria-label="Main" className="absolute left-1/2 hidden -translate-x-1/2 xl:block">
             <ul className="flex items-center gap-0.5">
               {LINKS.map((link) => (
                 <li key={link.label}>
@@ -83,7 +80,7 @@ export function Nav({ signedIn }: { signedIn: boolean }) {
 
           <div className="hidden shrink-0 items-center gap-1.5 xl:flex">
             {signedIn ? (
-              <Cta to="/dashboard" size="sm">
+              <Cta to="/dashboard" size="sm" className="bg-white text-black hover:bg-neutral-100">
                 Go to dashboard
               </Cta>
             ) : (
@@ -94,7 +91,7 @@ export function Nav({ signedIn }: { signedIn: boolean }) {
                 >
                   Sign in
                 </Link>
-                <Cta to="/sign-up" size="sm">
+                <Cta to="/sign-up" size="sm" className="bg-white text-black hover:bg-neutral-100">
                   Start free trial
                 </Cta>
               </>
@@ -159,10 +156,14 @@ export function Nav({ signedIn }: { signedIn: boolean }) {
             </nav>
             <div className="mt-4 flex flex-col gap-2">
               {signedIn ? (
-                <Cta to="/dashboard">Go to dashboard</Cta>
+                <Cta to="/dashboard" className="bg-white text-black hover:bg-neutral-100">
+                  Go to dashboard
+                </Cta>
               ) : (
                 <>
-                  <Cta to="/sign-up">Start free trial</Cta>
+                  <Cta to="/sign-up" className="bg-white text-black hover:bg-neutral-100">
+                    Start free trial
+                  </Cta>
                   <Cta to="/sign-in" variant="secondary">
                     Sign in
                   </Cta>

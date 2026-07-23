@@ -14,8 +14,17 @@ const HeroDashboard = lazy(() => import('../product/HeroDashboard'));
 /** Small triangle for the secondary CTA. Drawn, not imported. */
 function PlayGlyph() {
   return (
-    <svg viewBox="0 0 12 12" width={10} height={10} aria-hidden="true" className="text-ink-tertiary">
-      <path d="M3.5 2.4v7.2a.4.4 0 0 0 .6.35l5.6-3.6a.4.4 0 0 0 0-.7L4.1 2.05a.4.4 0 0 0-.6.35Z" fill="currentColor" />
+    <svg
+      viewBox="0 0 12 12"
+      width={10}
+      height={10}
+      aria-hidden="true"
+      className="text-ink-tertiary"
+    >
+      <path
+        d="M3.5 2.4v7.2a.4.4 0 0 0 .6.35l5.6-3.6a.4.4 0 0 0 0-.7L4.1 2.05a.4.4 0 0 0-.6.35Z"
+        fill="currentColor"
+      />
     </svg>
   );
 }
@@ -79,7 +88,7 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
       <Shell className="relative pt-14 md:pt-16 lg:pt-20">
         {/* The column is sized for the headline, not the prose — the paragraph
             re-narrows itself to a readable measure below. */}
-        <div className="mx-auto max-w-[62.5rem] text-center">
+        <div className="mx-auto max-w-[62.5rem] text-left">
           <Reveal variant="fade">
             <a
               href="#showcase"
@@ -103,7 +112,7 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
               replacing them: the two spans still break where the copy was
               written to break, and balance only governs how each line rewraps
               when a narrow viewport forces it to. */}
-          <h1 className="mt-7 text-balance text-display font-semibold">
+          <h1 className="mt-7 text-balance text-[clamp(3.5rem,7vw,5rem)] font-semibold">
             <Reveal variant="blur" as="span" className="block">
               The AI operating system
             </Reveal>
@@ -113,14 +122,14 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
           </h1>
 
           <Reveal variant="up" index={3}>
-            <p className="mx-auto mt-7 max-w-xl text-lead text-ink-secondary">
-              Answers every call, qualifies the homeowner, books the job, and syncs it to your
-              CRM — around the clock.
+            <p className="mt-7 max-w-xl text-lead text-ink-secondary">
+              Answers every call, qualifies the homeowner, books the job, and syncs it to your CRM —
+              around the clock.
             </p>
           </Reveal>
 
           <Reveal variant="up" index={4}>
-            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className="mt-9 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
               <Cta to={signedIn ? '/dashboard' : '/sign-up'}>
                 {signedIn ? 'Go to dashboard' : 'Start free trial'}
               </Cta>
@@ -132,7 +141,7 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
           </Reveal>
 
           <Reveal variant="fade" index={6}>
-            <p className="mt-6 text-xs text-ink-tertiary">
+            <p className="mt-6 text-left text-xs text-ink-tertiary">
               14-day trial · No card required · Live on your number in under an hour
             </p>
           </Reveal>
