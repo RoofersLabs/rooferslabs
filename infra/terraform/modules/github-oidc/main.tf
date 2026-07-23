@@ -36,10 +36,27 @@ locals {
     ? aws_iam_openid_connect_provider.github[0].arn
   : data.aws_iam_openid_connect_provider.existing[0].arn)
 
-  allowed_subjects = [
-    for branch in var.allowed_branches :
-    "repo:${var.github_repository}:ref:refs/heads/${branch}"
-  ]
+  # This org has GitHub's immutable unique-ID subject claims enabled, so the
+  # `sub` is NOT the documented `repo:OWNER/REPO:ref:...` — it carries the
+  # numeric org and repo ids too:
+  #   repo:RoofersLabs@305356388/rooferslabs@1301242105:ref:refs/heads/develop
+  # Both forms are allowed: the id-qualified one is what GitHub sends today and
+  # survives a rename, the plain one keeps this working if the org setting is
+  # ever turned off. Neither uses a wildcard, so a lookalike org cannot match.
+  id_qualified_repository = (var.github_org_id != "" && var.github_repository_id != ""
+    ? "${local.repo_owner}@${var.github_org_id}/${local.repo_name}@${var.github_repository_id}"
+  : "")
+
+  repo_owner = split("/", var.github_repository)[0]
+  repo_name  = split("/", var.github_repository)[1]
+
+  allowed_subjects = concat(
+    [for branch in var.allowed_branches : "repo:${var.github_repository}:ref:refs/heads/${branch}"],
+    local.id_qualified_repository == "" ? [] : [
+      for branch in var.allowed_branches :
+      "repo:${local.id_qualified_repository}:ref:refs/heads/${branch}"
+    ],
+  )
 }
 
 data "aws_iam_policy_document" "assume" {

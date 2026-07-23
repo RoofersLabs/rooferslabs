@@ -187,9 +187,11 @@ module "iam" {
 module "github_oidc" {
   source = "../../modules/github-oidc"
 
-  name              = local.name
-  github_repository = var.github_repository
-  allowed_branches  = var.github_deploy_branches
+  name                 = local.name
+  github_repository    = var.github_repository
+  github_org_id        = var.github_org_id
+  github_repository_id = var.github_repository_id
+  allowed_branches     = var.github_deploy_branches
 
   web_bucket_arn              = module.frontend.bucket_arn
   cloudfront_distribution_arn = module.frontend.distribution_arn

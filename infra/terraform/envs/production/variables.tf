@@ -192,3 +192,15 @@ variable "github_deploy_branches" {
   type        = list(string)
   default     = ["main", "develop"]
 }
+
+variable "github_org_id" {
+  description = "Numeric GitHub org id, used by the OIDC trust policy (this org emits immutable unique-ID subject claims)."
+  type        = string
+  default     = "305356388"
+}
+
+variable "github_repository_id" {
+  description = "Numeric GitHub repository id, used by the OIDC trust policy."
+  type        = string
+  default     = "1301242105"
+}

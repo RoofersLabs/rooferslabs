@@ -40,3 +40,20 @@ variable "ecs_service_arns" {
   type        = list(string)
   default     = []
 }
+
+# GitHub's immutable unique-ID subject claims (org setting). When enabled, the
+# OIDC `sub` embeds these numeric ids, and a trust policy matching only
+# owner/repo names is rejected with "Not authorized to perform
+# sts:AssumeRoleWithWebIdentity". Look them up with:
+#   gh api /repos/<owner>/<repo> --jq '{repo: .id, org: .owner.id}'
+variable "github_org_id" {
+  description = "Numeric GitHub org id. Empty disables the id-qualified subject."
+  type        = string
+  default     = ""
+}
+
+variable "github_repository_id" {
+  description = "Numeric GitHub repository id. Empty disables the id-qualified subject."
+  type        = string
+  default     = ""
+}
