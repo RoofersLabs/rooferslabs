@@ -22,7 +22,7 @@ const variants: Record<MktVariant, string> = {
     'bg-mkt-surface text-mkt-ink-body border border-mkt-line shadow-mkt-xs hover:border-mkt-line-strong hover:text-mkt-ink',
   ghost: 'text-mkt-ink-muted hover:text-mkt-ink hover:bg-mkt-accent-soft',
   // For use on the dark CTA band, where the page ground is already dark.
-  inverse: 'bg-white text-[#08090a] shadow-mkt-md',
+  inverse: 'bg-white text-black shadow-mkt-md',
 };
 
 const sizes: Record<MktSize, string> = {

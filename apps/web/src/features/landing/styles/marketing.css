@@ -55,186 +55,163 @@
   --mkt-dur-panel: 240ms;
   --mkt-dur-reveal: 620ms;
 
-  /* ── Blue: the primary accent ────────────────────────────────────────────
-     Anchored to the RoofersLabs brand hue, raised in chroma so it holds its
-     own against a warm background without tipping into "startup neon". */
-  --mkt-blue-50: #eef3ff;
-  --mkt-blue-100: #dde7ff;
-  --mkt-blue-200: #bcd0ff;
-  --mkt-blue-300: #92afff;
-  --mkt-blue-400: #6389fb;
-  --mkt-blue-500: #3f68f0;
-  --mkt-blue-600: #2450dc;
-  --mkt-blue-700: #1a3fb2;
-  --mkt-blue-800: #17348c;
-  --mkt-blue-900: #142c6e;
+  /* ── MONOCHROME (light) ──────────────────────────────────────────────────
+     The mirror of the dark theme: white ground, black type, black buttons with
+     white labels. Same rule — the hue-named ramps are names only, and every
+     stop is a neutral grey. See the dark block for why the names survive. */
+  --mkt-blue-50: #f5f5f5;
+  --mkt-blue-100: #ebebeb;
+  --mkt-blue-200: #d6d6d6;
+  --mkt-blue-300: #a3a3a3;
+  --mkt-blue-400: #7a7a7a;
+  --mkt-blue-500: #5c5c5c;
+  --mkt-blue-600: #404040;
+  --mkt-blue-700: #2e2e2e;
+  --mkt-blue-800: #1f1f1f;
+  --mkt-blue-900: #141414;
 
-  /* ── Indigo: the secondary accent ────────────────────────────────────────
-     Sits ~40° from the blue. Used for gradient travel and second-position
-     emphasis, never as a competing primary. */
-  --mkt-indigo-100: #e7e5fd;
-  --mkt-indigo-200: #cdc9fa;
-  --mkt-indigo-300: #aca6f6;
-  --mkt-indigo-400: #8b83ef;
-  --mkt-indigo-500: #6e64e2;
-  --mkt-indigo-600: #574bcb;
-  --mkt-indigo-700: #453ba6;
+  --mkt-indigo-100: #ebebeb;
+  --mkt-indigo-200: #d6d6d6;
+  --mkt-indigo-300: #a3a3a3;
+  --mkt-indigo-400: #7a7a7a;
+  --mkt-indigo-500: #5c5c5c;
+  --mkt-indigo-600: #404040;
+  --mkt-indigo-700: #2e2e2e;
 
-  /* ── Emerald: success / proof points ─────────────────────────────────────
-     Desaturated against stock emerald so metrics read as fact, not as a toast. */
-  --mkt-emerald-100: #d7f2e6;
-  --mkt-emerald-300: #7fd7b4;
-  --mkt-emerald-500: #12a374;
-  --mkt-emerald-600: #0b7c58; /* text-safe step: 4.85:1 on --mkt-bg */
-  --mkt-emerald-700: #0a6a4c;
+  /* Success and warning signal by weight, not hue. */
+  --mkt-emerald-100: #ebebeb;
+  --mkt-emerald-300: #a3a3a3;
+  --mkt-emerald-500: #1a1a1a;
+  --mkt-emerald-600: #141414;
+  --mkt-emerald-700: #0f0f0f;
 
-  /* ── Amber: sparing, for "cost of inaction" framing ──────────────────── */
-  --mkt-amber-100: #fceedb;
-  --mkt-amber-500: #c77d1a;
-  --mkt-amber-600: #9c5e11; /* text-safe step: 4.87:1 on --mkt-bg */
+  --mkt-amber-100: #ebebeb;
+  --mkt-amber-500: #5c5c5c;
+  --mkt-amber-600: #404040;
 
-  /* ── Warm neutral scale ──────────────────────────────────────────────────
-     A touch of yellow-red in the hue so whites feel like paper, not screen.
-     Kept low-chroma so blue accents stay clean on top. */
+  /* ── Neutral scale ───────────────────────────────────────────────────────
+     Achromatic. The old scale carried a deliberate yellow-red cast so whites
+     read as paper; that warmth is itself colour, so it is gone. */
   --mkt-warm-0: #ffffff;
-  --mkt-warm-25: #fcfbf8;
-  --mkt-warm-50: #f8f7f4;
-  --mkt-warm-100: #f2f0eb;
-  --mkt-warm-200: #e7e4dd;
-  --mkt-warm-300: #d8d4cb;
-  --mkt-warm-400: #b9b4ad;
-  --mkt-warm-500: #918b83;
-  --mkt-warm-600: #6d6760;
-  --mkt-warm-700: #4e4942;
-  --mkt-warm-800: #33302b;
-  --mkt-warm-900: #1c1a17;
+  --mkt-warm-25: #fcfcfc;
+  --mkt-warm-50: #f7f7f7;
+  --mkt-warm-100: #f0f0f0;
+  --mkt-warm-200: #e5e5e5;
+  --mkt-warm-300: #d4d4d4;
+  --mkt-warm-400: #b3b3b3;
+  --mkt-warm-500: #8c8c8c;
+  --mkt-warm-600: #666666;
+  --mkt-warm-700: #474747;
+  --mkt-warm-800: #2e2e2e;
+  --mkt-warm-900: #171717;
 
   /* ── Semantic surfaces ─────────────────────────────────────────────────── */
-  --mkt-bg: #f8f7f4; /* page — warm white, Attio/Mercury register */
-  --mkt-bg-subtle: #f2f0eb; /* alternating band, to separate sections */
-  --mkt-bg-inset: #ece9e2; /* wells, code blocks, inset panels */
-  --mkt-surface: #ffffff; /* cards — pure white, lifts off the warm page */
-  --mkt-surface-2: #fcfcfb; /* nested surface inside a card */
+  --mkt-bg: #ffffff; /* page — pure white, the mirror of pure black */
+  --mkt-bg-subtle: #f7f7f7; /* alternating band, to separate sections */
+  --mkt-bg-inset: #f0f0f0; /* wells, code blocks, inset panels */
+  --mkt-surface: #ffffff; /* cards */
+  --mkt-surface-2: #fafafa; /* nested surface inside a card */
   --mkt-surface-raised: #ffffff; /* popovers, dropdowns, floating chrome */
 
-  /* ── Borders ─────────────────────────────────────────────────────────────
-     Opaque in light mode: translucent hairlines over a warm bg go muddy.
-     Warmed in step with the page so card edges don't read grey against it. */
-  --mkt-line-subtle: #eeebe5;
-  --mkt-line: #e2ded6;
-  --mkt-line-strong: #d0cbc1;
+  /* ── Borders — neutral greys, no warm cast ─────────────────────────────── */
+  --mkt-line-subtle: #ededed;
+  --mkt-line: #e0e0e0;
+  --mkt-line-strong: #cccccc;
 
-  /* ── Text — rich charcoal, slightly cool against the warm surfaces ─────── */
-  /* Ratios are the WORST CASE across all three light grounds a marketing page
-     actually uses — bg, bg-subtle (the alternating band) and surface. Checking
-     against bg alone is how a "faint" step ends up failing on every other
-     section. Measured, not estimated. */
-  --mkt-ink: #17181c; /* headlines        15.58:1 */
-  --mkt-ink-body: #3b3d45; /* body copy         9.51:1 */
-  --mkt-ink-muted: #5c5f6a; /* secondary text    5.59:1 */
-  --mkt-ink-faint: #676b78; /* labels, meta      4.67:1 — AA at any size */
+  /* ── Text — neutral black ramp ──────────────────────────────────────────
+     Ratios are the WORST CASE across the grounds a marketing page actually
+     uses (bg, bg-subtle, surface). Checking against bg alone is how a "faint"
+     step ends up failing on every other section. */
+  --mkt-ink: #000000; /* headlines        ~19.6:1 */
+  --mkt-ink-body: #3d3d3d; /* body copy         ~9.9:1 */
+  --mkt-ink-muted: #5e5e5e; /* secondary text    ~5.9:1 */
+  --mkt-ink-faint: #6b6b6b; /* labels, meta      ~4.9:1 — AA at any size */
   --mkt-ink-inverse: #ffffff;
 
-  /* ── Accent roles ──────────────────────────────────────────────────────── */
-  --mkt-accent: var(--mkt-blue-600);
-  --mkt-accent-hover: var(--mkt-blue-700);
-  --mkt-accent-active: var(--mkt-blue-800);
-  --mkt-accent-soft: var(--mkt-blue-50);
-  --mkt-accent-border: var(--mkt-blue-200);
+  /* ── Accent roles ────────────────────────────────────────────────────────
+     The mirror of dark: accent is black, and what sits on an accent fill is
+     white. Primary buttons become black-on-white. */
+  --mkt-accent: #000000;
+  --mkt-accent-hover: #000000;
+  --mkt-accent-active: #2e2e2e;
+  --mkt-accent-soft: rgba(0, 0, 0, 0.05);
+  --mkt-accent-border: rgba(0, 0, 0, 0.16);
   --mkt-accent-ink: #ffffff; /* text on accent fill */
-  --mkt-accent-2: var(--mkt-indigo-600); /* secondary accent */
-  --mkt-accent-2-soft: var(--mkt-indigo-100);
+  --mkt-accent-2: #474747;
+  --mkt-accent-2-soft: rgba(0, 0, 0, 0.04);
   --mkt-success: var(--mkt-emerald-600);
-  --mkt-success-soft: var(--mkt-emerald-100);
+  --mkt-success-soft: rgba(0, 0, 0, 0.05);
   --mkt-warn: var(--mkt-amber-600);
-  --mkt-warn-soft: var(--mkt-amber-100);
+  --mkt-warn-soft: rgba(0, 0, 0, 0.04);
 
-  --mkt-focus: var(--mkt-blue-500);
+  --mkt-focus: #000000;
 
   /* ── Gradients ───────────────────────────────────────────────────────────
-     Restraint rule: gradients travel across HUE-ADJACENT stops (blue→indigo)
-     and never more than ~40°. Wide rainbow sweeps are what make a SaaS page
-     look cheap. */
+     All achromatic. A gradient is allowed to travel in LUMINANCE only. */
 
-  /* Headline: charcoal that resolves into brand blue on the last words. */
+  /* Headline: black fading to grey along the line. */
   --mkt-grad-headline: linear-gradient(
-    135deg,
-    var(--mkt-ink) 0%,
-    var(--mkt-ink) 38%,
-    var(--mkt-blue-700) 78%,
-    var(--mkt-indigo-600) 100%
+    168deg,
+    #000000 0%,
+    #000000 52%,
+    #2e2e2e 78%,
+    #5e5e5e 100%
   );
 
-  /* Primary CTA fill. Two stops, tight range — reads as a lit surface. */
-  --mkt-grad-cta: linear-gradient(180deg, var(--mkt-blue-500) 0%, var(--mkt-blue-700) 100%);
-  --mkt-grad-cta-hover: linear-gradient(180deg, var(--mkt-blue-600) 0%, var(--mkt-blue-800) 100%);
+  /* Primary CTA fill: flat black, white label. */
+  --mkt-grad-cta: linear-gradient(180deg, #000000 0%, #000000 100%);
+  --mkt-grad-cta-hover: linear-gradient(180deg, #2e2e2e 0%, #2e2e2e 100%);
 
-  /* Hero atmosphere — layered radials, deliberately weak. */
-  --mkt-grad-hero: radial-gradient(
-      60% 50% at 50% 0%,
-      color-mix(in oklab, var(--mkt-blue-400) 16%, transparent) 0%,
-      transparent 70%
-    ),
-    radial-gradient(
-      40% 40% at 85% 12%,
-      color-mix(in oklab, var(--mkt-indigo-400) 12%, transparent) 0%,
-      transparent 72%
-    );
+  /* Hero atmosphere — a grey wash on white, the mirror of the white wash on
+     black. Very weak: on a white page any darkening is immediately visible. */
+  --mkt-grad-hero: radial-gradient(72% 52% at 50% -8%, rgba(0, 0, 0, 0.035) 0%, transparent 72%),
+    radial-gradient(42% 36% at 84% 4%, rgba(0, 0, 0, 0.018) 0%, transparent 76%);
 
-  /* Glow behind mockups / dark panels. */
-  --mkt-glow-blue: color-mix(in oklab, var(--mkt-blue-500) 28%, transparent);
-  --mkt-glow-indigo: color-mix(in oklab, var(--mkt-indigo-500) 22%, transparent);
-  --mkt-glow-strength: 0.55;
+  /* Glow behind mockups / panels. */
+  --mkt-glow-blue: rgba(0, 0, 0, 0.07);
+  --mkt-glow-indigo: rgba(0, 0, 0, 0.04);
+  --mkt-glow-strength: 0.5;
 
-  /* Section ambience — the hero wash, restated quietly for every section below
-     it, so the page reads as one lit surface rather than a stack of bands.
-     Weaker than the hero on purpose: the hero is the light source, everything
-     after it is spill. On the warm light page this is barely a tint — enough to
-     cool the ground under a card, not enough to look like a coloured band. */
-  --mkt-ambient-blue: color-mix(in oklab, var(--mkt-blue-400) 13%, transparent);
-  --mkt-ambient-indigo: color-mix(in oklab, var(--mkt-indigo-400) 9%, transparent);
+  /* Section ambience — the hero wash restated quietly for the sections below,
+     so the page reads as one lit surface rather than a stack of bands. */
+  --mkt-ambient-blue: rgba(0, 0, 0, 0.016);
+  --mkt-ambient-indigo: rgba(0, 0, 0, 0.01);
   --mkt-ambient-strength: 0.9;
 
-  /* Card hover wash — a whisper, not a color change. */
+  /* Card hover wash — a whisper of shade, not a colour change. */
   --mkt-grad-card-hover: linear-gradient(
     180deg,
-    color-mix(in oklab, var(--mkt-blue-500) 5%, transparent) 0%,
-    transparent 60%
+    rgba(0, 0, 0, 0.035) 0%,
+    rgba(0, 0, 0, 0.012) 38%,
+    transparent 70%
   );
 
   /* Gradient hairline for premium card edges. */
-  --mkt-grad-border: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--mkt-blue-500) 30%, transparent),
-    transparent 55%
-  );
+  --mkt-grad-border: linear-gradient(180deg, rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0.04) 40%, transparent 70%);
 
   /* ── Shadows ─────────────────────────────────────────────────────────────
-     Tinted with the warm neutral, never neutral black — black shadows on a
-     warm bg look like dirt. Multi-layer for a soft, physical falloff. */
-  --mkt-shadow-xs: 0 1px 2px rgba(28, 26, 23, 0.05);
-  --mkt-shadow-sm:
-    0 1px 2px rgba(28, 26, 23, 0.05), 0 2px 6px rgba(28, 26, 23, 0.04);
-  --mkt-shadow-md:
-    0 2px 4px rgba(28, 26, 23, 0.04), 0 6px 14px rgba(28, 26, 23, 0.06);
-  --mkt-shadow-lg:
-    0 4px 8px rgba(28, 26, 23, 0.04), 0 14px 32px rgba(28, 26, 23, 0.08);
-  --mkt-shadow-xl:
-    0 8px 16px rgba(28, 26, 23, 0.05), 0 28px 60px rgba(28, 26, 23, 0.1);
+     Neutral black at low alpha. The old set was tinted with the warm neutral
+     to avoid looking like dirt on a warm page; on a pure white page a neutral
+     shadow is correct. */
+  --mkt-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --mkt-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --mkt-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.04), 0 6px 14px rgba(0, 0, 0, 0.06);
+  --mkt-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.04), 0 14px 32px rgba(0, 0, 0, 0.08);
+  --mkt-shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.05), 0 28px 60px rgba(0, 0, 0, 0.1);
   /* Reserved for the hero mockup — the single heaviest element on the page. */
   --mkt-shadow-mockup:
-    0 12px 24px rgba(28, 26, 23, 0.06), 0 40px 80px rgba(28, 26, 23, 0.12),
-    0 0 0 1px rgba(28, 26, 23, 0.05);
-  --mkt-shadow-cta: 0 1px 2px rgba(20, 44, 110, 0.3), 0 6px 16px rgba(36, 80, 220, 0.24);
+    0 12px 24px rgba(0, 0, 0, 0.06), 0 40px 80px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  --mkt-shadow-cta: 0 1px 2px rgba(0, 0, 0, 0.24), 0 6px 16px rgba(0, 0, 0, 0.16);
 
-  /* Inner top highlight — the 1px that makes a filled button look machined. */
-  --mkt-inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  /* A flat black fill needs no machined top edge. */
+  --mkt-inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   DARK THEME — designed, not inverted.
-   Rich charcoal with a cool cast, genuinely layered surfaces, translucent
-   hairlines, and accents pushed brighter to survive the dark field.
+   DARK THEME — the default, and the one the site is art-directed for.
+   Pure black ground, white type, white buttons with black labels. Layering is
+   achromatic: greys and translucent white hairlines only.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .mkt[data-mkt-theme='dark'] {
@@ -242,62 +219,82 @@
 
   /* Blues brighten and desaturate slightly — a 600-weight blue goes muddy on
      charcoal, so the accent moves up the scale rather than staying put. */
-  --mkt-blue-50: #eaf1ff;
-  --mkt-blue-100: #d3e1ff;
-  --mkt-blue-200: #adc6ff;
-  --mkt-blue-300: #85a8ff;
-  --mkt-blue-400: #628dff;
-  --mkt-blue-500: #4a78ff;
-  --mkt-blue-600: #3560f0;
-  --mkt-blue-700: #2848c4;
-  --mkt-blue-800: #1e3792;
-  --mkt-blue-900: #172a6d;
+  /* ── MONOCHROME ──────────────────────────────────────────────────────────
+     The page carries no hue at all: pure black ground, white type, white
+     buttons with black labels.
 
-  --mkt-indigo-100: #e6e3ff;
-  --mkt-indigo-200: #cbc5ff;
-  --mkt-indigo-300: #b0a7fb;
-  --mkt-indigo-400: #9a8cf7;
-  --mkt-indigo-500: #8674ee;
-  --mkt-indigo-600: #7160dc;
-  --mkt-indigo-700: #5d4dbe;
+     The hue-named ramps below are kept as NAMES only — every stop resolves to
+     a neutral grey. Keeping the names means the ~40 `text-mkt-accent`,
+     `text-mkt-success` and `bg-mkt-blue-*` usages across the sections stay
+     valid and simply render achromatic, instead of needing a rename in every
+     file. Anything that lands here later is monochrome by default rather than
+     by remembering to be.
 
-  --mkt-emerald-100: #0e3b2c;
-  --mkt-emerald-300: #2bbd8c;
-  --mkt-emerald-500: #35d69d;
-  --mkt-emerald-600: #4ae0ab;
-  --mkt-emerald-700: #6febc0;
+     Steps are matched on LUMINANCE to the hues they replace, so contrast and
+     visual weight are preserved wherever these were used. */
+  --mkt-blue-50: #fafafa;
+  --mkt-blue-100: #ededed;
+  --mkt-blue-200: #d4d4d4;
+  --mkt-blue-300: #b4b4b4;
+  --mkt-blue-400: #949494;
+  --mkt-blue-500: #7c7c7c;
+  --mkt-blue-600: #636363;
+  --mkt-blue-700: #4d4d4d;
+  --mkt-blue-800: #383838;
+  --mkt-blue-900: #262626;
 
-  --mkt-amber-100: #3d2f14;
-  --mkt-amber-500: #e0a54a;
-  --mkt-amber-600: #edb862;
+  --mkt-indigo-100: #ededed;
+  --mkt-indigo-200: #d4d4d4;
+  --mkt-indigo-300: #b4b4b4;
+  --mkt-indigo-400: #949494;
+  --mkt-indigo-500: #7c7c7c;
+  --mkt-indigo-600: #636363;
+  --mkt-indigo-700: #4d4d4d;
+
+  /* "Success" and "warning" become weight, not hue — a tick is white, a
+     caution chip is grey. Nothing on the page signals by colour. */
+  --mkt-emerald-100: #1a1a1a;
+  --mkt-emerald-300: #d4d4d4;
+  --mkt-emerald-500: #ffffff;
+  --mkt-emerald-600: #ffffff;
+  --mkt-emerald-700: #ffffff;
+
+  --mkt-amber-100: #1a1a1a;
+  --mkt-amber-500: #b4b4b4;
+  --mkt-amber-600: #cfcfcf;
 
   /* Near-black ramp, very slightly cool. The hue is barely there (a couple of
      points of blue in the low steps) — enough that the greys read as considered
      rather than default-grey, not enough to look tinted. The RoofersLabs blue
      stays the only actual colour on the page. */
-  --mkt-warm-0: #08090a;
-  --mkt-warm-25: #0b0d10;
-  --mkt-warm-50: #0e1013;
-  --mkt-warm-100: #131619;
-  --mkt-warm-200: #181b1f;
-  --mkt-warm-300: #22262b;
-  --mkt-warm-400: #363b43;
-  --mkt-warm-500: #4c525c;
-  --mkt-warm-600: #6b727e;
-  --mkt-warm-700: #8a919d;
-  --mkt-warm-800: #b5bcc8;
+  /* Pure neutral ramp — R = G = B at every step, so nothing can tint. */
+  --mkt-warm-0: #000000;
+  --mkt-warm-25: #050505;
+  --mkt-warm-50: #0a0a0a;
+  --mkt-warm-100: #111111;
+  --mkt-warm-200: #171717;
+  --mkt-warm-300: #232323;
+  --mkt-warm-400: #383838;
+  --mkt-warm-500: #4d4d4d;
+  --mkt-warm-600: #6a6a6a;
+  --mkt-warm-700: #8c8c8c;
+  --mkt-warm-800: #b4b4b4;
   --mkt-warm-900: #ffffff;
 
   /* Surfaces step up in luminance — this is what "layered" means. Never fake
      elevation with borders alone. The steps are close together on purpose: a
      card should read as the same material as the page, lit slightly more, not
      as a lighter-coloured box sitting on top of it. */
-  --mkt-bg: #08090a; /* page — near-black, never #000 */
-  --mkt-bg-subtle: #0b0d10; /* alternating band */
-  --mkt-bg-inset: #060708; /* wells sink BELOW the page in dark mode */
-  --mkt-surface: #0e1013; /* the workhorse card */
-  --mkt-surface-2: #131619; /* nested — lifts above its parent card */
-  --mkt-surface-raised: #181b1f; /* popovers, floating chrome */
+  /* Pure black page. The band and surface steps stay achromatic greys — grey
+     is the absence of hue, so layering still works without introducing colour.
+     They are kept very close together so the page still reads as one black
+     field with objects lit on it. */
+  --mkt-bg: #000000; /* page — pure black */
+  --mkt-bg-subtle: #050505; /* alternating band */
+  --mkt-bg-inset: #000000; /* wells sink back to the page */
+  --mkt-surface: #0a0a0a; /* the workhorse card */
+  --mkt-surface-2: #111111; /* nested — lifts above its parent card */
+  --mkt-surface-raised: #171717; /* popovers, floating chrome */
 
   /* Translucent hairlines — they pick up whatever they sit on, which is what
      makes layered dark surfaces cohere. */
@@ -311,91 +308,86 @@
      muted all clear AA on every surface; --mkt-ink-faint is reserved for
      non-essential meta and sits at ~AA-large, so never put running copy on it. */
   --mkt-ink: #ffffff; /* headlines, primary text */
-  --mkt-ink-body: #b5bcc8; /* body copy         ~11:1 on page */
-  --mkt-ink-muted: #8a919d; /* secondary text    ~6.6:1 on page */
-  --mkt-ink-faint: #6b727e; /* meta/labels only */
-  --mkt-ink-inverse: #08090a;
+  --mkt-ink-body: #b4b4b4; /* body copy      ~10.9:1 on black */
+  --mkt-ink-muted: #8c8c8c; /* secondary text  ~6.6:1 on black */
+  --mkt-ink-faint: #6a6a6a; /* meta/labels only */
+  --mkt-ink-inverse: #000000; /* type on a white fill */
 
-  --mkt-accent: var(--mkt-blue-400);
-  --mkt-accent-hover: var(--mkt-blue-300);
-  --mkt-accent-active: var(--mkt-blue-200);
-  --mkt-accent-soft: rgba(74, 120, 255, 0.14);
-  --mkt-accent-border: rgba(98, 141, 255, 0.32);
-  --mkt-accent-ink: #ffffff;
-  --mkt-accent-2: var(--mkt-indigo-400);
-  --mkt-accent-2-soft: rgba(134, 116, 238, 0.16);
+  /* The accent IS white. Emphasis now comes from luminance and weight rather
+     than from hue: an eyebrow, an active link and a tick mark are all simply
+     brighter than the copy around them.
+
+     --mkt-accent-ink is what sits ON an accent fill, so with a white accent it
+     must be black. That single swap is what turns every primary button on the
+     page into white-on-black. */
+  --mkt-accent: #ffffff;
+  --mkt-accent-hover: #ffffff;
+  --mkt-accent-active: #e5e5e5;
+  --mkt-accent-soft: rgba(255, 255, 255, 0.08);
+  --mkt-accent-border: rgba(255, 255, 255, 0.18);
+  --mkt-accent-ink: #000000;
+  --mkt-accent-2: #b4b4b4;
+  --mkt-accent-2-soft: rgba(255, 255, 255, 0.06);
   --mkt-success: var(--mkt-emerald-500);
-  --mkt-success-soft: rgba(53, 214, 157, 0.14);
+  --mkt-success-soft: rgba(255, 255, 255, 0.08);
   --mkt-warn: var(--mkt-amber-500);
-  --mkt-warn-soft: rgba(224, 165, 74, 0.14);
+  --mkt-warn-soft: rgba(255, 255, 255, 0.06);
 
-  --mkt-focus: var(--mkt-blue-300);
+  --mkt-focus: #ffffff;
 
-  /* Headlines are white that cools off toward the end of the line, rather than
-     white that turns blue. The old version resolved into blue-300 → indigo-300,
-     which coloured the last third of every headline and competed with the CTA
-     for the eye. This keeps the identity (the tail is still on the blue axis)
-     while letting the headline read as typography rather than as a gradient. */
+  /* Headlines fade from white into grey along the line. Achromatic, so it adds
+     depth to large type without introducing a hue. */
   --mkt-grad-headline: linear-gradient(
     168deg,
     #ffffff 0%,
-    #ffffff 46%,
-    color-mix(in oklab, var(--mkt-blue-100) 62%, #ffffff) 82%,
-    color-mix(in oklab, var(--mkt-blue-200) 78%, var(--mkt-ink-body)) 100%
+    #ffffff 52%,
+    #ededed 78%,
+    #b4b4b4 100%
   );
 
-  --mkt-grad-cta: linear-gradient(180deg, var(--mkt-blue-400) 0%, var(--mkt-blue-600) 100%);
-  --mkt-grad-cta-hover: linear-gradient(180deg, var(--mkt-blue-300) 0%, var(--mkt-blue-500) 100%);
+  /* Primary CTA: FLAT WHITE, black label. Not a gradient — a two-stop white
+     gradient just reads as a dirty white, and the whole point of the fill is
+     that it is the one pure-white object on a pure-black page. */
+  --mkt-grad-cta: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
+  --mkt-grad-cta-hover: linear-gradient(180deg, #e8e8e8 0%, #e8e8e8 100%);
 
-  /* ONE light source, at the top of the page, and it is dim.
+  /* ONE light source, at the top of the page, and it is WHITE.
 
-     The previous values (19/18/12%, plus a full-strength indigo radial on every
-     section) put a visible blue-violet bloom on all fifteen sections. Reading
-     down the page that stops looking like lighting and starts looking like a
-     gradient template — the exact thing this brief is trying to get away from.
-
-     What replaces it: a single blue radial at the top, roughly half the old
-     strength, and NO second hue. The indigo stop is gone from the hero entirely.
-     Two hues at 45° in the same wash is what produced the purple cast; one hue
-     reads as light falling on a neutral surface, which is the Linear/Vercel
-     move. Depth in the rest of the page now comes from surface luminance,
-     hairlines and shadow — not from colour. */
+     The glow is now plain white at very low alpha. On pure black a white radial
+     reads as light falling on the page — which is the only kind of "glow" a
+     monochrome design can have. Any tinted radial, however faint, would be the
+     one coloured object on the site and would be obvious precisely because
+     nothing else has hue. Kept dim so the hero mockup stays the brightest
+     thing on screen. */
   --mkt-grad-hero: radial-gradient(
       72% 52% at 50% -8%,
-      color-mix(in oklab, var(--mkt-blue-500) 11%, transparent) 0%,
+      rgba(255, 255, 255, 0.055) 0%,
       transparent 72%
     ),
-    radial-gradient(
-      42% 36% at 84% 4%,
-      color-mix(in oklab, var(--mkt-blue-400) 5%, transparent) 0%,
-      transparent 76%
-    );
+    radial-gradient(42% 36% at 84% 4%, rgba(255, 255, 255, 0.025) 0%, transparent 76%);
 
-  --mkt-glow-blue: color-mix(in oklab, var(--mkt-blue-500) 26%, transparent);
-  --mkt-glow-indigo: color-mix(in oklab, var(--mkt-blue-600) 16%, transparent);
+  --mkt-glow-blue: rgba(255, 255, 255, 0.1);
+  --mkt-glow-indigo: rgba(255, 255, 255, 0.06);
   --mkt-glow-strength: 0.5;
 
-  /* Section ambience is now a whisper — roughly a third of what it was. It
-     exists to stop large dark areas going flat, and to give the eye a reason to
-     keep moving down the page. If you can point at it and call it "the blue
-     bit", it is too strong. */
-  --mkt-ambient-blue: color-mix(in oklab, var(--mkt-blue-500) 6%, transparent);
-  --mkt-ambient-indigo: color-mix(in oklab, var(--mkt-blue-600) 3.5%, transparent);
-  --mkt-ambient-strength: 0.85;
+  /* Section ambience — a whisper of white so large black areas don't go
+     completely flat. If you can see where it starts, it is too strong. */
+  --mkt-ambient-blue: rgba(255, 255, 255, 0.022);
+  --mkt-ambient-indigo: rgba(255, 255, 255, 0.014);
+  --mkt-ambient-strength: 0.9;
 
-  /* Hover is light arriving on the card, not the card changing colour. Mostly
-     white with a trace of blue so it stays on-brand without tinting. */
+  /* Hover is light arriving on the card. Pure white, no trace of hue. */
   --mkt-grad-card-hover: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.045) 0%,
-    color-mix(in oklab, var(--mkt-blue-400) 3%, transparent) 38%,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.02) 38%,
     transparent 70%
   );
 
   --mkt-grad-border: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.14),
-    color-mix(in oklab, var(--mkt-blue-300) 12%, transparent) 40%,
+    rgba(255, 255, 255, 0.16),
+    rgba(255, 255, 255, 0.05) 40%,
     transparent 70%
   );
 
@@ -421,12 +413,16 @@
   --mkt-shadow-mockup:
     inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 20px 40px rgba(0, 0, 0, 0.55),
     0 56px 110px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.07);
-  /* The CTA halo is glow too — pulled back in step with the radials above so
-     the button doesn't become the one thing still running at full brightness. */
+  /* The CTA is a white slab on black, so it needs no coloured halo — a faint
+     white bloom reads as the button being the brightest object on the page,
+     which is exactly its job. The old blue glow was the single loudest piece of
+     hue on the site. */
   --mkt-shadow-cta:
-    0 1px 2px rgba(0, 0, 0, 0.5), 0 6px 20px rgba(74, 120, 255, 0.2);
+    0 1px 2px rgba(0, 0, 0, 0.6), 0 6px 22px rgba(255, 255, 255, 0.09);
 
-  --mkt-inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  /* A white fill needs no lit top edge — the highlight would be invisible on
+     it and only ever showed up on the old gradient button. */
+  --mkt-inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
