@@ -96,6 +96,9 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
             >
               <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
               Now answering calls 24/7
+              <span aria-hidden="true" className="text-ink-quaternary">
+                →
+              </span>
             </a>
           </Reveal>
 
@@ -112,7 +115,10 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
               replacing them: the two spans still break where the copy was
               written to break, and balance only governs how each line rewraps
               when a narrow viewport forces it to. */}
-          <h1 className="mt-7 text-balance text-[clamp(3.5rem,7vw,5rem)] font-semibold">
+          {/* Display type needs its tracking restored explicitly: an arbitrary
+              clamp() size carries no letter-spacing, and 80px type at default
+              tracking reads loose and unfinished. */}
+          <h1 className="mt-7 text-balance text-[clamp(3.5rem,7vw,5rem)] font-semibold leading-[1.04] tracking-[-0.04em]">
             <Reveal variant="blur" as="span" className="block">
               The AI operating system
             </Reveal>
@@ -130,7 +136,10 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
 
           <Reveal variant="up" index={4}>
             <div className="mt-9 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-              <Cta to={signedIn ? '/dashboard' : '/sign-up'}>
+              {/* The one inverse button on the site: solid white on black is
+                  the strongest move available, so the page spends it here and
+                  keeps the accent for everything else. */}
+              <Cta to={signedIn ? '/dashboard' : '/sign-up'} variant="inverse">
                 {signedIn ? 'Go to dashboard' : 'Start free trial'}
               </Cta>
               <Cta to="#showcase" variant="secondary">
@@ -141,9 +150,21 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
           </Reveal>
 
           <Reveal variant="fade" index={6}>
-            <p className="mt-6 text-left text-xs text-ink-tertiary">
-              14-day trial · No card required · Live on your number in under an hour
-            </p>
+            {/* Three separated claims rather than one run-on string — each
+                reads at a glance, and the hairline dividers carry the same
+                machined line the rest of the page uses. */}
+            <ul className="mt-7 flex flex-wrap items-center gap-y-2 text-xs text-ink-tertiary">
+              {['14-day free trial', 'No card required', 'Live in under an hour'].map(
+                (claim, index) => (
+                  <li key={claim} className="flex items-center">
+                    {index > 0 && (
+                      <span aria-hidden="true" className="mx-4 h-3 w-px bg-white/10" />
+                    )}
+                    {claim}
+                  </li>
+                ),
+              )}
+            </ul>
           </Reveal>
         </div>
       </Shell>
@@ -153,9 +174,22 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
       <div className="relative mt-12 md:mt-14">
         <Shell>
           <div
-            className="mx-auto h-[420px] max-w-[1120px] sm:h-[520px] lg:h-[600px]"
+            className="relative mx-auto h-[420px] max-w-[1120px] sm:h-[520px] lg:h-[600px]"
             style={{ transform: `translate3d(0, ${-parallax}px, 0)`, willChange: 'transform' }}
           >
+            {/* A faint accent halo behind the console's top edge. The card is
+                opaque, so only the rim of the glow shows around it — enough to
+                seat the panel in light instead of pasting it on black. The
+                transformed parent is a stacking context, so -z-10 stays in
+                front of the section background but behind the card. */}
+            <div
+              aria-hidden="true"
+              className="absolute -inset-x-8 -top-10 bottom-1/2 -z-10"
+              style={{
+                background:
+                  'radial-gradient(55% 60% at 50% 12%, rgba(37,99,235,0.09), transparent 70%)',
+              }}
+            />
             <Suspense
               fallback={
                 <div

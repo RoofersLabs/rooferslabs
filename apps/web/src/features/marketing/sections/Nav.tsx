@@ -80,7 +80,7 @@ export function Nav({ signedIn }: { signedIn: boolean }) {
 
           <div className="hidden shrink-0 items-center gap-1.5 xl:flex">
             {signedIn ? (
-              <Cta to="/dashboard" size="sm" className="bg-white text-black hover:bg-neutral-100">
+              <Cta to="/dashboard" size="sm" variant="inverse">
                 Go to dashboard
               </Cta>
             ) : (
@@ -91,7 +91,7 @@ export function Nav({ signedIn }: { signedIn: boolean }) {
                 >
                   Sign in
                 </Link>
-                <Cta to="/sign-up" size="sm" className="bg-white text-black hover:bg-neutral-100">
+                <Cta to="/sign-up" size="sm" variant="inverse">
                   Start free trial
                 </Cta>
               </>
@@ -156,12 +156,12 @@ export function Nav({ signedIn }: { signedIn: boolean }) {
             </nav>
             <div className="mt-4 flex flex-col gap-2">
               {signedIn ? (
-                <Cta to="/dashboard" className="bg-white text-black hover:bg-neutral-100">
+                <Cta to="/dashboard" variant="inverse">
                   Go to dashboard
                 </Cta>
               ) : (
                 <>
-                  <Cta to="/sign-up" className="bg-white text-black hover:bg-neutral-100">
+                  <Cta to="/sign-up" variant="inverse">
                     Start free trial
                   </Cta>
                   <Cta to="/sign-in" variant="secondary">

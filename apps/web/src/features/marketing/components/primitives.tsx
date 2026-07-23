@@ -55,21 +55,24 @@ export function Eyebrow({ children, className }: { children: ReactNode; classNam
 type CtaProps = {
   children: ReactNode;
   to: string;
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'inverse';
   /** `sm` is the navigation bar; `md` is everything in page content. */
   size?: 'sm' | 'md';
   className?: string;
 };
 
 /**
- * The only two button styles on the site, in two sizes.
+ * The button system, in two sizes.
  *
- * The system is deliberately rectangular: 6px radius, a 1px border on both
- * variants, and a little extra height. Feedback is carried entirely by
- * background colour — hover lightens, press darkens — over a 150ms ease.
- * No scale on press and no motion of any kind: at this level of restraint a
- * button that physically squashes reads as consumer app, and colour change is
- * feedback enough.
+ * Deliberately rectangular: 6px radius, a 1px border on every variant, and a
+ * little extra height. Feedback is carried entirely by background colour —
+ * hover lightens, press darkens — over a 150ms ease. No scale on press and no
+ * motion of any kind: at this level of restraint a button that physically
+ * squashes reads as consumer app, and colour change is feedback enough.
+ *
+ * `inverse` is the loudest thing on a black page — solid white, black text —
+ * and is reserved for the single action the page exists to produce: starting
+ * a trial (nav and hero). Everything else keeps the accent or a border.
  */
 export function Cta({ children, to, variant = 'primary', size = 'md', className }: CtaProps) {
   const base = cn(
@@ -78,10 +81,13 @@ export function Cta({ children, to, variant = 'primary', size = 'md', className 
     size === 'sm' ? 'h-10 px-4 text-[0.8125rem]' : 'h-12 px-6 text-[0.9375rem]',
   );
 
-  const styles =
-    variant === 'primary'
-      ? 'border-white/10 bg-accent text-white hover:bg-accent-hover active:bg-accent-press'
-      : 'border-strong bg-transparent text-ink hover:bg-white/[0.05] active:bg-white/[0.08]';
+  const styles = {
+    primary: 'border-white/10 bg-accent text-white hover:bg-accent-hover active:bg-accent-press',
+    secondary: 'border-strong bg-transparent text-ink hover:bg-white/[0.05] active:bg-white/[0.08]',
+    // Hover dims rather than brightens — there is nowhere brighter than white
+    // to go, and the darkening reads as the button giving under the pointer.
+    inverse: 'border-transparent bg-white text-[#0A0A0A] hover:bg-[#E9EAEC] active:bg-[#D9DBDF]',
+  }[variant];
 
   const isInternal = to.startsWith('/');
 
