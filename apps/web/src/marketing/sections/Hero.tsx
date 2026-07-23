@@ -1,8 +1,7 @@
 import { useRef } from 'react';
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
-import { Button } from '../components/Button';
 import { Container } from '../components/Container';
-import { HeroPreview } from '../dashboard/HeroPreview';
+import { ProductShowcase } from '../dashboard/ProductShowcase';
 import { EASE_SMOOTH } from '../motion';
 
 /**
@@ -24,57 +23,51 @@ export function Hero() {
   return (
     <section ref={ref} className="relative flex min-h-[100svh] flex-col pt-16">
       <Container className="flex flex-1 flex-col">
-        <div className="flex flex-col items-center pb-10 pt-14 text-center sm:pt-20">
+        <div className="max-w-[680px] pb-8 pt-16 text-left sm:pt-24 lg:pt-28">
+          <motion.p
+            initial={{ opacity: 0, y: reduced ? 0 : 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: EASE_SMOOTH }}
+            className="mb-5 text-[12px] font-medium uppercase tracking-[0.14em] text-white/55"
+          >
+            AI receptionist for roofing teams
+          </motion.p>
+
           <motion.h1
             initial={{ opacity: 0, y: reduced ? 0 : 14 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: EASE_SMOOTH }}
-            className="max-w-[17ch] text-balance text-[clamp(2.5rem,6.2vw,4.5rem)] font-semibold leading-[1.03] tracking-[-0.035em] text-white"
+            transition={{ duration: 0.8, ease: EASE_SMOOTH, delay: 0.04 }}
+            className="max-w-[12ch] text-balance text-[clamp(2.65rem,5.6vw,4.15rem)] font-semibold leading-[1.02] tracking-[-0.035em] text-white"
           >
-            Every call answered. Every job booked.
+            <span className="block">Every call answered.</span>
+            <span className="block">Every job booked.</span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: reduced ? 0 : 14 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: EASE_SMOOTH, delay: 0.08 }}
-            className="mt-6 max-w-[56ch] text-pretty text-[17px] leading-[1.6] text-mk-secondary sm:text-[18px]"
+            transition={{ duration: 0.8, ease: EASE_SMOOTH, delay: 0.12 }}
+            className="mt-6 max-w-[52ch] text-pretty text-[16.5px] leading-[1.65] text-mk-secondary sm:text-[17.5px]"
           >
             RoofersLabs is the AI receptionist for roofing companies. It picks up on the first ring,
             qualifies the homeowner, books the appointment, and pages your crew when it is an
-            emergency — around the clock.
+            emergency, around the clock.
           </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: reduced ? 0 : 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: EASE_SMOOTH, delay: 0.16 }}
-            className="mt-9 flex flex-col items-center gap-3 sm:flex-row"
-          >
-            <Button href="/sign-up" size="lg" className="w-full sm:w-auto">
-              Get started
-            </Button>
-            <Button href="#how-it-works" variant="secondary" size="lg" className="w-full sm:w-auto">
-              See how it works
-            </Button>
-          </motion.div>
         </div>
 
-        {/* The product preview. Clipped by the viewport edge rather than given
-            its own bottom margin, so it reads as continuing past the fold. */}
         <motion.div
           // Scroll-driven values must own their own element: a motion value in
           // `style` outranks `animate`, so the entrance below gets its own node.
           style={reduced ? undefined : { y: previewY, opacity: previewOpacity }}
-          className="min-h-[440px] flex-1 pb-6 sm:min-h-[500px]"
+          className="min-h-[560px] flex-1 pb-10 sm:pb-12"
         >
           <motion.div
             initial={{ opacity: 0, y: reduced ? 0 : 28 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: EASE_SMOOTH, delay: 0.24 }}
+            transition={{ duration: 1, ease: EASE_SMOOTH, delay: 0.2 }}
             className="h-full"
           >
-            <HeroPreview />
+            <ProductShowcase />
           </motion.div>
         </motion.div>
       </Container>

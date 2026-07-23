@@ -5,6 +5,7 @@ import { Workflow } from './sections/Workflow';
 import { Showcase } from './sections/Showcase';
 import { Pricing } from './sections/Pricing';
 import { FinalCta } from './sections/FinalCta';
+import { Footer } from './sections/Footer';
 
 /**
  * The public marketing site.
@@ -38,6 +39,8 @@ export function MarketingPage() {
         <Pricing />
         <FinalCta />
       </main>
+
+      <Footer />
     </div>
   );
 }

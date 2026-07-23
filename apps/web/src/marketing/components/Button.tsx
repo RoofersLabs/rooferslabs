@@ -7,25 +7,21 @@ type Size = 'md' | 'lg';
 
 const base = cn(
   'group relative inline-flex select-none items-center justify-center gap-2 whitespace-nowrap',
-  'rounded-lg font-medium tracking-[-0.01em]',
-  'transition-[transform,background-color,border-color,box-shadow] duration-200 ease-smooth',
+  'rounded-none font-medium tracking-[-0.01em]',
+  'transition-[transform,background-color,border-color,box-shadow,opacity] duration-200 ease-smooth',
   'hover:-translate-y-px active:translate-y-0 active:duration-75',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mk-accent-ring focus-visible:ring-offset-2 focus-visible:ring-offset-black',
   'motion-reduce:transform-none motion-reduce:transition-none',
 );
 
 const variants: Record<Variant, string> = {
-  // The only saturated surface on the page. The inset highlight is a 1px top
-  // rim, not a gradient — it reads as a lit edge and keeps the fill flat.
   primary: cn(
-    'bg-mk-accent text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.16)]',
-    'hover:bg-mk-accent-hover hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_6px_28px_-8px_rgba(43,92,230,0.7)]',
+    'border border-white bg-white text-black shadow-[0_1px_0_rgba(255,255,255,0.08)]',
+    'hover:bg-neutral-200 hover:shadow-[0_12px_28px_-22px_rgba(255,255,255,0.65)]',
   ),
-  // Card surface, hairline border. The border is what animates on hover; the
-  // fill barely moves, which keeps it subordinate to the primary action.
   secondary: cn(
-    'border border-mk-line bg-mk-card text-white',
-    'hover:border-mk-line-strong hover:bg-mk-card-hover',
+    'border border-white bg-white text-black shadow-[0_1px_0_rgba(255,255,255,0.08)]',
+    'hover:bg-neutral-200 hover:shadow-[0_12px_28px_-22px_rgba(255,255,255,0.65)]',
   ),
 };
 
