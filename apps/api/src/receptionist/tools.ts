@@ -18,8 +18,6 @@ export const TOOL = {
   END_CALL: 'end_call',
 } as const;
 
-export type ToolName = (typeof TOOL)[keyof typeof TOOL];
-
 interface RealtimeTool {
   type: 'function';
   name: string;
