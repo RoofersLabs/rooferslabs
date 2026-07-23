@@ -1,0 +1,103 @@
+name: Deploy API (ECR + ECS)
+
+# Production backend deploy. This workflow is a CONVENIENCE WRAPPER around
+# infra/scripts/deploy.sh — the script is the single source of truth for how the
+# API image is built, pushed, and rolled out, and can be run locally on its own.
+# Disabling or breaking this workflow never blocks a deploy.
+#
+# Requires (repo Settings → Secrets and variables → Actions):
+#   Variables: AWS_REGION, AWS_DEPLOY_ROLE_ARN (GitHub OIDC role),
+#              ECS_CLUSTER, API_SERVICE, API_REPO
+# The role comes from infra/terraform/modules/github-oidc.
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/api/**'
+      - 'packages/shared/**'
+      - 'docker/api.Dockerfile'
+      - 'infra/scripts/deploy.sh'
+      - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:
+
+# Never roll the service from two runs at once, and never cancel a rollout
+# midway — an interrupted `ecs wait` leaves the deploy in an unknown state.
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # AWS OIDC
+  contents: read
+
+jobs:
+  deploy:
+    name: Build, push, and roll out the API
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared contracts
+        run: npm run build --workspace @rooferslabs/shared
+
+      - name: Generate Prisma client
+        run: npx --prefix apps/api prisma generate --schema apps/api/prisma/schema.prisma
+
+      - name: Typecheck
+        run: npm run typecheck --workspace @rooferslabs/api
+
+      - name: Lint
+        run: npm run lint --workspace @rooferslabs/api
+
+      # Backend deploy — gate only on the api workspace, mirroring how
+      # deploy-web.yml gates only on web.
+      - name: Test (api only)
+        run: npm test --workspace @rooferslabs/api --if-present
+
+      # Without this, an unset variable surfaces only as the AWS action's
+      # opaque "Input required and not supplied: aws-region".
+      - name: Check deploy configuration is present
+        env:
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+          API_SERVICE: ${{ vars.API_SERVICE }}
+          API_REPO: ${{ vars.API_REPO }}
+        run: |
+          missing=()
+          for v in AWS_REGION AWS_DEPLOY_ROLE_ARN ECS_CLUSTER API_SERVICE API_REPO; do
+            [ -n "${!v}" ] || missing+=("$v")
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing deploy configuration: ${missing[*]}"
+            echo "Set these under Settings → Secrets and variables → Actions." >&2
+            echo "AWS_DEPLOY_ROLE_ARN comes from 'terraform output github_deploy_role_arn'." >&2
+            exit 1
+          fi
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      # Build + push + roll out + verify, all from the same script used locally.
+      # Every value it would otherwise read from Terraform outputs is supplied
+      # here, so no Terraform state is needed in CI.
+      - name: Deploy (build, push, roll out, verify)
+        env:
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+          API_SERVICE: ${{ vars.API_SERVICE }}
+          API_REPO: ${{ vars.API_REPO }}
+          API_HEALTH_URL: ${{ vars.API_HEALTH_URL || 'https://api.rooferslabs.com/v1/health' }}
+        run: ./infra/scripts/deploy.sh

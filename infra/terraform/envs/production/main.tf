@@ -179,6 +179,29 @@ module "iam" {
   sqs_queue_arns = [module.sqs.queue_arn, module.sqs.dead_letter_queue_arn]
 }
 
+# ---- CI deploy role (GitHub Actions OIDC) --------------------------------------------
+# Scoped to this repo's main/develop branches and to exactly the resources the
+# two deploy workflows touch: the SPA bucket, its distribution, the api ECR
+# repository, and the api ECS service.
+
+module "github_oidc" {
+  source = "../../modules/github-oidc"
+
+  name              = local.name
+  github_repository = var.github_repository
+  allowed_branches  = var.github_deploy_branches
+
+  web_bucket_arn              = module.frontend.bucket_arn
+  cloudfront_distribution_arn = module.frontend.distribution_arn
+  ecr_repository_arns         = values(module.ecr.repository_arns)
+
+  # Built here rather than taken from the module: aws_ecs_service exposes the
+  # ARN as `id`, which reads as an accident at the call site.
+  ecs_service_arns = [
+    "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:service/${local.name}/${local.name}-api",
+  ]
+}
+
 # ---- CloudWatch ------------------------------------------------------------------------
 
 module "observability" {

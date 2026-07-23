@@ -1,6 +1,11 @@
 name: Deploy Web (S3 + CloudFront)
 
-# Production frontend deploy. Requires (repo Settings → Secrets and variables):
+# Production frontend deploy. This workflow is a CONVENIENCE WRAPPER around
+# infra/scripts/deploy-web.sh — the script is the single source of truth for how
+# the SPA is built, uploaded, and invalidated, and can be run locally on its own.
+# Disabling or breaking this workflow never blocks a deploy.
+#
+# Requires (repo Settings → Secrets and variables):
 #   Variables: AWS_REGION, AWS_DEPLOY_ROLE_ARN (GitHub OIDC role),
 #              WEB_BUCKET, WEB_DISTRIBUTION_ID, VITE_API_BASE_URL
 #   Secrets:   VITE_CLERK_PUBLISHABLE_KEY (pk_live_…)
@@ -12,6 +17,7 @@ on:
     paths:
       - 'apps/web/**'
       - 'packages/shared/**'
+      - 'infra/scripts/deploy-web.sh'
       - '.github/workflows/deploy-web.yml'
   workflow_dispatch:
 
@@ -52,53 +58,46 @@ jobs:
       - name: Test (web only)
         run: npm test --workspace @rooferslabs/web --if-present
 
-      - name: Build frontend
+      # Without this, an unset variable surfaces only as the AWS action's
+      # opaque "Input required and not supplied: aws-region".
+      - name: Check deploy configuration is present
         env:
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          WEB_BUCKET: ${{ vars.WEB_BUCKET }}
+          WEB_DISTRIBUTION_ID: ${{ vars.WEB_DISTRIBUTION_ID }}
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
-        run: npm run build --workspace @rooferslabs/web
+        run: |
+          missing=()
+          for v in AWS_REGION AWS_DEPLOY_ROLE_ARN WEB_BUCKET WEB_DISTRIBUTION_ID \
+                   VITE_API_BASE_URL VITE_CLERK_PUBLISHABLE_KEY; do
+            [ -n "${!v}" ] || missing+=("$v")
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing deploy configuration: ${missing[*]}"
+            echo "Set these under Settings → Secrets and variables → Actions." >&2
+            echo "AWS_DEPLOY_ROLE_ARN comes from 'terraform output github_deploy_role_arn'." >&2
+            exit 1
+          fi
 
       - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Upload hashed assets (immutable)
-        run: |
-          aws s3 sync apps/web/dist/ "s3://${{ vars.WEB_BUCKET }}/" --delete \
-            --cache-control "public,max-age=31536000,immutable" \
-            --exclude "index.html" --exclude "*.webmanifest" \
-            --exclude "sw.js" --exclude "push-sw.js" --exclude "registerSW.js"
-
-      - name: Upload entry + service worker (no-cache)
-        run: |
-          aws s3 cp apps/web/dist/index.html "s3://${{ vars.WEB_BUCKET }}/index.html" \
-            --cache-control "no-cache" --content-type "text/html; charset=utf-8"
-          for f in sw.js push-sw.js registerSW.js; do
-            [ -f "apps/web/dist/$f" ] && aws s3 cp "apps/web/dist/$f" "s3://${{ vars.WEB_BUCKET }}/$f" \
-              --cache-control "no-cache" --content-type "application/javascript"
-          done
-          for m in apps/web/dist/*.webmanifest; do
-            [ -f "$m" ] && aws s3 cp "$m" "s3://${{ vars.WEB_BUCKET }}/$(basename "$m")" \
-              --cache-control "no-cache" --content-type "application/manifest+json"
-          done
-
-      - name: Invalidate CloudFront
-        run: |
-          ID=$(aws cloudfront create-invalidation \
-            --distribution-id "${{ vars.WEB_DISTRIBUTION_ID }}" \
-            --paths "/index.html" "/sw.js" "/push-sw.js" "/registerSW.js" "/manifest.webmanifest" \
-            --query 'Invalidation.Id' --output text)
-          aws cloudfront wait invalidation-completed \
-            --distribution-id "${{ vars.WEB_DISTRIBUTION_ID }}" --id "$ID"
-
-      - name: Verify deployment
+      # Build + upload + invalidate + verify, all from the same script used
+      # locally. Every value it would otherwise read from Terraform outputs is
+      # supplied here, so no Terraform state is needed in CI.
+      - name: Deploy (build, upload, invalidate, verify)
         env:
+          SKIP_INSTALL: '1' # dependencies are already installed above
+          WEB_BUCKET: ${{ vars.WEB_BUCKET }}
+          WEB_DISTRIBUTION_ID: ${{ vars.WEB_DISTRIBUTION_ID }}
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
           # Defaults to the public site; set WEB_VERIFY_URL to the CloudFront
           # domain to verify before the DNS cutover.
-          VERIFY_URL: ${{ vars.WEB_VERIFY_URL || 'https://rooferslabs.com' }}
-        run: |
-          STATUS=$(curl -s -o /dev/null -w '%{http_code}' "$VERIFY_URL/")
-          echo "GET $VERIFY_URL/ → $STATUS"
-          test "$STATUS" = "200"
+          WEB_VERIFY_URL: ${{ vars.WEB_VERIFY_URL || 'https://rooferslabs.com' }}
+        run: ./infra/scripts/deploy-web.sh
