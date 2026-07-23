@@ -37,6 +37,11 @@ export interface AppConfig {
     };
     /** Free-trial length applied to new checkout sessions; 0 disables trials. */
     trialPeriodDays: number;
+    /**
+     * Companies created strictly before this instant are exempt from the
+     * payment wall. Null means no exemption: every tenant pays.
+     */
+    grandfatherBefore: Date | null;
   };
   openai: {
     apiKey: string;
@@ -111,6 +116,19 @@ export default (): AppConfig => {
         PROFESSIONAL: process.env.STRIPE_PRICE_PROFESSIONAL ?? '',
       },
       trialPeriodDays: Number(process.env.STRIPE_TRIAL_PERIOD_DAYS ?? 0),
+      /**
+       * Companies created strictly before this instant keep full access without
+       * paying; everyone who signs up afterwards hits the payment wall as
+       * normal. Unset (the default) means no exemption at all — the cutoff has
+       * to be turned on deliberately, so a missing or malformed value can never
+       * silently hand the product away for free.
+       */
+      grandfatherBefore: (() => {
+        const raw = process.env.BILLING_GRANDFATHER_BEFORE;
+        if (!raw) return null;
+        const parsed = new Date(raw);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+      })(),
     },
     openai: {
       apiKey: process.env.OPENAI_API_KEY ?? '',

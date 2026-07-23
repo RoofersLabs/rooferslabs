@@ -73,7 +73,17 @@ export class BillingService {
   /** The tenant's billing state; a tenant that never started checkout gets NONE. */
   async getSummary(companyId: string): Promise<SubscriptionSummary> {
     const subscription = await this.repo.findByCompanyId(companyId);
-    return BillingService.toSummary(subscription);
+    const summary = BillingService.toSummary(subscription);
+
+    // A grandfathered tenant keeps its real Stripe status — it genuinely has no
+    // subscription — but reads as entitled, so the frontend guard lets it into
+    // the application instead of bouncing it to /payment. This must agree with
+    // hasActiveSubscription() or the client and the API would disagree about
+    // who is allowed in.
+    if (!summary.isActive && (await this.isGrandfathered(companyId))) {
+      return { ...summary, isActive: true };
+    }
+    return summary;
   }
 
   /**
@@ -87,10 +97,30 @@ export class BillingService {
     const subscription = await this.repo.findByCompanyId(companyId);
     const isActive = subscription
       ? ACTIVE_SUBSCRIPTION_STATUSES.includes(subscription.status as SubscriptionStatus)
-      : false;
+      : (await this.isGrandfathered(companyId));
 
     await this.redis.set(this.entitlementKey(companyId), isActive, this.entitlementTtl);
     return isActive;
+  }
+
+  /**
+   * Whether this tenant predates the payment wall and is therefore exempt from
+   * it. Existing accounts keep working; anyone created on or after the cutoff
+   * pays like normal.
+   *
+   * Deliberately keyed on `Company.createdAt` rather than a stored flag, so the
+   * exemption is a property of when the tenant signed up and cannot be widened
+   * by a later write. With no cutoff configured this is always false.
+   */
+  private async isGrandfathered(companyId: string): Promise<boolean> {
+    const cutoff = this.config.stripe.grandfatherBefore;
+    if (!cutoff) return false;
+
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { createdAt: true },
+    });
+    return company ? company.createdAt < cutoff : false;
   }
 
   static toSummary(subscription: Subscription | null): SubscriptionSummary {

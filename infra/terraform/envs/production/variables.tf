@@ -126,6 +126,16 @@ variable "stripe_trial_period_days" {
   default     = 0
 }
 
+variable "billing_grandfather_before" {
+  description = <<-EOT
+    RFC3339 instant. Companies created strictly before it keep full access
+    without paying; everyone created on or after it hits the payment wall.
+    Empty (the default) applies the wall to every tenant.
+  EOT
+  type        = string
+  default     = ""
+}
+
 variable "vapid_public_key" {
   description = "Web Push VAPID public key (npx web-push generate-vapid-keys)."
   type        = string

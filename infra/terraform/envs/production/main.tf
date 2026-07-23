@@ -256,6 +256,8 @@ module "api_service" {
     STRIPE_PRICE_STARTER      = var.stripe_price_starter
     STRIPE_PRICE_PROFESSIONAL = var.stripe_price_professional
     STRIPE_TRIAL_PERIOD_DAYS  = tostring(var.stripe_trial_period_days)
+    # Tenants that predate the payment wall keep access without paying.
+    BILLING_GRANDFATHER_BEFORE = var.billing_grandfather_before
   }
 
   secrets = merge(
