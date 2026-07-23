@@ -8,7 +8,6 @@
 export { HowItWorks } from './HowItWorks';
 export { Metrics } from './Metrics';
 export { Intelligence } from './Intelligence';
-export { Integrations } from './Integrations';
 export { Testimonials } from './Testimonials';
 export { Pricing } from './Pricing';
 export { Faq } from './Faq';

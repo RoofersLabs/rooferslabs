@@ -3,15 +3,14 @@ import { useAuth } from '@clerk/clerk-react';
 import { Nav } from './sections/Nav';
 import { Hero } from './sections/Hero';
 import { TrustedBy } from './sections/TrustedBy';
-import { Capabilities } from './sections/Capabilities';
 import { Footer } from './sections/Footer';
 
 /**
  * Below-the-fold sections load as one deferred chunk.
  *
- * Each `lazy` call points at the same module, so the eight of them cost a
- * single request — the module registry dedupes it — while still letting the
- * hero and capability grid ship in the initial bundle.
+ * Each `lazy` call points at the same module, so all of them cost a single
+ * request — the module registry dedupes it — while the hero still ships in the
+ * initial bundle.
  */
 function deferred<K extends keyof typeof import('./sections/deferred')>(name: K) {
   return lazy(async () => {
@@ -24,7 +23,6 @@ const Showcase = lazy(async () => ({ default: (await import('./sections/Showcase
 const HowItWorks = deferred('HowItWorks');
 const Metrics = deferred('Metrics');
 const Intelligence = deferred('Intelligence');
-const Integrations = deferred('Integrations');
 const Testimonials = deferred('Testimonials');
 const Pricing = deferred('Pricing');
 const Faq = deferred('Faq');
@@ -70,10 +68,9 @@ const STRUCTURED_DATA = {
 /**
  * The marketing site.
  *
- * Fourteen sections, every one of them entering differently, and every product
- * visual on the page rendered from real components rather than an image. The
- * whole surface is pure black with a single accent; hierarchy is carried by
- * type scale and space.
+ * Every section enters differently, and every product visual on the page is
+ * rendered from real components rather than an image. One near-black surface,
+ * one accent; hierarchy is carried by type scale and space.
  */
 export function MarketingPage() {
   const { isSignedIn } = useAuth();
@@ -129,7 +126,6 @@ export function MarketingPage() {
       <main id="main">
         <Hero signedIn={Boolean(isSignedIn)} />
         <TrustedBy />
-        <Capabilities />
 
         <Suspense fallback={<Reserved height="48rem" />}>
           <Showcase />
@@ -139,7 +135,6 @@ export function MarketingPage() {
           <HowItWorks />
           <Metrics />
           <Intelligence />
-          <Integrations />
           <Testimonials />
           <Pricing />
           <Faq />

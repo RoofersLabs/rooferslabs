@@ -6,8 +6,7 @@ import { Logomark } from '../components/icons';
 import { Cta, Shell } from '../components/primitives';
 
 const LINKS = [
-  { label: 'Product', href: '#product' },
-  { label: 'CRM', href: '#showcase' },
+  { label: 'Product', href: '#showcase' },
   { label: 'AI Receptionist', href: '#solutions' },
   { label: 'Pricing', href: '#pricing' },
   { label: 'Resources', href: '#resources' },

@@ -82,7 +82,7 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
         <div className="mx-auto max-w-[62.5rem] text-center">
           <Reveal variant="fade">
             <a
-              href="#product"
+              href="#showcase"
               className="pressable inline-flex items-center gap-2 rounded-full border border-subtle bg-white/[0.025] py-1 pl-2.5 pr-3 text-xs text-ink-secondary transition-colors duration-150 ease-out hover:border-strong hover:text-ink"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
