@@ -178,3 +178,17 @@ variable "openai_embedding_model" {
   type    = string
   default = "text-embedding-3-small"
 }
+
+# ---- CI deploy role ---------------------------------------------------------
+
+variable "github_repository" {
+  description = "owner/repo whose GitHub Actions runs may assume the deploy role."
+  type        = string
+  default     = "RoofersLabs/rooferslabs"
+}
+
+variable "github_deploy_branches" {
+  description = "Branches allowed to deploy. A run on any other ref cannot assume the role."
+  type        = list(string)
+  default     = ["main", "develop"]
+}

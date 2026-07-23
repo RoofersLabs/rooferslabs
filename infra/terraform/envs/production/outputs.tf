@@ -91,3 +91,12 @@ output "aws_region" {
 output "s3_buckets" {
   value = module.s3.bucket_names
 }
+
+output "github_deploy_role_arn" {
+  description = "Set as the AWS_DEPLOY_ROLE_ARN GitHub Actions variable (Settings → Secrets and variables → Actions)."
+  value       = module.github_oidc.deploy_role_arn
+}
+
+output "web_bucket_arn" {
+  value = module.frontend.bucket_arn
+}

@@ -7,6 +7,11 @@ output "bucket_name" {
   value       = aws_s3_bucket.site.bucket
 }
 
+output "bucket_arn" {
+  description = "ARN of the SPA bucket (scopes the CI deploy role's S3 permissions)."
+  value       = aws_s3_bucket.site.arn
+}
+
 output "distribution_id" {
   description = "CloudFront distribution id (deploy-web.sh invalidation target)."
   value       = aws_cloudfront_distribution.this.id

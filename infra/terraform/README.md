@@ -64,7 +64,11 @@ terraform apply -var 'enable_https=true'     # or set enable_https = true in tfv
 # 4. Frontend HTTPS: add the web ACM validation CNAMEs to Cloudflare (DNS-only),
 #    wait for the cert to issue, then attach the apex + www aliases.
 terraform output web_certificate_validation_records
-terraform apply -var 'enable_web_custom_domain=true'
+# Set this in tfvars, do NOT pass it only as -var: a flag that lives on the
+# command line is absent from the next plan, which then reads as "detach the
+# apex + www aliases and fall back to the default certificate" — i.e. it takes
+# the public site off its own domain.
+terraform apply -var 'enable_web_custom_domain=true'   # then persist it in tfvars
 
 # 5. Cloudflare DNS:
 terraform output alb_dns_name web_cloudfront_domain
@@ -114,6 +118,39 @@ aws logs tail /rooferslabs-production/api --follow
 aws ecs execute-command --cluster rooferslabs-production \
   --task <task-id> --container api --interactive --command "/bin/sh"
 ```
+
+## Deploying from CI (GitHub Actions)
+
+Both deploy workflows assume `module.github_oidc`'s role over OIDC, so no AWS
+access key is ever stored in GitHub. The trust policy only accepts runs from
+`main` and `develop` on the repo named by `var.github_repository` — a fork or a
+feature branch cannot assume it.
+
+The workflows are wrappers around the same two scripts used above, and every
+value the scripts would read from Terraform outputs is passed in as an Actions
+variable, so CI needs no Terraform state. After `terraform apply`, sync them:
+
+```bash
+tf() { terraform -chdir=infra/terraform/envs/production output -raw "$1"; }
+gh variable set AWS_REGION          --body "$(tf aws_region)"
+gh variable set AWS_DEPLOY_ROLE_ARN --body "$(tf github_deploy_role_arn)"
+gh variable set WEB_BUCKET          --body "$(tf web_bucket)"
+gh variable set WEB_DISTRIBUTION_ID --body "$(tf web_distribution_id)"
+gh variable set VITE_API_BASE_URL   --body "$(tf api_url)"
+gh variable set WEB_VERIFY_URL      --body "$(tf web_url)"
+gh variable set ECS_CLUSTER         --body "$(tf ecs_cluster_name)"
+gh variable set API_SERVICE         --body "$(tf api_service_name)"
+gh variable set API_HEALTH_URL      --body "$(tf api_url)/v1/health"
+gh secret   set VITE_CLERK_PUBLISHABLE_KEY --body "$(tf clerk_publishable_key)"
+# API_REPO is a map member, so it does not come from `output -raw`:
+gh variable set API_REPO --body "$(terraform -chdir=infra/terraform/envs/production \
+  output -json ecr_repository_urls | python3 -c 'import json,sys; print(json.load(sys.stdin)["api"])')"
+```
+
+Both workflows fail with an explicit list of what is missing if a variable is
+unset, rather than surfacing the AWS action's opaque "Input required and not
+supplied: aws-region". Neither is load-bearing: the scripts remain the source of
+truth and can always ship from a laptop.
 
 ## State, cost, and safety notes
 
