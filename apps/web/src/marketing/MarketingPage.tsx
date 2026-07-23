@@ -3,6 +3,7 @@ import { Nav } from './sections/Nav';
 import { Hero } from './sections/Hero';
 import { Workflow } from './sections/Workflow';
 import { Showcase } from './sections/Showcase';
+import { CapabilitiesTimeline } from './sections/CapabilitiesTimeline';
 import { Pricing } from './sections/Pricing';
 import { FinalCta } from './sections/FinalCta';
 import { Footer } from './sections/Footer';
@@ -36,6 +37,7 @@ export function MarketingPage() {
         <Hero />
         <Workflow />
         <Showcase />
+        <CapabilitiesTimeline />
         <Pricing />
         <FinalCta />
       </main>

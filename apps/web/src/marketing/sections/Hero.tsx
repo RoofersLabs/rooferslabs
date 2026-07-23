@@ -10,23 +10,30 @@ export function Hero() {
   return (
     <section className="relative flex min-h-[100svh] flex-col bg-black pt-16">
       <Container className="flex flex-1 flex-col">
-        <div className="max-w-[620px] pb-12 pt-20 text-left sm:pt-28 lg:pt-32">
-          <p className="mb-6 text-[12px] font-medium uppercase tracking-[0.14em] text-white/55">
+        <div className="max-w-[620px] pb-10 pt-16 text-left sm:pb-12 sm:pt-28 lg:pt-32">
+          <p className="mb-5 text-[11.5px] font-medium uppercase tracking-[0.14em] text-white/55 sm:mb-6 sm:text-[12px]">
             AI receptionist for roofing teams
           </p>
 
-          <h1 className="text-[2.125rem] font-semibold leading-[0.98] tracking-[-0.035em] sm:text-[3.5rem] lg:text-[4.25rem]">
+          <h1 className="text-[1.875rem] font-semibold leading-[1] tracking-[-0.03em] sm:text-[3.5rem] sm:leading-[0.98] sm:tracking-[-0.035em] lg:text-[4.25rem]">
             <span className="block whitespace-nowrap text-white">Calls answered.</span>
             <span className="block whitespace-nowrap text-white/70">Leads captured.</span>
           </h1>
 
-          <p className="mt-7 max-w-[42ch] text-pretty text-[16px] leading-[1.65] text-mk-secondary sm:text-[17px]">
+          <p className="mt-5 max-w-[42ch] text-pretty text-[14.5px] leading-[1.65] text-mk-secondary sm:mt-7 sm:text-[17px]">
             Answer calls. Qualify leads. Book jobs before homeowners move on.
           </p>
         </div>
 
-        <div className="min-h-[560px] flex-1 pb-10 sm:pb-12">
-          <ProductShowcase />
+        <div
+          role="region"
+          aria-label="Scrollable product preview"
+          tabIndex={0}
+          className="-mx-6 min-h-[560px] flex-1 overflow-x-auto overscroll-x-contain px-6 pb-10 [-ms-overflow-style:none] [-webkit-overflow-scrolling:touch] [scrollbar-width:none] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mk-accent-ring focus-visible:ring-offset-4 focus-visible:ring-offset-black sm:-mx-8 sm:px-8 sm:pb-12 lg:mx-0 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden"
+        >
+          <div className="w-[1040px] max-w-none lg:w-full">
+            <ProductShowcase />
+          </div>
         </div>
       </Container>
     </section>

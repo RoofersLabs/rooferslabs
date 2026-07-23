@@ -9,15 +9,15 @@ import { Reveal } from '../components/Reveal';
  */
 export function FinalCta() {
   return (
-    <section className="border-t border-mk-line py-28 sm:py-36">
+    <section className="border-t border-mk-line py-24 sm:py-36">
       <Container className="flex flex-col items-center text-center">
         <Reveal>
-          <h2 className="max-w-[16ch] text-balance text-[clamp(2.25rem,5.2vw,4rem)] font-semibold leading-[1.05] tracking-[-0.035em] text-white">
+          <h2 className="max-w-[16ch] text-balance text-[clamp(1.95rem,5.2vw,4rem)] font-semibold leading-[1.05] tracking-[-0.035em] text-white">
             Your phone stops being a problem today.
           </h2>
         </Reveal>
         <Reveal delay={0.08}>
-          <p className="mt-6 max-w-[48ch] text-pretty text-[17px] leading-[1.6] text-mk-secondary">
+          <p className="mt-5 max-w-[48ch] text-pretty text-[15px] leading-[1.65] text-mk-secondary sm:mt-6 sm:text-[17px] sm:leading-[1.6]">
             Set up your number in a few minutes. The next call that comes in gets answered.
           </p>
         </Reveal>

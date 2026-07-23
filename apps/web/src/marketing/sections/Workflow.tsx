@@ -95,19 +95,19 @@ export function Workflow() {
   const fill = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
   return (
-    <section id="how-it-works" className="scroll-mt-24 py-20 sm:py-24">
+    <section id="how-it-works" className="scroll-mt-24 py-[72px] sm:py-24">
       <Container>
         <Reveal>
-          <h2 className="max-w-[20ch] text-balance text-[clamp(2rem,4.2vw,3.25rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-white">
+          <h2 className="max-w-[20ch] text-balance text-[clamp(1.75rem,4.2vw,3.25rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-white">
             One call, start to finish, without you.
           </h2>
-          <p className="mt-5 max-w-[58ch] text-pretty text-[16.5px] leading-[1.65] text-mk-secondary">
+          <p className="mt-5 max-w-[58ch] text-pretty text-[15px] leading-[1.65] text-mk-secondary sm:text-[16.5px]">
             The same five things happen on every call, at three in the morning as reliably as at
             three in the afternoon. You find out when it is already handled.
           </p>
         </Reveal>
 
-        <div ref={ref} className="relative mt-16">
+        <div ref={ref} className="relative mt-14 sm:mt-16">
           {/* The rail. One track, one fill — the fill's length is the reader's
               scroll position through this section. */}
           <span
@@ -129,7 +129,13 @@ export function Workflow() {
 
           <ol className="flex flex-col gap-10 md:flex-row md:gap-0">
             {STEPS.map((step, i) => (
-              <Step key={step.title} step={step} index={i} progress={scrollYProgress} reduced={Boolean(reduced)} />
+              <Step
+                key={step.title}
+                step={step}
+                index={i}
+                progress={scrollYProgress}
+                reduced={Boolean(reduced)}
+              />
             ))}
           </ol>
         </div>

@@ -76,20 +76,20 @@ function Check() {
 
 export function Pricing() {
   return (
-    <section id="pricing" className="scroll-mt-24 py-20 sm:py-24">
+    <section id="pricing" className="scroll-mt-24 py-[72px] sm:py-24">
       <Container>
         <Reveal>
-          <h2 className="max-w-[20ch] text-balance text-[clamp(2rem,4.2vw,3.25rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-white">
+          <h2 className="max-w-[20ch] text-balance text-[clamp(1.75rem,4.2vw,3.25rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-white">
             What a receptionist can’t do at 2 AM.
           </h2>
-          <p className="mt-5 max-w-[58ch] text-pretty text-[16.5px] leading-[1.65] text-mk-secondary">
+          <p className="mt-5 max-w-[58ch] text-pretty text-[15px] leading-[1.65] text-mk-secondary sm:text-[16.5px]">
             Nothing here is a criticism of the person answering your phone. It is a description of
             what one person, working reasonable hours, physically cannot cover.
           </p>
         </Reveal>
 
         {/* Comparison */}
-        <Reveal delay={0.08} className="mt-14 overflow-hidden rounded-2xl border border-mk-line">
+        <Reveal delay={0.08} className="mt-12 overflow-hidden rounded-2xl border border-mk-line sm:mt-14">
           {/* One table in the DOM at every width. Below `md` the rows become
               blocks and each value carries its own label, because three columns
               on a phone collapses into four-word-per-line rubble. The labels are
@@ -155,7 +155,7 @@ export function Pricing() {
         </Reveal>
 
         {/* Pricing */}
-        <Reveal delay={0.1} className="mt-16">
+        <Reveal delay={0.1} className="mt-14 sm:mt-16">
           <div className="mx-auto max-w-[720px] overflow-hidden rounded-2xl border border-mk-line bg-mk-card">
             <div className="grid grid-cols-1 items-center gap-8 p-8 sm:p-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-10">
               <div>

@@ -33,19 +33,19 @@ const SIGNALS = [
 
 export function Showcase() {
   return (
-    <section id="product" className="scroll-mt-24 py-24 sm:py-32">
+    <section id="product" className="scroll-mt-24 py-[72px] sm:py-32">
       <Container>
-        <div className="grid gap-14 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20">
           <Reveal>
-            <h2 className="max-w-[18ch] text-balance text-[clamp(2rem,4.2vw,3.25rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-white">
+            <h2 className="max-w-[18ch] text-balance text-[clamp(1.75rem,4.2vw,3.25rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-white">
               The front office, running itself.
             </h2>
-            <p className="mt-5 max-w-[48ch] text-pretty text-[16.5px] leading-[1.65] text-mk-secondary">
+            <p className="mt-5 max-w-[48ch] text-pretty text-[15px] leading-[1.65] text-mk-secondary sm:text-[16.5px]">
               Every call becomes a qualified record: who called, what they need, when they are
               booked, and who on your team needs to know.
             </p>
 
-            <dl className="mt-12 grid max-w-[420px] grid-cols-2 border-y border-mk-line">
+            <dl className="mt-10 grid max-w-[420px] grid-cols-2 border-y border-mk-line sm:mt-12">
               {SIGNALS.map(([label, value]) => (
                 <div
                   key={label}
@@ -68,7 +68,7 @@ export function Showcase() {
             className="grid grid-cols-1 gap-px overflow-hidden border border-mk-line bg-mk-line md:grid-cols-2"
           >
             {CAPABILITIES.map((item) => (
-              <StaggerItem key={item.label} className="bg-black p-6 sm:p-7">
+              <StaggerItem key={item.label} className="bg-black p-5 sm:p-7">
                 <span className="font-num text-[11px] font-medium uppercase tracking-[0.08em] text-mk-muted">
                   {item.label}
                 </span>
