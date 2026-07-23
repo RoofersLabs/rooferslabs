@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { Nav } from './sections/Nav';
 import { Hero } from './sections/Hero';
-import { CallShowcase } from './sections/CallShowcase';
 import { Workflow } from './sections/Workflow';
 import { Showcase } from './sections/Showcase';
 import { CapabilitiesTimeline } from './sections/CapabilitiesTimeline';
@@ -36,7 +35,6 @@ export function MarketingPage() {
 
       <main id="main">
         <Hero />
-        <CallShowcase />
         <Workflow />
         <Showcase />
         <CapabilitiesTimeline />
