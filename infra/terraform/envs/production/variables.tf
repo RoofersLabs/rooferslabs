@@ -98,6 +98,34 @@ variable "twilio_auth_token" {
   sensitive   = true
 }
 
+variable "stripe_secret_key" {
+  description = "Stripe Dashboard → Developers → API keys → secret key (sk_live_…)."
+  type        = string
+  sensitive   = true
+}
+
+variable "stripe_webhook_secret" {
+  description = "Signing secret (whsec_…) for the /v1/billing/webhook endpoint."
+  type        = string
+  sensitive   = true
+}
+
+variable "stripe_price_starter" {
+  description = "Stripe recurring Price ID backing the Starter plan."
+  type        = string
+}
+
+variable "stripe_price_professional" {
+  description = "Stripe recurring Price ID backing the Professional plan."
+  type        = string
+}
+
+variable "stripe_trial_period_days" {
+  description = "Free-trial length applied to new checkouts. 0 disables trials."
+  type        = number
+  default     = 0
+}
+
 variable "vapid_public_key" {
   description = "Web Push VAPID public key (npx web-push generate-vapid-keys)."
   type        = string

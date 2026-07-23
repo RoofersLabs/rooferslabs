@@ -159,6 +159,9 @@ module "secrets" {
       OPENAI_API_KEY     = var.openai_api_key
       TWILIO_ACCOUNT_SID = var.twilio_account_sid
       TWILIO_AUTH_TOKEN  = var.twilio_auth_token
+      # Billing gates every tenant's access, so the API refuses to boot without these.
+      STRIPE_SECRET_KEY     = var.stripe_secret_key
+      STRIPE_WEBHOOK_SECRET = var.stripe_webhook_secret
     },
     var.clerk_webhook_secret != "" ? { CLERK_WEBHOOK_SECRET = var.clerk_webhook_secret } : {},
     var.vapid_private_key != "" ? { VAPID_PRIVATE_KEY = var.vapid_private_key } : {},
@@ -249,6 +252,10 @@ module "api_service" {
     # Queue is provisioned and permitted; consumers arrive in a later release.
     SQS_QUEUE_URL          = module.sqs.queue_url
     BACKGROUND_JOBS_INLINE = "true"
+    # Stripe Price IDs are configuration, not credentials.
+    STRIPE_PRICE_STARTER      = var.stripe_price_starter
+    STRIPE_PRICE_PROFESSIONAL = var.stripe_price_professional
+    STRIPE_TRIAL_PERIOD_DAYS  = tostring(var.stripe_trial_period_days)
   }
 
   secrets = merge(
@@ -258,6 +265,9 @@ module "api_service" {
       OPENAI_API_KEY     = "${module.secrets.app_secret_arn}:OPENAI_API_KEY::"
       TWILIO_ACCOUNT_SID = "${module.secrets.app_secret_arn}:TWILIO_ACCOUNT_SID::"
       TWILIO_AUTH_TOKEN  = "${module.secrets.app_secret_arn}:TWILIO_AUTH_TOKEN::"
+
+      STRIPE_SECRET_KEY     = "${module.secrets.app_secret_arn}:STRIPE_SECRET_KEY::"
+      STRIPE_WEBHOOK_SECRET = "${module.secrets.app_secret_arn}:STRIPE_WEBHOOK_SECRET::"
     },
     var.clerk_webhook_secret != ""
     ? { CLERK_WEBHOOK_SECRET = "${module.secrets.app_secret_arn}:CLERK_WEBHOOK_SECRET::" }
