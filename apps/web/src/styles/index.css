@@ -183,26 +183,6 @@
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
     mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
   }
-
-  /* Right edge only. A horizontal rail whose first card starts flush with the
-     page gutter must not fade on the left — that would imply content is hidden
-     back there when the rail is still at its start. The right fade is the one
-     that carries real meaning: keep scrolling. */
-  .rail-mask {
-    -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent);
-    mask-image: linear-gradient(90deg, #000 82%, transparent);
-  }
-
-  /* Keeps horizontal scrollers usable without a visible scrollbar stealing
-     8px of vertical rhythm. */
-  .no-scrollbar {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
 }
 
 @keyframes marquee {
@@ -237,45 +217,16 @@
   }
 }
 
-/**
- * Rows arriving inside a product panel when its tab is selected.
- *
- * Redefined (not disabled) under reduced motion further down: an
- * `animation: none` on a `both`-filled animation would strand these rows at
- * `opacity: 0` and hide real content.
- */
-@keyframes panel-row {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 8px, 0);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-/* Chart bars growing from the axis. Starts at a sliver rather than zero so the
-   bar is already a shape before it moves. */
-@keyframes bar-grow {
-  from {
-    opacity: 0;
-    transform: scaleY(0.06);
-  }
-  to {
-    opacity: 1;
-    transform: scaleY(1);
-  }
-}
-
-@keyframes caret {
+/* The AI-is-typing indicator: three dots pulsing opacity in sequence. Opacity
+   only — dots that hop read as cartoon, not as software. */
+@keyframes typing-dot {
   0%,
-  45% {
-    opacity: 1;
-  }
-  55%,
+  60%,
   100% {
-    opacity: 0;
+    opacity: 0.25;
+  }
+  30% {
+    opacity: 1;
   }
 }
 
@@ -302,26 +253,6 @@
   .marquee-track,
   [class*='animate-'] {
     animation: none !important;
-  }
-
-  /* Kept as an animation so the fill mode still resolves — only the movement
-     is removed. */
-  @keyframes panel-row {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes bar-grow {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
   }
 
   .pressable:active {

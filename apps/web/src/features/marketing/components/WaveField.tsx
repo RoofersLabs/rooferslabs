@@ -60,7 +60,7 @@ const LAYERS: WaveLayer[] = [
     w1: 0.00019,
     w2: 0.00012,
     phase: 1.7,
-    stroke: 'rgba(255,255,255,0.026)',
+    stroke: 'rgba(255,255,255,0.05)',
   },
   {
     spacing: 8,
@@ -71,7 +71,7 @@ const LAYERS: WaveLayer[] = [
     w1: 0.00028,
     w2: 0.00017,
     phase: 3.9,
-    stroke: 'rgba(255,255,255,0.038)',
+    stroke: 'rgba(255,255,255,0.068)',
   },
   {
     spacing: 7,
@@ -82,7 +82,7 @@ const LAYERS: WaveLayer[] = [
     w1: 0.00038,
     w2: 0.00023,
     phase: 0.6,
-    stroke: 'rgba(255,255,255,0.052)',
+    stroke: 'rgba(255,255,255,0.088)',
   },
 ];
 
@@ -138,7 +138,7 @@ export function WaveField({ className }: { className?: string }) {
 
       // Accent crest: short segments along the front surface whose opacity
       // rises with height, so only the upper reaches of each swell catch the
-      // light. Peak alpha stays under 0.3 — separation, not neon.
+      // light. Peak alpha stays well under 0.5 — separation, not neon.
       const step = 26;
       const ampPx = FRONT.amp * height * 1.14;
       let prevY = surfaceY(FRONT, 0, t, height);
@@ -146,7 +146,7 @@ export function WaveField({ className }: { className?: string }) {
         const y = surfaceY(FRONT, x / width, t, height);
         const crest = (FRONT.base * height - Math.min(prevY, y)) / ampPx;
         const lift = Math.max(0, (crest - 0.45) / 0.55);
-        const alpha = lift * lift * 0.28;
+        const alpha = lift * lift * 0.42;
         if (alpha > 0.012) {
           ctx.strokeStyle = `rgba(37,99,235,${alpha.toFixed(3)})`;
           ctx.beginPath();

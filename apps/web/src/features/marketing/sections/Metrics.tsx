@@ -17,22 +17,24 @@ const METRICS = [
 ];
 
 /**
- * The scale section: four numbers floating over a procedural wave-field.
+ * The scale section: four numbers set directly over a procedural wave-field.
  *
- * The composition is deliberately top-and-bottom: figures live in the upper
- * portion of the band, the wave occupies the lower ~68%, and the two overlap
- * just enough that the numbers read as suspended above a surface rather than
- * printed on a flat black card. The counters and the staggered fade-up are the
- * only entrance motion — the wave is continuous background, not an event.
+ * The wave is the band's background — full-bleed behind the figures, with the
+ * surface crests rising up behind the type — so the numbers read as suspended
+ * over a live surface rather than printed on a flat black card. The counters
+ * and the staggered fade-up are the only entrance motion; the wave is
+ * continuous background, not an event.
  */
 export function Metrics() {
   const [ref, inView] = useInView<HTMLDivElement>();
 
   return (
     <Section className="overflow-hidden border-y border-subtle" label="Platform results">
-      {/* The wave. Behind the Shell (which is relative), masked on every edge
-          by the component itself, and purely decorative. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[68%]">
+      {/* The wave fills the entire band — a background the figures sit on,
+          not a strip below them. It is masked on every edge by the component
+          itself and purely decorative; the type stays legible because the
+          brightest line is still under 9% white. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
         <WaveField />
       </div>
 
@@ -57,10 +59,6 @@ export function Metrics() {
             </Reveal>
           ))}
         </div>
-
-        {/* Clears the water: holds the figures in the band's upper half and
-            gives the wave room to breathe beneath them. */}
-        <div aria-hidden="true" className="h-40 md:h-52 lg:h-64" />
       </Shell>
     </Section>
   );

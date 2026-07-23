@@ -1,149 +1,81 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { cn } from '@/lib/utils';
-import { Eyebrow, Section, Shell } from '../components/primitives';
+import { Section, Shell } from '../components/primitives';
 import { Reveal } from '../components/Reveal';
-import { CallsPanel } from '../product/CallsPanel';
-import { AppointmentsPanel } from '../product/AppointmentsPanel';
-import { TranscriptPanel } from '../product/TranscriptPanel';
-import { AnalyticsPanel } from '../product/AnalyticsPanel';
-import { KnowledgePanel } from '../product/KnowledgePanel';
+import { CheckIcon } from '../components/icons';
+import { LiveReceptionist } from '../product/LiveReceptionist';
 
-const TABS = [
-  { id: 'calls', label: 'Calls', Panel: CallsPanel },
-  { id: 'appointments', label: 'Appointments', Panel: AppointmentsPanel },
-  { id: 'transcript', label: 'Transcript', Panel: TranscriptPanel },
-  { id: 'analytics', label: 'Analytics', Panel: AnalyticsPanel },
-  { id: 'knowledge', label: 'Knowledge', Panel: KnowledgePanel },
-] as const;
+const FEATURES = [
+  'Natural conversations',
+  'Lead qualification',
+  'Appointment scheduling',
+  'CRM synchronization',
+  'Emergency call routing',
+  'Knowledge base responses',
+];
 
 /**
- * The centrepiece: the actual product, running on the page.
+ * The product section: a live AI receptionist call, looping.
  *
- * Five real panels behind a real tab list — filters filter, keyboard navigation
- * works, and the content is rendered from typed fixtures rather than pasted
- * from a screenshot. Panels are keyed by tab so switching replays their row
- * stagger; every panel is a fixed height so switching never moves the page.
+ * The old tabbed console showed the system's records; this shows the system
+ * working. One column of copy, one column of conversation — the animation is
+ * the argument, and a visitor should understand the product from watching a
+ * single loop without reading a paragraph.
  */
 export function Showcase() {
-  const [active, setActive] = useState(0);
-  const listRef = useRef<HTMLDivElement | null>(null);
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [indicator, setIndicator] = useState({ left: 0, width: 0 });
-
-  const measure = useCallback(() => {
-    const tab = tabRefs.current[active];
-    const list = listRef.current;
-    if (!tab || !list) return;
-    setIndicator({
-      left: tab.offsetLeft - list.scrollLeft,
-      width: tab.offsetWidth,
-    });
-  }, [active]);
-
-  // Layout effect so the indicator is never painted at a stale position.
-  useLayoutEffect(measure, [measure]);
-
-  useEffect(() => {
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [measure]);
-
-  /** Roving arrow-key navigation, as expected of a real tab list. */
-  const onKeyDown = (event: React.KeyboardEvent) => {
-    const delta = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
-    if (!delta) return;
-    event.preventDefault();
-    const next = (active + delta + TABS.length) % TABS.length;
-    setActive(next);
-    tabRefs.current[next]?.focus();
-  };
-
-  // `TABS` is a non-empty const tuple, so index 0 is always present; the
-  // fallback exists purely to satisfy `noUncheckedIndexedAccess`.
-  const activeTab = TABS[active] ?? TABS[0];
-  const ActivePanel = activeTab.Panel;
-
   return (
     <Section id="showcase">
       <Shell>
-        <div className="max-w-3xl">
-          <Reveal variant="fade">
-            <Eyebrow>The product</Eyebrow>
-          </Reveal>
-          <Reveal variant="up" index={1}>
-            <h2 className="mt-5 text-headline font-medium">
-              Not a screenshot.
-              <br className="hidden sm:block" />{' '}
-              <span className="text-ink-tertiary">The real thing, on this page.</span>
-            </h2>
-          </Reveal>
-          <Reveal variant="up" index={2}>
-            <p className="mt-6 max-w-prose text-lead text-ink-secondary">
-              Every call, appointment and decision your receptionist makes, in one place. Click
-              through it.
-            </p>
+        <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-[minmax(0,10fr)_minmax(0,11fr)] lg:gap-20">
+          <div>
+            <Reveal variant="fade">
+              <span className="inline-flex items-center gap-2 rounded-full border border-subtle bg-white/[0.025] px-3 py-1 text-xs text-ink-secondary">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+                AI Receptionist
+              </span>
+            </Reveal>
+
+            <Reveal variant="up" index={1}>
+              <h2 className="mt-6 text-headline font-medium">
+                A receptionist that
+                <br className="hidden sm:block" /> sounds human.
+              </h2>
+            </Reveal>
+
+            <Reveal variant="up" index={2}>
+              <p className="mt-6 max-w-prose text-lead text-ink-secondary">
+                RoofersLabs answers every incoming call, understands the homeowner, qualifies the
+                lead, books the appointment, and keeps your CRM current — following your
+                company’s call flow automatically.
+              </p>
+            </Reveal>
+
+            <Reveal variant="up" index={3}>
+              <ul className="mt-9 grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
+                {FEATURES.map((feature) => (
+                  <li key={feature} className="flex items-center gap-2.5 text-sm text-ink-secondary">
+                    <CheckIcon width={15} height={15} className="shrink-0 text-accent" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </Reveal>
+
+            <Reveal variant="fade" index={4}>
+              <a
+                href="#resources"
+                className="mt-9 inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-colors duration-150 ease-out hover:text-accent-hover"
+              >
+                Learn how it handles your calls
+                <span aria-hidden="true">→</span>
+              </a>
+            </Reveal>
+          </div>
+
+          {/* The demo enters once with a scale reveal; from then on all motion
+              is the call itself. */}
+          <Reveal variant="scale" index={2}>
+            <LiveReceptionist />
           </Reveal>
         </div>
-
-        {/* A mask reveal — the whole console wipes up into view, distinct from
-            the fade-ups used by the section above. */}
-        <Reveal variant="mask" className="mt-14">
-          <div className="overflow-hidden rounded-2xl border border-subtle bg-surface-raised shadow-[0_32px_120px_-48px_rgba(0,0,0,1)]">
-            <div className="relative border-b border-subtle">
-              <div
-                ref={listRef}
-                role="tablist"
-                aria-label="Product areas"
-                onKeyDown={onKeyDown}
-                className="no-scrollbar relative flex overflow-x-auto px-2"
-              >
-                {/* Absolutely positioned, childless, and the only thing that
-                    moves — so animating its width costs nothing measurable. */}
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute bottom-0 h-px bg-accent transition-[transform,width] duration-300 ease-out"
-                  style={{
-                    width: `${indicator.width}px`,
-                    transform: `translate3d(${indicator.left}px, 0, 0)`,
-                  }}
-                />
-                {TABS.map((tab, index) => {
-                  const selected = index === active;
-                  return (
-                    <button
-                      key={tab.id}
-                      ref={(node) => {
-                        tabRefs.current[index] = node;
-                      }}
-                      role="tab"
-                      id={`showcase-tab-${tab.id}`}
-                      aria-selected={selected}
-                      aria-controls={`showcase-panel-${tab.id}`}
-                      tabIndex={selected ? 0 : -1}
-                      onClick={() => setActive(index)}
-                      className={cn(
-                        'whitespace-nowrap px-4 py-3.5 text-sm font-medium transition-colors duration-200 ease-out',
-                        selected ? 'text-ink' : 'text-ink-tertiary hover:text-ink-secondary',
-                      )}
-                    >
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div
-              key={activeTab.id}
-              role="tabpanel"
-              id={`showcase-panel-${activeTab.id}`}
-              aria-labelledby={`showcase-tab-${activeTab.id}`}
-              tabIndex={0}
-            >
-              <ActivePanel />
-            </div>
-          </div>
-        </Reveal>
       </Shell>
     </Section>
   );
