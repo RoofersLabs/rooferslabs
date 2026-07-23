@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { CompanyStatus, OnboardingStep } from '@rooferslabs/shared';
 import type { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
+import { BillingService, type SubscriptionSummary } from '../billing/billing.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { ClerkService } from './clerk.service';
@@ -18,6 +19,8 @@ export interface SessionCompanySummary {
 export interface SessionResponse {
   user: AuthenticatedUser;
   company: SessionCompanySummary | null;
+  /** Billing state, so the client can route to /billing without a second call. */
+  subscription: SubscriptionSummary | null;
 }
 
 /**
@@ -30,12 +33,14 @@ export class AuthService {
     private readonly clerk: ClerkService,
     private readonly users: UsersService,
     private readonly prisma: PrismaService,
+    private readonly billing: BillingService,
   ) {}
 
   /** Build the bootstrap session payload for the authenticated user. */
   async getSession(user: AuthenticatedUser): Promise<SessionResponse> {
-    if (!user.companyId) return { user, company: null };
+    if (!user.companyId) return { user, company: null, subscription: null };
 
+    const subscription = await this.billing.getSummary(user.companyId);
     const company = await this.prisma.company.findUnique({
       where: { id: user.companyId },
       select: {
@@ -51,6 +56,7 @@ export class AuthService {
 
     return {
       user,
+      subscription,
       company: company
         ? {
             id: company.id,

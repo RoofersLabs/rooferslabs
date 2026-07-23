@@ -27,6 +27,17 @@ export interface AppConfig {
     jwtKey: string | undefined;
     webhookSecret: string | undefined;
   };
+  stripe: {
+    secretKey: string;
+    webhookSecret: string;
+    /** Stripe Price IDs (recurring) backing each self-serve plan. */
+    prices: {
+      STARTER: string;
+      PROFESSIONAL: string;
+    };
+    /** Free-trial length applied to new checkout sessions; 0 disables trials. */
+    trialPeriodDays: number;
+  };
   openai: {
     apiKey: string;
     realtimeModel: string;
@@ -91,6 +102,15 @@ export default (): AppConfig => {
       secretKey: process.env.CLERK_SECRET_KEY ?? '',
       jwtKey: process.env.CLERK_JWT_KEY || undefined,
       webhookSecret: process.env.CLERK_WEBHOOK_SECRET || undefined,
+    },
+    stripe: {
+      secretKey: process.env.STRIPE_SECRET_KEY ?? '',
+      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? '',
+      prices: {
+        STARTER: process.env.STRIPE_PRICE_STARTER ?? '',
+        PROFESSIONAL: process.env.STRIPE_PRICE_PROFESSIONAL ?? '',
+      },
+      trialPeriodDays: Number(process.env.STRIPE_TRIAL_PERIOD_DAYS ?? 0),
     },
     openai: {
       apiKey: process.env.OPENAI_API_KEY ?? '',

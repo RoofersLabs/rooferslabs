@@ -15,6 +15,12 @@ const REQUIRED_IN_PRODUCTION = [
   'REDIS_URL',
   'API_PUBLIC_URL',
   'WEB_PUBLIC_URL',
+  // Billing gates every tenant's access to the product, so a production boot
+  // without Stripe would lock every customer out — fail fast instead.
+  'STRIPE_SECRET_KEY',
+  'STRIPE_WEBHOOK_SECRET',
+  'STRIPE_PRICE_STARTER',
+  'STRIPE_PRICE_PROFESSIONAL',
 ] as const;
 
 /** Feature credentials: their absence degrades a capability rather than the
@@ -23,6 +29,11 @@ const FEATURE_CREDENTIALS: Record<string, string> = {
   OPENAI_API_KEY: 'the AI receptionist and post-call analysis are disabled',
   TWILIO_ACCOUNT_SID: 'telephony (inbound calls) is disabled',
   TWILIO_AUTH_TOKEN: 'Twilio webhooks and media streams will be rejected',
+};
+
+/** Development-only hints for credentials that production requires outright. */
+const DEV_HINTS: Record<string, string> = {
+  STRIPE_SECRET_KEY: 'billing endpoints will return 502 until a test key is set',
 };
 
 export function validateEnv(config: Record<string, unknown>): Record<string, unknown> {
@@ -46,12 +57,11 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
     );
   }
 
-  if (isProduction) {
-    for (const [key, consequence] of Object.entries(FEATURE_CREDENTIALS)) {
-      if (!config[key]) {
-        // The structured logger is not constructed yet at env-validation time.
-        console.warn(`[env] ${key} is not set — ${consequence}.`);
-      }
+  const warnings = isProduction ? FEATURE_CREDENTIALS : { ...FEATURE_CREDENTIALS, ...DEV_HINTS };
+  for (const [key, consequence] of Object.entries(warnings)) {
+    if (!config[key]) {
+      // The structured logger is not constructed yet at env-validation time.
+      console.warn(`[env] ${key} is not set — ${consequence}.`);
     }
   }
 

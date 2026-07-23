@@ -39,6 +39,10 @@ export class AppConfigService {
     return this.root.clerk;
   }
 
+  get stripe(): AppConfig['stripe'] {
+    return this.root.stripe;
+  }
+
   get openai(): AppConfig['openai'] {
     return this.root.openai;
   }
