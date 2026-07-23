@@ -197,3 +197,34 @@ export enum AiVoice {
   SHIMMER = 'shimmer',
   VERSE = 'verse',
 }
+
+/**
+ * Billing status of a company's subscription.
+ *
+ * Values mirror Stripe's `subscription.status` plus `NONE` for a tenant that
+ * has never started checkout. Only `ACTIVE` and `TRIALING` grant access to the
+ * application (see {@link ACTIVE_SUBSCRIPTION_STATUSES}).
+ */
+export enum SubscriptionStatus {
+  NONE = 'NONE',
+  INCOMPLETE = 'INCOMPLETE',
+  INCOMPLETE_EXPIRED = 'INCOMPLETE_EXPIRED',
+  TRIALING = 'TRIALING',
+  ACTIVE = 'ACTIVE',
+  PAST_DUE = 'PAST_DUE',
+  CANCELED = 'CANCELED',
+  UNPAID = 'UNPAID',
+  PAUSED = 'PAUSED',
+}
+
+/** Subscription statuses that entitle a tenant to use the application. */
+export const ACTIVE_SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = [
+  SubscriptionStatus.ACTIVE,
+  SubscriptionStatus.TRIALING,
+];
+
+/** Self-serve subscription plans available through Stripe Checkout. */
+export enum SubscriptionPlan {
+  STARTER = 'STARTER',
+  PROFESSIONAL = 'PROFESSIONAL',
+}
