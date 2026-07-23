@@ -119,9 +119,12 @@ automatic rollback on failed health checks; manual rollback = redeploy the
 previous image tag.
 
 **Frontend (S3 + CloudFront):** `infra/scripts/deploy-web.sh` builds the SPA and
-syncs it to S3 (immutable hashed assets, no-cache `index.html`/service worker),
-then invalidates CloudFront. The `deploy-web.yml` GitHub Actions workflow does
-the same on push to `main` (OIDC into AWS). The `frontend-cdn` Terraform module
+syncs it to S3 (immutable hashed assets, one-hour unhashed icons, no-cache
+`index.html`/service worker), then invalidates `/*` and verifies the site
+returns 200. It is self-contained — GitHub Actions is not required to deploy.
+The `deploy-web.yml` workflow simply runs the same script on push to `main`
+(OIDC into AWS), passing bucket/distribution as env vars instead of reading
+Terraform outputs, so the two paths can never drift. The `frontend-cdn` module
 owns SPA routing (403/404 → `index.html`), cache policy, and security headers.
 Rollback: re-run `deploy-web.sh` from the previous commit (the bucket keeps
 object versions), or `aws s3 sync` a prior build.
