@@ -58,20 +58,37 @@ function ConfigError({ errors }: { errors: string[] }) {
   );
 }
 
+/**
+ * Everything every route needs: an error boundary and a router.
+ *
+ * Auth deliberately does *not* live here. The public marketing site is a route
+ * like any other, and mounting Clerk above it would make a page with no session
+ * wait on an auth SDK before it can paint — and take the whole site down with
+ * it whenever the key is wrong for the environment.
+ */
 export function AppProviders({ children }: { children: ReactNode }) {
+  return (
+    <ErrorBoundary>
+      <BrowserRouter>{children}</BrowserRouter>
+    </ErrorBoundary>
+  );
+}
+
+/**
+ * Wraps the authenticated area. Mounted by the route tree beneath the public
+ * surface, so configuration problems surface where they matter instead of
+ * blanking the marketing site.
+ */
+export function AuthenticatedProviders({ children }: { children: ReactNode }) {
   if (config.configErrors.length > 0) {
     return <ConfigError errors={config.configErrors} />;
   }
 
   return (
-    <ErrorBoundary>
-      <ClerkProvider publishableKey={config.clerkPublishableKey} afterSignOutUrl="/">
-        <QueryClientProvider client={queryClient}>
-          <TokenBridge>
-            <BrowserRouter>{children}</BrowserRouter>
-          </TokenBridge>
-        </QueryClientProvider>
-      </ClerkProvider>
-    </ErrorBoundary>
+    <ClerkProvider publishableKey={config.clerkPublishableKey} afterSignOutUrl="/">
+      <QueryClientProvider client={queryClient}>
+        <TokenBridge>{children}</TokenBridge>
+      </QueryClientProvider>
+    </ClerkProvider>
   );
 }

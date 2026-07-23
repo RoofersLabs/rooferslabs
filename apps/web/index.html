@@ -11,6 +11,18 @@
       content="RoofersLabs is an AI receptionist for roofing companies. It answers every call 24/7, qualifies the homeowner, books the job, and transfers real emergencies to your crew."
     />
     <link rel="canonical" href="https://rooferslabs.com/" />
+
+    <!--
+      Marketing typography. The stylesheet is a few hundred bytes; the WOFF2
+      payloads are only fetched when a rule actually uses these families, which
+      the application never does — it stays on the system stack.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="RoofersLabs" />
     <meta property="og:title" content="The AI receptionist for roofing companies" />

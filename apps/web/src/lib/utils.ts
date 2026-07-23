@@ -1,5 +1,14 @@
 import { format } from 'date-fns';
 
+/**
+ * Joins conditional class names. Deliberately not `clsx` + `tailwind-merge`:
+ * nothing here relies on later utilities overriding earlier ones, so a
+ * dependency-free filter is the whole requirement.
+ */
+export function cn(...classes: Array<string | false | null | undefined>): string {
+  return classes.filter(Boolean).join(' ');
+}
+
 /** "Jul 16, 2026" style dates. */
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—';

@@ -1,6 +1,8 @@
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
+import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import { useSessionQuery } from '@/hooks/queries';
+import { AuthenticatedProviders } from '@/providers/AppProviders';
 import { AppLayout } from '@/layouts/AppLayout';
 import { SignInPage, SignUpPage } from '@/pages/AuthPages';
 import { OnboardingPage } from '@/pages/OnboardingPage';
@@ -9,6 +11,13 @@ import { BillingPage } from '@/pages/BillingPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+
+// The marketing site is the only route an unauthenticated visitor sees, and
+// the only one the application's own bundle never needs. Splitting it keeps
+// each audience off the other's critical path.
+const MarketingPage = lazy(() =>
+  import('@/marketing/MarketingPage').then((m) => ({ default: m.MarketingPage })),
+);
 
 function Loading({ label = 'Loading…' }: { label?: string }) {
   return (
@@ -71,55 +80,76 @@ function Protected({
   return <>{children}</>;
 }
 
+/** Mounts the auth stack for every route beneath the public marketing site. */
+function AuthenticatedShell() {
+  return (
+    <AuthenticatedProviders>
+      <Outlet />
+    </AuthenticatedProviders>
+  );
+}
+
 export function App() {
   return (
     <Routes>
-      {/* The application has no public surface: the root sends every visitor
-          into the authenticated area, where the guard chain below routes them
-          to sign-in, onboarding or payment as their session requires. */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/sign-in/*" element={<SignInPage />} />
-      <Route path="/sign-up/*" element={<SignUpPage />} />
+      {/* The root is the public marketing site. Everything below it is gated:
+          the guard chain routes visitors to sign-in, onboarding or payment as
+          their session requires. */}
+      <Route
+        path="/"
+        element={
+          <Suspense fallback={<div className="min-h-screen bg-black" />}>
+            <MarketingPage />
+          </Suspense>
+        }
+      />
+      {/* Everything below this line runs inside the auth stack. It is a layout
+          route rather than a wrapper around <Routes> so that the public surface
+          above never mounts Clerk at all. */}
+      <Route element={<AuthenticatedShell />}>
+        <Route path="/sign-in/*" element={<SignInPage />} />
+        <Route path="/sign-up/*" element={<SignUpPage />} />
 
-      {/* Reachable before payment — this is where a blocked tenant subscribes. */}
-      <Route
-        path="/onboarding"
-        element={
-          <Protected requireSubscription={false}>
-            <OnboardingPage />
-          </Protected>
-        }
-      />
-      <Route
-        path="/payment"
-        element={
-          <Protected requireSubscription={false}>
-            <PaymentPage />
-          </Protected>
-        }
-      />
-      <Route
-        path="/billing"
-        element={
-          <Protected requireSubscription={false}>
-            <BillingPage />
-          </Protected>
-        }
-      />
+        {/* Reachable before payment — this is where a blocked tenant subscribes. */}
+        <Route
+          path="/onboarding"
+          element={
+            <Protected requireSubscription={false}>
+              <OnboardingPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/payment"
+          element={
+            <Protected requireSubscription={false}>
+              <PaymentPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/billing"
+          element={
+            <Protected requireSubscription={false}>
+              <BillingPage />
+            </Protected>
+          }
+        />
 
-      {/* Requires an active subscription. */}
-      <Route
-        element={
-          <Protected>
-            <AppLayout />
-          </Protected>
-        }
-      >
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
+        {/* Requires an active subscription. */}
+        <Route
+          element={
+            <Protected>
+              <AppLayout />
+            </Protected>
+          }
+        >
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
+
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
-
-      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
