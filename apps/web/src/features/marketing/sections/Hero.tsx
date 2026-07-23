@@ -32,11 +32,18 @@ function PlayGlyph() {
 /**
  * The first viewport.
  *
- * A single centred column — navigation, headline, one sentence, two buttons —
- * and then the product itself, deliberately taller than the space left for it.
- * The fold cropping the console is the point: it says there is more system here
- * than fits on one screen, and it earns the first scroll without a "scroll
- * down" prompt.
+ * A left-aligned column — badge, headline, one sentence, two buttons, trust
+ * line — and then the product itself, deliberately taller than the space left
+ * for it. The fold cropping the console is the point: it says there is more
+ * system here than fits on one screen, and it earns the first scroll without a
+ * "scroll down" prompt.
+ *
+ * ALIGNMENT
+ * The copy and the console share one ruler. Both sit in the same `Shell` and
+ * both are wrapped in `mx-auto max-w-[1120px]`, so every element in the hero
+ * starts on the console's left edge at every breakpoint. The text then narrows
+ * to a 700px reading column inside that track rather than centring itself, which
+ * is what keeps the left edge honest instead of drifting with the copy length.
  *
  * Hero motion is CSS, not framer-motion. This is the first paint of the site;
  * CSS transitions run off the main thread and are already resolving while
@@ -86,86 +93,106 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
       </div>
 
       <Shell className="relative pt-14 md:pt-16 lg:pt-20">
-        {/* The column is sized for the headline, not the prose — the paragraph
-            re-narrows itself to a readable measure below. */}
-        <div className="mx-auto max-w-[62.5rem] text-left">
-          <Reveal variant="fade">
-            <a
-              href="#showcase"
-              className="pressable inline-flex items-center gap-2 rounded-full border border-subtle bg-white/[0.025] py-1 pl-2.5 pr-3 text-xs text-ink-secondary transition-colors duration-150 ease-out hover:border-strong hover:text-ink"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
-              Now answering calls 24/7
-              <span aria-hidden="true" className="text-ink-quaternary">
-                →
-              </span>
-            </a>
-          </Reveal>
-
-          {/* Line breaks are hard-coded. At display size a reflow that orphans
-              one word ruins the whole block, and `text-wrap: balance` cannot be
-              trusted to break in the same place the copy was written for. Each
-              line enters on its own beat — the stagger is what makes a static
-              sentence feel authored. */}
-          {/* Wider than the column around it. The prose below wants a 34rem
-              measure; the headline at 84px needs ~940px to hold "The AI
-              operating system" on one line, and letting it inherit the text
-              column's width is what breaks it onto three. */}
-          {/* `text-balance` complements the authored breaks rather than
-              replacing them: the two spans still break where the copy was
-              written to break, and balance only governs how each line rewraps
-              when a narrow viewport forces it to. */}
-          {/* Display type needs its tracking restored explicitly: an arbitrary
-              clamp() size carries no letter-spacing, and 80px type at default
-              tracking reads loose and unfinished. */}
-          <h1 className="mt-7 text-balance text-[clamp(3.5rem,7vw,5rem)] font-semibold leading-[1.04] tracking-[-0.04em]">
-            <Reveal variant="blur" as="span" className="block">
-              The AI operating system
+        {/* Mirrors the console's wrapper below exactly — same Shell, same
+            `mx-auto max-w-[1120px]`. That is what puts the badge, headline,
+            prose, buttons and trust line on precisely the same left edge as
+            the dashboard, at every breakpoint: above 1120px both boxes centre
+            identically, and below it both simply fill the Shell. */}
+        <div className="mx-auto max-w-[1120px]">
+          <div className="max-w-[700px]">
+            <Reveal variant="fade">
+              <a
+                href="#showcase"
+                className="pressable inline-flex items-center gap-2 rounded-full border border-subtle bg-white/[0.025] py-1 pl-2.5 pr-3 text-xs text-ink-secondary transition-colors duration-150 ease-out hover:border-strong hover:text-ink"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+                Now answering calls 24/7
+                <span aria-hidden="true" className="text-ink-quaternary">
+                  →
+                </span>
+              </a>
             </Reveal>
-            <Reveal variant="blur" as="span" className="block text-ink-tertiary" index={1}>
-              for roofing companies.
+
+            {/* Line breaks are hard-coded. At display size a reflow that orphans
+                one word ruins the whole block, and `text-wrap: balance` cannot be
+                trusted to break in the same place the copy was written for. Each
+                line enters on its own beat — the stagger is what makes a static
+                sentence feel authored. */}
+            {/* The ceiling is set by the column, not by taste. In this face at
+                this weight and tracking, "The AI operating system" measures
+                9.78px of width per pixel of font size, so 70px needs ~685px —
+                it clears the 700px column with room to spare and the authored
+                two-line break survives. Anything above ~71.5px wraps to three
+                lines and the block falls apart. */}
+            {/* `text-balance` complements the authored breaks rather than
+                replacing them: the two spans still break where the copy was
+                written to break, and balance only governs how each line rewraps
+                when a narrow viewport forces it to. */}
+            {/* Display type needs its tracking restored explicitly: an arbitrary
+                clamp() size carries no letter-spacing, and type this large at
+                default tracking reads loose and unfinished. */}
+            <h1 className="mt-7 text-balance text-[clamp(3rem,6.1vw,4.375rem)] font-semibold leading-[1.04] tracking-[-0.04em]">
+              <Reveal variant="blur" as="span" className="block">
+                The AI operating system
+              </Reveal>
+              <Reveal variant="blur" as="span" className="block text-ink-tertiary" index={1}>
+                for roofing companies.
+              </Reveal>
+            </h1>
+
+            {/* `max-w-prose` (34rem) rather than the column's full 700px — the
+                same measure the rest of the site uses for body copy, and short
+                enough that the eye returns to the left edge without hunting. */}
+            <Reveal variant="up" index={3}>
+              <p className="mt-7 max-w-prose text-lead text-ink-secondary">
+                Answers every call, qualifies the homeowner, books the job, and syncs it to your CRM
+                — around the clock.
+              </p>
             </Reveal>
-          </h1>
 
-          <Reveal variant="up" index={3}>
-            <p className="mt-7 max-w-xl text-lead text-ink-secondary">
-              Answers every call, qualifies the homeowner, books the job, and syncs it to your CRM —
-              around the clock.
-            </p>
-          </Reveal>
+            {/* Tighter than the gap above it: the buttons belong to the
+                sentence that motivates them, so they sit closer to it than the
+                paragraph sits to the headline. */}
+            <Reveal variant="up" index={4}>
+              <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+                {/* The one inverse button on the site: solid white on black is
+                    the strongest move available, so the page spends it here and
+                    keeps the accent for everything else. */}
+                <Cta to={signedIn ? '/dashboard' : '/sign-up'} variant="inverse">
+                  {signedIn ? 'Go to dashboard' : 'Start free trial'}
+                </Cta>
+                <Cta to="#showcase" variant="secondary">
+                  <PlayGlyph />
+                  Watch demo
+                </Cta>
+              </div>
+            </Reveal>
 
-          <Reveal variant="up" index={4}>
-            <div className="mt-9 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-              {/* The one inverse button on the site: solid white on black is
-                  the strongest move available, so the page spends it here and
-                  keeps the accent for everything else. */}
-              <Cta to={signedIn ? '/dashboard' : '/sign-up'} variant="inverse">
-                {signedIn ? 'Go to dashboard' : 'Start free trial'}
-              </Cta>
-              <Cta to="#showcase" variant="secondary">
-                <PlayGlyph />
-                Watch demo
-              </Cta>
-            </div>
-          </Reveal>
-
-          <Reveal variant="fade" index={6}>
-            {/* Three separated claims rather than one run-on string — each
-                reads at a glance, and the hairline dividers carry the same
-                machined line the rest of the page uses. */}
-            <ul className="mt-7 flex flex-wrap items-center gap-y-2 text-xs text-ink-tertiary">
-              {['14-day free trial', 'No card required', 'Live in under an hour'].map(
-                (claim, index) => (
-                  <li key={claim} className="flex items-center">
-                    {index > 0 && (
-                      <span aria-hidden="true" className="mx-4 h-3 w-px bg-white/10" />
-                    )}
-                    {claim}
-                  </li>
-                ),
-              )}
-            </ul>
-          </Reveal>
+            <Reveal variant="fade" index={6}>
+              {/* Three separated claims rather than one run-on string — each
+                  reads at a glance, and the hairline dividers carry the same
+                  machined line the rest of the page uses. */}
+              {/* Stacks rather than wraps on small screens. A wrapped
+                  divider-separated row strands a divider at the start of the
+                  second line, which reads as a rendering bug — so the dividers
+                  exist only at the width where the row fits on one line. */}
+              <ul className="mt-7 flex flex-col items-start gap-2 text-xs text-ink-tertiary sm:flex-row sm:items-center sm:gap-0">
+                {['14-day free trial', 'No card required', 'Live in under an hour'].map(
+                  (claim, index) => (
+                    <li key={claim} className="flex items-center">
+                      {index > 0 && (
+                        <span
+                          aria-hidden="true"
+                          className="mx-4 hidden h-3 w-px bg-white/10 sm:block"
+                        />
+                      )}
+                      {claim}
+                    </li>
+                  ),
+                )}
+              </ul>
+            </Reveal>
+          </div>
         </div>
       </Shell>
 
