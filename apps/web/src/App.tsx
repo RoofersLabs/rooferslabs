@@ -2,7 +2,6 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import { useSessionQuery } from '@/hooks/queries';
 import { AppLayout } from '@/layouts/AppLayout';
-import { LandingPage } from '@/pages/LandingPage';
 import { SignInPage, SignUpPage } from '@/pages/AuthPages';
 import { OnboardingPage } from '@/pages/OnboardingPage';
 import { PaymentPage } from '@/pages/PaymentPage';
@@ -75,7 +74,10 @@ function Protected({
 export function App() {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      {/* The application has no public surface: the root sends every visitor
+          into the authenticated area, where the guard chain below routes them
+          to sign-in, onboarding or payment as their session requires. */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/sign-up/*" element={<SignUpPage />} />
 
