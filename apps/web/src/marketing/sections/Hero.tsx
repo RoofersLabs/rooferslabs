@@ -16,8 +16,12 @@ export function Hero() {
           </p>
 
           <h1 className="text-[1.875rem] font-semibold leading-[1] tracking-[-0.03em] sm:text-[3.5rem] sm:leading-[0.98] sm:tracking-[-0.035em] lg:text-[4.25rem]">
-            <span className="block whitespace-nowrap text-white">Calls answered.</span>
-            <span className="block whitespace-nowrap text-white/70">Leads captured.</span>
+            <span className="block whitespace-nowrap text-white">
+              Built for every roofing conversation
+            </span>
+            <span className="block whitespace-nowrap text-white/70">
+              Every call becomes an opportunity
+            </span>
           </h1>
 
           <p className="mt-5 max-w-[42ch] text-pretty text-[14.5px] leading-[1.65] text-mk-secondary sm:mt-7 sm:text-[17px]">

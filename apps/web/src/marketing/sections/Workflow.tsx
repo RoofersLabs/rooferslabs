@@ -1,7 +1,3 @@
-import { useRef } from 'react';
-import type { MotionValue } from 'framer-motion';
-import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { Container } from '../components/Container';
 import { Reveal } from '../components/Reveal';
 
@@ -33,67 +29,31 @@ const STEPS = [
   },
 ] as const;
 
-/**
- * One step on the rail.
- *
- * Each node fades up as the rail's fill reaches it, so the sequence is driven
- * by the reader's own scrolling rather than by a timer — the connection is the
- * animation, and nothing moves until it is being looked at.
- */
-function Step({
-  step,
-  index,
-  progress,
-  reduced,
-}: {
-  step: (typeof STEPS)[number];
-  index: number;
-  progress: MotionValue<number>;
-  reduced: boolean;
-}) {
-  const start = index / STEPS.length;
-  const end = start + 0.6 / STEPS.length;
-
-  const opacity = useTransform(progress, [start, end], [0.28, 1]);
-  const dotScale = useTransform(progress, [start, end], [0.7, 1]);
-
+function Step({ step, index }: { step: (typeof STEPS)[number]; index: number }) {
   return (
-    <motion.li
-      style={reduced ? undefined : { opacity }}
-      className="relative flex-1 pl-10 md:pl-0 md:pt-14"
-    >
-      <motion.span
+    <li className="group relative flex-1 pl-10 transition-[transform] duration-200 ease-smooth hover:-translate-y-0.5 md:pl-0 md:pt-14">
+      <span
         aria-hidden="true"
-        style={reduced ? undefined : { scale: dotScale }}
-        className={cn(
-          'absolute left-[9px] top-[5px] h-2.5 w-2.5 rounded-full bg-mk-accent-ring',
-          'ring-[5px] ring-black',
-          'md:left-0 md:top-[calc(3.5rem-5px)]',
-        )}
+        className="absolute left-[11px] top-[7px] h-1.5 w-1.5 rounded-full bg-white/30 ring-[6px] ring-black transition-colors duration-200 ease-smooth group-hover:bg-white/55 md:left-0 md:top-[calc(3.5rem-3px)]"
       />
-      <div className="md:pr-8">
+      <div className="grid max-w-[34ch] grid-rows-[20px_52px_auto] md:pr-8">
         <span className="font-num text-[11.5px] tabular-nums text-mk-muted">{step.at}</span>
-        <h3 className="mt-1.5 text-[17px] font-medium tracking-[-0.015em] text-white">
+        <h3
+          className={`pt-1.5 text-[17px] font-medium leading-[1.25] tracking-[-0.015em] transition-colors duration-200 ease-smooth ${
+            index === 0 ? 'text-white' : 'text-white/72 group-hover:text-white'
+          }`}
+        >
           {step.title}
         </h3>
-        <p className="mt-1.5 max-w-[34ch] text-[14.5px] leading-[1.6] text-mk-secondary">
+        <p className="pt-2 text-[14.5px] leading-[1.6] text-mk-secondary transition-colors duration-200 ease-smooth group-hover:text-white/74">
           {step.detail}
         </p>
       </div>
-    </motion.li>
+    </li>
   );
 }
 
 export function Workflow() {
-  const ref = useRef<HTMLDivElement>(null);
-  const reduced = useReducedMotion();
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ['start 0.8', 'end 0.65'],
-  });
-
-  const fill = useTransform(scrollYProgress, [0, 1], [0, 1]);
-
   return (
     <section id="how-it-works" className="scroll-mt-24 py-[72px] sm:py-24">
       <Container>
@@ -107,35 +67,15 @@ export function Workflow() {
           </p>
         </Reveal>
 
-        <div ref={ref} className="relative mt-14 sm:mt-16">
-          {/* The rail. One track, one fill — the fill's length is the reader's
-              scroll position through this section. */}
+        <div className="relative mt-14 sm:mt-16">
           <span
             aria-hidden="true"
-            className="absolute left-[14px] top-2 h-[calc(100%-1rem)] w-px bg-mk-line md:left-0 md:top-[3.5rem] md:h-px md:w-full"
-          />
-          {/* The fill scales along a different axis at each breakpoint, so it is
-              two elements rather than one element with a conditional transform. */}
-          <motion.span
-            aria-hidden="true"
-            style={{ scaleY: reduced ? 1 : fill }}
-            className="absolute left-[14px] top-2 h-[calc(100%-1rem)] w-px origin-top bg-mk-accent-ring md:hidden"
-          />
-          <motion.span
-            aria-hidden="true"
-            style={{ scaleX: reduced ? 1 : fill }}
-            className="absolute left-0 top-[3.5rem] hidden h-px w-full origin-left bg-mk-accent-ring md:block"
+            className="absolute left-[14px] top-2 h-[calc(100%-1rem)] w-px bg-white/[0.10] md:left-0 md:top-[3.5rem] md:h-px md:w-full"
           />
 
           <ol className="flex flex-col gap-10 md:flex-row md:gap-0">
             {STEPS.map((step, i) => (
-              <Step
-                key={step.title}
-                step={step}
-                index={i}
-                progress={scrollYProgress}
-                reduced={Boolean(reduced)}
-              />
+              <Step key={step.title} step={step} index={i} />
             ))}
           </ol>
         </div>

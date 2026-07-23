@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
 import { useReducedMotion } from 'framer-motion';
+import { useEffect, useRef } from 'react';
 import { Container } from '../components/Container';
 import { Reveal } from '../components/Reveal';
 
@@ -26,8 +26,9 @@ const CAPABILITIES = [
   },
   {
     label: 'Recover',
-    title: 'Captures missed leads',
-    detail: 'Turns voicemail, after-hours calls, and overflow demand into structured opportunities.',
+    title: 'Recovers missed leads',
+    detail:
+      'Turns voicemail, after-hours calls, and overflow demand into structured opportunities.',
   },
   {
     label: 'Route',
@@ -41,16 +42,19 @@ const CAPABILITIES = [
   },
   {
     label: 'Sync',
-    title: 'Syncs with your CRM',
+    title: 'Syncs with CRM',
     detail: 'Sends summaries, recordings, contact details, and lead status where your team works.',
   },
 ] as const;
 
-const BAR_COUNT = 192;
+const BAR_COUNT = 256;
 const BAR_INDEXES = Array.from({ length: BAR_COUNT }, (_, index) => index);
+const IDLE_OPACITY = 0.075;
+const ACTIVE_OPACITY = 0.11;
+const ACTIVE_GAIN = 1.78;
 
 function restScale(index: number) {
-  return 0.12 + Math.sin(index * 0.71) * 0.035 + Math.sin(index * 0.17) * 0.025;
+  return 0.18 + Math.sin(index * 0.71) * 0.045 + Math.sin(index * 0.17) * 0.035;
 }
 
 export function CapabilitiesTimeline() {
@@ -68,12 +72,12 @@ export function CapabilitiesTimeline() {
 
     const paint = (time = 0) => {
       const width = Math.max(1, surface.clientWidth);
-      const sigma = Math.max(90, width / (CAPABILITIES.length * 1.35));
+      const sigma = Math.max(150, width / (CAPABILITIES.length * 0.88));
       const target = targetRef.current;
       const current = currentRef.current;
 
-      current.x += (target.x - current.x) * 0.11;
-      current.intensity += (target.intensity - current.intensity) * 0.1;
+      current.x += (target.x - current.x) * 0.13;
+      current.intensity += (target.intensity - current.intensity) * 0.12;
 
       barRefs.current.forEach((bar, index) => {
         if (!bar) return;
@@ -81,9 +85,16 @@ export function CapabilitiesTimeline() {
         const position = ((index + 0.5) / BAR_COUNT) * width;
         const distance = position - current.x;
         const falloff = Math.exp(-(distance * distance) / (2 * sigma * sigma));
-        const voice = 0.94 + Math.sin(index * 0.41 + time * 0.003) * 0.06;
-        const height = restScale(index) + falloff * current.intensity * 0.94 * voice;
-        const opacity = 0.06 + falloff * current.intensity * 0.055;
+        const voice =
+          0.86 +
+          Math.sin(index * 0.41 + time * 0.003) * 0.08 +
+          Math.sin(index * 0.19 - time * 0.0021) * 0.045 +
+          Math.sin(index * 1.13 + time * 0.0014) * 0.025;
+        const height = Math.min(
+          1.28,
+          restScale(index) + falloff * current.intensity * ACTIVE_GAIN * voice,
+        );
+        const opacity = IDLE_OPACITY + falloff * current.intensity * ACTIVE_OPACITY;
 
         bar.style.transform = `translateZ(0) scaleY(${height.toFixed(3)})`;
         bar.style.opacity = opacity.toFixed(3);
@@ -138,7 +149,10 @@ export function CapabilitiesTimeline() {
     const surface = surfaceRef.current;
     if (!surface) return;
 
-    animateAt(surface.getBoundingClientRect().left + ((index + 0.5) / CAPABILITIES.length) * surface.clientWidth);
+    animateAt(
+      surface.getBoundingClientRect().left +
+        ((index + 0.5) / CAPABILITIES.length) * surface.clientWidth,
+    );
   };
 
   const reset = () => {
@@ -152,8 +166,8 @@ export function CapabilitiesTimeline() {
         <Reveal>
           <div className="max-w-[760px]">
             <h2 className="text-balance text-[clamp(1.85rem,4.8vw,4rem)] font-semibold leading-[1.04] tracking-[-0.035em]">
-              <span className="block text-white">Built for every roofing conversation.</span>
-              <span className="block text-white/70">Every call becomes an opportunity.</span>
+              <span className="block text-white">Calls answered</span>
+              <span className="block text-white/70">Leads captured</span>
             </h2>
             <p className="mt-6 max-w-[52ch] text-[15px] leading-[1.65] text-mk-secondary sm:text-[17px]">
               RoofersLabs turns calls into booked work, emergency context, and clean follow-up
@@ -178,41 +192,46 @@ export function CapabilitiesTimeline() {
             <div
               id="capability-list"
               ref={surfaceRef}
-              onPointerMove={(event) => animateAt(event.clientX, event.pointerType === 'touch' ? 0.9 : 1)}
+              onPointerMove={(event) =>
+                animateAt(event.clientX, event.pointerType === 'touch' ? 0.9 : 1)
+              }
               onPointerDown={(event) => animateAt(event.clientX, 1)}
               onPointerLeave={reset}
               onPointerCancel={reset}
               onBlur={reset}
-              className="min-w-[1480px] lg:min-w-0"
+              className="min-w-[1560px] lg:min-w-0"
             >
-              <div className="grid grid-cols-8 border-y border-mk-line">
+              <div className="grid grid-cols-[repeat(8,minmax(0,1fr))] border-y border-mk-line">
                 {CAPABILITIES.map((item, index) => (
                   <article
                     key={item.title}
                     onPointerEnter={() => activateColumn(index)}
-                    className="min-h-[290px] border-r border-mk-line px-6 py-9 outline-none last:border-r-0 xl:px-8 xl:py-10"
+                    className="grid min-h-[322px] grid-rows-[18px_104px_1fr] border-r border-mk-line px-7 py-10 outline-none last:border-r-0 xl:px-8 xl:py-11"
                   >
                     <p className="font-num text-[11px] font-medium uppercase tracking-[0.08em] text-mk-muted">
                       {item.label}
                     </p>
-                    <h3 className="mt-8 text-[24px] font-semibold leading-[1.08] tracking-[-0.03em] text-white">
+                    <h3 className="pt-9 text-[23px] font-semibold leading-[1.08] tracking-[-0.03em] text-white">
                       {item.title}
                     </h3>
-                    <p className="mt-4 max-w-[22ch] text-[14.5px] leading-[1.65] text-mk-secondary">
+                    <p className="max-w-[23ch] pt-4 text-[14.5px] leading-[1.65] text-mk-secondary">
                       {item.detail}
                     </p>
                   </article>
                 ))}
               </div>
 
-              <div aria-hidden="true" className="flex h-24 items-end gap-[3px] border-b border-mk-line py-4">
+              <div
+                aria-hidden="true"
+                className="grid h-32 grid-cols-[repeat(256,minmax(0,1fr))] items-end overflow-hidden border-b border-mk-line py-5"
+              >
                 {BAR_INDEXES.map((index) => (
                   <span
                     key={index}
                     ref={(element) => {
                       barRefs.current[index] = element;
                     }}
-                    className="block h-full w-px origin-bottom bg-white opacity-[0.06] will-change-transform"
+                    className="block h-full w-px origin-bottom justify-self-center bg-white opacity-[0.075] will-change-transform"
                     style={{ transform: `translateZ(0) scaleY(${restScale(index).toFixed(3)})` }}
                   />
                 ))}
