@@ -155,11 +155,11 @@ Frontend implementation.
 
 ---
 
-05_UI_UX_Guidelines.md
+14_Billing.md
 
 Owns:
 
-User Interface and User Experience.
+Stripe subscription billing and the payment wall.
 
 ---
 
@@ -493,9 +493,9 @@ Frontend
 
 → 04_Frontend_Architecture.md
 
-UI
+Billing
 
-→ 05_UI_UX_Guidelines.md
+→ 14_Billing.md
 
 Telephony
 

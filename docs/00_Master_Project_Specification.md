@@ -975,7 +975,6 @@ The following documents provide detailed technical and implementation guidance a
 - `02_System_Architecture.md`
 - `03_Backend_Architecture.md`
 - `04_Frontend_Architecture.md`
-- `05_UI_UX_Guidelines.md`
 - `06_Telephony_Architecture.md`
 - `07_AI_Receptionist_Specification.md`
 - `08_Database_Design.md`
@@ -983,6 +982,8 @@ The following documents provide detailed technical and implementation guidance a
 - `10_AWS_Infrastructure.md`
 - `11_Coding_Standards.md`
 - `12_Testing_Strategy.md`
+- `13_Deployment_Guide.md`
+- `14_Billing.md`
 
 ---
 

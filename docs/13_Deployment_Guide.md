@@ -187,6 +187,28 @@ Customer-side call forwarding instructions live in the product
 
 ---
 
+## 7a. Stripe configuration (live mode)
+
+Billing is mandatory, so the API **refuses to boot in production** without the
+four required Stripe variables (`env.validation.ts`). Full design:
+[`14_Billing.md`](./14_Billing.md).
+
+1. Create the two recurring monthly prices (Starter, Professional) in the live
+   product catalogue; put the `price_…` IDs in `terraform.tfvars`
+   (`stripe_price_starter`, `stripe_price_professional`).
+2. Put the live secret key in `terraform.tfvars` (`stripe_secret_key`) —
+   Terraform writes it to Secrets Manager; it is never a build-time value and
+   never reaches the browser.
+3. Add the webhook endpoint `https://api.rooferslabs.com/v1/billing/webhook`
+   subscribed to `checkout.session.completed`,
+   `customer.subscription.{created,updated,deleted}`, `invoice.paid`, and
+   `invoice.payment_failed`. Put its signing secret in `stripe_webhook_secret`.
+4. Activate the Customer Portal (Stripe → Settings → Billing → Customer portal).
+5. After `terraform apply`, confirm Stripe reports 2xx for a test delivery on the
+   webhook endpoint.
+
+---
+
 ## 8. Post-deploy verification
 
 ```bash
@@ -194,6 +216,10 @@ curl -s https://api.rooferslabs.com/v1/health         | jq .data.status   # "ok"
 curl -s https://api.rooferslabs.com/v1/health/ready   | jq .data          # database+cache true
 open https://app.rooferslabs.com                       # landing renders, register works
 ```
+
+Billing smoke test: register → create an organization → confirm `/dashboard`
+redirects to `/payment` → complete Checkout with a live card → confirm Stripe
+delivered `checkout.session.completed` (2xx) and the dashboard now opens.
 
 Then run the full testing checklist in the README (§Testing checklist),
 including one real forwarded phone call.

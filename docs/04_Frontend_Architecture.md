@@ -1,5 +1,19 @@
 # Frontend Architecture
 
+> **Status: the UI layer described here has been removed.**
+>
+> The design system, theming, marketing site, and all feature page UIs were
+> deleted ahead of a full product redesign. `apps/web` currently ships a
+> deliberately minimal placeholder interface — stock Tailwind, no tokens, no
+> component library — covering only landing, sign-in, sign-up, organization
+> creation, payment, billing, dashboard, and settings.
+>
+> Everything below the UI layer is still accurate and still in force: routing,
+> the API client and its response envelope, TanStack Query as the sole data
+> layer, Zustand for session state, providers, forms and validation. Treat the
+> component/design sections as the brief for the redesign, not a description of
+> the current tree. See `14_Billing.md` for the payment wall the router enforces.
+
 ## 1. Document Information
 
 ### Purpose

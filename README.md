@@ -25,7 +25,7 @@ Production deployment runbook: [`docs/13_Deployment_Guide.md`](./docs/13_Deploym
 | AI             | OpenAI Realtime API (voice) · OpenAI Responses API (structured outputs) · RAG knowledge base            |
 | Telephony      | Twilio Programmable Voice + Media Streams                                                               |
 | Infrastructure | AWS (ECS/Fargate, S3, Secrets Manager, CloudWatch), Docker, Cloudflare                                  |
-| Payments       | Stripe (architecture reserved — not implemented in r1 echo)                                             |
+| Payments       | Stripe (Checkout, Customer Portal, webhooks) — subscription required to use the app                     |
 
 ---
 
@@ -37,7 +37,8 @@ rooferslabs/
 │   ├── api/                    # NestJS backend
 │   │   ├── prisma/             #   schema, migrations, seed
 │   │   └── src/
-│   │       ├── auth/           #   Clerk adapter, guards (auth/tenant/roles)
+│   │       ├── auth/           #   Clerk adapter, guards (auth/tenant/subscription/roles)
+│   │       ├── billing/        #   Stripe checkout, portal, webhooks, gating
 │   │       ├── companies/      #   onboarding, business + AI configuration
 │   │       ├── knowledge/      #   knowledge base CRUD + chunk indexing
 │   │       ├── ai/             #   OpenAI adapter + RAG retrieval
@@ -49,10 +50,9 @@ rooferslabs/
 │   │       ├── common/         #   envelope, filters, decorators, pagination
 │   │       └── config/ prisma/ redis/
 │   └── web/                    # React + Vite installable PWA
-│       └── src/
-│           ├── features/       #   landing, auth, onboarding, dashboard, calls,
-│           │                   #   customers, appointments, knowledge,
-│           │                   #   notifications, settings
+│       └── src/                # temporary placeholder UI pending redesign
+│           ├── pages/          #   landing, auth, onboarding, payment,
+│           │                   #   billing, dashboard, settings
 │           ├── components/ layouts/ hooks/ state/ providers/
 │           └── lib/ types/ styles/
 ├── packages/shared/            # contracts: enums, API envelope, AI types
@@ -66,47 +66,52 @@ rooferslabs/
 
 ## Third-party accounts required
 
-| Service          | Purpose                                                | Where to sign up            |
-| ---------------- | ------------------------------------------------------ | --------------------------- |
-| **Clerk**        | Authentication (register, login, sessions)             | https://clerk.com           |
-| **OpenAI**       | Realtime voice AI + Responses API + embeddings         | https://platform.openai.com |
-| **Twilio**       | Phone numbers, inbound calls, Media Streams            | https://twilio.com          |
-| **AWS**          | RDS, ECS/Fargate, S3, SQS, Secrets Manager, CloudWatch | https://aws.amazon.com      |
-| **Cloudflare**   | DNS, TLS, WebSocket proxy, edge caching                | https://cloudflare.com      |
-| Stripe _(later)_ | Billing (not in r1 echo)                               | https://stripe.com          |
+| Service        | Purpose                                                | Where to sign up            |
+| -------------- | ------------------------------------------------------ | --------------------------- |
+| **Clerk**      | Authentication (register, login, sessions)             | https://clerk.com           |
+| **OpenAI**     | Realtime voice AI + Responses API + embeddings         | https://platform.openai.com |
+| **Twilio**     | Phone numbers, inbound calls, Media Streams            | https://twilio.com          |
+| **AWS**        | RDS, ECS/Fargate, S3, SQS, Secrets Manager, CloudWatch | https://aws.amazon.com      |
+| **Cloudflare** | DNS, TLS, WebSocket proxy, edge caching                | https://cloudflare.com      |
+| **Stripe**     | Subscription billing (Checkout, Customer Portal)       | https://stripe.com          |
 
 ## Every environment variable
 
 Backend (root `.env` — full annotated reference in [`.env.example`](./.env.example)):
 
-| Variable                                      | Required | Description                                       |
-| --------------------------------------------- | -------- | ------------------------------------------------- |
-| `NODE_ENV`                                    | yes      | `development` / `production`                      |
-| `API_PORT`                                    | yes      | API port (default 4000)                           |
-| `API_PUBLIC_URL`                              | yes      | Public API origin (webhooks, Swagger)             |
-| `WEB_PUBLIC_URL`                              | yes      | Public PWA origin                                 |
-| `CORS_ORIGINS`                                | yes      | Comma-separated allowed origins                   |
-| `DATABASE_URL`                                | **yes**  | PostgreSQL connection string                      |
-| `REDIS_URL`                                   | yes      | Redis connection string                           |
-| `CLERK_PUBLISHABLE_KEY`                       | **yes**  | Clerk `pk_…`                                      |
-| `CLERK_SECRET_KEY`                            | **yes**  | Clerk `sk_…` (server only)                        |
-| `CLERK_JWT_KEY`                               | no       | PEM key for offline JWT verification              |
-| `CLERK_WEBHOOK_SECRET`                        | no       | Clerk webhook signing secret                      |
-| `OPENAI_API_KEY`                              | **yes*** | OpenAI API key (*AI features disabled without it) |
-| `OPENAI_REALTIME_MODEL`                       | no       | default `gpt-realtime`                            |
-| `OPENAI_REALTIME_URL`                         | no       | Realtime GA endpoint override (tests/proxies)     |
-| `OPENAI_RESPONSES_MODEL`                      | no       | default `gpt-4.1`                                 |
-| `OPENAI_EMBEDDING_MODEL`                      | no       | default `text-embedding-3-small`                  |
-| `TWILIO_ACCOUNT_SID`                          | **yes*** | Twilio account SID (*telephony)                   |
-| `TWILIO_AUTH_TOKEN`                           | **yes*** | Twilio auth token (webhook signatures)            |
-| `TWILIO_MEDIA_STREAM_URL`                     | yes      | `wss://…/v1/telephony/media-stream`               |
-| `AWS_REGION`                                  | yes      | AWS region                                        |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | prod     | Omit on ECS (task role)                           |
-| `S3_BUCKET_RECORDINGS` / `S3_BUCKET_UPLOADS`  | prod     | S3 bucket names                                   |
-| `SQS_QUEUE_URL`                               | no       | Jobs queue URL                                    |
-| `BACKGROUND_JOBS_INLINE`                      | no       | `true` = process jobs in-process (local dev)      |
-| `MIGRATE_ON_START`                            | no       | Container-only: run `migrate deploy` on boot      |
-| `LOG_LEVEL`                                   | no       | pino level (default `debug` dev / `info` prod)    |
+| Variable                                      | Required | Description                                        |
+| --------------------------------------------- | -------- | -------------------------------------------------- |
+| `NODE_ENV`                                    | yes      | `development` / `production`                       |
+| `API_PORT`                                    | yes      | API port (default 4000)                            |
+| `API_PUBLIC_URL`                              | yes      | Public API origin (webhooks, Swagger)              |
+| `WEB_PUBLIC_URL`                              | yes      | Public PWA origin                                  |
+| `CORS_ORIGINS`                                | yes      | Comma-separated allowed origins                    |
+| `DATABASE_URL`                                | **yes**  | PostgreSQL connection string                       |
+| `REDIS_URL`                                   | yes      | Redis connection string                            |
+| `CLERK_PUBLISHABLE_KEY`                       | **yes**  | Clerk `pk_…`                                       |
+| `CLERK_SECRET_KEY`                            | **yes**  | Clerk `sk_…` (server only)                         |
+| `CLERK_JWT_KEY`                               | no       | PEM key for offline JWT verification               |
+| `CLERK_WEBHOOK_SECRET`                        | no       | Clerk webhook signing secret                       |
+| `OPENAI_API_KEY`                              | **yes*** | OpenAI API key (*AI features disabled without it)  |
+| `OPENAI_REALTIME_MODEL`                       | no       | default `gpt-realtime`                             |
+| `OPENAI_REALTIME_URL`                         | no       | Realtime GA endpoint override (tests/proxies)      |
+| `OPENAI_RESPONSES_MODEL`                      | no       | default `gpt-4.1`                                  |
+| `OPENAI_EMBEDDING_MODEL`                      | no       | default `text-embedding-3-small`                   |
+| `STRIPE_SECRET_KEY`                           | **yes**  | Stripe `sk_…` (server only, never exposed)         |
+| `STRIPE_WEBHOOK_SECRET`                       | **yes**  | `whsec_…` signing secret for `/v1/billing/webhook` |
+| `STRIPE_PRICE_STARTER`                        | **yes**  | Recurring Price ID for the Starter plan            |
+| `STRIPE_PRICE_PROFESSIONAL`                   | **yes**  | Recurring Price ID for the Professional plan       |
+| `STRIPE_TRIAL_PERIOD_DAYS`                    | no       | Free-trial length on new checkouts (`0` = none)    |
+| `TWILIO_ACCOUNT_SID`                          | **yes*** | Twilio account SID (*telephony)                    |
+| `TWILIO_AUTH_TOKEN`                           | **yes*** | Twilio auth token (webhook signatures)             |
+| `TWILIO_MEDIA_STREAM_URL`                     | yes      | `wss://…/v1/telephony/media-stream`                |
+| `AWS_REGION`                                  | yes      | AWS region                                         |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | prod     | Omit on ECS (task role)                            |
+| `S3_BUCKET_RECORDINGS` / `S3_BUCKET_UPLOADS`  | prod     | S3 bucket names                                    |
+| `SQS_QUEUE_URL`                               | no       | Jobs queue URL                                     |
+| `BACKGROUND_JOBS_INLINE`                      | no       | `true` = process jobs in-process (local dev)       |
+| `MIGRATE_ON_START`                            | no       | Container-only: run `migrate deploy` on boot       |
+| `LOG_LEVEL`                                   | no       | pino level (default `debug` dev / `info` prod)     |
 
 Frontend (`apps/web/.env` — see [`apps/web/.env.example`](./apps/web/.env.example)):
 
@@ -121,8 +126,9 @@ Frontend (`apps/web/.env` — see [`apps/web/.env.example`](./apps/web/.env.exam
 2. **Clerk secret key** (`sk_test_…`/`sk_live_…`) — same page → backend `.env` only.
 3. **OpenAI API key** (`sk-…`) — platform.openai.com → API keys → backend `.env`. Must have access to the Realtime and Responses APIs.
 4. **Twilio Account SID + Auth Token** — Twilio Console home → backend `.env`.
-5. **AWS access key pair** — IAM user for local/CLI use only; production uses ECS task roles.
-6. **Cloudflare** — account credentials only (dashboard configuration, no key consumed by the app).
+5. **Stripe secret key + webhook secret + two Price IDs** — see [Billing](#billing-stripe) below.
+6. **AWS access key pair** — IAM user for local/CLI use only; production uses ECS task roles.
+7. **Cloudflare** — account credentials only (dashboard configuration, no key consumed by the app).
 
 ---
 
@@ -135,7 +141,7 @@ Frontend (`apps/web/.env` — see [`apps/web/.env.example`](./apps/web/.env.exam
 npm install
 
 # 2. Environment
-cp .env.example .env                 # fill in Clerk/OpenAI/Twilio keys
+cp .env.example .env                 # fill in Clerk/OpenAI/Twilio/Stripe keys
 cp apps/web/.env.example apps/web/.env   # set VITE_CLERK_PUBLISHABLE_KEY
 
 # 3. Infrastructure (PostgreSQL + Redis)
@@ -156,6 +162,34 @@ To exercise a real phone call locally, expose the API with a tunnel
 (e.g. `ngrok http 4000`), set `API_PUBLIC_URL` and
 `TWILIO_MEDIA_STREAM_URL=wss://<tunnel>/v1/telephony/media-stream`, and point a
 Twilio number's voice webhook at `https://<tunnel>/v1/telephony/incoming`.
+
+## Billing (Stripe)
+
+A subscription is **mandatory**: a tenant can sign up and create its organization,
+but every other API and the dashboard stay locked until Stripe Checkout completes.
+See [`docs/14_Billing.md`](./docs/14_Billing.md) for the full design.
+
+One-time setup:
+
+1. **Products & prices** — Stripe Dashboard → Product catalogue. Create two
+   recurring monthly prices (Starter, Professional) and copy the `price_…` IDs
+   into `STRIPE_PRICE_STARTER` / `STRIPE_PRICE_PROFESSIONAL`.
+2. **Secret key** — Developers → API keys → `STRIPE_SECRET_KEY` (backend `.env`
+   only; the browser never sees a Stripe key of any kind).
+3. **Webhook** — Developers → Webhooks → add endpoint
+   `https://<api-origin>/v1/billing/webhook`, subscribed to:
+   `checkout.session.completed`, `customer.subscription.created`,
+   `customer.subscription.updated`, `customer.subscription.deleted`,
+   `invoice.paid`, `invoice.payment_failed`. Copy the signing secret into
+   `STRIPE_WEBHOOK_SECRET`.
+4. **Customer Portal** — Settings → Billing → Customer portal → activate it.
+
+Locally, forward events with the Stripe CLI instead of step 3:
+
+```bash
+stripe listen --forward-to localhost:4000/v1/billing/webhook   # prints whsec_…
+stripe trigger checkout.session.completed
+```
 
 ## Database migrations
 
@@ -189,8 +223,9 @@ docker build -f docker/web.Dockerfile \
 **Frontend → AWS S3 + CloudFront** (Terraform module `frontend-cdn`): the static
 Vite SPA is uploaded and cached at the edge, served on the apex `rooferslabs.com`.
 Deploy with [`infra/scripts/deploy-web.sh`](./infra/scripts/deploy-web.sh) (build
-→ S3 sync → CloudFront invalidation) or the `deploy-web.yml` GitHub Actions
-pipeline. No Vercel.
+→ S3 sync → CloudFront `/*` invalidation → verify). The script is self-contained;
+the `deploy-web.yml` GitHub Actions pipeline just runs it, so deploying never
+depends on CI being green or even enabled. No Vercel.
 
 **Backend → AWS, all Terraform** — VPC, ALB/ACM, ECR, ECS Fargate, RDS,
 ElastiCache, S3, SQS, Secrets Manager, IAM, CloudWatch:
