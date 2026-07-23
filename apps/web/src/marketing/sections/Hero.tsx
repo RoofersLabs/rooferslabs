@@ -11,11 +11,11 @@ export function Hero() {
     <section className="relative flex min-h-[100svh] flex-col bg-black pt-16">
       <Container className="flex flex-1 flex-col">
         <div className="max-w-[620px] pb-10 pt-16 text-left sm:pb-12 sm:pt-28 lg:pt-32">
-          <p className="mb-5 text-[11.5px] font-medium uppercase tracking-[0.14em] text-white/55 sm:mb-6 sm:text-[12px]">
-            AI receptionist for roofing teams
+          <p className="mb-5 text-[13.5px] font-medium uppercase tracking-[0.14em] text-white/55 sm:mb-7 sm:text-[14px]">
+            Your receptionist for roofing
           </p>
 
-          <h1 className="text-[1.875rem] font-semibold leading-[1] tracking-[-0.03em] sm:text-[3.5rem] sm:leading-[0.98] sm:tracking-[-0.035em] lg:text-[4.25rem]">
+          <h1 className="text-[1.65rem] font-semibold leading-[1] tracking-[-0.03em] sm:text-[3rem] sm:leading-[0.98] sm:tracking-[-0.035em] lg:text-[3.7rem]">
             <span className="block whitespace-nowrap text-white">
               Built for every roofing conversation
             </span>
