@@ -26,8 +26,10 @@ import { RequestContextMiddleware } from './common/middleware/request-context.mi
 import { AuthModule } from './auth/auth.module';
 import { ClerkAuthGuard } from './auth/guards/clerk-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
+import { SubscriptionGuard } from './auth/guards/subscription.guard';
 import { TenantGuard } from './auth/guards/tenant.guard';
 import { UsersModule } from './users/users.module';
+import { BillingModule } from './billing/billing.module';
 import { CompaniesModule } from './companies/companies.module';
 import { AiModule } from './ai/ai.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
@@ -84,6 +86,7 @@ import { HealthModule } from './health/health.module';
     }),
     AuthModule,
     UsersModule,
+    BillingModule,
     CompaniesModule,
     AiModule,
     KnowledgeModule,
@@ -98,10 +101,12 @@ import { HealthModule } from './health/health.module';
     HealthModule,
   ],
   providers: [
-    // Order matters: authentication → throttling → tenant isolation → roles.
+    // Order matters: authentication → throttling → tenant isolation →
+    // subscription (payment wall) → roles.
     { provide: APP_GUARD, useClass: ClerkAuthGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: TenantGuard },
+    { provide: APP_GUARD, useClass: SubscriptionGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
