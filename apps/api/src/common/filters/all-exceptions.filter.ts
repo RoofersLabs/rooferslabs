@@ -15,7 +15,7 @@ import type { AuthenticatedRequest } from '../interfaces/authenticated-request.i
 
 /**
  * Translates every thrown error into the standard error envelope
- * (docs/09_API_Standards.md §14). Internal details and stack traces are never
+ *. Internal details and stack traces are never
  * exposed; unexpected errors are logged and returned as a generic 500.
  */
 @Catch()

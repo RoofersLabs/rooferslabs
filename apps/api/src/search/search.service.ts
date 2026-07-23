@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 /**
  * Cross-entity global search over customers, conversations, and appointments.
- * Every query is tenant-scoped and case-insensitive (docs/09_API_Standards §22).
+ * Every query is tenant-scoped and case-insensitive.
  */
 @Injectable()
 export class SearchService {

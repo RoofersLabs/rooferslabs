@@ -1,6 +1,6 @@
 /**
  * TanStack Query hooks — the single data-access layer for the frontend
- * (docs/04_Frontend_Architecture §12/§23). Components never call fetch.
+ *. Components never call fetch.
  */
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import type { OnboardingStep, SubscriptionPlan } from '@rooferslabs/shared';

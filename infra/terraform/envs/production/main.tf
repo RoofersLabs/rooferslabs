@@ -21,11 +21,11 @@ locals {
   app_url    = "https://${local.app_domain}"
   root_url   = "https://${var.root_domain}"
 
-  # The frontend is a single SPA (marketing + authenticated app) served on the
-  # apex domain. WEB_PUBLIC_URL is the canonical public origin; CORS accepts the
+  # The frontend is the authenticated application SPA, served on the apex
+  # domain. WEB_PUBLIC_URL is the canonical public origin; CORS accepts the
   # apex, www, and the legacy app.<domain> subdomain so the domain migration is
   # non-breaking. Applies to the API only — Cloudflare DNS and the CloudFront
-  # domain aliases are configured out-of-band; see docs/PRODUCTION_READINESS.md.
+  # domain aliases are configured out-of-band.
   web_public_url = local.root_url
   cors_origins   = join(",", [local.root_url, "https://www.${var.root_domain}", local.app_url])
 }
@@ -130,7 +130,7 @@ module "frontend" {
   name        = local.name
   bucket_name = "${local.name}-web-${data.aws_caller_identity.current.account_id}"
 
-  # The SPA serves both the marketing site and the app from the apex + www.
+  # The SPA is served from the apex + www.
   domain_aliases          = [var.root_domain, "www.${var.root_domain}"]
   root_domain             = var.root_domain
   api_domain              = local.api_domain

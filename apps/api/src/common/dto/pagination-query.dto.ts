@@ -5,7 +5,7 @@ import { PAGINATION_DEFAULTS } from '@rooferslabs/shared';
 
 /**
  * Base query parameters supported by every collection endpoint
- * (docs/09_API_Standards.md §19–22). Feature DTOs extend this to add filters.
+ *. Feature DTOs extend this to add filters.
  */
 export class PaginationQueryDto {
   @ApiPropertyOptional({ description: 'Page number (1-based).', default: 1, minimum: 1 })

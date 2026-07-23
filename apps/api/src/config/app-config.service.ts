@@ -5,7 +5,7 @@ import type { AppConfig } from './configuration';
 /**
  * Strongly-typed accessor over Nest's ConfigService. Modules inject this rather
  * than reading `process.env` directly, keeping configuration centralized and
- * type-safe (see docs/03_Backend_Architecture.md §24).
+ * type-safe.
  */
 @Injectable()
 export class AppConfigService {

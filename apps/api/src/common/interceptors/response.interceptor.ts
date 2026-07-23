@@ -7,7 +7,7 @@ import type { AuthenticatedRequest } from '../interfaces/authenticated-request.i
 
 /**
  * Wraps every successful controller return value in the standard success
- * envelope (docs/09_API_Standards.md §13). Controllers return raw data or an
+ * envelope. Controllers return raw data or an
  * {@link ApiPayload}; clients always receive the same shape.
  */
 @Injectable()

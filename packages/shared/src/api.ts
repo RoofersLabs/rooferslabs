@@ -2,8 +2,7 @@
  * Standard API response contract.
  *
  * Every RoofersLabs API response — success or error — follows one of these two
- * shapes, as mandated by `docs/09_API_Standards.md` §13–14. Clients can consume
- * any endpoint without bespoke parsing.
+ * shapes, so clients can consume any endpoint without bespoke parsing.
  */
 
 /** Pagination metadata attached to any paginated collection response. */

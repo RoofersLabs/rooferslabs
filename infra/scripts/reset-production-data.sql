@@ -8,7 +8,7 @@
 -- PRESERVES the schema, enums, constraints, indexes, and the Prisma migration
 -- history (`_prisma_migrations`) — so the database stays valid and migrated,
 -- just empty. Run ONLY against a database you intend to wipe to a fresh,
--- never-onboarded state. See docs/PRODUCTION_READINESS.md before running.
+-- never-onboarded state. Read this file in full before running.
 --
 -- Discovers tables dynamically so a newly-added table is never missed.
 -- =============================================================================

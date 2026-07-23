@@ -13,7 +13,7 @@ interface SessionState {
 }
 
 /**
- * Shared application state for the authenticated session (docs/04 §11).
+ * Shared application state for the authenticated session.
  * Server state (queries) lives in TanStack Query; this holds only the
  * bootstrap identity, tenant, and billing state used across layouts and guards.
  */

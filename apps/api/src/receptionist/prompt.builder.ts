@@ -11,7 +11,7 @@ interface BusinessHour {
  * Builds the system instructions for the AI receptionist Realtime session,
  * grounded entirely in the company's configuration. The AI answers company
  * questions only via the lookup_knowledge tool and never invents business facts
- * (docs/07_AI_Receptionist_Specification.md; docs/CLAUDE.md §10/§24).
+ *.
  */
 export function buildReceptionistInstructions(company: CompanyWithRelations): string {
   const ai = company.aiConfiguration;

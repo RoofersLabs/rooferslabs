@@ -97,7 +97,7 @@ export class BillingService {
     const subscription = await this.repo.findByCompanyId(companyId);
     const isActive = subscription
       ? ACTIVE_SUBSCRIPTION_STATUSES.includes(subscription.status as SubscriptionStatus)
-      : (await this.isGrandfathered(companyId));
+      : await this.isGrandfathered(companyId);
 
     await this.redis.set(this.entitlementKey(companyId), isActive, this.entitlementTtl);
     return isActive;

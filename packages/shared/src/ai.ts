@@ -2,8 +2,7 @@
  * AI structured-output contracts.
  *
  * These types describe the structured data extracted from a completed AI
- * conversation via the OpenAI Responses API (see
- * `docs/07_AI_Receptionist_Specification.md`). They are produced by the backend
+ * conversation via the OpenAI Responses API. They are produced by the backend
  * AI module and consumed by both the persistence layer and the frontend.
  */
 import type {

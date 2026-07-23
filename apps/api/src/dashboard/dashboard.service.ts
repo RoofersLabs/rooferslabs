@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 /**
  * Read model aggregating today's operational snapshot for the dashboard
- * (docs/04_Frontend_Architecture §22). All queries are tenant-scoped.
+ *. All queries are tenant-scoped.
  */
 @Injectable()
 export class DashboardService {

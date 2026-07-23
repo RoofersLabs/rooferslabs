@@ -37,7 +37,7 @@ export interface FinalizeCallInput {
 /**
  * Orchestrates the call lifecycle: create the inbound call record, then — when
  * the call ends — run AI analysis and atomically persist the conversation,
- * customer, appointment, and notifications (docs/02_System_Architecture §15).
+ * customer, appointment, and notifications.
  */
 @Injectable()
 export class CallProcessingService {
