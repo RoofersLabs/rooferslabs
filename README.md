@@ -8,9 +8,9 @@
 the NestJS backend, the installable React PWA, shared contracts, the database
 schema, and all infrastructure configuration.
 
-The architecture is frozen and defined in [`docs/`](./docs) — canonical
-reference: [`docs/00_GStack_Architecture.md`](./docs/00_GStack_Architecture.md).
-Production deployment runbook: [`docs/13_Deployment_Guide.md`](./docs/13_Deployment_Guide.md).
+Infrastructure and the deployment runbook live in
+[`infra/terraform/README.md`](./infra/terraform/README.md); everything else is
+documented where it is implemented.
 
 ---
 
@@ -50,14 +50,13 @@ rooferslabs/
 │   │       ├── common/         #   envelope, filters, decorators, pagination
 │   │       └── config/ prisma/ redis/
 │   └── web/                    # React + Vite installable PWA
-│       └── src/                # temporary placeholder UI pending redesign
-│           ├── pages/          #   landing, auth, onboarding, payment,
+│       └── src/                # authenticated application only (no public site)
+│           ├── pages/          #   auth, onboarding, payment,
 │           │                   #   billing, dashboard, settings
 │           ├── components/ layouts/ hooks/ state/ providers/
 │           └── lib/ types/ styles/
 ├── packages/shared/            # contracts: enums, API envelope, AI types
 ├── docker/                     # Dockerfiles, nginx, docker-compose
-├── docs/                       # frozen architecture (source of truth)
 ├── scripts/                    # icon generation etc.
 └── .github/workflows/ci.yml    # typecheck + build + docker CI
 ```
@@ -102,6 +101,7 @@ Backend (root `.env` — full annotated reference in [`.env.example`](./.env.exa
 | `STRIPE_PRICE_STARTER`                        | **yes**  | Recurring Price ID for the Starter plan            |
 | `STRIPE_PRICE_PROFESSIONAL`                   | **yes**  | Recurring Price ID for the Professional plan       |
 | `STRIPE_TRIAL_PERIOD_DAYS`                    | no       | Free-trial length on new checkouts (`0` = none)    |
+| `BILLING_GRANDFATHER_BEFORE`                  | no       | RFC3339 instant; tenants created before it skip the paywall |
 | `TWILIO_ACCOUNT_SID`                          | **yes*** | Twilio account SID (*telephony)                    |
 | `TWILIO_AUTH_TOKEN`                           | **yes*** | Twilio auth token (webhook signatures)             |
 | `TWILIO_MEDIA_STREAM_URL`                     | yes      | `wss://…/v1/telephony/media-stream`                |
@@ -167,7 +167,6 @@ Twilio number's voice webhook at `https://<tunnel>/v1/telephony/incoming`.
 
 A subscription is **mandatory**: a tenant can sign up and create its organization,
 but every other API and the dashboard stay locked until Stripe Checkout completes.
-See [`docs/14_Billing.md`](./docs/14_Billing.md) for the full design.
 
 One-time setup:
 
@@ -240,7 +239,7 @@ terraform init && terraform apply
 From-scratch walkthrough: [`infra/terraform/README.md`](./infra/terraform/README.md).
 The operational runbook — releases, rollback, and all Cloudflare settings
 (DNS, Full-strict TLS, **WebSockets ON**, cache rules) — is in
-[`docs/13_Deployment_Guide.md`](./docs/13_Deployment_Guide.md).
+[`infra/terraform/README.md`](./infra/terraform/README.md).
 
 ---
 
