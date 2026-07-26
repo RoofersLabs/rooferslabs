@@ -78,41 +78,40 @@ rooferslabs/
 
 Backend (root `.env`):
 
-| Variable                                      | Required | Description                                                 |
-| --------------------------------------------- | -------- | ----------------------------------------------------------- |
-| `NODE_ENV`                                    | yes      | `development` / `production`                                |
-| `API_PORT`                                    | yes      | API port (default 4000)                                     |
-| `API_PUBLIC_URL`                              | yes      | Public API origin (webhooks, Swagger)                       |
-| `WEB_PUBLIC_URL`                              | yes      | Public PWA origin                                           |
-| `CORS_ORIGINS`                                | yes      | Comma-separated allowed origins                             |
-| `DATABASE_URL`                                | **yes**  | PostgreSQL connection string                                |
-| `REDIS_URL`                                   | yes      | Redis connection string                                     |
-| `CLERK_PUBLISHABLE_KEY`                       | **yes**  | Clerk `pk_…`                                                |
-| `CLERK_SECRET_KEY`                            | **yes**  | Clerk `sk_…` (server only)                                  |
-| `CLERK_JWT_KEY`                               | no       | PEM key for offline JWT verification                        |
-| `CLERK_WEBHOOK_SECRET`                        | no       | Clerk webhook signing secret                                |
-| `OPENAI_API_KEY`                              | **yes*** | OpenAI API key (*AI features disabled without it)           |
-| `OPENAI_REALTIME_MODEL`                       | no       | default `gpt-realtime`                                      |
-| `OPENAI_REALTIME_URL`                         | no       | Realtime GA endpoint override (tests/proxies)               |
-| `OPENAI_RESPONSES_MODEL`                      | no       | default `gpt-4.1`                                           |
-| `OPENAI_EMBEDDING_MODEL`                      | no       | default `text-embedding-3-small`                            |
-| `PAYMENTS_ENABLED`                            | no       | default `true`; `false` disables billing entirely (below)   |
-| `STRIPE_SECRET_KEY`                           | **yes†** | Stripe `sk_…` (server only, never exposed)                  |
-| `STRIPE_WEBHOOK_SECRET`                       | **yes†** | `whsec_…` signing secret for `/v1/billing/webhook`          |
-| `STRIPE_PRICE_STARTER`                        | **yes†** | Recurring Price ID for the Starter plan                     |
-| `STRIPE_PRICE_PROFESSIONAL`                   | **yes†** | Recurring Price ID for the Professional plan                |
-| `STRIPE_TRIAL_PERIOD_DAYS`                    | no       | Free-trial length on new checkouts (`0` = none)             |
-| `BILLING_GRANDFATHER_BEFORE`                  | no       | RFC3339 instant; tenants created before it skip the paywall |
-| `TWILIO_ACCOUNT_SID`                          | **yes*** | Twilio account SID (*telephony)                             |
-| `TWILIO_AUTH_TOKEN`                           | **yes*** | Twilio auth token (webhook signatures)                      |
-| `TWILIO_MEDIA_STREAM_URL`                     | yes      | `wss://…/v1/telephony/media-stream`                         |
-| `AWS_REGION`                                  | yes      | AWS region                                                  |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | prod     | Omit on ECS (task role)                                     |
-| `S3_BUCKET_RECORDINGS` / `S3_BUCKET_UPLOADS`  | prod     | S3 bucket names                                             |
-| `SQS_QUEUE_URL`                               | no       | Jobs queue URL                                              |
-| `BACKGROUND_JOBS_INLINE`                      | no       | `true` = process jobs in-process (local dev)                |
-| `MIGRATE_ON_START`                            | no       | Container-only: run `migrate deploy` on boot                |
-| `LOG_LEVEL`                                   | no       | pino level (default `debug` dev / `info` prod)              |
+| Variable                                     | Required | Description                                                 |
+| -------------------------------------------- | -------- | ----------------------------------------------------------- |
+| `NODE_ENV`                                   | yes      | `development` / `production`                                |
+| `API_PORT`                                   | yes      | API port (default 4000)                                     |
+| `API_PUBLIC_URL`                             | yes      | Public API origin (webhooks, Swagger)                       |
+| `WEB_PUBLIC_URL`                             | yes      | Public PWA origin                                           |
+| `CORS_ORIGINS`                               | yes      | Comma-separated allowed origins                             |
+| `DATABASE_URL`                               | **yes**  | PostgreSQL connection string                                |
+| `REDIS_URL`                                  | yes      | Redis connection string                                     |
+| `CLERK_PUBLISHABLE_KEY`                      | **yes**  | Clerk `pk_…`                                                |
+| `CLERK_SECRET_KEY`                           | **yes**  | Clerk `sk_…` (server only)                                  |
+| `CLERK_JWT_KEY`                              | no       | PEM key for offline JWT verification                        |
+| `CLERK_WEBHOOK_SECRET`                       | no       | Clerk webhook signing secret                                |
+| `OPENAI_API_KEY`                             | **yes*** | OpenAI API key (*AI features disabled without it)           |
+| `OPENAI_REALTIME_MODEL`                      | no       | default `gpt-realtime`                                      |
+| `OPENAI_REALTIME_URL`                        | no       | Realtime GA endpoint override (tests/proxies)               |
+| `OPENAI_RESPONSES_MODEL`                     | no       | default `gpt-4.1`                                           |
+| `OPENAI_EMBEDDING_MODEL`                     | no       | default `text-embedding-3-small`                            |
+| `PAYMENTS_ENABLED`                           | no       | default `true`; `false` disables billing entirely (below)   |
+| `STRIPE_SECRET_KEY`                          | **yes†** | Stripe `sk_…` (server only, never exposed)                  |
+| `STRIPE_WEBHOOK_SECRET`                      | **yes†** | `whsec_…` signing secret for `/v1/billing/webhook`          |
+| `STRIPE_PRICE_STARTER`                       | **yes†** | Recurring Price ID for the Starter plan                     |
+| `STRIPE_PRICE_PROFESSIONAL`                  | **yes†** | Recurring Price ID for the Professional plan                |
+| `STRIPE_TRIAL_PERIOD_DAYS`                   | no       | Free-trial length on new checkouts (`0` = none)             |
+| `BILLING_GRANDFATHER_BEFORE`                 | no       | RFC3339 instant; tenants created before it skip the paywall |
+| `TWILIO_ACCOUNT_SID`                         | **yes*** | Twilio account SID (*telephony)                             |
+| `TWILIO_AUTH_TOKEN`                          | **yes*** | Twilio auth token (webhook signatures)                      |
+| `TWILIO_MEDIA_STREAM_URL`                    | yes      | `wss://…/v1/telephony/media-stream`                         |
+| `AWS_REGION`                                 | yes      | AWS region                                                  |
+| `S3_BUCKET_RECORDINGS` / `S3_BUCKET_UPLOADS` | prod     | S3 bucket names                                             |
+| `SQS_QUEUE_URL`                              | no       | Jobs queue URL                                              |
+| `BACKGROUND_JOBS_INLINE`                     | no       | `true` = process jobs in-process (local dev)                |
+| `MIGRATE_ON_START`                           | no       | Container-only: run `migrate deploy` on boot                |
+| `LOG_LEVEL`                                  | no       | pino level (default `debug` dev / `info` prod)              |
 
 † Required only while `PAYMENTS_ENABLED` is `true` (the default). See
 [Running without Stripe](#running-without-stripe).
@@ -131,7 +130,9 @@ Frontend (`apps/web/.env` — see [`apps/web/.env.example`](./apps/web/.env.exam
 3. **OpenAI API key** (`sk-…`) — platform.openai.com → API keys → backend `.env`. Must have access to the Realtime and Responses APIs.
 4. **Twilio Account SID + Auth Token** — Twilio Console home → backend `.env`.
 5. **Stripe secret key + webhook secret + two Price IDs** — see [Billing](#billing-stripe) below.
-6. **AWS access key pair** — IAM user for local/CLI use only; production uses ECS task roles.
+6. **AWS credentials** — not application config. Production authenticates with the ECS task
+   role; locally the AWS CLI/SDK provider chain (`aws configure`, SSO, or `AWS_*` in your shell)
+   is used, so no key pair is read from `.env`.
 7. **Cloudflare** — account credentials only (dashboard configuration, no key consumed by the app).
 
 ---
@@ -180,15 +181,15 @@ before a Stripe account exists. It is a supported configuration, not a stopgap �
 no Stripe code is removed or bypassed, and flipping the flag back needs no code
 change:
 
-| Concern            | `PAYMENTS_ENABLED=true` (default)     | `PAYMENTS_ENABLED=false`                    |
-| ------------------ | ------------------------------------- | ------------------------------------------- |
-| `STRIPE_*` env     | Required in production (boot fails)   | Not required at all                         |
-| Stripe client      | Constructed on first use              | Never constructed                           |
-| `/v1/billing/*`    | Live                                  | `503 PAYMENTS_DISABLED`                     |
-| Webhook route      | Registered                            | Not registered (the route does not exist)   |
-| Payment wall       | Enforced on every gated endpoint      | Open — every tenant has full access         |
-| Frontend flow      | onboarding → payment → dashboard      | onboarding → dashboard                      |
-| Payment / billing pages | Reachable                        | Route guard turns them away; nav link hidden |
+| Concern                 | `PAYMENTS_ENABLED=true` (default)   | `PAYMENTS_ENABLED=false`                     |
+| ----------------------- | ----------------------------------- | -------------------------------------------- |
+| `STRIPE_*` env          | Required in production (boot fails) | Not required at all                          |
+| Stripe client           | Constructed on first use            | Never constructed                            |
+| `/v1/billing/*`         | Live                                | `503 PAYMENTS_DISABLED`                      |
+| Webhook route           | Registered                          | Not registered (the route does not exist)    |
+| Payment wall            | Enforced on every gated endpoint    | Open — every tenant has full access          |
+| Frontend flow           | onboarding → payment → dashboard    | onboarding → dashboard                       |
+| Payment / billing pages | Reachable                           | Route guard turns them away; nav link hidden |
 
 The API reports the flag on `GET /v1/auth/me` as `paymentsEnabled`, so the
 frontend derives the flow from the backend rather than from its own build-time

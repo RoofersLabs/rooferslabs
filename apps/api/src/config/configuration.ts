@@ -66,10 +66,18 @@ export interface AppConfig {
     authToken: string;
     mediaStreamUrl: string;
   };
+  /**
+   * AWS resource coordinates.
+   *
+   * There are deliberately no access keys here. Every environment that talks to
+   * AWS gets its credentials from the provider chain the SDK already consults:
+   * the ECS task role in production, and whatever `aws configure`/SSO left in
+   * the environment locally. Threading a static key pair through application
+   * config would give the process a second, weaker way to authenticate that the
+   * task role makes unnecessary — and one that has to be rotated by hand.
+   */
   aws: {
     region: string;
-    accessKeyId: string | undefined;
-    secretAccessKey: string | undefined;
     s3RecordingsBucket: string;
     s3UploadsBucket: string;
     sqsQueueUrl: string | undefined;
@@ -158,8 +166,6 @@ export default (): AppConfig => {
     },
     aws: {
       region: process.env.AWS_REGION ?? 'us-east-1',
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID || undefined,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || undefined,
       s3RecordingsBucket: process.env.S3_BUCKET_RECORDINGS ?? 'rooferslabs-recordings-dev',
       s3UploadsBucket: process.env.S3_BUCKET_UPLOADS ?? 'rooferslabs-uploads-dev',
       sqsQueueUrl: process.env.SQS_QUEUE_URL || undefined,
