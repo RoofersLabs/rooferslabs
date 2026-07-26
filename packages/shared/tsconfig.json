@@ -1,12 +1,17 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    /* The CommonJS half of the dual build. NodeNext emits CJS here because
+       packages/shared/package.json declares no "type"; the ESM half overrides
+       this in tsconfig.esm.json and drops a {"type":"module"} marker beside its
+       output. This is also the half that emits the package's .d.ts. */
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+
+    "outDir": "./dist",
+    "rootDir": "./src"
   },
   "include": ["src/**/*.ts"]
 }
