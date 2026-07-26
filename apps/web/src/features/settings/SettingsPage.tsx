@@ -12,7 +12,8 @@ import {
 import type { BusinessHour } from '@/types/api';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Input, Select, Textarea } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { Checkbox, Input, Select, Textarea } from '@/components/ui/input';
 import { LoadingBlock } from '@/components/ui/spinner';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PhoneSetupTab } from './PhoneSetupTab';
@@ -43,7 +44,7 @@ export function SettingsPage() {
               to={`/settings/${item.key}`}
               className={({ isActive }) =>
                 cn(
-                  'focus-ring flex shrink-0 items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-body font-medium transition-colors duration-fast lg:w-full',
+                  'focus-ring flex h-10 shrink-0 items-center gap-2.5 rounded-md px-3.5 text-body font-medium transition-colors duration-fast lg:w-full',
                   isActive || (item.key === 'business' && tab === 'business')
                     ? 'bg-accent-subtle text-accent'
                     : 'text-ink-muted hover:bg-surface-2 hover:text-ink',
@@ -68,10 +69,19 @@ export function SettingsPage() {
   );
 }
 
+/**
+ * The footer every settings form shares. It sits on the card's own gutter with
+ * a divider above it, matching the wizard's step footer and CardFooter, so the
+ * "save" affordance is in the same place and shape wherever it appears.
+ */
 function SaveBar({ saving, saved, error }: { saving: boolean; saved: boolean; error?: string }) {
   return (
-    <div className="flex items-center justify-end gap-3">
-      {error && <p className="text-small text-emergency">{error}</p>}
+    <div className="flex flex-wrap items-center justify-end gap-3 border-t border-line-subtle pt-5">
+      {error && (
+        <p className="mr-auto text-small text-emergency" role="alert">
+          {error}
+        </p>
+      )}
       {saved && !saving && !error && (
         <p className="flex items-center gap-1 text-small text-success">
           <CheckCircle2 className="h-4 w-4" aria-hidden />
@@ -130,7 +140,7 @@ function BusinessTab() {
   };
 
   return (
-    <form onSubmit={onSubmit} className="card space-y-5 p-6">
+    <Card as="form" onSubmit={onSubmit} className="gap-5 px-6 py-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label="Company name" value={value('name', data.name)} onChange={set('name')} />
         <Input label="Business email" value={value('email', data.email)} onChange={set('email')} />
@@ -191,13 +201,21 @@ function BusinessTab() {
         saved={update.isSuccess}
         error={update.isError ? (update.error as Error).message : undefined}
       />
-    </form>
+    </Card>
   );
 }
 
 // ---------------------------------------------------------------------------
 // Hours tab
 // ---------------------------------------------------------------------------
+
+/**
+ * Native time pickers can't go through the `Input` component (they carry no
+ * label and must stay inline), so they restate its declarations: same height,
+ * radius, border and hover as every other control.
+ */
+const timeInputClass =
+  'focus-ring h-10 rounded-md border border-line bg-surface px-3 text-form-input text-ink transition-colors duration-fast ease-standard hover:border-line-strong';
 
 const WEEK: BusinessHour[] = [
   { day: 'monday', open: '08:00', close: '18:00', closed: false },
@@ -227,7 +245,7 @@ function HoursTab() {
   };
 
   return (
-    <form onSubmit={onSubmit} className="card space-y-4 p-6">
+    <Card as="form" onSubmit={onSubmit} className="gap-5 px-6 py-6">
       <p className="text-small text-ink-muted">
         The AI tells callers when you’re open and adjusts after-hours behavior.
       </p>
@@ -235,15 +253,15 @@ function HoursTab() {
         {current.map((hour, index) => (
           <div
             key={hour.day}
-            className="flex items-center gap-3 rounded-lg border border-line-subtle px-4 py-2.5 transition-colors duration-fast hover:border-line-strong"
+            className="flex flex-wrap items-center gap-3 rounded-md border border-line-subtle px-4 py-2.5 transition-colors duration-fast hover:border-line-strong"
           >
-            <span className="w-24 text-body font-medium capitalize text-ink">{hour.day}</span>
-            <label className="flex items-center gap-2 text-small text-ink-muted">
-              <input
-                type="checkbox"
+            <span className="w-24 shrink-0 text-body font-medium capitalize text-ink">
+              {hour.day}
+            </span>
+            <label className="flex cursor-pointer items-center gap-2 text-small text-ink-muted">
+              <Checkbox
                 checked={!hour.closed}
                 onChange={(e) => updateDay(index, { closed: !e.target.checked })}
-                className="focus-ring h-4 w-4 rounded border-line text-accent"
               />
               Open
             </label>
@@ -253,15 +271,15 @@ function HoursTab() {
                   type="time"
                   value={hour.open}
                   onChange={(e) => updateDay(index, { open: e.target.value })}
-                  className="focus-ring rounded-lg border border-line px-2 py-1.5 text-form-input text-ink"
+                  className={timeInputClass}
                   aria-label={`${hour.day} opening time`}
                 />
-                <span className="text-caption text-ink-faint">to</span>
+                <span className="text-small text-ink-faint">to</span>
                 <input
                   type="time"
                   value={hour.close}
                   onChange={(e) => updateDay(index, { close: e.target.value })}
-                  className="focus-ring rounded-lg border border-line px-2 py-1.5 text-form-input text-ink"
+                  className={timeInputClass}
                   aria-label={`${hour.day} closing time`}
                 />
               </>
@@ -274,7 +292,7 @@ function HoursTab() {
         saved={save.isSuccess}
         error={save.isError ? (save.error as Error).message : undefined}
       />
-    </form>
+    </Card>
   );
 }
 
@@ -328,7 +346,7 @@ function AiTab() {
   ];
 
   return (
-    <form onSubmit={onSubmit} className="card space-y-5 p-6">
+    <Card as="form" onSubmit={onSubmit} className="gap-5 px-6 py-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <Input
           label="Assistant name"
@@ -369,15 +387,14 @@ function AiTab() {
         {toggles.map((toggle) => (
           <label
             key={toggle.field}
-            className="flex cursor-pointer items-start gap-3 rounded-xl border border-line-subtle p-4 transition-colors duration-fast hover:border-line-strong"
+            className="flex cursor-pointer items-start gap-3 rounded-md border border-line-subtle p-4 transition-colors duration-fast hover:border-line-strong"
           >
-            <input
-              type="checkbox"
+            <Checkbox
+              className="mt-0.5"
               checked={bool(toggle.field, data[toggle.field])}
               onChange={(e) => setForm((p) => ({ ...p, [toggle.field]: e.target.checked }))}
-              className="focus-ring mt-0.5 h-4 w-4 rounded border-line text-accent"
             />
-            <span>
+            <span className="min-w-0">
               <span className="block text-body font-medium text-ink">{toggle.label}</span>
               <span className="block text-small text-ink-muted">{toggle.hint}</span>
             </span>
@@ -389,7 +406,7 @@ function AiTab() {
         saved={update.isSuccess}
         error={update.isError ? (update.error as Error).message : undefined}
       />
-    </form>
+    </Card>
   );
 }
 
@@ -415,20 +432,18 @@ function BrandingTab() {
   };
 
   return (
-    <form onSubmit={onSubmit} className="card space-y-5 p-6">
-      <div className="flex items-center gap-4">
-        <div>
-          <label htmlFor="brand-color" className="block text-body font-medium text-ink">
-            Primary brand color
-          </label>
-          <input
-            id="brand-color"
-            type="color"
-            value={primary ?? data.primaryColor ?? '#0E3996'}
-            onChange={(e) => setPrimary(e.target.value)}
-            className="focus-ring mt-1.5 h-10 w-20 cursor-pointer rounded-lg border border-line"
-          />
-        </div>
+    <Card as="form" onSubmit={onSubmit} className="gap-5 px-6 py-6">
+      <div>
+        <label htmlFor="brand-color" className="block text-form-label font-medium text-ink-muted">
+          Primary brand color
+        </label>
+        <input
+          id="brand-color"
+          type="color"
+          value={primary ?? data.primaryColor ?? '#0E3996'}
+          onChange={(e) => setPrimary(e.target.value)}
+          className="focus-ring mt-1.5 h-10 w-20 cursor-pointer rounded-md border border-line bg-surface p-1 transition-colors duration-fast hover:border-line-strong"
+        />
       </div>
       <Input
         label="Logo URL"
@@ -441,6 +456,6 @@ function BrandingTab() {
         saved={update.isSuccess}
         error={update.isError ? (update.error as Error).message : undefined}
       />
-    </form>
+    </Card>
   );
 }

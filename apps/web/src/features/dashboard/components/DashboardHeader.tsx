@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import type { ReceptionistStatus } from '@/types/api';
 import { ROUTES } from '@/auth/stages';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 function greetingFor(date = new Date()): string {
   const hour = date.getHours();
@@ -10,7 +11,13 @@ function greetingFor(date = new Date()): string {
   return 'Good evening';
 }
 
-/** Page greeting + at-a-glance receptionist status chips. */
+/**
+ * Page greeting + at-a-glance receptionist status chips.
+ *
+ * Rendered through the shared `PageHeader` so the dashboard's title block is
+ * literally the same component every other authenticated page opens with — the
+ * chips simply occupy its actions slot.
+ */
 export function DashboardHeader({
   firstName,
   receptionist,
@@ -20,32 +27,28 @@ export function DashboardHeader({
 }) {
   const name = firstName?.trim();
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-      <div>
-        <h1 className="text-h2 text-ink">
-          {greetingFor()}
-          {name ? `, ${name}` : ''}!
-        </h1>
-        <p className="mt-1.5 text-body-lg text-ink-muted">
-          Here’s what’s happening with your business today.
-        </p>
-      </div>
-
-      {receptionist && (
-        <div className="flex flex-wrap gap-2">
-          <StatusChip
-            good={receptionist.enabled}
-            goodLabel="AI receptionist active"
-            badLabel="AI receptionist disabled"
-          />
-          <StatusChip
-            good={receptionist.forwardingVerified}
-            goodLabel="Forwarding verified"
-            badLabel="Forwarding required"
-          />
-        </div>
-      )}
-    </div>
+    <PageHeader
+      // The dashboard's sections are spaced by the page's own `space-y-8`.
+      className="mb-0"
+      title={`${greetingFor()}${name ? `, ${name}` : ''}!`}
+      description="Here’s what’s happening with your business today."
+      actions={
+        receptionist && (
+          <>
+            <StatusChip
+              good={receptionist.enabled}
+              goodLabel="AI receptionist active"
+              badLabel="AI receptionist disabled"
+            />
+            <StatusChip
+              good={receptionist.forwardingVerified}
+              goodLabel="Forwarding verified"
+              badLabel="Forwarding required"
+            />
+          </>
+        )
+      }
+    />
   );
 }
 

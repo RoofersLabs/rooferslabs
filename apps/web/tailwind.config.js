@@ -65,6 +65,7 @@ export default {
           2: 'var(--surface-2)',
           3: 'var(--surface-3)',
           overlay: 'var(--surface-overlay)',
+          disabled: 'var(--bg-disabled)',
         },
         line: {
           subtle: 'var(--border-subtle)',

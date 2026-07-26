@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Phone, PhoneMissed, Search, ShieldAlert } from 'lucide-react';
+import { ChevronRight, Phone, PhoneMissed, ShieldAlert } from 'lucide-react';
 import { useCalls } from '@/hooks/queries';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { formatDateTime, formatDuration, formatPhone } from '@/lib/utils';
 import { EnumBadge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { FilterBar } from '@/components/ui/FilterBar';
+import { IconTile } from '@/components/ui/IconTile';
+import { SearchInput } from '@/components/ui/SearchInput';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -26,25 +29,18 @@ export function CallsPage() {
       />
 
       <Card className="overflow-hidden">
-        <div className="border-b border-line-subtle p-4">
-          <div className="relative max-w-sm">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
-              aria-hidden
-            />
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Search by caller or number…"
-              className="focus-ring h-9 w-full rounded-lg border border-line bg-surface pl-9 pr-3 text-form-input text-ink placeholder:text-ink-faint transition-colors duration-fast hover:border-line-strong"
-              aria-label="Search calls"
-            />
-          </div>
-        </div>
+        <FilterBar>
+          <SearchInput
+            className="sm:max-w-xs"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Search by caller or number…"
+            aria-label="Search calls"
+          />
+        </FilterBar>
 
         {calls.isLoading ? (
           <ListSkeleton />
@@ -66,20 +62,11 @@ export function CallsPage() {
               {calls.data.items.map((call) => {
                 const isEmergency = call.conversation?.isEmergency ?? false;
                 const row = (
-                  <div className="group flex items-center gap-4 px-5 py-4 transition-colors duration-fast hover:bg-surface-2">
-                    <span
-                      className={
-                        isEmergency
-                          ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emergency-subtle'
-                          : 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-subtle'
-                      }
-                    >
-                      {isEmergency ? (
-                        <ShieldAlert className="h-5 w-5 text-emergency" aria-hidden />
-                      ) : (
-                        <Phone className="h-5 w-5 text-accent" aria-hidden />
-                      )}
-                    </span>
+                  <div className="group flex items-center gap-4 px-6 py-4 transition-colors duration-fast hover:bg-surface-2">
+                    <IconTile
+                      icon={isEmergency ? ShieldAlert : Phone}
+                      tone={isEmergency ? 'emergency' : 'brand'}
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="truncate text-body font-medium text-ink">

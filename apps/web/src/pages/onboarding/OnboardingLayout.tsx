@@ -1,6 +1,9 @@
 import { Navigate, useParams } from 'react-router-dom';
 import { UserButton } from '@clerk/clerk-react';
+import { Check } from 'lucide-react';
 import { OnboardingStep } from '@rooferslabs/shared';
+import { cn } from '@/lib/utils';
+import { StandaloneLayout } from '@/layouts/StandaloneLayout';
 import {
   ONBOARDING_STEPS,
   SLUG_TO_STEP,
@@ -21,33 +24,43 @@ const STEP_SCREENS: Record<WizardStep, () => JSX.Element> = {
   [OnboardingStep.KNOWLEDGE]: ReviewStep,
 };
 
-/** Numbered progress rail. */
+/**
+ * Numbered progress rail.
+ *
+ * Three states, each carrying its own shape as well as its own colour: a
+ * completed step is a filled tick, the current step is a filled number, and an
+ * upcoming step is an outline. Colour alone never distinguishes them.
+ */
 function Stepper({ currentIndex, furthestIndex }: { currentIndex: number; furthestIndex: number }) {
   return (
-    <ol className="mb-10 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+    <ol className="mb-10 flex flex-wrap items-center gap-x-5 gap-y-3">
       {ONBOARDING_STEPS.map((step, index) => {
         const state =
           index === currentIndex ? 'current' : index < furthestIndex ? 'done' : 'upcoming';
         return (
-          <li key={step} className="flex items-center gap-2">
+          <li key={step} className="flex items-center gap-2.5">
             <span
               aria-hidden
-              className={
+              className={cn(
+                'font-num flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-caption font-semibold transition-colors duration-base ease-standard',
                 state === 'upcoming'
-                  ? 'flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-xs text-gray-400'
-                  : 'flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-medium text-white'
-              }
+                  ? 'border border-line text-ink-faint'
+                  : state === 'done'
+                    ? 'bg-success text-ink-on-brand'
+                    : 'bg-accent text-ink-on-brand',
+              )}
             >
-              {state === 'done' ? '✓' : index + 1}
+              {state === 'done' ? <Check className="h-3.5 w-3.5" /> : index + 1}
             </span>
             <span
-              className={
+              className={cn(
+                'text-small transition-colors duration-base ease-standard',
                 state === 'current'
-                  ? 'font-medium text-gray-900'
+                  ? 'font-semibold text-ink'
                   : state === 'done'
-                    ? 'text-gray-600'
-                    : 'text-gray-400'
-              }
+                    ? 'font-medium text-ink-muted'
+                    : 'text-ink-faint',
+              )}
               aria-current={state === 'current' ? 'step' : undefined}
             >
               {STEP_LABELS[step]}
@@ -86,18 +99,9 @@ export function OnboardingLayout() {
   const StepScreen = STEP_SCREENS[step];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-6 py-3">
-          <span className="font-bold">RoofersLabs</span>
-          <UserButton />
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-2xl px-6 py-12">
-        <Stepper currentIndex={stepIndex(step)} furthestIndex={stepIndex(furthest)} />
-        <StepScreen />
-      </main>
-    </div>
+    <StandaloneLayout action={<UserButton />}>
+      <Stepper currentIndex={stepIndex(step)} furthestIndex={stepIndex(furthest)} />
+      <StepScreen />
+    </StandaloneLayout>
   );
 }

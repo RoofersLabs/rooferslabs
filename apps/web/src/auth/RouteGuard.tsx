@@ -1,28 +1,26 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { IconTile } from '@/components/ui/IconTile';
+import { FullScreenSpinner } from '@/components/ui/spinner';
 import { useAccess } from './AccessProvider';
 import { redirectFor, type GuardedRoute } from './stages';
-
-function FullPageMessage({ label }: { label: string }) {
-  return (
-    <div className="flex min-h-screen items-center justify-center text-sm text-gray-600">
-      {label}
-    </div>
-  );
-}
 
 /** The session request failed — routing cannot be decided, so offer a retry. */
 function SessionError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div className="mx-auto max-w-md px-6 py-24 text-center">
-      <h1 className="text-xl font-bold">We couldn’t load your workspace</h1>
-      <p className="mt-2 text-sm text-gray-600">{message || 'Please try again in a moment.'}</p>
-      <button
-        type="button"
-        className="mt-4 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white"
-        onClick={onRetry}
-      >
-        Retry
-      </button>
+    <div className="flex min-h-screen items-center justify-center bg-base p-6">
+      <Card className="max-w-md items-center px-8 py-10 text-center">
+        <IconTile icon={AlertTriangle} tone="emergency" size="xl" shape="square" />
+        <h1 className="mt-5 text-h4 text-ink">We couldn’t load your workspace</h1>
+        <p className="mt-1.5 max-w-sm text-body leading-6 text-ink-muted">
+          {message || 'Please try again in a moment.'}
+        </p>
+        <Button className="mt-6" onClick={onRetry}>
+          Retry
+        </Button>
+      </Card>
     </div>
   );
 }
@@ -41,7 +39,7 @@ export function RouteGuard({ route }: { route: GuardedRoute }) {
   const access = useAccess();
   const location = useLocation();
 
-  if (access.isLoading) return <FullPageMessage label="Loading your workspace…" />;
+  if (access.isLoading) return <FullScreenSpinner label="Loading your workspace…" />;
 
   // A signed-in visitor whose session will not load has no derivable stage.
   // Anonymous visitors are unaffected — their stage needs no session.

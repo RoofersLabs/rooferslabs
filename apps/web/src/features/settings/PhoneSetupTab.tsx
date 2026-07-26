@@ -10,8 +10,11 @@ import {
   useVerifyForwarding,
 } from '@/hooks/queries';
 import { cn, formatPhone, humanizeEnum } from '@/lib/utils';
+import { Alert } from '@/components/ui/Alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { IconTile } from '@/components/ui/IconTile';
 import { Input, Select } from '@/components/ui/input';
 import { LoadingBlock } from '@/components/ui/spinner';
 import { CARRIER_GUIDES } from './forwarding';
@@ -32,21 +35,19 @@ export function PhoneSetupTab() {
   const number = phone.data;
   if (!number) {
     return (
-      <Card className="p-8 text-center">
-        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-subtle text-accent">
-          <PhoneForwarded className="h-6 w-6" aria-hidden />
-        </span>
-        <h2 className="mt-5 text-h5 text-ink">Get your AI receptionist number</h2>
-        <p className="mx-auto mt-1.5 max-w-md text-small leading-6 text-ink-muted">
+      <Card className="items-center px-8 py-12 text-center">
+        <IconTile icon={PhoneForwarded} size="xl" shape="square" className="rounded-2xl" />
+        <h2 className="mt-5 text-h4 text-ink">Get your AI receptionist number</h2>
+        <p className="mt-1.5 max-w-md text-body leading-6 text-ink-muted">
           We’ll set up a local number for your business (matching your area code when available) and
           connect it to your AI receptionist.
         </p>
         {provision.isError && (
-          <p className="mx-auto mt-3 max-w-md text-small text-emergency">
+          <Alert className="mt-5 w-full max-w-md text-left" tone="danger">
             {(provision.error as Error).message}
-          </p>
+          </Alert>
         )}
-        <Button className="mt-5" loading={provision.isPending} onClick={() => provision.mutate()}>
+        <Button className="mt-6" loading={provision.isPending} onClick={() => provision.mutate()}>
           <PhoneForwarded className="h-4 w-4" aria-hidden />
           Get my AI receptionist number
         </Button>
@@ -84,7 +85,7 @@ function ControlCenterCard() {
   const s = status.data;
 
   return (
-    <Card className="p-6">
+    <Card className="px-6 py-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-h5 text-ink">AI Receptionist</h2>
@@ -102,22 +103,22 @@ function ControlCenterCard() {
           disabled={toggle.isPending}
           onClick={() => toggle.mutate(!s.enabled)}
           className={cn(
-            'focus-ring relative inline-flex h-9 w-[104px] shrink-0 items-center rounded-full transition-colors',
-            s.enabled ? 'bg-success' : 'bg-line',
+            'focus-ring relative inline-flex h-9 w-[104px] shrink-0 items-center rounded-full transition-colors duration-base ease-standard',
+            s.enabled ? 'bg-success' : 'bg-line-strong',
             toggle.isPending && 'opacity-60',
           )}
         >
           <span
             className={cn(
               'absolute text-caption font-bold',
-              s.enabled ? 'left-4 text-ink-on-brand' : 'right-4 text-ink-muted',
+              s.enabled ? 'left-4 text-ink-on-brand' : 'right-4 text-ink',
             )}
           >
             {s.enabled ? 'ON' : 'OFF'}
           </span>
           <span
             className={cn(
-              'inline-block h-7 w-7 transform rounded-full bg-surface shadow transition-transform',
+              'inline-block h-7 w-7 transform rounded-full bg-surface shadow-button transition-transform duration-base ease-spring',
               s.enabled ? 'translate-x-[72px]' : 'translate-x-1',
             )}
           >
@@ -130,7 +131,9 @@ function ControlCenterCard() {
       </div>
 
       {toggle.isError && (
-        <p className="mt-3 text-small text-emergency">{(toggle.error as Error).message}</p>
+        <Alert className="mt-4" tone="danger">
+          {(toggle.error as Error).message}
+        </Alert>
       )}
 
       <dl className="mt-5 grid gap-x-8 gap-y-3 text-small sm:grid-cols-2 lg:grid-cols-3">
@@ -161,7 +164,9 @@ function ControlCenterCard() {
 
 /** Small caps eyebrow marking a card's place in the 3-step activation journey. */
 function StepEyebrow({ step }: { step: number }) {
-  return <p className="mb-1 text-label uppercase tracking-wider text-accent">Step {step} of 3</p>;
+  return (
+    <p className="mb-1.5 text-caption uppercase tracking-wider text-accent">Step {step} of 3</p>
+  );
 }
 
 function StatusRow({
@@ -197,26 +202,24 @@ function NumberCard({ phoneNumber, verified }: { phoneNumber: string; verified: 
   };
 
   return (
-    <Card className="p-6">
+    <Card className="px-6 py-6">
       <StepEyebrow step={1} />
       <h2 className="text-h5 text-ink">Your AI Receptionist Number</h2>
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <span className="font-num rounded-xl bg-accent-subtle px-5 py-3 text-h4 text-accent">
+        <span className="font-num rounded-md border border-accent-border bg-accent-subtle px-5 py-2.5 text-h4 text-accent">
           {formatPhone(phoneNumber)}
         </span>
-        <Button variant="secondary" size="sm" onClick={() => void copy()}>
+        <Button variant="secondary" onClick={() => void copy()}>
           <Copy className="h-4 w-4" aria-hidden />
           {copied ? 'Copied!' : 'Copy'}
         </Button>
         {verified ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-success-subtle px-3 py-1 text-caption font-medium text-success">
-            <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
+          <Badge tone="success">
+            <ShieldCheck className="h-3 w-3" aria-hidden />
             AI Receptionist Active
-          </span>
+          </Badge>
         ) : (
-          <span className="rounded-full bg-warning-subtle px-3 py-1 text-caption font-medium text-warning">
-            AI Receptionist Not Yet Activated
-          </span>
+          <Badge tone="warning">AI Receptionist Not Yet Activated</Badge>
         )}
       </div>
       <p className="mt-3 text-small text-ink-muted">
@@ -254,7 +257,7 @@ function ForwardingCard({
   };
 
   return (
-    <Card className="p-6">
+    <Card className="px-6 py-6">
       <StepEyebrow step={2} />
       <h2 className="text-h5 text-ink">Forward your business number</h2>
       <p className="mt-1 text-small text-ink-muted">
@@ -281,18 +284,20 @@ function ForwardingCard({
           ))}
         </Select>
       </div>
-      <div className="mt-3 flex items-center gap-3">
-        <Button variant="secondary" size="sm" loading={update.isPending} onClick={save}>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <Button variant="secondary" loading={update.isPending} onClick={save}>
           Save
         </Button>
         {update.isSuccess && !update.isPending && (
-          <span className="flex items-center gap-1 text-small text-success">
+          <span className="flex items-center gap-1.5 text-small font-medium text-success">
             <CheckCircle2 className="h-4 w-4" aria-hidden />
             Saved
           </span>
         )}
         {update.isError && (
-          <span className="text-small text-emergency">{(update.error as Error).message}</span>
+          <span className="text-small text-emergency" role="alert">
+            {(update.error as Error).message}
+          </span>
         )}
       </div>
 
@@ -319,7 +324,7 @@ function VerifyCard() {
   const verify = useVerifyForwarding();
 
   return (
-    <Card className="p-6">
+    <Card className="px-6 py-6">
       <StepEyebrow step={3} />
       <h2 className="flex items-center gap-2 text-h5 text-ink">
         <PhoneCall className="h-4 w-4 text-accent" aria-hidden />
@@ -330,9 +335,15 @@ function VerifyCard() {
         should answer with your greeting. Then verify below.
       </p>
       {verify.isError && (
-        <p className="mt-3 text-small text-emergency">{(verify.error as Error).message}</p>
+        <Alert className="mt-4" tone="danger">
+          {(verify.error as Error).message}
+        </Alert>
       )}
-      <Button className="mt-4" loading={verify.isPending} onClick={() => verify.mutate()}>
+      <Button
+        className="mt-5 self-start"
+        loading={verify.isPending}
+        onClick={() => verify.mutate()}
+      >
         <CheckCircle2 className="h-4 w-4" aria-hidden />
         Verify forwarding
       </Button>

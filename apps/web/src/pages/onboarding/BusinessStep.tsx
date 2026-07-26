@@ -6,7 +6,19 @@ import { z } from 'zod';
 import { stepPath } from '@/auth/stages';
 import { useCompany, useSetBusinessHours, useUpdateCompany } from '@/hooks/queries';
 import type { BusinessHour } from '@/types/api';
-import { Field, StepActions, StepError, StepHeading, fieldClass, labelClass } from './fields';
+import { cn } from '@/lib/utils';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/input';
+import {
+  Field,
+  StepActions,
+  StepError,
+  StepHeading,
+  StepLoading,
+  fieldClass,
+  labelClass,
+  textareaClass,
+} from './fields';
 import { useOnboarding } from './useOnboarding';
 
 const DAYS = [
@@ -116,7 +128,7 @@ export function BusinessStep() {
     await advanceFrom(OnboardingStep.BUSINESS);
   });
 
-  if (company.isLoading) return <p className="text-sm text-gray-600">Loading…</p>;
+  if (company.isLoading) return <StepLoading />;
 
   return (
     <div className="space-y-8">
@@ -125,7 +137,7 @@ export function BusinessStep() {
         blurb="Where you work and when. Your AI receptionist uses this to answer questions and book jobs."
       />
 
-      <form onSubmit={onSubmit} className="space-y-6 rounded border border-gray-200 bg-white p-6">
+      <Card as="form" onSubmit={onSubmit} className="gap-6 px-6 py-6">
         <Field label="Street address" htmlFor="addressLine1" error={errors.addressLine1}>
           <input id="addressLine1" className={fieldClass} {...register('addressLine1')} />
         </Field>
@@ -138,7 +150,11 @@ export function BusinessStep() {
           </div>
           <div className="flex-1">
             <Field label="Timezone" htmlFor="timezone" error={errors.timezone}>
-              <select id="timezone" className={fieldClass} {...register('timezone')}>
+              <select
+                id="timezone"
+                className={cn(fieldClass, 'cursor-pointer pr-8')}
+                {...register('timezone')}
+              >
                 <option value="America/New_York">Eastern</option>
                 <option value="America/Chicago">Central</option>
                 <option value="America/Denver">Mountain</option>
@@ -158,7 +174,7 @@ export function BusinessStep() {
           <textarea
             id="serviceAreas"
             rows={2}
-            className={fieldClass}
+            className={textareaClass}
             placeholder="Austin TX, Round Rock TX, 78701"
             {...register('serviceAreas')}
           />
@@ -173,7 +189,7 @@ export function BusinessStep() {
           <textarea
             id="roofingServices"
             rows={2}
-            className={fieldClass}
+            className={textareaClass}
             placeholder="Roof replacement, Roof repair, Storm damage, Inspections"
             {...register('roofingServices')}
           />
@@ -183,21 +199,26 @@ export function BusinessStep() {
           <legend className={labelClass}>Business hours</legend>
           <div className="mt-2 space-y-2">
             {DAYS.map((day, index) => (
-              <div key={day} className="flex items-center gap-3 text-sm">
-                <span className="w-24 capitalize text-gray-700">{day}</span>
+              <div
+                key={day}
+                className="flex flex-wrap items-center gap-3 rounded-md border border-line-subtle px-4 py-2.5 transition-colors duration-fast hover:border-line-strong"
+              >
+                <span className="w-24 shrink-0 text-body font-medium capitalize text-ink">
+                  {day}
+                </span>
                 <input
                   aria-label={`${day} opening time`}
-                  className="w-28 rounded border border-gray-300 px-2 py-1"
+                  className={cn(fieldClass, 'mt-0 w-28')}
                   {...register(`hours.${index}.open`)}
                 />
-                <span className="text-gray-400">to</span>
+                <span className="text-small text-ink-faint">to</span>
                 <input
                   aria-label={`${day} closing time`}
-                  className="w-28 rounded border border-gray-300 px-2 py-1"
+                  className={cn(fieldClass, 'mt-0 w-28')}
                   {...register(`hours.${index}.close`)}
                 />
-                <label className="ml-2 flex items-center gap-1.5 text-gray-600">
-                  <input type="checkbox" {...register(`hours.${index}.closed`)} />
+                <label className="ml-auto flex cursor-pointer items-center gap-2 text-small text-ink-muted">
+                  <Checkbox {...register(`hours.${index}.closed`)} />
                   Closed
                 </label>
                 <input type="hidden" {...register(`hours.${index}.day`)} />
@@ -205,15 +226,15 @@ export function BusinessStep() {
             ))}
           </div>
           {errors.hours && (
-            <p className="mt-1 text-sm text-red-600">
+            <p className="mt-1.5 text-small text-emergency" role="alert">
               Check the opening and closing times — each must be HH:mm (24-hour).
             </p>
           )}
         </fieldset>
 
-        <div className="space-y-3">
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-            <input type="checkbox" {...register('emergencyServiceEnabled')} />
+        <div className="space-y-4">
+          <label className="flex cursor-pointer items-center gap-3 text-body font-medium text-ink">
+            <Checkbox {...register('emergencyServiceEnabled')} />
             Offer 24/7 emergency service
           </label>
           {emergencyEnabled && (
@@ -238,7 +259,7 @@ export function BusinessStep() {
           submitting={isSubmitting}
           onBack={() => navigate(stepPath(OnboardingStep.COMPANY))}
         />
-      </form>
+      </Card>
     </div>
   );
 }

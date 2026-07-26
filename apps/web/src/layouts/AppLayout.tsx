@@ -16,6 +16,7 @@ import { ROUTES } from '@/auth/stages';
 import { useUnreadCount } from '@/hooks/queries';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { InstallPwaButton } from '@/components/InstallPwaButton';
+import { Button } from '@/components/ui/button';
 import {
   Sidebar,
   SidebarContent,
@@ -103,23 +104,28 @@ export function AppLayout() {
 
           <GlobalSearch />
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-1.5">
             <InstallPwaButton />
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative"
               onClick={() => navigate(ROUTES.notifications)}
-              className="focus-ring relative rounded-md p-2 text-ink-muted transition-colors hover:bg-surface-3"
               aria-label={`Notifications${unreadCount ? ` (${unreadCount} unread)` : ''}`}
             >
-              <Bell className="h-5 w-5" />
+              <Bell className="h-5 w-5" aria-hidden />
               {unreadCount > 0 && (
-                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-emergency ring-2 ring-surface" />
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-emergency ring-2 ring-surface" />
               )}
-            </button>
+            </Button>
             <UserButton />
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-dashboard px-4 py-6 sm:px-6">
+        {/* 32px page gutter matches the vertical rhythm the pages themselves
+            use between sections, so the shell never feels tighter than its
+            contents. */}
+        <main className="mx-auto w-full max-w-dashboard px-4 py-8 sm:px-6 lg:px-8">
           <Outlet />
         </main>
       </SidebarInset>

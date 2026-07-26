@@ -11,12 +11,16 @@ export function Skeleton({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-/** Placeholder for list/table panels: rows of avatar + text lines. */
+/**
+ * Placeholder for list/table panels: rows of avatar + text lines, laid out on
+ * the same 24px gutter and row height as the real rows they stand in for, so
+ * content does not visibly shift sideways when it arrives.
+ */
 export function ListSkeleton({ rows = 5 }: { rows?: number }) {
   return (
     <div role="status" aria-label="Loading content" className="divide-y divide-line-subtle">
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="flex items-center gap-4 px-5 py-4">
+        <div key={i} className="flex items-center gap-4 px-6 py-4">
           <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
           <div className="min-w-0 flex-1 space-y-2">
             <Skeleton className="h-3.5 w-1/3" />

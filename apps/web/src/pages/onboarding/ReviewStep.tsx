@@ -1,22 +1,17 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { Pencil } from 'lucide-react';
 import { OnboardingStep } from '@rooferslabs/shared';
 import { useAccess } from '@/auth/AccessProvider';
 import { stepPath } from '@/auth/stages';
 import { useAiConfig, useCompany } from '@/hooks/queries';
 import { formatTimeRange } from '@/lib/utils';
-import { StepActions, StepError, StepHeading } from './fields';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { DetailRow } from '@/components/ui/DetailRow';
+import { StepActions, StepError, StepHeading, StepLoading } from './fields';
 import { useOnboarding } from './useOnboarding';
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between gap-6 py-1.5 text-sm">
-      <dt className="text-gray-600">{label}</dt>
-      <dd className="text-right font-medium text-gray-900">{value || '—'}</dd>
-    </div>
-  );
-}
-
-function Card({
+/** One reviewable section of the wizard's answers, with a link back to it. */
+function ReviewSection({
   title,
   editTo,
   children,
@@ -26,15 +21,21 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded border border-gray-200 bg-white p-6">
-      <div className="flex items-baseline justify-between">
-        <h2 className="font-semibold">{title}</h2>
-        <Link to={editTo} className="text-sm underline">
+    <Card as="section">
+      <CardHeader className="items-center">
+        <CardTitle as="h2">{title}</CardTitle>
+        <Link
+          to={editTo}
+          className="focus-ring inline-flex shrink-0 items-center gap-1 rounded-xs text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
+        >
           Edit
+          <Pencil className="h-3.5 w-3.5" aria-hidden />
         </Link>
-      </div>
-      <dl className="mt-3 divide-y divide-gray-100">{children}</dl>
-    </section>
+      </CardHeader>
+      <dl className="divide-y divide-line-subtle border-t border-line-subtle px-6 py-2">
+        {children}
+      </dl>
+    </Card>
   );
 }
 
@@ -59,9 +60,7 @@ export function ReviewStep() {
     await advanceFrom(OnboardingStep.KNOWLEDGE);
   };
 
-  if (company.isLoading || config.isLoading) {
-    return <p className="text-sm text-gray-600">Loading…</p>;
-  }
+  if (company.isLoading || config.isLoading) return <StepLoading />;
 
   const data = company.data;
   const openDays = (data?.businessHours ?? []).filter((hour) => !hour.closed);
@@ -74,19 +73,22 @@ export function ReviewStep() {
         blurb="Check everything over. You can change any of it later in Settings."
       />
 
-      <div className="space-y-4">
-        <Card title="Organization" editTo={stepPath(OnboardingStep.COMPANY)}>
-          <Row label="Business name" value={data?.name ?? ''} />
-          <Row label="Email" value={data?.email ?? ''} />
-          <Row label="Phone" value={data?.phone ?? ''} />
-          <Row label="Location" value={[data?.city, data?.state].filter(Boolean).join(', ')} />
-        </Card>
+      <div className="space-y-6">
+        <ReviewSection title="Organization" editTo={stepPath(OnboardingStep.COMPANY)}>
+          <DetailRow label="Business name" value={data?.name ?? ''} />
+          <DetailRow label="Email" value={data?.email ?? ''} />
+          <DetailRow label="Phone" value={data?.phone ?? ''} />
+          <DetailRow
+            label="Location"
+            value={[data?.city, data?.state].filter(Boolean).join(', ')}
+          />
+        </ReviewSection>
 
-        <Card title="Business details" editTo={stepPath(OnboardingStep.BUSINESS)}>
-          <Row label="Timezone" value={data?.timezone ?? ''} />
-          <Row label="Service areas" value={(data?.serviceAreas ?? []).join(', ')} />
-          <Row label="Services" value={(data?.roofingServices ?? []).join(', ')} />
-          <Row
+        <ReviewSection title="Business details" editTo={stepPath(OnboardingStep.BUSINESS)}>
+          <DetailRow label="Timezone" value={data?.timezone ?? ''} />
+          <DetailRow label="Service areas" value={(data?.serviceAreas ?? []).join(', ')} />
+          <DetailRow label="Services" value={(data?.roofingServices ?? []).join(', ')} />
+          <DetailRow
             label="Open"
             value={
               firstOpenDay
@@ -94,25 +96,25 @@ export function ReviewStep() {
                 : 'No open days set'
             }
           />
-          <Row
+          <DetailRow
             label="Emergency service"
             value={data?.emergencyServiceEnabled ? 'Enabled' : 'Not offered'}
           />
-        </Card>
+        </ReviewSection>
 
-        <Card title="AI receptionist" editTo={stepPath(OnboardingStep.AI)}>
-          <Row label="Name" value={config.data?.assistantName ?? ''} />
-          <Row label="Voice" value={config.data?.voice ?? ''} />
-          <Row label="Greeting" value={config.data?.greeting ?? ''} />
-          <Row
+        <ReviewSection title="AI receptionist" editTo={stepPath(OnboardingStep.AI)}>
+          <DetailRow label="Name" value={config.data?.assistantName ?? ''} />
+          <DetailRow label="Voice" value={config.data?.voice ?? ''} />
+          <DetailRow label="Greeting" value={config.data?.greeting ?? ''} />
+          <DetailRow
             label="Transfers to a person"
             value={config.data?.transferToHuman ? (config.data.transferPhone ?? 'Yes') : 'No'}
           />
-        </Card>
+        </ReviewSection>
       </div>
 
-      <form onSubmit={onSubmit} className="space-y-4">
-        <p className="text-sm text-gray-600">
+      <form onSubmit={onSubmit} className="space-y-5">
+        <p className="text-body text-ink-muted">
           {paymentsEnabled
             ? 'Finishing setup takes you to plan selection. Your receptionist goes live once your subscription is active.'
             : 'Finishing setup takes you straight to your dashboard.'}

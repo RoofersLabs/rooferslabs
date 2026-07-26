@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen, Plus, Search, Trash2 } from 'lucide-react';
+import { BookOpen, Plus, Trash2 } from 'lucide-react';
 import { KnowledgeCategory } from '@rooferslabs/shared';
 import {
   useDeleteKnowledgeArticle,
@@ -11,6 +11,10 @@ import type { KnowledgeArticle } from '@/types/api';
 import { humanizeEnum, timeAgo } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { FilterBar } from '@/components/ui/FilterBar';
+import { IconTile } from '@/components/ui/IconTile';
+import { SearchInput } from '@/components/ui/SearchInput';
 import { Input, Select, Textarea } from '@/components/ui/input';
 import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -39,71 +43,66 @@ export function KnowledgePage() {
         title="Knowledge Base"
         description="Everything your AI receptionist knows about your business. It answers callers using only this content."
         actions={
-          <Button size="sm" onClick={() => setCreating(true)}>
+          <Button onClick={() => setCreating(true)}>
             <Plus className="h-4 w-4" aria-hidden />
             New article
           </Button>
         }
       />
 
-      <div className="card mb-6 flex flex-col gap-3 p-4 sm:flex-row">
-        <div className="relative flex-1 sm:max-w-sm">
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
-            aria-hidden
-          />
-          <input
-            type="search"
+      <Card className="mb-6">
+        <FilterBar className="border-b-0">
+          <SearchInput
+            className="flex-1 sm:max-w-xs"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(1);
             }}
             placeholder="Search articles…"
-            className="focus-ring h-9 w-full rounded-lg border border-line bg-surface pl-9 pr-3 text-form-input text-ink placeholder:text-ink-faint transition-colors duration-fast hover:border-line-strong"
             aria-label="Search knowledge base"
           />
-        </div>
-        <Select
-          value={category}
-          onChange={(e) => {
-            setCategory(e.target.value);
-            setPage(1);
-          }}
-          aria-label="Filter by category"
-          className="sm:w-52"
-        >
-          <option value="">All categories</option>
-          {Object.values(KnowledgeCategory).map((value) => (
-            <option key={value} value={value}>
-              {humanizeEnum(value)}
-            </option>
-          ))}
-        </Select>
-      </div>
+          <Select
+            value={category}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              setPage(1);
+            }}
+            aria-label="Filter by category"
+            className="sm:w-52"
+          >
+            <option value="">All categories</option>
+            {Object.values(KnowledgeCategory).map((value) => (
+              <option key={value} value={value}>
+                {humanizeEnum(value)}
+              </option>
+            ))}
+          </Select>
+        </FilterBar>
+      </Card>
 
       {articles.isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className="card flex flex-col p-5">
-              <Skeleton className="h-9 w-9 rounded-lg" />
-              <Skeleton className="mt-3.5 h-4 w-4/5" />
-              <Skeleton className="mt-2 h-3 w-full" />
+            <Card key={i} className="px-6 py-5">
+              <Skeleton className="h-10 w-10 rounded-lg" />
+              <Skeleton className="mt-4 h-4 w-4/5" />
+              <Skeleton className="mt-2.5 h-3 w-full" />
               <Skeleton className="mt-1.5 h-3 w-3/5" />
               <Skeleton className="mt-4 h-5 w-20 rounded-full" />
-            </div>
+            </Card>
           ))}
         </div>
       ) : articles.isError ? (
-        <div className="card">
+        <Card>
           <ErrorState
             title="Couldn’t load the knowledge base"
             message={(articles.error as Error).message}
             onRetry={() => void articles.refetch()}
           />
-        </div>
+        </Card>
       ) : !articles.data?.items.length ? (
-        <div className="card">
+        <Card>
           <EmptyState
             icon={BookOpen}
             title="No articles yet"
@@ -111,20 +110,18 @@ export function KnowledgePage() {
             actionLabel="Write your first article"
             onAction={() => setCreating(true)}
           />
-        </div>
+        </Card>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {articles.data.items.map((article) => (
               <button
                 key={article.id}
                 onClick={() => setEditing(article)}
-                className="card-interactive flex flex-col items-start p-5 text-left"
+                className="card-interactive focus-ring flex flex-col items-start px-6 py-5 text-left"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-subtle">
-                  <BookOpen className="h-4 w-4 text-accent" aria-hidden />
-                </span>
-                <span className="mt-3.5 line-clamp-2 text-body font-medium text-ink">
+                <IconTile icon={BookOpen} shape="square" />
+                <span className="mt-4 line-clamp-2 text-body font-medium text-ink">
                   {article.title}
                 </span>
                 <span className="mt-2 line-clamp-3 text-small text-ink-muted">
@@ -140,9 +137,13 @@ export function KnowledgePage() {
               </button>
             ))}
           </div>
-          <div className="card mt-4">
-            <Pagination pagination={articles.data.pagination} onPageChange={setPage} />
-          </div>
+          <Card className="mt-6">
+            <Pagination
+              className="border-t-0"
+              pagination={articles.data.pagination}
+              onPageChange={setPage}
+            />
+          </Card>
         </>
       )}
 
@@ -219,16 +220,15 @@ function ArticleModal({
           required
         />
         {(save.isError || remove.isError) && (
-          <p className="text-small text-emergency">
+          <p className="text-small text-emergency" role="alert">
             {((save.error ?? remove.error) as Error).message}
           </p>
         )}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3 pt-1">
           {article ? (
             <Button
               type="button"
               variant="destructive"
-              size="sm"
               loading={remove.isPending}
               onClick={() => remove.mutate(article.id, { onSuccess: onClose })}
             >
@@ -238,7 +238,7 @@ function ArticleModal({
           ) : (
             <span />
           )}
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Button type="button" variant="secondary" onClick={onClose}>
               Cancel
             </Button>

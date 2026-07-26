@@ -2,9 +2,12 @@ import type { ReactNode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { ClerkProvider, useAuth } from '@clerk/clerk-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Wrench } from 'lucide-react';
 import { config } from '@/config';
 import { ApiError, setTokenGetter } from '@/lib/api-client';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { Card } from '@/components/ui/card';
+import { IconTile } from '@/components/ui/IconTile';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,20 +43,23 @@ function TokenBridge({ children }: { children: ReactNode }) {
 /** Shown when required frontend environment variables are missing or invalid. */
 function ConfigError({ errors }: { errors: string[] }) {
   return (
-    <div className="flex min-h-screen items-center justify-center p-6">
-      <div className="max-w-lg rounded border border-gray-200 bg-white p-8">
-        <h1 className="text-xl font-bold">Configuration required</h1>
-        <p className="mt-3 text-sm text-gray-600">
+    <div className="flex min-h-screen items-center justify-center bg-base p-6">
+      <Card className="max-w-lg px-8 py-8">
+        <IconTile icon={Wrench} tone="warning" size="xl" shape="square" />
+        <h1 className="mt-5 text-h4 text-ink">Configuration required</h1>
+        <p className="mt-1.5 text-body leading-6 text-ink-muted">
           The app can’t start until these environment variables in{' '}
-          <code className="rounded bg-gray-100 px-1.5 py-0.5">apps/web/.env</code> are fixed, then
-          restart the dev server:
+          <code className="font-num rounded-xs bg-surface-3 px-1.5 py-0.5 text-small text-ink">
+            apps/web/.env
+          </code>{' '}
+          are fixed. Correct them, then restart the dev server:
         </p>
-        <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-gray-600">
+        <ul className="mt-4 list-disc space-y-2 pl-5 text-small text-ink-muted">
           {errors.map((error) => (
             <li key={error}>{error}</li>
           ))}
         </ul>
-      </div>
+      </Card>
     </div>
   );
 }

@@ -1,8 +1,18 @@
 import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, CreditCard } from 'lucide-react';
 import { SubscriptionStatus } from '@rooferslabs/shared';
 import { ROUTES } from '@/auth/stages';
+import { StandaloneLayout } from '@/layouts/StandaloneLayout';
+import { Alert } from '@/components/ui/Alert';
+import { EnumBadge } from '@/components/ui/badge';
+import { Button, ButtonLink } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { DetailRow } from '@/components/ui/DetailRow';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { LoadingBlock } from '@/components/ui/spinner';
 import {
   queryKeys,
   useCancelSubscription,
@@ -55,117 +65,100 @@ export function BillingPage() {
   const mutationError = (portal.error ?? cancel.error ?? resume.error) as ApiError | null;
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
-      <h1 className="text-2xl font-bold">Billing</h1>
+    <StandaloneLayout>
+      <PageHeader title="Billing" description="Your subscription, payment method, and invoices." />
 
       {returningFromCheckout && !isActive && (
-        <p className="mt-4 rounded border border-blue-300 bg-blue-50 px-4 py-3 text-sm">
-          Payment received. Activating your subscription…
-        </p>
+        <Alert className="mb-6" tone="info" title="Payment received">
+          Activating your subscription — this usually takes a few seconds.
+        </Alert>
       )}
 
       {subscription.isLoading ? (
-        <p className="mt-6 text-sm text-gray-600">Loading…</p>
+        <Card>
+          <LoadingBlock label="Loading your subscription…" />
+        </Card>
       ) : subscription.isError ? (
-        <p className="mt-6 text-sm text-red-600">
-          {(subscription.error as ApiError).message || 'Could not load your subscription.'}
-        </p>
+        <Card>
+          <ErrorState
+            title="Couldn’t load your subscription"
+            message={(subscription.error as ApiError).message}
+            onRetry={() => void subscription.refetch()}
+          />
+        </Card>
       ) : data ? (
-        <div className="mt-6 space-y-6">
-          <dl className="rounded border border-gray-200 bg-white p-6 text-sm">
-            <div className="flex justify-between py-1">
-              <dt className="text-gray-600">Status</dt>
-              <dd className="font-medium">{humanizeEnum(data.status)}</dd>
-            </div>
-            <div className="flex justify-between py-1">
-              <dt className="text-gray-600">Plan</dt>
-              <dd className="font-medium">{data.plan ? humanizeEnum(data.plan) : '—'}</dd>
-            </div>
-            <div className="flex justify-between py-1">
-              <dt className="text-gray-600">
-                {data.cancelAtPeriodEnd ? 'Access ends' : 'Renews on'}
-              </dt>
-              <dd className="font-medium">{formatDate(data.currentPeriodEnd)}</dd>
-            </div>
-            {data.trialEndsAt && (
-              <div className="flex justify-between py-1">
-                <dt className="text-gray-600">Trial ends</dt>
-                <dd className="font-medium">{formatDate(data.trialEndsAt)}</dd>
-              </div>
-            )}
-          </dl>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader className="items-center">
+              <CardTitle as="h2">Subscription</CardTitle>
+              <EnumBadge value={data.status} />
+            </CardHeader>
+            <dl className="divide-y divide-line-subtle border-t border-line-subtle px-6 py-2">
+              <DetailRow label="Plan" value={data.plan ? humanizeEnum(data.plan) : '—'} />
+              <DetailRow
+                label={data.cancelAtPeriodEnd ? 'Access ends' : 'Renews on'}
+                value={formatDate(data.currentPeriodEnd)}
+              />
+              {data.trialEndsAt && (
+                <DetailRow label="Trial ends" value={formatDate(data.trialEndsAt)} />
+              )}
+            </dl>
+          </Card>
 
-          {STATUS_HELP[data.status] && (
-            <p className="rounded border border-gray-200 bg-gray-100 px-4 py-3 text-sm">
-              {STATUS_HELP[data.status]}
-            </p>
-          )}
+          {STATUS_HELP[data.status] && <Alert tone="info">{STATUS_HELP[data.status]}</Alert>}
 
           {data.cancelAtPeriodEnd && isActive && (
-            <p className="rounded border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm">
-              This subscription is scheduled to end on {formatDate(data.currentPeriodEnd)}.
-            </p>
+            <Alert tone="warning" title="Scheduled to end">
+              This subscription ends on {formatDate(data.currentPeriodEnd)}. Resume it any time
+              before then to keep your receptionist answering.
+            </Alert>
           )}
+
+          {mutationError && <Alert tone="danger">{mutationError.message}</Alert>}
 
           <div className="flex flex-wrap gap-3">
             {data.hasStripeCustomer && (
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                loading={portal.isPending}
                 onClick={() => void openPortal()}
-                disabled={portal.isPending}
-                className="rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
+                <CreditCard className="h-4 w-4" aria-hidden />
                 {portal.isPending ? 'Opening…' : 'Manage payment & invoices'}
-              </button>
+              </Button>
             )}
 
             {isActive && !data.cancelAtPeriodEnd && (
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                className="text-emergency hover:border-emergency-border hover:bg-emergency-subtle"
+                loading={cancel.isPending}
                 onClick={() => cancel.mutate()}
-                disabled={cancel.isPending}
-                className="rounded border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 disabled:opacity-50"
               >
                 {cancel.isPending ? 'Cancelling…' : 'Cancel subscription'}
-              </button>
+              </Button>
             )}
 
             {data.cancelAtPeriodEnd && (
-              <button
-                type="button"
-                onClick={() => resume.mutate()}
-                disabled={resume.isPending}
-                className="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-              >
+              <Button loading={resume.isPending} onClick={() => resume.mutate()}>
                 {resume.isPending ? 'Resuming…' : 'Resume subscription'}
-              </button>
+              </Button>
             )}
 
-            {!isActive && (
-              <Link
-                to={ROUTES.payment}
-                className="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white"
-              >
-                Choose a plan
-              </Link>
-            )}
+            {!isActive && <ButtonLink to={ROUTES.payment}>Choose a plan</ButtonLink>}
           </div>
-
-          {mutationError && <p className="text-sm text-red-600">{mutationError.message}</p>}
         </div>
       ) : null}
 
-      <p className="mt-8 text-sm text-gray-600">
-        {isActive ? (
-          <Link to={ROUTES.dashboard} className="underline">
-            Back to dashboard
-          </Link>
-        ) : (
-          <Link to={ROUTES.marketing} className="underline">
-            Back to home
-          </Link>
-        )}
+      <p className="mt-10">
+        <Link
+          to={isActive ? ROUTES.dashboard : ROUTES.marketing}
+          className="focus-ring inline-flex items-center gap-1.5 rounded-xs text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          {isActive ? 'Back to dashboard' : 'Back to home'}
+        </Link>
       </p>
-    </main>
+    </StandaloneLayout>
   );
 }

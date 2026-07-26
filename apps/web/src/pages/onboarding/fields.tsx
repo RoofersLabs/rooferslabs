@@ -1,8 +1,24 @@
 import type { ReactNode } from 'react';
 import type { FieldError } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export const fieldClass = 'mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm';
-export const labelClass = 'block text-sm font-medium text-gray-700';
+/**
+ * Onboarding registers its inputs with `react-hook-form`, which wants a bare
+ * element rather than the controlled `Input`/`Select` components. These class
+ * strings are therefore the declarations those components make, applied
+ * directly — the same 40px height, radius, border and hover as every other
+ * control in the product. They are not a second styling scheme: a change to
+ * form control styling belongs in components/ui/input.tsx, and then here.
+ */
+export const fieldClass =
+  'focus-ring mt-1.5 block h-10 w-full rounded-md border border-line bg-surface px-3 text-form-input text-ink transition-colors duration-fast ease-standard placeholder:text-ink-faint hover:border-line-strong';
+
+/** The same control sized for a textarea, which grows by rows instead. */
+export const textareaClass =
+  'focus-ring mt-1.5 block w-full rounded-md border border-line bg-surface px-3 py-2.5 text-form-input text-ink transition-colors duration-fast ease-standard placeholder:text-ink-faint hover:border-line-strong';
+
+export const labelClass = 'block text-form-label font-medium text-ink-muted';
 
 /** Label + control + inline validation message, so every step looks the same. */
 export function Field({
@@ -24,8 +40,12 @@ export function Field({
         {label}
       </label>
       {children}
-      {hint && !error && <p className="mt-1 text-xs text-gray-500">{hint}</p>}
-      {error && <p className="mt-1 text-sm text-red-600">{error.message}</p>}
+      {hint && !error && <p className="mt-1.5 text-small text-ink-faint">{hint}</p>}
+      {error && (
+        <p className="mt-1.5 text-small text-emergency" role="alert">
+          {error.message}
+        </p>
+      )}
     </div>
   );
 }
@@ -41,25 +61,17 @@ export function StepActions({
   submitLabel?: string;
 }) {
   return (
-    <div className="flex items-center justify-between pt-2">
+    <div className="flex items-center justify-between gap-3 border-t border-line-subtle pt-5">
       {onBack ? (
-        <button
-          type="button"
-          onClick={onBack}
-          className="rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium"
-        >
+        <Button type="button" variant="secondary" onClick={onBack}>
           Back
-        </button>
+        </Button>
       ) : (
         <span />
       )}
-      <button
-        type="submit"
-        disabled={submitting}
-        className="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-      >
+      <Button type="submit" loading={submitting}>
         {submitting ? 'Saving…' : submitLabel}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -67,14 +79,38 @@ export function StepActions({
 export function StepError({ error }: { error: unknown }) {
   if (!error) return null;
   const message = error instanceof Error ? error.message : 'Something went wrong.';
-  return <p className="text-sm text-red-600">{message}</p>;
+  return (
+    <p
+      className="rounded-md border border-emergency-border bg-emergency-subtle px-4 py-3 text-small text-emergency"
+      role="alert"
+    >
+      {message}
+    </p>
+  );
 }
 
 export function StepHeading({ title, blurb }: { title: string; blurb: string }) {
   return (
     <header>
-      <h1 className="text-2xl font-bold">{title}</h1>
-      <p className="mt-2 text-sm text-gray-600">{blurb}</p>
+      <h1 className="text-h2 text-ink">{title}</h1>
+      <p className="mt-1.5 text-body-lg text-ink-muted">{blurb}</p>
     </header>
+  );
+}
+
+/** Placeholder shown while a step's saved answers are still loading. */
+export function StepLoading() {
+  return (
+    <div role="status" aria-label="Loading your saved answers" className="space-y-8">
+      <div className="space-y-2">
+        <Skeleton className="h-9 w-64" />
+        <Skeleton className="h-5 w-96 max-w-full" />
+      </div>
+      <div className="space-y-5 rounded-xl border border-line-subtle bg-surface p-6 shadow-card">
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-16 w-2/3" />
+      </div>
+    </div>
   );
 }

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Phone, CalendarClock, BookOpen, User } from 'lucide-react';
+import { Phone, CalendarClock, BookOpen, User } from 'lucide-react';
 import { useGlobalSearch } from '@/hooks/queries';
 import { humanizeEnum, timeAgo } from '@/lib/utils';
+import { SearchInput } from '@/components/ui/SearchInput';
 
 /** Header search with debounced global results across all business entities. */
 export function GlobalSearch() {
@@ -42,27 +43,19 @@ export function GlobalSearch() {
 
   return (
     <div ref={containerRef} className="relative w-full max-w-md">
-      <div className="relative">
-        <Search
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
-          aria-hidden
-        />
-        <input
-          type="search"
-          value={query}
-          onFocus={() => setOpen(true)}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setOpen(true);
-          }}
-          placeholder="Search customers, calls, appointments…"
-          className="focus-ring h-9 w-full rounded-md border border-line bg-surface-2 pl-9 pr-3 text-body text-ink transition-colors duration-fast placeholder:text-ink-faint hover:border-line-strong"
-          aria-label="Global search"
-        />
-      </div>
+      <SearchInput
+        value={query}
+        onFocus={() => setOpen(true)}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setOpen(true);
+        }}
+        placeholder="Search customers, calls, appointments…"
+        aria-label="Global search"
+      />
 
       {open && debounced.trim().length >= 2 && (
-        <div className="absolute z-40 mt-2 max-h-96 w-full overflow-y-auto rounded-lg border border-line-subtle bg-surface-overlay p-2 shadow-dropdown">
+        <div className="absolute z-40 mt-2 max-h-96 w-full overflow-y-auto rounded-xl border border-line-subtle bg-surface-overlay p-2 shadow-dropdown">
           {results.isLoading ? (
             <p className="px-3 py-4 text-body text-ink-muted">Searching…</p>
           ) : !hasResults ? (
@@ -154,7 +147,7 @@ function SearchRow({
   return (
     <button
       onClick={onClick}
-      className="focus-ring flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors duration-fast hover:bg-surface-3"
+      className="focus-ring flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors duration-fast hover:bg-surface-2"
     >
       {icon}
       <span className="min-w-0">

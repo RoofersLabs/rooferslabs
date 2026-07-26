@@ -2,8 +2,19 @@ import { forwardRef, useId } from 'react';
 import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
+/**
+ * Form control styling, defined once.
+ *
+ * The radius matches Button (`rounded-md`) and the height matches Button's `md`
+ * size (40px), so a field, a select and a button standing side by side in a
+ * toolbar or a card footer line up on both edges. Textareas opt out of the
+ * fixed height below, since they grow by rows.
+ */
 const baseField =
-  'focus-ring block w-full rounded-lg border border-line bg-surface px-3 py-2 text-form-input text-ink placeholder:text-ink-faint transition-colors duration-fast ease-standard hover:border-line-strong disabled:cursor-not-allowed disabled:opacity-60';
+  'focus-ring block w-full rounded-md border border-line bg-surface px-3 text-form-input text-ink placeholder:text-ink-faint transition-colors duration-fast ease-standard hover:border-line-strong disabled:cursor-not-allowed disabled:bg-surface-disabled disabled:text-ink-disabled disabled:hover:border-line';
+
+/** Single-line controls sit at the shared 40px control height. */
+const fixedHeightField = cn(baseField, 'h-10 py-0');
 
 interface FieldWrapperProps {
   label?: string;
@@ -50,7 +61,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       <input
         ref={ref}
         id={id}
-        className={cn(baseField, error && 'border-emergency-border', className)}
+        aria-invalid={error ? true : undefined}
+        className={cn(fixedHeightField, error && 'border-emergency', className)}
         {...props}
       />
     </FieldWrapper>
@@ -75,7 +87,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
         ref={ref}
         id={id}
         rows={rows}
-        className={cn(baseField, error && 'border-emergency-border', className)}
+        aria-invalid={error ? true : undefined}
+        className={cn(baseField, 'py-2.5', error && 'border-emergency', className)}
         {...props}
       />
     </FieldWrapper>
@@ -99,7 +112,13 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
       <select
         ref={ref}
         id={id}
-        className={cn(baseField, error && 'border-emergency-border', className)}
+        aria-invalid={error ? true : undefined}
+        className={cn(
+          fixedHeightField,
+          'cursor-pointer pr-8',
+          error && 'border-emergency',
+          className,
+        )}
         {...props}
       >
         {children}
@@ -107,3 +126,30 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
     </FieldWrapper>
   );
 });
+
+/**
+ * The product's only checkbox. Every tick box in the application renders
+ * through this, so size, checked colour and focus ring can never drift between
+ * the settings forms and the onboarding wizard.
+ *
+ * `accent-accent` tints the native control with the brand blue. The native
+ * control is used on purpose: there is no forms plugin in the Tailwind build,
+ * so a hand-drawn box would lose the platform's own checked/indeterminate
+ * rendering and its keyboard behaviour for nothing.
+ */
+export const Checkbox = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
+  function Checkbox({ className, ...props }, ref) {
+    return (
+      <input
+        ref={ref}
+        type="checkbox"
+        className={cn(
+          'focus-ring accent-accent h-4 w-4 shrink-0 cursor-pointer',
+          'disabled:cursor-not-allowed disabled:opacity-40',
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
+);

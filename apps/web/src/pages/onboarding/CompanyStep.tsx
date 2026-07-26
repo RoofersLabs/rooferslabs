@@ -4,7 +4,8 @@ import { OnboardingStep } from '@rooferslabs/shared';
 import { z } from 'zod';
 import { useAccess } from '@/auth/AccessProvider';
 import { useCompany, useCreateCompany, useUpdateCompany } from '@/hooks/queries';
-import { Field, StepActions, StepError, StepHeading, fieldClass } from './fields';
+import { Card } from '@/components/ui/card';
+import { Field, StepActions, StepError, StepHeading, StepLoading, fieldClass } from './fields';
 import { useOnboarding } from './useOnboarding';
 
 /** Mirrors CreateCompanyDto / the matching subset of UpdateCompanyDto. */
@@ -70,9 +71,7 @@ export function CompanyStep() {
     await advanceFrom(OnboardingStep.COMPANY);
   });
 
-  if (hasCompany && company.isLoading) {
-    return <p className="text-sm text-gray-600">Loading…</p>;
-  }
+  if (hasCompany && company.isLoading) return <StepLoading />;
 
   return (
     <div className="space-y-8">
@@ -81,7 +80,7 @@ export function CompanyStep() {
         blurb="Tell us about your business. This takes about two minutes."
       />
 
-      <form onSubmit={onSubmit} className="space-y-4 rounded border border-gray-200 bg-white p-6">
+      <Card as="form" onSubmit={onSubmit} className="gap-5 px-6 py-6">
         <Field label="Business name" htmlFor="name" error={errors.name}>
           <input id="name" className={fieldClass} {...register('name')} />
         </Field>
@@ -110,7 +109,7 @@ export function CompanyStep() {
               <input id="city" className={fieldClass} {...register('city')} />
             </Field>
           </div>
-          <div className="w-24">
+          <div className="w-28">
             <Field label="State" htmlFor="state" error={errors.state}>
               <input id="state" className={fieldClass} {...register('state')} />
             </Field>
@@ -119,7 +118,7 @@ export function CompanyStep() {
 
         <StepError error={createCompany.error ?? updateCompany.error} />
         <StepActions submitting={isSubmitting} />
-      </form>
+      </Card>
     </div>
   );
 }

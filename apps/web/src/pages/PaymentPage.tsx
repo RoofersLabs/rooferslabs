@@ -3,6 +3,11 @@ import { SubscriptionPlan } from '@rooferslabs/shared';
 import { ROUTES } from '@/auth/stages';
 import { useCreateCheckoutSession } from '@/hooks/queries';
 import { ApiError } from '@/lib/api-client';
+import { StandaloneLayout } from '@/layouts/StandaloneLayout';
+import { Alert } from '@/components/ui/Alert';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 export const PLANS: { plan: SubscriptionPlan; name: string; price: string; blurb: string }[] = [
   {
@@ -41,50 +46,52 @@ export function PaymentPage() {
   };
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-16">
-      <h1 className="text-2xl font-bold">Choose your plan</h1>
-      <p className="mt-2 text-sm text-gray-600">
-        A subscription is required to use RoofersLabs. You can change or cancel it at any time.
-      </p>
+    <StandaloneLayout>
+      <PageHeader
+        title="Choose your plan"
+        description="A subscription is required to use RoofersLabs. You can change or cancel it at any time."
+      />
 
       {params.get('checkout') === 'cancelled' && (
-        <p className="mt-4 rounded border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm">
-          Checkout was cancelled. No payment was taken — pick a plan to try again.
-        </p>
+        <Alert className="mb-6" tone="warning" title="Checkout was cancelled">
+          No payment was taken — pick a plan to try again.
+        </Alert>
       )}
 
-      <div className="mt-8 space-y-4">
+      {checkout.isError && (
+        <Alert className="mb-6" tone="danger">
+          {(checkout.error as ApiError).message || 'Could not start checkout. Please try again.'}
+        </Alert>
+      )}
+
+      <div className="space-y-6">
         {PLANS.map((p) => (
-          <div key={p.plan} className="rounded border border-gray-200 bg-white p-6">
-            <div className="flex items-baseline justify-between">
-              <h2 className="text-lg font-semibold">{p.name}</h2>
-              <span className="text-lg font-semibold">{p.price}</span>
+          <Card key={p.plan} className="px-6 py-6">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <h2 className="text-h4 text-ink">{p.name}</h2>
+              <span className="font-num text-h4 text-ink">{p.price}</span>
             </div>
-            <p className="mt-2 text-sm text-gray-600">{p.blurb}</p>
-            <button
-              type="button"
+            <p className="mt-2 text-body leading-6 text-ink-muted">{p.blurb}</p>
+            <Button
+              className="mt-5 self-start"
+              loading={checkout.isPending}
               onClick={() => void start(p.plan)}
-              disabled={checkout.isPending}
-              className="mt-4 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
             >
               {checkout.isPending ? 'Redirecting…' : `Subscribe to ${p.name}`}
-            </button>
-          </div>
+            </Button>
+          </Card>
         ))}
       </div>
 
-      {checkout.isError && (
-        <p className="mt-4 text-sm text-red-600">
-          {(checkout.error as ApiError).message || 'Could not start checkout. Please try again.'}
-        </p>
-      )}
-
-      <p className="mt-8 text-sm text-gray-600">
+      <p className="mt-10 text-small text-ink-muted">
         Already subscribed?{' '}
-        <Link to={ROUTES.billing} className="underline">
+        <Link
+          to={ROUTES.billing}
+          className="focus-ring rounded-xs font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
+        >
           Manage billing
         </Link>
       </p>
-    </main>
+    </StandaloneLayout>
   );
 }

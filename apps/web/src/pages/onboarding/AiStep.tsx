@@ -5,7 +5,19 @@ import { AiVoice, OnboardingStep } from '@rooferslabs/shared';
 import { z } from 'zod';
 import { stepPath } from '@/auth/stages';
 import { useAiConfig, useUpdateAiConfig } from '@/hooks/queries';
-import { Field, StepActions, StepError, StepHeading, fieldClass, labelClass } from './fields';
+import { cn } from '@/lib/utils';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/input';
+import {
+  Field,
+  StepActions,
+  StepError,
+  StepHeading,
+  StepLoading,
+  fieldClass,
+  labelClass,
+  textareaClass,
+} from './fields';
 import { useOnboarding } from './useOnboarding';
 
 /** Mirrors UpdateAiConfigurationDto. */
@@ -102,7 +114,7 @@ export function AiStep() {
     await advanceFrom(OnboardingStep.AI);
   });
 
-  if (config.isLoading) return <p className="text-sm text-gray-600">Loading…</p>;
+  if (config.isLoading) return <StepLoading />;
 
   return (
     <div className="space-y-8">
@@ -111,7 +123,7 @@ export function AiStep() {
         blurb="How it introduces itself, and what it handles while you’re on a roof."
       />
 
-      <form onSubmit={onSubmit} className="space-y-6 rounded border border-gray-200 bg-white p-6">
+      <Card as="form" onSubmit={onSubmit} className="gap-6 px-6 py-6">
         <Field label="Receptionist name" htmlFor="assistantName" error={errors.assistantName}>
           <input
             id="assistantName"
@@ -122,7 +134,11 @@ export function AiStep() {
         </Field>
 
         <Field label="Voice" htmlFor="voice" error={errors.voice}>
-          <select id="voice" className={fieldClass} {...register('voice')}>
+          <select
+            id="voice"
+            className={cn(fieldClass, 'cursor-pointer pr-8')}
+            {...register('voice')}
+          >
             {VOICES.map((voice) => (
               <option key={voice.value} value={voice.value}>
                 {voice.label}
@@ -140,7 +156,7 @@ export function AiStep() {
           <textarea
             id="greeting"
             rows={2}
-            className={fieldClass}
+            className={textareaClass}
             placeholder="Thanks for calling Summit Roofing — this is Riley. How can I help?"
             {...register('greeting')}
           />
@@ -157,22 +173,25 @@ export function AiStep() {
 
         <fieldset>
           <legend className={labelClass}>What it handles</legend>
-          <div className="mt-2 space-y-3">
+          <div className="mt-2 space-y-2">
             {CAPABILITIES.map((capability) => (
-              <label key={capability.name} className="flex gap-2.5 text-sm">
-                <input type="checkbox" className="mt-1" {...register(capability.name)} />
-                <span>
-                  <span className="font-medium text-gray-900">{capability.label}</span>
-                  <span className="block text-gray-600">{capability.blurb}</span>
+              <label
+                key={capability.name}
+                className="flex cursor-pointer items-start gap-3 rounded-md border border-line-subtle p-4 transition-colors duration-fast hover:border-line-strong"
+              >
+                <Checkbox className="mt-0.5" {...register(capability.name)} />
+                <span className="min-w-0">
+                  <span className="block text-body font-medium text-ink">{capability.label}</span>
+                  <span className="block text-small text-ink-muted">{capability.blurb}</span>
                 </span>
               </label>
             ))}
           </div>
         </fieldset>
 
-        <div className="space-y-3">
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-            <input type="checkbox" {...register('transferToHuman')} />
+        <div className="space-y-4">
+          <label className="flex cursor-pointer items-center gap-3 text-body font-medium text-ink">
+            <Checkbox {...register('transferToHuman')} />
             Transfer to a person on request
           </label>
           {transferToHuman && (
@@ -192,7 +211,7 @@ export function AiStep() {
           submitting={isSubmitting}
           onBack={() => navigate(stepPath(OnboardingStep.BUSINESS))}
         />
-      </form>
+      </Card>
     </div>
   );
 }
