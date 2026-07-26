@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { UserButton } from '@clerk/clerk-react';
-import { useSessionStore } from '@/state/session.store';
+import { useAccess } from '@/auth/AccessProvider';
 
 const navigation = [
   { to: '/dashboard', label: 'Dashboard' },
@@ -10,7 +10,7 @@ const navigation = [
 
 /** Temporary application shell: a plain header and the routed page. */
 export function AppLayout() {
-  const company = useSessionStore((s) => s.company);
+  const { company } = useAccess();
 
   return (
     <div className="min-h-screen">

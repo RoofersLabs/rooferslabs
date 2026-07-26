@@ -8,6 +8,7 @@ import type { StripeService } from './stripe.service';
 import type { AppConfigService } from '../config/app-config.service';
 import type { PrismaService } from '../prisma/prisma.service';
 import type { RedisService } from '../redis/redis.service';
+import type { CompaniesService } from '../companies/companies.service';
 
 const COMPANY = 'company_1';
 const CUSTOMER = 'cus_123';
@@ -107,8 +108,12 @@ function makeService(
     del: jest.fn().mockResolvedValue(undefined),
   } as unknown as jest.Mocked<RedisService>;
 
-  const service = new BillingService(repo, stripe, config, prisma, redis);
-  return { service, repo, stripe, prisma, redis };
+  const companies = {
+    provisionReceptionistNumber: jest.fn().mockResolvedValue(undefined),
+  } as unknown as jest.Mocked<CompaniesService>;
+
+  const service = new BillingService(repo, stripe, config, prisma, redis, companies);
+  return { service, repo, stripe, prisma, redis, companies };
 }
 
 describe('BillingService', () => {
@@ -226,6 +231,45 @@ describe('BillingService', () => {
       expect(upsert.create.status).toBe(SubscriptionStatus.ACTIVE);
       // Basil moved the billing period onto the subscription item.
       expect(upsert.create.currentPeriodEnd).toEqual(new Date(1785000000 * 1000));
+    });
+
+    it('provisions the AI phone number when the tenant first becomes active', async () => {
+      // Onboarding now completes before payment, so activation — not finishing
+      // the wizard — is what earns a tenant a real (billable) Twilio number.
+      const { service, companies } = makeService({ existing: null, byCustomer: null });
+      await service.applyWebhookEvent(
+        event('checkout.session.completed', { subscription: SUB, client_reference_id: COMPANY }),
+      );
+      expect(companies.provisionReceptionistNumber).toHaveBeenCalledWith(COMPANY);
+    });
+
+    it('does not re-provision when an already-active subscription is redelivered', async () => {
+      // Stripe retries deliveries and sends several events describing an
+      // already-active subscription; provisioning must key off the transition.
+      const { service, companies } = makeService({
+        existing: makeSubscription({ status: SubscriptionStatus.ACTIVE }),
+        byCustomer: makeSubscription({ status: SubscriptionStatus.ACTIVE }),
+      });
+      await service.applyWebhookEvent(
+        event('customer.subscription.updated', makeStripeSubscription()),
+      );
+      expect(companies.provisionReceptionistNumber).not.toHaveBeenCalled();
+    });
+
+    it('does not provision for a tenant whose payment failed', async () => {
+      const { service, companies, prisma } = makeService({
+        existing: null,
+        byCustomer: null,
+        upsert: makeSubscription({ status: SubscriptionStatus.PAST_DUE }),
+        stripeSubscription: makeStripeSubscription({ status: 'past_due' }),
+      });
+      await service.applyWebhookEvent(
+        event('invoice.payment_failed', {
+          parent: { subscription_details: { subscription: SUB } },
+        }),
+      );
+      expect((prisma.subscription.upsert as jest.Mock).mock.calls).toHaveLength(1);
+      expect(companies.provisionReceptionistNumber).not.toHaveBeenCalled();
     });
 
     it('mirrors a cancellation from customer.subscription.deleted', async () => {

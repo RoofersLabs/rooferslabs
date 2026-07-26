@@ -8,6 +8,7 @@ import {
   SubscriptionStatus,
 } from '@rooferslabs/shared';
 import { BusinessRuleError, NotFoundError } from '../common/exceptions/domain.exception';
+import { CompaniesService } from '../companies/companies.service';
 import { AppConfigService } from '../config/app-config.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
@@ -62,6 +63,7 @@ export class BillingService {
     private readonly config: AppConfigService,
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    private readonly companies: CompaniesService,
   ) {}
 
   private entitlementKey(companyId: string): string {
@@ -297,6 +299,14 @@ export class BillingService {
       return BillingService.toSummary(null);
     }
 
+    // Read the tenant's state before the upsert so activation can be detected
+    // as a transition rather than a level — Stripe redelivers events and sends
+    // several that all describe an already-active subscription.
+    const previous = await this.repo.findByCompanyId(companyId);
+    const wasActive = previous
+      ? ACTIVE_SUBSCRIPTION_STATUSES.includes(previous.status as SubscriptionStatus)
+      : false;
+
     const item = subscription.items.data[0];
     const priceId = item?.price?.id ?? null;
     const data = {
@@ -322,6 +332,20 @@ export class BillingService {
     this.logger.log(
       `Subscription for company ${companyId} is now ${row.status} (${subscription.id})`,
     );
+
+    // First moment this tenant is entitled to service: buy its dedicated AI
+    // number. This used to happen when onboarding completed, but onboarding now
+    // runs before payment, so provisioning there would purchase a real number
+    // for tenants who finish setup and never subscribe.
+    //
+    // Guarded on the transition so redelivered events never re-run it, and the
+    // call itself is both idempotent and non-throwing — a Twilio failure must
+    // not fail the webhook, or Stripe would retry the entire event.
+    const isNowActive = ACTIVE_SUBSCRIPTION_STATUSES.includes(row.status as SubscriptionStatus);
+    if (isNowActive && !wasActive) {
+      await this.companies.provisionReceptionistNumber(companyId);
+    }
+
     return BillingService.toSummary(row);
   }
 

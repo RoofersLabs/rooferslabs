@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useReceptionistStatus, useSetReceptionistEnabled } from '@/hooks/queries';
-import { useSessionStore } from '@/state/session.store';
+import { useAccess } from '@/auth/AccessProvider';
 import { ApiError } from '@/lib/api-client';
 
 /**
@@ -10,7 +10,7 @@ import { ApiError } from '@/lib/api-client';
  * the full settings surface waits for the redesign.
  */
 export function SettingsPage() {
-  const company = useSessionStore((s) => s.company);
+  const { company } = useAccess();
   const status = useReceptionistStatus();
   const setEnabled = useSetReceptionistEnabled();
   const push = usePushNotifications();

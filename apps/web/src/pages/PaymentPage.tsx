@@ -1,6 +1,7 @@
-import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { SubscriptionPlan } from '@rooferslabs/shared';
-import { useCreateCheckoutSession, useSubscription } from '@/hooks/queries';
+import { ROUTES } from '@/auth/stages';
+import { useCreateCheckoutSession } from '@/hooks/queries';
 import { ApiError } from '@/lib/api-client';
 
 export const PLANS: { plan: SubscriptionPlan; name: string; price: string; blurb: string }[] = [
@@ -19,12 +20,18 @@ export const PLANS: { plan: SubscriptionPlan; name: string; price: string; blurb
 ];
 
 /**
- * The payment step. A tenant lands here after creating its organization and
- * cannot reach the application until Stripe Checkout completes successfully.
+ * The payment step. A tenant lands here once setup is finished and cannot reach
+ * the application until Stripe Checkout completes successfully.
+ *
+ * There is no subscribed check here on purpose. This page used to redirect to
+ * `/dashboard` when `/billing/subscription` reported active, while the route
+ * guard read the same fact from `/auth/me` — two independently cached answers
+ * that disagreed for a few seconds after checkout and bounced the browser
+ * between the two routes. The `payment`-only guard on this route is now the
+ * single check, so a subscribed tenant never renders this page at all.
  */
 export function PaymentPage() {
   const [params] = useSearchParams();
-  const subscription = useSubscription();
   const checkout = useCreateCheckoutSession();
 
   const start = async (plan: SubscriptionPlan) => {
@@ -32,8 +39,6 @@ export function PaymentPage() {
     // Stripe-hosted Checkout — a full navigation, not a client-side route.
     window.location.assign(url);
   };
-
-  if (subscription.data?.isActive) return <Navigate to="/dashboard" replace />;
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
@@ -76,7 +81,7 @@ export function PaymentPage() {
 
       <p className="mt-8 text-sm text-gray-600">
         Already subscribed?{' '}
-        <Link to="/billing" className="underline">
+        <Link to={ROUTES.billing} className="underline">
           Manage billing
         </Link>
       </p>

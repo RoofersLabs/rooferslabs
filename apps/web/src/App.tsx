@@ -1,11 +1,12 @@
 import { Suspense, lazy } from 'react';
-import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
-import { useAuth } from '@clerk/clerk-react';
-import { useSessionQuery } from '@/hooks/queries';
+import { Outlet, Route, Routes } from 'react-router-dom';
+import { AccessProvider } from '@/auth/AccessProvider';
+import { RouteGuard } from '@/auth/RouteGuard';
+import { ROUTE_ACCESS, ROUTES } from '@/auth/stages';
 import { AuthenticatedProviders } from '@/providers/AppProviders';
 import { AppLayout } from '@/layouts/AppLayout';
 import { SignInPage, SignUpPage } from '@/pages/AuthPages';
-import { OnboardingPage } from '@/pages/OnboardingPage';
+import { OnboardingLayout } from '@/pages/onboarding/OnboardingLayout';
 import { PaymentPage } from '@/pages/PaymentPage';
 import { BillingPage } from '@/pages/BillingPage';
 import { DashboardPage } from '@/pages/DashboardPage';
@@ -19,133 +20,79 @@ const MarketingPage = lazy(() =>
   import('@/marketing/MarketingPage').then((m) => ({ default: m.MarketingPage })),
 );
 
-function Loading({ label = 'Loading…' }: { label?: string }) {
-  return (
-    <div className="flex min-h-screen items-center justify-center text-sm text-gray-600">
-      {label}
-    </div>
-  );
-}
-
 /**
- * Guards the authenticated area and enforces the onboarding flow:
- * authenticate → create organization → pay → use the application.
- *
- * The payment wall here is a convenience, not the enforcement point: the API
- * rejects every gated request from an unsubscribed tenant regardless of what
- * the client does.
+ * Mounts the auth stack and the access context for every route beneath the
+ * public marketing site.
  */
-function Protected({
-  children,
-  requireSubscription = true,
-}: {
-  children: React.ReactNode;
-  requireSubscription?: boolean;
-}) {
-  const { isSignedIn, isLoaded } = useAuth();
-  const location = useLocation();
-  const session = useSessionQuery(Boolean(isLoaded && isSignedIn));
-
-  if (!isLoaded) return <Loading />;
-  if (!isSignedIn) return <Navigate to="/sign-in" replace />;
-  if (session.isLoading) return <Loading label="Loading your workspace…" />;
-  if (session.isError) {
-    return (
-      <div className="mx-auto max-w-md px-6 py-24 text-center">
-        <h1 className="text-xl font-bold">We couldn’t load your workspace</h1>
-        <p className="mt-2 text-sm text-gray-600">
-          {(session.error as Error).message || 'Please try again in a moment.'}
-        </p>
-        <button
-          type="button"
-          className="mt-4 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white"
-          onClick={() => void session.refetch()}
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
-  const hasCompany = Boolean(session.data?.company);
-  const isSubscribed = session.data?.subscription?.isActive ?? false;
-  const onOnboarding = location.pathname === '/onboarding';
-
-  if (!hasCompany && !onOnboarding) return <Navigate to="/onboarding" replace />;
-  if (hasCompany && onOnboarding) {
-    return <Navigate to={isSubscribed ? '/dashboard' : '/payment'} replace />;
-  }
-  if (requireSubscription && !isSubscribed) return <Navigate to="/payment" replace />;
-
-  return <>{children}</>;
-}
-
-/** Mounts the auth stack for every route beneath the public marketing site. */
 function AuthenticatedShell() {
   return (
     <AuthenticatedProviders>
-      <Outlet />
+      <AccessProvider>
+        <Outlet />
+      </AccessProvider>
     </AuthenticatedProviders>
   );
 }
 
+/**
+ * The route table, and the whole of the application's routing policy.
+ *
+ * Every guarded path sits under a `<RouteGuard>` whose `allow` list comes from
+ * `ROUTE_ACCESS`. No page component redirects on its own — there is exactly one
+ * decision site (`redirectFor`) and one place that renders its outcome
+ * (`RouteGuard`), which is what makes the flow
+ *
+ *     visitor → sign in → onboarding (4 steps) → payment → dashboard
+ *
+ * enforceable in both directions without any page knowing about the others.
+ */
 export function App() {
   return (
     <Routes>
-      {/* The root is the public marketing site. Everything below it is gated:
-          the guard chain routes visitors to sign-in, onboarding or payment as
-          their session requires. */}
+      {/* The public marketing site. Deliberately outside the auth stack so a
+          page with no session never waits on an auth SDK to paint. */}
       <Route
-        path="/"
+        path={ROUTES.marketing}
         element={
           <Suspense fallback={<div className="min-h-screen bg-black" />}>
             <MarketingPage />
           </Suspense>
         }
       />
-      {/* Everything below this line runs inside the auth stack. It is a layout
-          route rather than a wrapper around <Routes> so that the public surface
-          above never mounts Clerk at all. */}
+
       <Route element={<AuthenticatedShell />}>
-        <Route path="/sign-in/*" element={<SignInPage />} />
-        <Route path="/sign-up/*" element={<SignUpPage />} />
+        {/* Signed out only — a signed-in visitor is moved to their stage. */}
+        <Route element={<RouteGuard allow={ROUTE_ACCESS[ROUTES.signIn]} />}>
+          <Route path="/sign-in/*" element={<SignInPage />} />
+          <Route path="/sign-up/*" element={<SignUpPage />} />
+        </Route>
 
-        {/* Reachable before payment — this is where a blocked tenant subscribes. */}
-        <Route
-          path="/onboarding"
-          element={
-            <Protected requireSubscription={false}>
-              <OnboardingPage />
-            </Protected>
-          }
-        />
-        <Route
-          path="/payment"
-          element={
-            <Protected requireSubscription={false}>
-              <PaymentPage />
-            </Protected>
-          }
-        />
-        <Route
-          path="/billing"
-          element={
-            <Protected requireSubscription={false}>
-              <BillingPage />
-            </Protected>
-          }
-        />
+        {/* Setup. Steps are URL-addressable so progress survives a reload; the
+            layout resolves the slug and resumes at the persisted step when it
+            is missing, unknown, or not yet unlocked. */}
+        <Route element={<RouteGuard allow={ROUTE_ACCESS[ROUTES.onboarding]} />}>
+          <Route path={ROUTES.onboarding} element={<OnboardingLayout />} />
+          <Route path={`${ROUTES.onboarding}/:step`} element={<OnboardingLayout />} />
+        </Route>
 
-        {/* Requires an active subscription. */}
-        <Route
-          element={
-            <Protected>
-              <AppLayout />
-            </Protected>
-          }
-        >
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
+        {/* The payment wall. Unreachable once subscribed — that guard is the
+            reason a paying tenant never sees this page again. */}
+        <Route element={<RouteGuard allow={ROUTE_ACCESS[ROUTES.payment]} />}>
+          <Route path={ROUTES.payment} element={<PaymentPage />} />
+        </Route>
+
+        {/* Billing is reachable while unpaid *and* while paying: Stripe returns
+            here after checkout, before the activation webhook has landed. */}
+        <Route element={<RouteGuard allow={ROUTE_ACCESS[ROUTES.billing]} />}>
+          <Route path={ROUTES.billing} element={<BillingPage />} />
+        </Route>
+
+        {/* The application proper. */}
+        <Route element={<RouteGuard allow={ROUTE_ACCESS[ROUTES.dashboard]} />}>
+          <Route element={<AppLayout />}>
+            <Route path={ROUTES.dashboard} element={<DashboardPage />} />
+            <Route path={ROUTES.settings} element={<SettingsPage />} />
+          </Route>
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

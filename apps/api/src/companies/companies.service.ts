@@ -128,7 +128,16 @@ export class CompaniesService {
     return this.getById(companyId);
   }
 
-  /** Finalize onboarding: the AI receptionist is ready to answer calls. */
+  /**
+   * Finalize the guided setup wizard. This marks configuration as done; it does
+   * not make the tenant operational — the payment step comes next.
+   *
+   * Phone-number provisioning deliberately does *not* happen here. Onboarding
+   * now runs before the payment wall, so provisioning on completion would buy a
+   * real Twilio number for every tenant that finished setup and then never
+   * paid. It moved to subscription activation (see BillingService), which is the
+   * first moment a tenant is genuinely entitled to a number.
+   */
   async completeOnboarding(companyId: string): Promise<CompanyWithRelations> {
     const company = await this.getById(companyId);
     if (!company.name) {
@@ -141,12 +150,19 @@ export class CompaniesService {
     });
     await this.invalidate(companyId);
     this.logger.log(`Onboarding completed for company ${companyId}`);
+    return this.getById(companyId);
+  }
 
-    // Purchase the company's dedicated AI phone number (idempotent). A
-    // provisioning failure never blocks onboarding — the dashboard directs
-    // the owner to Phone Setup, where the retry surfaces the same error —
-    // but it is logged loudly here with the full stack, never swallowed.
+  /**
+   * Purchase the company's dedicated AI number, called when a subscription
+   * becomes active. Idempotent, and never throws: a provisioning failure must
+   * not fail the Stripe webhook that triggered it (Stripe would retry the whole
+   * event, and the tenant is already paid). The owner retries from Phone Setup,
+   * where the same error surfaces, and the failure is logged with its stack.
+   */
+  async provisionReceptionistNumber(companyId: string): Promise<void> {
     try {
+      const company = await this.getById(companyId);
       await this.phoneNumbers.provisionForCompany(companyId, {
         companyName: company.name,
         businessPhone: company.phone,
@@ -157,8 +173,6 @@ export class CompaniesService {
         (error as Error).stack,
       );
     }
-
-    return this.getById(companyId);
   }
 
   private async generateUniqueSlug(name: string): Promise<string> {

@@ -5,7 +5,6 @@
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import type { OnboardingStep, SubscriptionPlan } from '@rooferslabs/shared';
 import { api, type PaginatedResult } from '@/lib/api-client';
-import { useSessionStore } from '@/state/session.store';
 import type {
   AiConfiguration,
   Appointment,
@@ -47,17 +46,17 @@ export const queryKeys = {
 // Session
 // ---------------------------------------------------------------------------
 
+/**
+ * The bootstrap session. `AccessProvider` is the single consumer and exposes
+ * the derived identity, tenant, and billing state to the rest of the app —
+ * components read it through `useAccess()`, never by calling this again.
+ */
 export function useSessionQuery(enabled: boolean) {
-  const setSession = useSessionStore((s) => s.setSession);
   return useQuery({
     queryKey: queryKeys.session,
     enabled,
     staleTime: 60_000,
-    queryFn: async () => {
-      const session = await api.get<Session>('/auth/me');
-      setSession(session);
-      return session;
-    },
+    queryFn: () => api.get<Session>('/auth/me'),
   });
 }
 
