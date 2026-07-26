@@ -4,11 +4,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { OnboardingStep } from '@rooferslabs/shared';
 import { queryKeys, useSessionQuery } from '@/hooks/queries';
 import { onSubscriptionRequired } from '@/lib/api-client';
-import type { SessionCompany } from '@/types/api';
+import type { SessionCompany, SessionUser } from '@/types/api';
 import { resolveStage, routeAccess, type RouteAccess, type Stage } from './stages';
 
 export interface AccessState {
   stage: Stage;
+  /** The signed-in user. Null until the session resolves. */
+  user: SessionUser | null;
   /** The caller's tenant. Null until it is created in wizard step 1. */
   company: SessionCompany | null;
   /** Null until the tenant creates its company in wizard step 1. */
@@ -66,6 +68,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     const paymentsEnabled = data?.paymentsEnabled ?? true;
     return {
       stage: resolveStage({ isSignedIn: signedIn, onboardingStep, isSubscribed, paymentsEnabled }),
+      user: data?.user ?? null,
       company,
       onboardingStep,
       paymentsEnabled,

@@ -25,6 +25,13 @@ export type Stage =
   /** Signed in, onboarded, and paying. The application proper. */
   | 'app';
 
+/**
+ * Every route in the application, named once.
+ *
+ * This is the single source of the canonical paths. Nothing should write a route
+ * as a string literal — the guard, the route table, the sidebar, and the
+ * post-auth fallback all read from here, so they cannot drift apart.
+ */
 export const ROUTES = {
   marketing: '/',
   signIn: '/sign-in',
@@ -32,7 +39,14 @@ export const ROUTES = {
   onboarding: '/onboarding',
   payment: '/payment',
   billing: '/billing',
+  /** The canonical dashboard. `home('app')` resolves here. */
   dashboard: '/dashboard',
+  calls: '/calls',
+  conversations: '/conversations',
+  customers: '/customers',
+  appointments: '/appointments',
+  knowledge: '/knowledge',
+  notifications: '/notifications',
   settings: '/settings',
 } as const;
 
@@ -178,7 +192,14 @@ export function routeAccess(paymentsEnabled: boolean): RouteAccess {
     [ROUTES.onboarding]: ['onboarding'],
     [ROUTES.payment]: paymentsEnabled ? ['payment'] : [],
     [ROUTES.billing]: paymentsEnabled ? ['payment', 'app'] : [],
+    // The application proper. Every one of these requires a finished tenant.
     [ROUTES.dashboard]: ['app'],
+    [ROUTES.calls]: ['app'],
+    [ROUTES.conversations]: ['app'],
+    [ROUTES.customers]: ['app'],
+    [ROUTES.appointments]: ['app'],
+    [ROUTES.knowledge]: ['app'],
+    [ROUTES.notifications]: ['app'],
     [ROUTES.settings]: ['app'],
   };
 }

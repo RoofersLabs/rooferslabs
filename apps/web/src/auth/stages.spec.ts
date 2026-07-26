@@ -134,15 +134,53 @@ describe('billing routes with payments disabled', () => {
   });
 
   it('leaves the rest of the table untouched', () => {
-    for (const route of [
-      ROUTES.signIn,
-      ROUTES.signUp,
-      ROUTES.onboarding,
-      ROUTES.dashboard,
-      ROUTES.settings,
-    ] as GuardedRoute[]) {
+    const unaffected = (Object.keys(withPayments) as GuardedRoute[]).filter(
+      (route) => route !== ROUTES.payment && route !== ROUTES.billing,
+    );
+    for (const route of unaffected) {
       expect(withoutPayments[route]).toEqual(withPayments[route]);
     }
+  });
+});
+
+describe('the application routes', () => {
+  /** Every page behind the sidebar shell requires a finished, entitled tenant. */
+  const appRoutes: GuardedRoute[] = [
+    ROUTES.dashboard,
+    ROUTES.calls,
+    ROUTES.conversations,
+    ROUTES.customers,
+    ROUTES.appointments,
+    ROUTES.knowledge,
+    ROUTES.notifications,
+    ROUTES.settings,
+  ];
+
+  it.each(appRoutes)('%s admits only the app stage', (route) => {
+    expect(withPayments[route]).toEqual(['app']);
+  });
+
+  it.each(appRoutes)('%s stays reachable when payments are disabled', (route) => {
+    // Turning billing off must not gate the product itself.
+    expect(redirectFor('app', withoutPayments[route], withoutPayments)).toBeNull();
+  });
+
+  it('sends a finished tenant to the canonical dashboard, never elsewhere', () => {
+    // The single canonical landing route. If this drifts from the route table in
+    // App.tsx, a tenant finishing onboarding lands on a path that does not exist.
+    expect(home('app')).toBe(ROUTES.dashboard);
+    expect(ROUTES.dashboard).toBe('/dashboard');
+  });
+
+  it('routes a finished tenant out of onboarding into the dashboard', () => {
+    // The post-onboarding hop, asserted directly: completing the wizard flips
+    // the stage to 'app', and /onboarding then redirects to /dashboard.
+    expect(redirectFor('app', withoutPayments[ROUTES.onboarding], withoutPayments)).toBe(
+      ROUTES.dashboard,
+    );
+    expect(redirectFor('app', withPayments[ROUTES.onboarding], withPayments)).toBe(
+      ROUTES.dashboard,
+    );
   });
 });
 

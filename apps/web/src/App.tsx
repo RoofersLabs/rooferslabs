@@ -9,9 +9,15 @@ import { SignInPage, SignUpPage } from '@/pages/AuthPages';
 import { OnboardingLayout } from '@/pages/onboarding/OnboardingLayout';
 import { PaymentPage } from '@/pages/PaymentPage';
 import { BillingPage } from '@/pages/BillingPage';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { SettingsPage } from '@/pages/SettingsPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { DashboardPage } from '@/features/dashboard/DashboardPage';
+import { CallsPage } from '@/features/calls/CallsPage';
+import { ConversationDetailPage } from '@/features/calls/ConversationDetailPage';
+import { CustomersPage } from '@/features/customers/CustomersPage';
+import { AppointmentsPage } from '@/features/appointments/AppointmentsPage';
+import { KnowledgePage } from '@/features/knowledge/KnowledgePage';
+import { NotificationsPage } from '@/features/notifications/NotificationsPage';
+import { SettingsPage } from '@/features/settings/SettingsPage';
 
 // The marketing site is the only route an unauthenticated visitor sees, and
 // the only one the application's own bundle never needs. Splitting it keeps
@@ -92,11 +98,20 @@ export function App() {
           <Route path={ROUTES.billing} element={<BillingPage />} />
         </Route>
 
-        {/* The application proper. */}
+        {/* The application proper — one guard, one shell, every feature page
+            beneath it. `ROUTES.dashboard` is the canonical landing route the
+            stage resolver sends a finished tenant to. */}
         <Route element={<RouteGuard route={ROUTES.dashboard} />}>
           <Route element={<AppLayout />}>
             <Route path={ROUTES.dashboard} element={<DashboardPage />} />
+            <Route path={ROUTES.calls} element={<CallsPage />} />
+            <Route path={`${ROUTES.conversations}/:id`} element={<ConversationDetailPage />} />
+            <Route path={ROUTES.customers} element={<CustomersPage />} />
+            <Route path={ROUTES.appointments} element={<AppointmentsPage />} />
+            <Route path={ROUTES.knowledge} element={<KnowledgePage />} />
+            <Route path={ROUTES.notifications} element={<NotificationsPage />} />
             <Route path={ROUTES.settings} element={<SettingsPage />} />
+            <Route path={`${ROUTES.settings}/:tab`} element={<SettingsPage />} />
           </Route>
         </Route>
 

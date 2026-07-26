@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { SubscriptionStatus } from '@rooferslabs/shared';
+import { ROUTES } from '@/auth/stages';
 import {
   queryKeys,
   useCancelSubscription,
@@ -142,7 +143,7 @@ export function BillingPage() {
 
             {!isActive && (
               <Link
-                to="/payment"
+                to={ROUTES.payment}
                 className="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white"
               >
                 Choose a plan
@@ -156,11 +157,11 @@ export function BillingPage() {
 
       <p className="mt-8 text-sm text-gray-600">
         {isActive ? (
-          <Link to="/dashboard" className="underline">
+          <Link to={ROUTES.dashboard} className="underline">
             Back to dashboard
           </Link>
         ) : (
-          <Link to="/" className="underline">
+          <Link to={ROUTES.marketing} className="underline">
             Back to home
           </Link>
         )}
