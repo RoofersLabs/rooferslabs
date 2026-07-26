@@ -5,22 +5,26 @@ const CAPABILITIES = [
   {
     label: 'Answer',
     title: 'Every call is picked up instantly',
-    detail: 'RoofersLabs answers in your company’s name, follows your greeting, and stays available after hours.',
+    detail:
+      'RoofersLabs answers in your company’s name, follows your greeting, and stays available after hours.',
   },
   {
     label: 'Qualify',
     title: 'The right questions, every time',
-    detail: 'Caller details, address, roof age, job type, urgency, and service-area fit are captured consistently.',
+    detail:
+      'Caller details, address, roof age, job type, urgency, and service-area fit are captured consistently.',
   },
   {
     label: 'Book',
     title: 'Qualified leads become appointments',
-    detail: 'Available slots are offered during the call, then written back to your calendar before the caller hangs up.',
+    detail:
+      'Available slots are offered during the call, then written back to your calendar before the caller hangs up.',
   },
   {
     label: 'Notify',
     title: 'Your team gets the full context',
-    detail: 'Transcripts, recordings, summaries, and emergency alerts reach the people who need to respond.',
+    detail:
+      'Transcripts, recordings, summaries, and emergency alerts reach the people who need to respond.',
   },
 ] as const;
 
@@ -75,9 +79,7 @@ export function Showcase() {
                 <h3 className="mt-5 text-[18px] font-medium leading-[1.25] tracking-[-0.02em] text-white">
                   {item.title}
                 </h3>
-                <p className="mt-3 text-[14.5px] leading-[1.65] text-mk-secondary">
-                  {item.detail}
-                </p>
+                <p className="mt-3 text-[14.5px] leading-[1.65] text-mk-secondary">{item.detail}</p>
               </StaggerItem>
             ))}
           </Stagger>

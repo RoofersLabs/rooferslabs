@@ -188,7 +188,10 @@ export function Pricing() {
                 </p>
               </div>
 
-              <Stagger as="ul" className="flex flex-col gap-3 md:border-l md:border-mk-line md:pl-10">
+              <Stagger
+                as="ul"
+                className="flex flex-col gap-3 md:border-l md:border-mk-line md:pl-10"
+              >
                 {INCLUDED.map((item) => (
                   <StaggerItem as="li" key={item} className="flex gap-2.5">
                     <Check />

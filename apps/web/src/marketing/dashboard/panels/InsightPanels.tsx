@@ -65,9 +65,7 @@ export function MetricsRow({ className }: { className?: string }) {
             <Num className="text-[22px] font-semibold leading-none tracking-[-0.02em] text-white">
               {metric.value}
             </Num>
-            {metric.delta && (
-              <Num className="text-[11.5px] text-mk-accent-fg">{metric.delta}</Num>
-            )}
+            {metric.delta && <Num className="text-[11.5px] text-mk-accent-fg">{metric.delta}</Num>}
           </div>
         </motion.div>
       ))}

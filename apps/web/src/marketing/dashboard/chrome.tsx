@@ -97,9 +97,7 @@ export function Panel({
 
 /** Numeric values are always tabular so columns of figures stay aligned. */
 export function Num({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <span className={cn('font-num tabular-nums', className)}>{children}</span>
-  );
+  return <span className={cn('font-num tabular-nums', className)}>{children}</span>;
 }
 
 const NAV = ['Overview', 'Calls', 'Appointments', 'Customers', 'Analytics'] as const;

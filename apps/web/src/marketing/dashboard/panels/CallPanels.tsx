@@ -190,7 +190,14 @@ function ScoreRing({ score }: { score: number }) {
   return (
     <div className="relative h-[68px] w-[68px] shrink-0">
       <svg viewBox="0 0 64 64" className="h-full w-full -rotate-90" aria-hidden="true">
-        <circle cx="32" cy="32" r={radius} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="4" />
+        <circle
+          cx="32"
+          cy="32"
+          r={radius}
+          fill="none"
+          stroke="rgba(255,255,255,0.08)"
+          strokeWidth="4"
+        />
         <motion.circle
           cx="32"
           cy="32"
@@ -200,7 +207,9 @@ function ScoreRing({ score }: { score: number }) {
           strokeWidth="4"
           strokeLinecap="round"
           strokeDasharray={circumference}
-          initial={{ strokeDashoffset: reduced ? circumference * (1 - score / 100) : circumference }}
+          initial={{
+            strokeDashoffset: reduced ? circumference * (1 - score / 100) : circumference,
+          }}
           whileInView={{ strokeDashoffset: circumference * (1 - score / 100) }}
           viewport={{ once: true }}
           transition={{ duration: reduced ? 0 : 1.1, ease: [0.16, 1, 0.3, 1] }}
@@ -215,13 +224,7 @@ function ScoreRing({ score }: { score: number }) {
 }
 
 /** Lead qualification — what the model established, and how it scored the lead. */
-export function LeadQualificationPanel({
-  call,
-  className,
-}: {
-  call: Call;
-  className?: string;
-}) {
+export function LeadQualificationPanel({ call, className }: { call: Call; className?: string }) {
   return (
     <Panel title="Lead qualification" className={className} bodyClassName="p-4 overflow-y-auto">
       <div className="flex items-center gap-4">

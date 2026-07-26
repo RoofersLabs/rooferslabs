@@ -166,7 +166,10 @@ export const transcripts: Record<string, Array<{ role: 'ai' | 'caller'; text: st
     { role: 'caller', text: 'One of my skylights is letting in water when it rains hard.' },
     { role: 'ai', text: 'Do you know how old the skylight is?' },
     { role: 'caller', text: 'It came with the house, so at least fifteen years.' },
-    { role: 'ai', text: 'Resealing usually handles that. I will have an estimator call you today.' },
+    {
+      role: 'ai',
+      text: 'Resealing usually handles that. I will have an estimator call you today.',
+    },
   ],
 };
 
