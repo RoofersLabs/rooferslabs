@@ -5,6 +5,7 @@
  * and exposed as a strongly-typed, nested config object consumed via
  * {@link AppConfigService}. Secrets are never logged.
  */
+import { isPaymentsEnabled } from './payments.flag';
 
 export interface AppConfig {
   env: 'development' | 'test' | 'production';
@@ -26,6 +27,15 @@ export interface AppConfig {
     secretKey: string;
     jwtKey: string | undefined;
     webhookSecret: string | undefined;
+  };
+  payments: {
+    /**
+     * Master switch for the billing feature. When false the Stripe client is
+     * never constructed, the webhook route is not registered, the billing
+     * endpoints answer 503, and the payment wall is open — every tenant reaches
+     * the product without a subscription.
+     */
+    enabled: boolean;
   };
   stripe: {
     secretKey: string;
@@ -107,6 +117,9 @@ export default (): AppConfig => {
       secretKey: process.env.CLERK_SECRET_KEY ?? '',
       jwtKey: process.env.CLERK_JWT_KEY || undefined,
       webhookSecret: process.env.CLERK_WEBHOOK_SECRET || undefined,
+    },
+    payments: {
+      enabled: isPaymentsEnabled(),
     },
     stripe: {
       secretKey: process.env.STRIPE_SECRET_KEY ?? '',

@@ -84,20 +84,44 @@ export interface AccessFacts {
   onboardingStep: OnboardingStep | null;
   /** Mirrors Stripe via the backend. Grandfathered tenants also read true. */
   isSubscribed: boolean;
+  /**
+   * Whether billing is switched on platform-wide, reported by the API so the
+   * flag is enforced from one place on both sides. When false the payment step
+   * does not exist: onboarding leads straight to the dashboard.
+   */
+  paymentsEnabled: boolean;
 }
 
 /**
  * Reduce the session to a stage. This is the *only* place the ordering
  * auth → onboarding → payment → app is encoded.
  */
-export function resolveStage({ isSignedIn, onboardingStep, isSubscribed }: AccessFacts): Stage {
+export function resolveStage({
+  isSignedIn,
+  onboardingStep,
+  isSubscribed,
+  paymentsEnabled,
+}: AccessFacts): Stage {
   if (!isSignedIn) return 'anonymous';
   // No company yet, or the wizard never reached the end: setup is unfinished.
   if (onboardingStep === null || onboardingStep !== OnboardingStep.COMPLETE) {
     return 'onboarding';
   }
-  if (!isSubscribed) return 'payment';
+  // With billing off there is no wall, so 'payment' is unreachable and a
+  // finished tenant goes straight into the application.
+  if (paymentsEnabled && !isSubscribed) return 'payment';
   return 'app';
+}
+
+/**
+ * The stages `resolveStage` can actually produce. With payments off nothing
+ * resolves to 'payment', which is what makes the billing routes unreachable
+ * without special-casing them in the guard.
+ */
+export function reachableStages(paymentsEnabled: boolean): readonly Stage[] {
+  return paymentsEnabled
+    ? ['anonymous', 'onboarding', 'payment', 'app']
+    : ['anonymous', 'onboarding', 'app'];
 }
 
 /**
@@ -132,6 +156,8 @@ export function home(stage: Stage): GuardedRoute {
   }
 }
 
+export type RouteAccess = Record<GuardedRoute, readonly Stage[]>;
+
 /**
  * Which stages may view each guarded route.
  *
@@ -139,44 +165,57 @@ export function home(stage: Stage): GuardedRoute {
  * returns there after checkout, when the webhook that flips the tenant to
  * active has usually not landed yet. Excluding `payment` would bounce every
  * successful payer off their own receipt.
+ *
+ * With payments off both billing routes admit no stage at all, so any attempt
+ * to reach them redirects to the visitor's own landing route. Expressing it in
+ * the table rather than in the guard keeps every routing decision in one place,
+ * and keeps the whole policy a pure function of the session.
  */
-export const ROUTE_ACCESS: Record<GuardedRoute, readonly Stage[]> = {
-  [ROUTES.signIn]: ['anonymous'],
-  [ROUTES.signUp]: ['anonymous'],
-  [ROUTES.onboarding]: ['onboarding'],
-  [ROUTES.payment]: ['payment'],
-  [ROUTES.billing]: ['payment', 'app'],
-  [ROUTES.dashboard]: ['app'],
-  [ROUTES.settings]: ['app'],
-};
+export function routeAccess(paymentsEnabled: boolean): RouteAccess {
+  return {
+    [ROUTES.signIn]: ['anonymous'],
+    [ROUTES.signUp]: ['anonymous'],
+    [ROUTES.onboarding]: ['onboarding'],
+    [ROUTES.payment]: paymentsEnabled ? ['payment'] : [],
+    [ROUTES.billing]: paymentsEnabled ? ['payment', 'app'] : [],
+    [ROUTES.dashboard]: ['app'],
+    [ROUTES.settings]: ['app'],
+  };
+}
 
 /**
  * The one decision function. Returns the path to redirect to, or `null` to
  * render the route. Guards call this and do nothing else.
  */
-export function redirectFor(stage: Stage, allowed: readonly Stage[]): GuardedRoute | null {
+export function redirectFor(
+  stage: Stage,
+  allowed: readonly Stage[],
+  access: RouteAccess,
+): GuardedRoute | null {
   if (allowed.includes(stage)) return null;
   const destination = home(stage);
   // Defensive: never emit a redirect to a route this stage also cannot view.
-  // Reaching this would mean ROUTE_ACCESS and home() disagree — a bug that
+  // Reaching this would mean the access table and home() disagree — a bug that
   // assertNoRedirectCycles() catches in CI. Rendering the wrong page once is
   // strictly better than ping-ponging the browser, so fail open.
-  if (!ROUTE_ACCESS[destination].includes(stage)) return null;
+  if (!access[destination].includes(stage)) return null;
   return destination;
 }
 
-const ALL_STAGES: readonly Stage[] = ['anonymous', 'onboarding', 'payment', 'app'];
-
 /**
- * Proves the routing table cannot loop: for every stage, following `home()`
- * from any disallowed route must land somewhere that stage is allowed to be,
- * so every redirect terminates in exactly one hop. Exercised by the unit tests.
+ * Proves the routing table cannot loop: for every stage a visitor can actually
+ * be in, following `home()` from any disallowed route must land somewhere that
+ * stage is allowed to be, so every redirect terminates in exactly one hop.
+ *
+ * Only reachable stages are checked. With payments off `home('payment')` still
+ * names `/payment`, which admits nobody — but no session resolves to 'payment',
+ * so that pairing never occurs at runtime.
  */
-export function assertNoRedirectCycles(): void {
-  for (const stage of ALL_STAGES) {
+export function assertNoRedirectCycles(paymentsEnabled: boolean): void {
+  const access = routeAccess(paymentsEnabled);
+  for (const stage of reachableStages(paymentsEnabled)) {
     const destination = home(stage);
-    const access = ROUTE_ACCESS[destination];
-    if (!access.includes(stage)) {
+    if (!access[destination].includes(stage)) {
       throw new Error(
         `Redirect cycle: stage '${stage}' is sent to '${destination}', which excludes it.`,
       );

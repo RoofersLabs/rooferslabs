@@ -2,14 +2,16 @@ import { OnboardingStep } from '@rooferslabs/shared';
 import {
   ONBOARDING_STEPS,
   ROUTES,
-  ROUTE_ACCESS,
   assertNoRedirectCycles,
   home,
   nextStep,
+  reachableStages,
   redirectFor,
   resolveStage,
   resumeStep,
+  routeAccess,
   stepPath,
+  type GuardedRoute,
   type Stage,
 } from './stages';
 
@@ -17,8 +19,14 @@ const facts = (overrides: Partial<Parameters<typeof resolveStage>[0]> = {}) => (
   isSignedIn: true,
   onboardingStep: OnboardingStep.COMPLETE,
   isSubscribed: true,
+  paymentsEnabled: true,
   ...overrides,
 });
+
+/** Access table with billing on — the full production flow. */
+const withPayments = routeAccess(true);
+/** Access table with billing off — PAYMENTS_ENABLED=false. */
+const withoutPayments = routeAccess(false);
 
 describe('resolveStage', () => {
   it('treats a visitor with no session as anonymous, whatever else is known', () => {
@@ -53,8 +61,33 @@ describe('resolveStage', () => {
   });
 });
 
+describe('resolveStage with payments disabled', () => {
+  it('sends an unsubscribed tenant straight to the application', () => {
+    // The whole point of the flag: onboarding → dashboard, no payment step.
+    expect(resolveStage(facts({ isSubscribed: false, paymentsEnabled: false }))).toBe('app');
+  });
+
+  it('never produces the payment stage', () => {
+    for (const isSubscribed of [true, false]) {
+      expect(resolveStage(facts({ isSubscribed, paymentsEnabled: false }))).not.toBe('payment');
+    }
+    expect(reachableStages(false)).not.toContain('payment');
+  });
+
+  it('still gates onboarding and authentication', () => {
+    // Disabling billing must not weaken anything earlier in the chain.
+    expect(resolveStage(facts({ isSignedIn: false, paymentsEnabled: false }))).toBe('anonymous');
+    expect(resolveStage(facts({ onboardingStep: null, paymentsEnabled: false }))).toBe(
+      'onboarding',
+    );
+    expect(resolveStage(facts({ onboardingStep: OnboardingStep.AI, paymentsEnabled: false }))).toBe(
+      'onboarding',
+    );
+  });
+});
+
 describe('redirectFor', () => {
-  const cases: { stage: Stage; route: keyof typeof ROUTE_ACCESS; expected: string | null }[] = [
+  const cases: { stage: Stage; route: GuardedRoute; expected: string | null }[] = [
     // Each stage may sit on its own landing route.
     { stage: 'anonymous', route: ROUTES.signIn, expected: null },
     { stage: 'onboarding', route: ROUTES.onboarding, expected: null },
@@ -75,45 +108,75 @@ describe('redirectFor', () => {
   ];
 
   it.each(cases)('$stage at $route → $expected', ({ stage, route, expected }) => {
-    expect(redirectFor(stage, ROUTE_ACCESS[route])).toBe(expected);
+    expect(redirectFor(stage, withPayments[route], withPayments)).toBe(expected);
   });
 
   it('never shows the payment page to a subscribed tenant', () => {
-    expect(redirectFor('app', ROUTE_ACCESS[ROUTES.payment])).toBe(ROUTES.dashboard);
+    expect(redirectFor('app', withPayments[ROUTES.payment], withPayments)).toBe(ROUTES.dashboard);
   });
 
   it('keeps billing reachable both before and after activation', () => {
     // Stripe returns to /billing before the activation webhook lands, so the
     // page must render in both stages or every payer bounces off their receipt.
-    expect(redirectFor('payment', ROUTE_ACCESS[ROUTES.billing])).toBeNull();
-    expect(redirectFor('app', ROUTE_ACCESS[ROUTES.billing])).toBeNull();
+    expect(redirectFor('payment', withPayments[ROUTES.billing], withPayments)).toBeNull();
+    expect(redirectFor('app', withPayments[ROUTES.billing], withPayments)).toBeNull();
   });
 });
 
-describe('redirect termination', () => {
-  it('has no cycles in the route table', () => {
-    expect(() => assertNoRedirectCycles()).not.toThrow();
-  });
-
-  it('settles in exactly one hop from any stage on any guarded route', () => {
-    const stages: Stage[] = ['anonymous', 'onboarding', 'payment', 'app'];
-    const routes = Object.keys(ROUTE_ACCESS) as (keyof typeof ROUTE_ACCESS)[];
-
-    for (const stage of stages) {
-      for (const route of routes) {
-        const first = redirectFor(stage, ROUTE_ACCESS[route]);
-        if (first === null) continue;
-        // Following the redirect must render, never redirect again.
-        expect(redirectFor(stage, ROUTE_ACCESS[first])).toBeNull();
+describe('billing routes with payments disabled', () => {
+  it('turns everyone away from /payment and /billing', () => {
+    for (const route of [ROUTES.payment, ROUTES.billing] as GuardedRoute[]) {
+      expect(withoutPayments[route]).toEqual([]);
+      for (const stage of reachableStages(false)) {
+        expect(redirectFor(stage, withoutPayments[route], withoutPayments)).toBe(home(stage));
       }
     }
   });
 
-  it('sends every stage to a route that stage can actually view', () => {
-    for (const stage of ['anonymous', 'onboarding', 'payment', 'app'] as Stage[]) {
-      expect(ROUTE_ACCESS[home(stage)]).toContain(stage);
+  it('leaves the rest of the table untouched', () => {
+    for (const route of [
+      ROUTES.signIn,
+      ROUTES.signUp,
+      ROUTES.onboarding,
+      ROUTES.dashboard,
+      ROUTES.settings,
+    ] as GuardedRoute[]) {
+      expect(withoutPayments[route]).toEqual(withPayments[route]);
     }
   });
+});
+
+describe('redirect termination', () => {
+  it.each([true, false])('has no cycles with paymentsEnabled=%s', (paymentsEnabled) => {
+    expect(() => assertNoRedirectCycles(paymentsEnabled)).not.toThrow();
+  });
+
+  it.each([true, false])(
+    'settles in one hop from any reachable stage on any route (paymentsEnabled=%s)',
+    (paymentsEnabled) => {
+      const access = routeAccess(paymentsEnabled);
+      const routes = Object.keys(access) as GuardedRoute[];
+
+      for (const stage of reachableStages(paymentsEnabled)) {
+        for (const route of routes) {
+          const first = redirectFor(stage, access[route], access);
+          if (first === null) continue;
+          // Following the redirect must render, never redirect again.
+          expect(redirectFor(stage, access[first], access)).toBeNull();
+        }
+      }
+    },
+  );
+
+  it.each([true, false])(
+    'sends every reachable stage somewhere it may be (paymentsEnabled=%s)',
+    (paymentsEnabled) => {
+      const access = routeAccess(paymentsEnabled);
+      for (const stage of reachableStages(paymentsEnabled)) {
+        expect(access[home(stage)]).toContain(stage);
+      }
+    },
+  );
 });
 
 describe('wizard progression', () => {

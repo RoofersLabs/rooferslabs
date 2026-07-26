@@ -58,6 +58,7 @@ function makeService(
     upsert?: Subscription;
     stripeSubscription?: Stripe.Subscription;
     cached?: boolean | null;
+    paymentsEnabled?: boolean;
   } = {},
 ) {
   const repo = {
@@ -91,6 +92,7 @@ function makeService(
   const config = {
     api: { webPublicUrl: 'https://app.rooferslabs.com' },
     stripe: { trialPeriodDays: 0 },
+    payments: { enabled: overrides.paymentsEnabled ?? true },
   } as unknown as AppConfigService;
 
   const prisma = {
@@ -145,6 +147,21 @@ describe('BillingService', () => {
     ])('denies access when %s', async (status) => {
       const { service } = makeService({ existing: makeSubscription({ status }) });
       await expect(service.hasActiveSubscription(COMPANY)).resolves.toBe(false);
+    });
+
+    it('entitles every tenant when payments are disabled', async () => {
+      // The wall is what PAYMENTS_ENABLED=false removes: an unsubscribed tenant
+      // must reach the product, or disabling billing would lock everyone out.
+      const { service, repo } = makeService({ existing: null, paymentsEnabled: false });
+      await expect(service.hasActiveSubscription(COMPANY)).resolves.toBe(true);
+      expect(repo.findByCompanyId).not.toHaveBeenCalled();
+    });
+
+    it('answers from the flag before consulting the entitlement cache', async () => {
+      // Flipping the flag must take effect at once, not after the TTL expires.
+      const { service, redis } = makeService({ cached: false, paymentsEnabled: false });
+      await expect(service.hasActiveSubscription(COMPANY)).resolves.toBe(true);
+      expect(redis.get).not.toHaveBeenCalled();
     });
 
     it('serves the cached answer without touching the database', async () => {

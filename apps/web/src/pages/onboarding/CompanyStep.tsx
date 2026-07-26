@@ -78,7 +78,7 @@ export function CompanyStep() {
     <div className="space-y-8">
       <StepHeading
         title="Create your organization"
-        blurb="Tell us about your business. You’ll choose a plan once setup is finished."
+        blurb="Tell us about your business. This takes about two minutes."
       />
 
       <form onSubmit={onSubmit} className="space-y-4 rounded border border-gray-200 bg-white p-6">

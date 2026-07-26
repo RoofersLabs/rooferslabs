@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { OnboardingStep } from '@rooferslabs/shared';
+import { useAccess } from '@/auth/AccessProvider';
 import { stepPath } from '@/auth/stages';
 import { useAiConfig, useCompany } from '@/hooks/queries';
 import { formatTimeRange } from '@/lib/utils';
@@ -46,6 +47,7 @@ function Card({
  */
 export function ReviewStep() {
   const navigate = useNavigate();
+  const { paymentsEnabled } = useAccess();
   const { advanceFrom, isSaving, error } = useOnboarding();
   const company = useCompany();
   const config = useAiConfig();
@@ -111,13 +113,14 @@ export function ReviewStep() {
 
       <form onSubmit={onSubmit} className="space-y-4">
         <p className="text-sm text-gray-600">
-          Finishing setup takes you to plan selection. Your receptionist goes live once your
-          subscription is active.
+          {paymentsEnabled
+            ? 'Finishing setup takes you to plan selection. Your receptionist goes live once your subscription is active.'
+            : 'Finishing setup takes you straight to your dashboard.'}
         </p>
         <StepError error={error} />
         <StepActions
           submitting={isSaving}
-          submitLabel="Finish setup & choose a plan"
+          submitLabel={paymentsEnabled ? 'Finish setup & choose a plan' : 'Finish setup'}
           onBack={() => navigate(stepPath(OnboardingStep.AI))}
         />
       </form>

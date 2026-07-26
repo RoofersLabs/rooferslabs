@@ -96,10 +96,11 @@ Backend (root `.env`):
 | `OPENAI_REALTIME_URL`                         | no       | Realtime GA endpoint override (tests/proxies)               |
 | `OPENAI_RESPONSES_MODEL`                      | no       | default `gpt-4.1`                                           |
 | `OPENAI_EMBEDDING_MODEL`                      | no       | default `text-embedding-3-small`                            |
-| `STRIPE_SECRET_KEY`                           | **yes**  | Stripe `sk_…` (server only, never exposed)                  |
-| `STRIPE_WEBHOOK_SECRET`                       | **yes**  | `whsec_…` signing secret for `/v1/billing/webhook`          |
-| `STRIPE_PRICE_STARTER`                        | **yes**  | Recurring Price ID for the Starter plan                     |
-| `STRIPE_PRICE_PROFESSIONAL`                   | **yes**  | Recurring Price ID for the Professional plan                |
+| `PAYMENTS_ENABLED`                            | no       | default `true`; `false` disables billing entirely (below)   |
+| `STRIPE_SECRET_KEY`                           | **yes†** | Stripe `sk_…` (server only, never exposed)                  |
+| `STRIPE_WEBHOOK_SECRET`                       | **yes†** | `whsec_…` signing secret for `/v1/billing/webhook`          |
+| `STRIPE_PRICE_STARTER`                        | **yes†** | Recurring Price ID for the Starter plan                     |
+| `STRIPE_PRICE_PROFESSIONAL`                   | **yes†** | Recurring Price ID for the Professional plan                |
 | `STRIPE_TRIAL_PERIOD_DAYS`                    | no       | Free-trial length on new checkouts (`0` = none)             |
 | `BILLING_GRANDFATHER_BEFORE`                  | no       | RFC3339 instant; tenants created before it skip the paywall |
 | `TWILIO_ACCOUNT_SID`                          | **yes*** | Twilio account SID (*telephony)                             |
@@ -112,6 +113,9 @@ Backend (root `.env`):
 | `BACKGROUND_JOBS_INLINE`                      | no       | `true` = process jobs in-process (local dev)                |
 | `MIGRATE_ON_START`                            | no       | Container-only: run `migrate deploy` on boot                |
 | `LOG_LEVEL`                                   | no       | pino level (default `debug` dev / `info` prod)              |
+
+† Required only while `PAYMENTS_ENABLED` is `true` (the default). See
+[Running without Stripe](#running-without-stripe).
 
 Frontend (`apps/web/.env` — see [`apps/web/.env.example`](./apps/web/.env.example)):
 
@@ -165,8 +169,36 @@ Twilio number's voice webhook at `https://<tunnel>/v1/telephony/incoming`.
 
 ## Billing (Stripe)
 
-A subscription is **mandatory**: a tenant can sign up and create its organization,
-but every other API and the dashboard stay locked until Stripe Checkout completes.
+A subscription is **mandatory** while `PAYMENTS_ENABLED` is `true`: a tenant can
+sign up and complete the four-step onboarding wizard, but the dashboard and every
+gated API stay locked until Stripe Checkout completes.
+
+### Running without Stripe
+
+`PAYMENTS_ENABLED=false` switches billing off platform-wide, so the platform runs
+before a Stripe account exists. It is a supported configuration, not a stopgap —
+no Stripe code is removed or bypassed, and flipping the flag back needs no code
+change:
+
+| Concern            | `PAYMENTS_ENABLED=true` (default)     | `PAYMENTS_ENABLED=false`                    |
+| ------------------ | ------------------------------------- | ------------------------------------------- |
+| `STRIPE_*` env     | Required in production (boot fails)   | Not required at all                         |
+| Stripe client      | Constructed on first use              | Never constructed                           |
+| `/v1/billing/*`    | Live                                  | `503 PAYMENTS_DISABLED`                     |
+| Webhook route      | Registered                            | Not registered (the route does not exist)   |
+| Payment wall       | Enforced on every gated endpoint      | Open — every tenant has full access         |
+| Frontend flow      | onboarding → payment → dashboard      | onboarding → dashboard                      |
+| Payment / billing pages | Reachable                        | Route guard turns them away; nav link hidden |
+
+The API reports the flag on `GET /v1/auth/me` as `paymentsEnabled`, so the
+frontend derives the flow from the backend rather than from its own build-time
+configuration. It defaults to enabled on both sides: an absent or misspelled
+value keeps the wall up rather than silently giving the product away.
+
+In production the flag is `payments_enabled` in
+`infra/terraform/envs/production/terraform.tfvars`. Setting it to `true` without
+all four `stripe_*` variables fails `terraform plan`, so the wall can never be
+switched on without the credentials to enforce it.
 
 One-time setup:
 

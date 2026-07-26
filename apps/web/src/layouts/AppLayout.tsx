@@ -1,16 +1,19 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { UserButton } from '@clerk/clerk-react';
 import { useAccess } from '@/auth/AccessProvider';
-
-const navigation = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/settings', label: 'Settings' },
-  { to: '/billing', label: 'Billing' },
-];
+import { ROUTES } from '@/auth/stages';
 
 /** Temporary application shell: a plain header and the routed page. */
 export function AppLayout() {
-  const { company } = useAccess();
+  const { company, paymentsEnabled } = useAccess();
+
+  // Billing is omitted rather than shown-and-broken while payments are off: the
+  // route guard would turn the link away and the API would answer 503.
+  const navigation = [
+    { to: ROUTES.dashboard, label: 'Dashboard' },
+    { to: ROUTES.settings, label: 'Settings' },
+    ...(paymentsEnabled ? [{ to: ROUTES.billing, label: 'Billing' }] : []),
+  ];
 
   return (
     <div className="min-h-screen">

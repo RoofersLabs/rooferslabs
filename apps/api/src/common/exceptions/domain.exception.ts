@@ -64,3 +64,16 @@ export class ExternalServiceError extends DomainException {
     super(ApiErrorCode.EXTERNAL_SERVICE_ERROR, message, HttpStatus.BAD_GATEWAY);
   }
 }
+
+/**
+ * Billing is switched off platform-wide (PAYMENTS_ENABLED=false).
+ *
+ * 503 rather than 402: nothing the caller does can satisfy this, and unlike
+ * SUBSCRIPTION_REQUIRED it carries no loss of access — the payment wall is open
+ * while it applies, so a client must not treat it as "go and pay".
+ */
+export class PaymentsDisabledError extends DomainException {
+  constructor(message = 'Payments are temporarily unavailable. Please try again later.') {
+    super(ApiErrorCode.PAYMENTS_DISABLED, message, HttpStatus.SERVICE_UNAVAILABLE);
+  }
+}

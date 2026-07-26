@@ -39,6 +39,10 @@ export class AppConfigService {
     return this.root.clerk;
   }
 
+  get payments(): AppConfig['payments'] {
+    return this.root.payments;
+  }
+
   get stripe(): AppConfig['stripe'] {
     return this.root.stripe;
   }

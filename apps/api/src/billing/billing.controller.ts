@@ -1,5 +1,10 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiServiceUnavailableResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { UserRole } from '@rooferslabs/shared';
 import { AllowInactiveSubscription } from '../common/decorators/public.decorator';
 import { CurrentCompanyId } from '../common/decorators/current-company.decorator';
@@ -7,14 +12,21 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { respond } from '../common/response';
 import { BillingService } from './billing.service';
 import { CreateCheckoutSessionDto } from './dto/billing.dto';
+import { PaymentsEnabledGuard } from './guards/payments-enabled.guard';
 
 /**
  * Tenant-facing billing surface. Every endpoint here is reachable without an
  * active subscription — this is where a blocked tenant goes to become unblocked.
+ *
+ * The whole controller is behind {@link PaymentsEnabledGuard}: while
+ * PAYMENTS_ENABLED is off these answer 503 PAYMENTS_DISABLED, and the frontend
+ * hides the routes that reach them.
  */
 @ApiTags('Billing')
 @ApiBearerAuth()
 @AllowInactiveSubscription()
+@UseGuards(PaymentsEnabledGuard)
+@ApiServiceUnavailableResponse({ description: 'Payments are disabled (PAYMENTS_DISABLED).' })
 @Controller({ path: 'billing', version: '1' })
 export class BillingController {
   constructor(private readonly billing: BillingService) {}

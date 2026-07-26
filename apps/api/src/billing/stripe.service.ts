@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import Stripe from 'stripe';
 import { SubscriptionPlan } from '@rooferslabs/shared';
-import { ExternalServiceError } from '../common/exceptions/domain.exception';
+import { ExternalServiceError, PaymentsDisabledError } from '../common/exceptions/domain.exception';
 import { AppConfigService } from '../config/app-config.service';
 
 /**
@@ -16,12 +16,24 @@ export class StripeService {
 
   constructor(private readonly config: AppConfigService) {}
 
-  get isConfigured(): boolean {
-    return Boolean(this.config.stripe.secretKey);
+  /** Whether billing is switched on platform-wide. */
+  get isEnabled(): boolean {
+    return this.config.payments.enabled;
   }
 
-  /** The Stripe client, constructed lazily so the app boots without billing keys. */
+  get isConfigured(): boolean {
+    return this.isEnabled && Boolean(this.config.stripe.secretKey);
+  }
+
+  /**
+   * The Stripe client, constructed lazily so the app boots without billing keys
+   * — and never constructed at all while PAYMENTS_ENABLED is off, so no Stripe
+   * connection is opened and no key is read.
+   */
   private get stripe(): Stripe {
+    if (!this.isEnabled) {
+      throw new PaymentsDisabledError();
+    }
     if (!this.isConfigured) {
       throw new ExternalServiceError('Billing is not configured. Set STRIPE_SECRET_KEY.');
     }
@@ -139,6 +151,9 @@ export class StripeService {
    * body is required — any re-serialization invalidates the signature.
    */
   constructWebhookEvent(rawBody: Buffer | string, signature: string | undefined): Stripe.Event {
+    if (!this.isEnabled) {
+      throw new PaymentsDisabledError();
+    }
     const secret = this.config.stripe.webhookSecret;
     if (!secret) {
       throw new ExternalServiceError('Billing webhooks are not configured.');

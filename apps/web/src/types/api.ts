@@ -71,7 +71,14 @@ export interface SubscriptionSummary {
 export interface Session {
   user: SessionUser;
   company: SessionCompany | null;
+  /** Null while payments are disabled platform-wide — there is no wall to report. */
   subscription: SubscriptionSummary | null;
+  /**
+   * Whether billing is switched on platform-wide (the API's PAYMENTS_ENABLED).
+   * The route guard skips the payment step when false, so the flag is enforced
+   * from a single place across both sides.
+   */
+  paymentsEnabled: boolean;
 }
 
 export interface AiConfiguration {

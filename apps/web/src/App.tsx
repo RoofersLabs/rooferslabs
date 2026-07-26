@@ -2,7 +2,7 @@ import { Suspense, lazy } from 'react';
 import { Outlet, Route, Routes } from 'react-router-dom';
 import { AccessProvider } from '@/auth/AccessProvider';
 import { RouteGuard } from '@/auth/RouteGuard';
-import { ROUTE_ACCESS, ROUTES } from '@/auth/stages';
+import { ROUTES } from '@/auth/stages';
 import { AuthenticatedProviders } from '@/providers/AppProviders';
 import { AppLayout } from '@/layouts/AppLayout';
 import { SignInPage, SignUpPage } from '@/pages/AuthPages';
@@ -37,14 +37,19 @@ function AuthenticatedShell() {
 /**
  * The route table, and the whole of the application's routing policy.
  *
- * Every guarded path sits under a `<RouteGuard>` whose `allow` list comes from
- * `ROUTE_ACCESS`. No page component redirects on its own — there is exactly one
- * decision site (`redirectFor`) and one place that renders its outcome
- * (`RouteGuard`), which is what makes the flow
+ * Every guarded path sits under a `<RouteGuard>` naming the route it protects;
+ * who may view it comes from the access table on the context. No page component
+ * redirects on its own — there is exactly one decision site (`redirectFor`) and
+ * one place that renders its outcome (`RouteGuard`), which is what makes the flow
  *
  *     visitor → sign in → onboarding (4 steps) → payment → dashboard
  *
  * enforceable in both directions without any page knowing about the others.
+ *
+ * The payment step drops out of that chain when the API reports payments as
+ * disabled, leaving onboarding → dashboard. The route entries below stay exactly
+ * as they are: the access table denies every stage, so the guard turns them away
+ * on its own and the Stripe pages remain wired up for the day billing returns.
  */
 export function App() {
   return (
@@ -62,7 +67,7 @@ export function App() {
 
       <Route element={<AuthenticatedShell />}>
         {/* Signed out only — a signed-in visitor is moved to their stage. */}
-        <Route element={<RouteGuard allow={ROUTE_ACCESS[ROUTES.signIn]} />}>
+        <Route element={<RouteGuard route={ROUTES.signIn} />}>
           <Route path="/sign-in/*" element={<SignInPage />} />
           <Route path="/sign-up/*" element={<SignUpPage />} />
         </Route>
@@ -70,25 +75,25 @@ export function App() {
         {/* Setup. Steps are URL-addressable so progress survives a reload; the
             layout resolves the slug and resumes at the persisted step when it
             is missing, unknown, or not yet unlocked. */}
-        <Route element={<RouteGuard allow={ROUTE_ACCESS[ROUTES.onboarding]} />}>
+        <Route element={<RouteGuard route={ROUTES.onboarding} />}>
           <Route path={ROUTES.onboarding} element={<OnboardingLayout />} />
           <Route path={`${ROUTES.onboarding}/:step`} element={<OnboardingLayout />} />
         </Route>
 
         {/* The payment wall. Unreachable once subscribed — that guard is the
             reason a paying tenant never sees this page again. */}
-        <Route element={<RouteGuard allow={ROUTE_ACCESS[ROUTES.payment]} />}>
+        <Route element={<RouteGuard route={ROUTES.payment} />}>
           <Route path={ROUTES.payment} element={<PaymentPage />} />
         </Route>
 
         {/* Billing is reachable while unpaid *and* while paying: Stripe returns
             here after checkout, before the activation webhook has landed. */}
-        <Route element={<RouteGuard allow={ROUTE_ACCESS[ROUTES.billing]} />}>
+        <Route element={<RouteGuard route={ROUTES.billing} />}>
           <Route path={ROUTES.billing} element={<BillingPage />} />
         </Route>
 
         {/* The application proper. */}
-        <Route element={<RouteGuard allow={ROUTE_ACCESS[ROUTES.dashboard]} />}>
+        <Route element={<RouteGuard route={ROUTES.dashboard} />}>
           <Route element={<AppLayout />}>
             <Route path={ROUTES.dashboard} element={<DashboardPage />} />
             <Route path={ROUTES.settings} element={<SettingsPage />} />

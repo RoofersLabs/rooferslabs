@@ -69,6 +69,13 @@ export enum ApiErrorCode {
   /** No active subscription — the client must send the user to billing. */
   SUBSCRIPTION_REQUIRED = 'SUBSCRIPTION_REQUIRED',
   SUBSCRIPTION_NOT_FOUND = 'SUBSCRIPTION_NOT_FOUND',
+  /**
+   * Billing is switched off platform-wide (PAYMENTS_ENABLED=false), so the
+   * billing surface is unavailable. Distinct from SUBSCRIPTION_REQUIRED: that
+   * one means "go and pay", this one means "paying is not possible right now"
+   * — and access is not restricted while it applies.
+   */
+  PAYMENTS_DISABLED = 'PAYMENTS_DISABLED',
   COMPANY_NOT_FOUND = 'COMPANY_NOT_FOUND',
   CUSTOMER_NOT_FOUND = 'CUSTOMER_NOT_FOUND',
   CONVERSATION_NOT_FOUND = 'CONVERSATION_NOT_FOUND',

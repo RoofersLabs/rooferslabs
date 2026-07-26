@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useReceptionistStatus, useSetReceptionistEnabled } from '@/hooks/queries';
 import { useAccess } from '@/auth/AccessProvider';
+import { ROUTES } from '@/auth/stages';
 import { ApiError } from '@/lib/api-client';
 
 /**
@@ -10,7 +11,7 @@ import { ApiError } from '@/lib/api-client';
  * the full settings surface waits for the redesign.
  */
 export function SettingsPage() {
-  const { company } = useAccess();
+  const { company, paymentsEnabled } = useAccess();
   const status = useReceptionistStatus();
   const setEnabled = useSetReceptionistEnabled();
   const push = usePushNotifications();
@@ -71,12 +72,14 @@ export function SettingsPage() {
         )}
       </section>
 
-      <section className="rounded border border-gray-200 bg-white p-6">
-        <h2 className="font-semibold">Billing</h2>
-        <Link to="/billing" className="mt-2 inline-block text-sm underline">
-          Manage your subscription
-        </Link>
-      </section>
+      {paymentsEnabled && (
+        <section className="rounded border border-gray-200 bg-white p-6">
+          <h2 className="font-semibold">Billing</h2>
+          <Link to={ROUTES.billing} className="mt-2 inline-block text-sm underline">
+            Manage your subscription
+          </Link>
+        </section>
+      )}
     </div>
   );
 }

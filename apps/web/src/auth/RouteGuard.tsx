@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAccess } from './AccessProvider';
-import { redirectFor, type Stage } from './stages';
+import { redirectFor, type GuardedRoute } from './stages';
 
 function FullPageMessage({ label }: { label: string }) {
   return (
@@ -30,12 +30,14 @@ function SessionError({ message, onRetry }: { message: string; onRetry: () => vo
 /**
  * The only component in the application that redirects.
  *
- * It is a layout route: every guarded path is nested under one of these,
- * declaring which stages may view it. The decision itself lives in
- * `redirectFor`, which is pure and proven acyclic, so this component only
- * renders the outcome.
+ * It is a layout route: every guarded path is nested under one of these, naming
+ * the route it protects. Who may view that route is read from the access table
+ * on the context, so a route's audience can depend on runtime configuration
+ * (such as whether payments are enabled) without the guard growing a special
+ * case. The decision itself lives in `redirectFor`, which is pure and proven
+ * acyclic, so this component only renders the outcome.
  */
-export function RouteGuard({ allow }: { allow: readonly Stage[] }) {
+export function RouteGuard({ route }: { route: GuardedRoute }) {
   const access = useAccess();
   const location = useLocation();
 
@@ -47,7 +49,7 @@ export function RouteGuard({ allow }: { allow: readonly Stage[] }) {
     return <SessionError message={access.error.message} onRetry={access.retry} />;
   }
 
-  const destination = redirectFor(access.stage, allow);
+  const destination = redirectFor(access.stage, access.access[route], access.access);
   if (destination) {
     // Remember where they were headed so sign-in can return them there.
     const state = access.stage === 'anonymous' ? { from: location.pathname } : undefined;

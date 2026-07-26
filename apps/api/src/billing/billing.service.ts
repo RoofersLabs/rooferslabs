@@ -93,6 +93,11 @@ export class BillingService {
    * request, so the answer is cached briefly and invalidated on any state change.
    */
   async hasActiveSubscription(companyId: string): Promise<boolean> {
+    // With billing switched off there is no wall to enforce: every tenant is
+    // entitled. Checked before the cache so flipping the flag takes effect
+    // immediately rather than after the entitlement TTL expires.
+    if (!this.config.payments.enabled) return true;
+
     const cached = await this.redis.get<boolean>(this.entitlementKey(companyId));
     if (cached !== null) return cached;
 

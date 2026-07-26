@@ -5,7 +5,7 @@ import type { OnboardingStep } from '@rooferslabs/shared';
 import { queryKeys, useSessionQuery } from '@/hooks/queries';
 import { onSubscriptionRequired } from '@/lib/api-client';
 import type { SessionCompany } from '@/types/api';
-import { resolveStage, type Stage } from './stages';
+import { resolveStage, routeAccess, type RouteAccess, type Stage } from './stages';
 
 export interface AccessState {
   stage: Stage;
@@ -13,6 +13,13 @@ export interface AccessState {
   company: SessionCompany | null;
   /** Null until the tenant creates its company in wizard step 1. */
   onboardingStep: OnboardingStep | null;
+  /**
+   * Whether billing is switched on platform-wide, as reported by the API. False
+   * hides the payment and billing surfaces entirely.
+   */
+  paymentsEnabled: boolean;
+  /** Which stages may view each route, derived from `paymentsEnabled`. */
+  access: RouteAccess;
   /** True while Clerk or the session request is still resolving. */
   isLoading: boolean;
   error: Error | null;
@@ -54,10 +61,15 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     const company = data?.company ?? null;
     const onboardingStep = company?.onboardingStep ?? null;
     const isSubscribed = data?.subscription?.isActive ?? false;
+    // Default to enabled until the session answers, matching the API's own
+    // fail-closed default so a slow response cannot flash the billing surface.
+    const paymentsEnabled = data?.paymentsEnabled ?? true;
     return {
-      stage: resolveStage({ isSignedIn: signedIn, onboardingStep, isSubscribed }),
+      stage: resolveStage({ isSignedIn: signedIn, onboardingStep, isSubscribed, paymentsEnabled }),
       company,
       onboardingStep,
+      paymentsEnabled,
+      access: routeAccess(paymentsEnabled),
       // Only a signed-in visitor waits on the session; an anonymous one is
       // already fully resolved and must not be held behind a request that
       // will never run.
