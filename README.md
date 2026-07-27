@@ -149,13 +149,15 @@ npm install
 cp .env.example .env                 # fill in Clerk/OpenAI/Twilio/Stripe keys
 cp apps/web/.env.example apps/web/.env   # set VITE_CLERK_PUBLISHABLE_KEY
 
-# 3. Infrastructure (PostgreSQL + Redis)
-npm run db:up
-
-# 4. Database
+# 3. Database
 npm run build:shared
-npm run prisma:generate
-npm run prisma:migrate               # applies migrations (dev)
+npm run prisma:generate              # no database needed — generates the client
+
+# Optional: a throwaway local Postgres + Redis, only if you want to run the API
+# against something. Production data lives in RDS and is never reachable from a
+# laptop; skip this and the frontend still runs against the deployed API.
+npm run db:up
+npm run prisma:migrate               # local database only
 npm run prisma:seed                  # loads the "Summit Roofing Co." demo tenant
 
 # 5. Run (two terminals)
@@ -234,6 +236,27 @@ npx --prefix apps/api prisma studio                      # inspect data
 
 Production containers apply pending migrations automatically at startup
 (`MIGRATE_ON_START=true`).
+
+## The production database
+
+RDS is not publicly accessible and sits in private subnets, so nothing on a
+laptop can connect to it — including Prisma. Migrations reach it one of two
+ways, both from inside the VPC:
+
+- **Automatically on deploy.** The API container runs `prisma migrate deploy`
+  on start (`docker/api-entrypoint.sh`), so shipping the API applies whatever
+  is pending. This is the normal path.
+- **On demand**, as a one-off ECS task using the API's own image, secrets and
+  security group:
+
+```bash
+infra/scripts/db.sh status    # which migrations production has applied
+infra/scripts/db.sh deploy    # apply pending migrations without a deploy
+```
+
+`prisma generate`, `validate` and `format` touch no database and work locally
+as normal. A `DATABASE_URL` pointing at localhost only ever describes the
+optional throwaway container above — never production.
 
 ## Docker commands
 

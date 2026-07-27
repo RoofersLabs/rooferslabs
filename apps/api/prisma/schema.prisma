@@ -148,32 +148,32 @@ model Customer {
 }
 
 model Call {
-  id              String        @id @default(cuid())
-  companyId       String
-  phoneNumberId   String?
-  customerId      String?
-  twilioCallSid   String?       @unique
-  direction       CallDirection @default(INBOUND)
-  fromNumber      String?
-  toNumber        String?
-  status          CallStatus    @default(INCOMING)
-  startedAt       DateTime?
-  answeredAt      DateTime?
-  endedAt         DateTime?
-  durationSeconds Int?
-  recordingUrl    String?
-  recordingKey    String?
+  id                String        @id @default(cuid())
+  companyId         String
+  phoneNumberId     String?
+  customerId        String?
+  twilioCallSid     String?       @unique
+  direction         CallDirection @default(INBOUND)
+  fromNumber        String?
+  toNumber          String?
+  status            CallStatus    @default(INCOMING)
+  startedAt         DateTime?
+  answeredAt        DateTime?
+  endedAt           DateTime?
+  durationSeconds   Int?
+  recordingUrl      String?
+  recordingKey      String?
   // Twilio call recording (started automatically for every answered call).
-  recordingSid      String? @unique
+  recordingSid      String?       @unique
   recordingStatus   String?
   recordingDuration Int?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  forwardedFrom   String?
-  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  customer        Customer?     @relation(fields: [customerId], references: [id])
-  phoneNumber     PhoneNumber?  @relation(fields: [phoneNumberId], references: [id])
-  conversation    Conversation?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  forwardedFrom     String?
+  company           Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer          Customer?     @relation(fields: [customerId], references: [id])
+  phoneNumber       PhoneNumber?  @relation(fields: [phoneNumberId], references: [id])
+  conversation      Conversation?
 
   @@index([companyId])
   @@index([companyId, status])
