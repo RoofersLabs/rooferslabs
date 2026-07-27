@@ -2,8 +2,7 @@
  * Standard API response contract.
  *
  * Every RoofersLabs API response — success or error — follows one of these two
- * shapes, as mandated by `docs/09_API_Standards.md` §13–14. Clients can consume
- * any endpoint without bespoke parsing.
+ * shapes, so clients can consume any endpoint without bespoke parsing.
  */
 
 /** Pagination metadata attached to any paginated collection response. */
@@ -67,6 +66,16 @@ export enum ApiErrorCode {
   EXTERNAL_SERVICE_ERROR = 'EXTERNAL_SERVICE_ERROR',
   INTERNAL_ERROR = 'INTERNAL_ERROR',
   ONBOARDING_INCOMPLETE = 'ONBOARDING_INCOMPLETE',
+  /** No active subscription — the client must send the user to billing. */
+  SUBSCRIPTION_REQUIRED = 'SUBSCRIPTION_REQUIRED',
+  SUBSCRIPTION_NOT_FOUND = 'SUBSCRIPTION_NOT_FOUND',
+  /**
+   * Billing is switched off platform-wide (PAYMENTS_ENABLED=false), so the
+   * billing surface is unavailable. Distinct from SUBSCRIPTION_REQUIRED: that
+   * one means "go and pay", this one means "paying is not possible right now"
+   * — and access is not restricted while it applies.
+   */
+  PAYMENTS_DISABLED = 'PAYMENTS_DISABLED',
   COMPANY_NOT_FOUND = 'COMPANY_NOT_FOUND',
   CUSTOMER_NOT_FOUND = 'CUSTOMER_NOT_FOUND',
   CONVERSATION_NOT_FOUND = 'CONVERSATION_NOT_FOUND',

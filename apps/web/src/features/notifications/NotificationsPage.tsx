@@ -21,6 +21,7 @@ import type { Notification } from '@/types/api';
 import { cn, timeAgo } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { IconTile } from '@/components/ui/IconTile';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -37,10 +38,8 @@ function PushNotificationsCard() {
   if (status === 'unsupported' || status === 'loading') return null;
 
   return (
-    <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl border border-line-subtle bg-surface px-5 py-4 shadow-card">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-subtle">
-        <BellRing className="h-5 w-5 text-accent" aria-hidden />
-      </span>
+    <Card className="mb-6 flex-row flex-wrap items-center gap-4 px-6 py-5">
+      <IconTile icon={BellRing} />
       <div className="min-w-0 flex-1">
         <p className="text-body font-semibold text-ink">
           {status === 'subscribed'
@@ -58,14 +57,13 @@ function PushNotificationsCard() {
       {status !== 'denied' && (
         <Button
           variant={status === 'subscribed' ? 'secondary' : 'primary'}
-          size="sm"
           loading={busy}
           onClick={() => void (status === 'subscribed' ? unsubscribe() : subscribe())}
         >
           {status === 'subscribed' ? 'Turn off on this device' : 'Enable push notifications'}
         </Button>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -103,7 +101,6 @@ export function NotificationsPage() {
           unreadCount > 0 ? (
             <Button
               variant="secondary"
-              size="sm"
               loading={markAll.isPending}
               onClick={() => markAll.mutate()}
             >
@@ -143,21 +140,15 @@ export function NotificationsPage() {
                     <button
                       onClick={() => open(notification)}
                       className={cn(
-                        'group focus-ring flex w-full items-start gap-3 border-l-2 py-4 pl-4 pr-5 text-left transition-colors duration-fast hover:bg-surface-2',
+                        // The unread rail is drawn inside the 24px gutter, so
+                        // the row's content stays on the same left edge as
+                        // every other list in the product whether it is read
+                        // or unread.
+                        'group focus-ring flex w-full items-start gap-4 border-l-2 py-4 pl-[22px] pr-6 text-left transition-colors duration-fast hover:bg-surface-2',
                         unread ? 'border-accent bg-accent-subtle/40' : 'border-transparent',
                       )}
                     >
-                      <span
-                        className={cn(
-                          'mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
-                          critical ? 'bg-emergency-subtle' : 'bg-surface-3',
-                        )}
-                      >
-                        <Icon
-                          className={cn('h-4 w-4', critical ? 'text-emergency' : 'text-ink-muted')}
-                          aria-hidden
-                        />
-                      </span>
+                      <IconTile icon={Icon} size="sm" tone={critical ? 'emergency' : 'neutral'} />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">
                           <span

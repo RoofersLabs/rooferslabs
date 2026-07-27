@@ -1,7 +1,21 @@
-/** @type {import('tailwindcss').Config} */
-// Utilities map onto the design tokens in src/styles/tokens.css. Prefer the
-// semantic names (bg-surface, text-ink, border-line, bg-accent, text-emergency)
-// so light/dark theming and re-brands flow from the tokens, never hardcoded.
+/**
+ * RoofersLabs Tailwind theme.
+ *
+ * Two palettes live here on purpose, and they must not be mixed:
+ *
+ *   Product tokens (`surface`, `ink`, `line`, `accent`, `emergency`, the shadcn
+ *   aliases, `sidebar-*`) map onto the CSS variables in src/styles/tokens.css.
+ *   The authenticated application and the shadcn/Radix primitives in
+ *   src/components/ui are built on these, so light/dark theming and a re-brand
+ *   flow from the tokens rather than from hardcoded hex.
+ *
+ *   Marketing scale (`mk-*`) is the public site's black editorial canvas,
+ *   scoped to src/marketing/. It is deliberately separate: the app is a
+ *   light-mode operations tool, and merging the two would force one to
+ *   compromise.
+ *
+ * @type {import('tailwindcss').Config}
+ */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   darkMode: ['selector', '[data-theme="dark"]'],
@@ -51,6 +65,7 @@ export default {
           2: 'var(--surface-2)',
           3: 'var(--surface-3)',
           overlay: 'var(--surface-overlay)',
+          disabled: 'var(--bg-disabled)',
         },
         line: {
           subtle: 'var(--border-subtle)',
@@ -137,6 +152,29 @@ export default {
         border: 'var(--border-default)',
         input: 'var(--border-default)',
         ring: 'var(--focus-ring)',
+        // ── Marketing palette (src/marketing/ ONLY) ────────────────────────
+        // The public site's black canvas. Never use these in the application.
+        mk: {
+          bg: '#000000',
+          card: 'rgba(255,255,255,0.03)',
+          'card-hover': 'rgba(255,255,255,0.05)',
+          line: 'rgba(255,255,255,0.11)',
+          'line-strong': 'rgba(255,255,255,0.16)',
+          // `muted` measures 4.43:1 on black, marginally under the AA body
+          // threshold, so it is reserved for micro-labels and timestamps. All
+          // running copy uses `secondary` (10.02:1).
+          fg: '#FFFFFF',
+          secondary: 'rgba(255,255,255,0.70)',
+          muted: 'rgba(255,255,255,0.45)',
+          // The RoofersLabs blue ramp, tuned for a black canvas. 600 carries
+          // white text at 5.56:1; 400 reads 7.80:1 as link text.
+          'accent-700': '#0E3996',
+          accent: '#2B5CE6',
+          'accent-hover': '#3B6BF0',
+          'accent-ring': '#4F7DFF',
+          'accent-fg': '#6E9BFF',
+        },
+
         sidebar: {
           DEFAULT: 'var(--surface-1)',
           foreground: 'var(--text-primary)',
@@ -147,110 +185,33 @@ export default {
           border: 'var(--border-subtle)',
           ring: 'var(--focus-ring)',
         },
-
-        // ── Marketing palette (landing page ONLY) ──────────────────────────
-        // Backed by src/features/landing/styles/marketing.css, where every
-        // variable is scoped under `.mkt`. Namespaced so it can never collide
-        // with a product token: `bg-mkt-surface`, `text-mkt-ink`, etc.
-        // Outside a `.mkt` subtree these variables are undefined — which is
-        // the point. Do not use them in the dashboard.
-        mkt: {
-          bg: 'var(--mkt-bg)',
-          'bg-subtle': 'var(--mkt-bg-subtle)',
-          'bg-inset': 'var(--mkt-bg-inset)',
-          surface: 'var(--mkt-surface)',
-          'surface-2': 'var(--mkt-surface-2)',
-          'surface-raised': 'var(--mkt-surface-raised)',
-          line: {
-            DEFAULT: 'var(--mkt-line)',
-            subtle: 'var(--mkt-line-subtle)',
-            strong: 'var(--mkt-line-strong)',
-          },
-          ink: {
-            DEFAULT: 'var(--mkt-ink)',
-            body: 'var(--mkt-ink-body)',
-            muted: 'var(--mkt-ink-muted)',
-            faint: 'var(--mkt-ink-faint)',
-            inverse: 'var(--mkt-ink-inverse)',
-          },
-          accent: {
-            DEFAULT: 'var(--mkt-accent)',
-            hover: 'var(--mkt-accent-hover)',
-            active: 'var(--mkt-accent-active)',
-            soft: 'var(--mkt-accent-soft)',
-            border: 'var(--mkt-accent-border)',
-            ink: 'var(--mkt-accent-ink)',
-          },
-          accent2: {
-            DEFAULT: 'var(--mkt-accent-2)',
-            soft: 'var(--mkt-accent-2-soft)',
-          },
-          success: {
-            DEFAULT: 'var(--mkt-success)',
-            soft: 'var(--mkt-success-soft)',
-          },
-          warn: {
-            DEFAULT: 'var(--mkt-warn)',
-            soft: 'var(--mkt-warn-soft)',
-          },
-          focus: 'var(--mkt-focus)',
-          // Raw ramps, for gradient stops and glows that need a specific step.
-          blue: {
-            50: 'var(--mkt-blue-50)',
-            100: 'var(--mkt-blue-100)',
-            200: 'var(--mkt-blue-200)',
-            300: 'var(--mkt-blue-300)',
-            400: 'var(--mkt-blue-400)',
-            500: 'var(--mkt-blue-500)',
-            600: 'var(--mkt-blue-600)',
-            700: 'var(--mkt-blue-700)',
-            800: 'var(--mkt-blue-800)',
-            900: 'var(--mkt-blue-900)',
-          },
-          indigo: {
-            100: 'var(--mkt-indigo-100)',
-            200: 'var(--mkt-indigo-200)',
-            300: 'var(--mkt-indigo-300)',
-            400: 'var(--mkt-indigo-400)',
-            500: 'var(--mkt-indigo-500)',
-            600: 'var(--mkt-indigo-600)',
-            700: 'var(--mkt-indigo-700)',
-          },
-          emerald: {
-            100: 'var(--mkt-emerald-100)',
-            300: 'var(--mkt-emerald-300)',
-            500: 'var(--mkt-emerald-500)',
-            600: 'var(--mkt-emerald-600)',
-            700: 'var(--mkt-emerald-700)',
-          },
-          warm: {
-            0: 'var(--mkt-warm-0)',
-            25: 'var(--mkt-warm-25)',
-            50: 'var(--mkt-warm-50)',
-            100: 'var(--mkt-warm-100)',
-            200: 'var(--mkt-warm-200)',
-            300: 'var(--mkt-warm-300)',
-            400: 'var(--mkt-warm-400)',
-            500: 'var(--mkt-warm-500)',
-            600: 'var(--mkt-warm-600)',
-            700: 'var(--mkt-warm-700)',
-            800: 'var(--mkt-warm-800)',
-            900: 'var(--mkt-warm-900)',
-          },
-        },
-      },
-      // Marketing-only gradients — `bg-mkt-hero`, `bg-mkt-cta`, etc.
-      backgroundImage: {
-        'mkt-hero': 'var(--mkt-grad-hero)',
-        'mkt-cta': 'var(--mkt-grad-cta)',
-        'mkt-cta-hover': 'var(--mkt-grad-cta-hover)',
-        'mkt-card-hover': 'var(--mkt-grad-card-hover)',
-        'mkt-headline': 'var(--mkt-grad-headline)',
-        'mkt-rule': 'var(--mkt-grad-rule)',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'SF Mono', 'Menlo', 'monospace'],
+        // The application's stack is request-free: no webfont on the critical
+        // path, so no FOUT-driven layout shift. Inter leads because the
+        // marketing site already loads it, but nothing here waits on it.
+        sans: [
+          'Inter',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          '"Segoe UI Variable Display"',
+          '"Segoe UI"',
+          'Roboto',
+          '"Helvetica Neue"',
+          'Arial',
+          'sans-serif',
+        ],
+        mono: [
+          '"JetBrains Mono"',
+          'ui-monospace',
+          'SFMono-Regular',
+          '"SF Mono"',
+          'Menlo',
+          'monospace',
+        ],
+        // Marketing-only, loaded from Google Fonts in index.html.
+        display: ['"Inter var"', 'Inter', 'system-ui', 'sans-serif'],
+        num: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       fontSize: {
         display: ['4.5rem', { lineHeight: '1.04', letterSpacing: '-0.02em', fontWeight: '700' }],
@@ -298,30 +259,19 @@ export default {
         dialog: 'var(--elevation-dialog)',
         tooltip: 'var(--elevation-tooltip)',
         button: 'var(--elevation-button)',
-        // Marketing-only elevation. Warm-tinted in light, near-invisible in
-        // dark (where depth comes from surface luminance and glow instead).
-        'mkt-xs': 'var(--mkt-shadow-xs)',
-        'mkt-sm': 'var(--mkt-shadow-sm)',
-        'mkt-md': 'var(--mkt-shadow-md)',
-        'mkt-lg': 'var(--mkt-shadow-lg)',
-        'mkt-xl': 'var(--mkt-shadow-xl)',
-        'mkt-mockup': 'var(--mkt-shadow-mockup)',
-        'mkt-cta': 'var(--mkt-shadow-cta)',
       },
       ringColor: {
         focus: 'var(--focus-ring)',
       },
       maxWidth: {
         narrow: 'var(--container-narrow)',
-        marketing: 'var(--container-marketing)',
+        // Marketing shell.
+        shell: '1280px',
         dashboard: 'var(--container-dashboard)',
-        // The marketing container plus its own gutters. For chrome that carries
-        // its own horizontal padding (the navbar) but whose CONTENT must land on
-        // the same left edge as an unpadded `max-w-marketing` shell. Derived, so
-        // changing --container-marketing keeps the navbar aligned with the hero.
-        'marketing-bleed': 'calc(var(--container-marketing) + 3rem)',
       },
       transitionTimingFunction: {
+        // Marketing: linear-style exponential ease-out, no overshoot.
+        smooth: 'cubic-bezier(0.16, 1, 0.3, 1)',
         standard: 'var(--ease-standard)',
         decelerate: 'var(--ease-decelerate)',
         accelerate: 'var(--ease-accelerate)',

@@ -21,11 +21,11 @@ locals {
   app_url    = "https://${local.app_domain}"
   root_url   = "https://${var.root_domain}"
 
-  # The frontend is a single SPA (marketing + authenticated app) served on the
-  # apex domain. WEB_PUBLIC_URL is the canonical public origin; CORS accepts the
+  # The frontend is the authenticated application SPA, served on the apex
+  # domain. WEB_PUBLIC_URL is the canonical public origin; CORS accepts the
   # apex, www, and the legacy app.<domain> subdomain so the domain migration is
   # non-breaking. Applies to the API only — Cloudflare DNS and the CloudFront
-  # domain aliases are configured out-of-band; see docs/PRODUCTION_READINESS.md.
+  # domain aliases are configured out-of-band.
   web_public_url = local.root_url
   cors_origins   = join(",", [local.root_url, "https://www.${var.root_domain}", local.app_url])
 }
@@ -130,7 +130,7 @@ module "frontend" {
   name        = local.name
   bucket_name = "${local.name}-web-${data.aws_caller_identity.current.account_id}"
 
-  # The SPA serves both the marketing site and the app from the apex + www.
+  # The SPA is served from the apex + www.
   domain_aliases          = [var.root_domain, "www.${var.root_domain}"]
   root_domain             = var.root_domain
   api_domain              = local.api_domain
@@ -147,12 +147,39 @@ module "sqs" {
 
 # ---- Secrets -----------------------------------------------------------------------
 
+# Turning the payment wall on without the credentials to enforce it would boot an
+# API that rejects every customer, so fail the plan instead of the deployment.
+resource "terraform_data" "payments_config_check" {
+  input = var.payments_enabled
+
+  lifecycle {
+    precondition {
+      condition = !var.payments_enabled || (
+        var.stripe_secret_key != "" &&
+        var.stripe_webhook_secret != "" &&
+        var.stripe_price_starter != "" &&
+        var.stripe_price_professional != ""
+      )
+      error_message = join(" ", [
+        "payments_enabled = true requires stripe_secret_key, stripe_webhook_secret,",
+        "stripe_price_starter and stripe_price_professional to be set.",
+        "Set payments_enabled = false to run without Stripe.",
+      ])
+    }
+  }
+}
+
 module "secrets" {
   source = "../../modules/secrets"
 
   name         = local.name
   database_url = module.rds.database_url
 
+  # Stripe keys are written only while payments are enabled. They are omitted
+  # rather than stored empty because the task definition below reads individual
+  # JSON keys out of this secret — a key that exists but is blank would start a
+  # task that then fails env validation, which is harder to diagnose than a key
+  # that is simply not wired.
   app_secrets = merge(
     {
       CLERK_SECRET_KEY   = var.clerk_secret_key
@@ -160,6 +187,12 @@ module "secrets" {
       TWILIO_ACCOUNT_SID = var.twilio_account_sid
       TWILIO_AUTH_TOKEN  = var.twilio_auth_token
     },
+    # Billing gates every tenant's access, so with payments on the API refuses
+    # to boot without these.
+    var.payments_enabled ? {
+      STRIPE_SECRET_KEY     = var.stripe_secret_key
+      STRIPE_WEBHOOK_SECRET = var.stripe_webhook_secret
+    } : {},
     var.clerk_webhook_secret != "" ? { CLERK_WEBHOOK_SECRET = var.clerk_webhook_secret } : {},
     var.vapid_private_key != "" ? { VAPID_PRIVATE_KEY = var.vapid_private_key } : {},
   )
@@ -274,6 +307,14 @@ module "api_service" {
     # Queue is provisioned and permitted; consumers arrive in a later release.
     SQS_QUEUE_URL          = module.sqs.queue_url
     BACKGROUND_JOBS_INLINE = "true"
+    # Master switch for billing. False boots the API with no Stripe at all.
+    PAYMENTS_ENABLED = tostring(var.payments_enabled)
+    # Stripe Price IDs are configuration, not credentials.
+    STRIPE_PRICE_STARTER      = var.stripe_price_starter
+    STRIPE_PRICE_PROFESSIONAL = var.stripe_price_professional
+    STRIPE_TRIAL_PERIOD_DAYS  = tostring(var.stripe_trial_period_days)
+    # Tenants that predate the payment wall keep access without paying.
+    BILLING_GRANDFATHER_BEFORE = var.billing_grandfather_before
   }
 
   secrets = merge(
@@ -283,7 +324,15 @@ module "api_service" {
       OPENAI_API_KEY     = "${module.secrets.app_secret_arn}:OPENAI_API_KEY::"
       TWILIO_ACCOUNT_SID = "${module.secrets.app_secret_arn}:TWILIO_ACCOUNT_SID::"
       TWILIO_AUTH_TOKEN  = "${module.secrets.app_secret_arn}:TWILIO_AUTH_TOKEN::"
+
     },
+    # Kept in lockstep with app_secrets above: wired only when payments are on.
+    var.payments_enabled
+    ? {
+      STRIPE_SECRET_KEY     = "${module.secrets.app_secret_arn}:STRIPE_SECRET_KEY::"
+      STRIPE_WEBHOOK_SECRET = "${module.secrets.app_secret_arn}:STRIPE_WEBHOOK_SECRET::"
+    }
+    : {},
     var.clerk_webhook_secret != ""
     ? { CLERK_WEBHOOK_SECRET = "${module.secrets.app_secret_arn}:CLERK_WEBHOOK_SECRET::" }
     : {},

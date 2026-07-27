@@ -98,6 +98,66 @@ variable "twilio_auth_token" {
   sensitive   = true
 }
 
+variable "payments_enabled" {
+  description = <<-EOT
+    Master switch for billing. When false the API boots with no Stripe
+    credentials at all: the client is never constructed, the webhook route is
+    not registered, the billing endpoints answer 503, and every tenant reaches
+    the product without a subscription (onboarding leads straight to the
+    dashboard). Set to true — together with the four stripe_* variables — to
+    restore the payment wall.
+  EOT
+  type        = bool
+  default     = true
+}
+
+# The four variables below default to empty so the stack can be applied before a
+# Stripe account exists. The validations make that safe: they are mandatory the
+# moment payments_enabled is true, so a production apply can never turn the wall
+# on without the credentials to enforce it.
+
+variable "stripe_secret_key" {
+  description = "Stripe Dashboard → Developers → API keys → secret key (sk_live_…)."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "stripe_webhook_secret" {
+  description = "Signing secret (whsec_…) for the /v1/billing/webhook endpoint."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "stripe_price_starter" {
+  description = "Stripe recurring Price ID backing the Starter plan."
+  type        = string
+  default     = ""
+}
+
+variable "stripe_price_professional" {
+  description = "Stripe recurring Price ID backing the Professional plan."
+  type        = string
+  default     = ""
+}
+
+variable "stripe_trial_period_days" {
+  description = "Free-trial length applied to new checkouts. 0 disables trials."
+  type        = number
+  default     = 0
+}
+
+variable "billing_grandfather_before" {
+  description = <<-EOT
+    RFC3339 instant. Companies created strictly before it keep full access
+    without paying; everyone created on or after it hits the payment wall.
+    Empty (the default) applies the wall to every tenant.
+  EOT
+  type        = string
+  default     = ""
+}
+
 variable "vapid_public_key" {
   description = "Web Push VAPID public key (npx web-push generate-vapid-keys)."
   type        = string

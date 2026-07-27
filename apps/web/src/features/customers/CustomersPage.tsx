@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, Search, Plus } from 'lucide-react';
+import { Users, Plus } from 'lucide-react';
 import { PropertyType } from '@rooferslabs/shared';
 import { useCustomers, useSaveCustomer } from '@/hooks/queries';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
@@ -8,6 +8,8 @@ import { formatPhone, humanizeEnum, timeAgo } from '@/lib/utils';
 import { EnumBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { FilterBar } from '@/components/ui/FilterBar';
+import { SearchInput } from '@/components/ui/SearchInput';
 import { Input, Select, Textarea } from '@/components/ui/input';
 import { Modal } from '@/components/ui/Modal';
 import { ListSkeleton } from '@/components/ui/skeleton';
@@ -38,7 +40,7 @@ export function CustomersPage() {
         title="Customers"
         description="Everyone who has called or been added to your front office."
         actions={
-          <Button size="sm" onClick={() => setCreating(true)}>
+          <Button onClick={() => setCreating(true)}>
             <Plus className="h-4 w-4" aria-hidden />
             Add customer
           </Button>
@@ -46,25 +48,18 @@ export function CustomersPage() {
       />
 
       <Card className="overflow-hidden">
-        <div className="border-b border-line-subtle p-4">
-          <div className="relative max-w-sm">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
-              aria-hidden
-            />
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Search name, phone, email, address…"
-              className="focus-ring h-9 w-full rounded-lg border border-line bg-surface pl-9 pr-3 text-form-input text-ink placeholder:text-ink-faint transition-colors duration-fast hover:border-line-strong"
-              aria-label="Search customers"
-            />
-          </div>
-        </div>
+        <FilterBar>
+          <SearchInput
+            className="sm:max-w-xs"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Search name, phone, email, address…"
+            aria-label="Search customers"
+          />
+        </FilterBar>
 
         {customers.isLoading ? (
           <ListSkeleton />
@@ -210,9 +205,11 @@ function CustomerModal({
         </Select>
         <Textarea label="Notes" rows={3} value={form.notes ?? ''} onChange={set('notes')} />
         {save.isError && (
-          <p className="text-small text-emergency">{(save.error as Error).message}</p>
+          <p className="text-small text-emergency" role="alert">
+            {(save.error as Error).message}
+          </p>
         )}
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-3 pt-1">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>

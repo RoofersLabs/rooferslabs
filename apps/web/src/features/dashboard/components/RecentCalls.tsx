@@ -3,6 +3,7 @@ import { Phone, ShieldAlert, Play } from 'lucide-react';
 import type { Conversation } from '@/types/api';
 import { formatDuration, formatPhone, humanizeEnum, timeAgo } from '@/lib/utils';
 import { EnumBadge } from '@/components/ui/badge';
+import { IconTile } from '@/components/ui/IconTile';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SectionCard } from './SectionCard';
@@ -48,19 +49,10 @@ export function RecentCalls({
                   to={`/conversations/${conversation.id}`}
                   className="group focus-ring flex items-center gap-4 px-6 py-4 transition-colors duration-fast hover:bg-surface-2"
                 >
-                  <span
-                    className={
-                      conversation.isEmergency
-                        ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emergency-subtle'
-                        : 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-subtle'
-                    }
-                  >
-                    {conversation.isEmergency ? (
-                      <ShieldAlert className="h-5 w-5 text-emergency" aria-hidden />
-                    ) : (
-                      <Phone className="h-5 w-5 text-accent" aria-hidden />
-                    )}
-                  </span>
+                  <IconTile
+                    icon={conversation.isEmergency ? ShieldAlert : Phone}
+                    tone={conversation.isEmergency ? 'emergency' : 'brand'}
+                  />
 
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">

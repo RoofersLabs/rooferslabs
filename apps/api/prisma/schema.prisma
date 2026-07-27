@@ -47,6 +47,7 @@ model Company {
   notifications           Notification[]
   phoneNumbers            PhoneNumber[]
   pushSubscriptions       PushSubscription[]
+  subscription            Subscription?
   users                   User[]
 
   @@index([status])
@@ -305,6 +306,29 @@ model PushSubscription {
   @@map("push_subscriptions")
 }
 
+/// Billing state for a tenant, mirrored from Stripe by the webhook handler.
+/// Stripe is the source of truth; this table is a local read-model so that
+/// request-time authorization never depends on an outbound API call.
+model Subscription {
+  id                   String             @id @default(cuid())
+  companyId            String             @unique
+  stripeCustomerId     String             @unique
+  stripeSubscriptionId String?            @unique
+  stripePriceId        String?
+  status               SubscriptionStatus @default(NONE)
+  plan                 SubscriptionPlan?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  canceledAt           DateTime?
+  trialEndsAt          DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  company              Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("subscriptions")
+}
+
 model AuditLog {
   id         String   @id @default(cuid())
   companyId  String
@@ -472,6 +496,23 @@ enum NotificationStatus {
   UNREAD
   READ
   ARCHIVED
+}
+
+enum SubscriptionStatus {
+  NONE
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+  PAUSED
+}
+
+enum SubscriptionPlan {
+  STARTER
+  PROFESSIONAL
 }
 
 enum PhoneNumberStatus {

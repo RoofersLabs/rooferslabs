@@ -22,6 +22,8 @@ import type {
   OnboardingStep,
   PhoneNumberStatus,
   PropertyType,
+  SubscriptionPlan,
+  SubscriptionStatus,
   TranscriptEntry,
   UrgencyLevel,
   UserRole,
@@ -54,9 +56,29 @@ export interface SessionCompany {
   primaryColor: string | null;
 }
 
+/** Billing state for the tenant, mirrored from Stripe by the backend. */
+export interface SubscriptionSummary {
+  status: SubscriptionStatus;
+  plan: SubscriptionPlan | null;
+  /** True when the tenant may use the application right now. */
+  isActive: boolean;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  trialEndsAt: string | null;
+  hasStripeCustomer: boolean;
+}
+
 export interface Session {
   user: SessionUser;
   company: SessionCompany | null;
+  /** Null while payments are disabled platform-wide — there is no wall to report. */
+  subscription: SubscriptionSummary | null;
+  /**
+   * Whether billing is switched on platform-wide (the API's PAYMENTS_ENABLED).
+   * The route guard skips the payment step when false, so the flag is enforced
+   * from a single place across both sides.
+   */
+  paymentsEnabled: boolean;
 }
 
 export interface AiConfiguration {

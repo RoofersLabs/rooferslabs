@@ -4,7 +4,7 @@ import { AppConfigService } from '../config/app-config.service';
 
 /**
  * Redis client wrapper used for caching, rate limiting, and ephemeral call
- * state (docs/02_System_Architecture.md §22). Cache misses degrade gracefully:
+ * state. Cache misses degrade gracefully:
  * callers should treat Redis as an optimization, never a source of truth.
  */
 @Injectable()

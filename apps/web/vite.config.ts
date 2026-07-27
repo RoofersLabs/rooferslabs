@@ -40,9 +40,15 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/v1\//],
         runtimeCaching: [
           {
+            // Icons are served from stable, unhashed names, so CacheFirst with
+            // no age limit would pin a replaced icon in the SW cache forever.
+            // 30 days bounds how long a stale icon can survive.
             urlPattern: ({ url }) => url.pathname.startsWith('/icons/'),
             handler: 'CacheFirst',
-            options: { cacheName: 'icons', expiration: { maxEntries: 20 } },
+            options: {
+              cacheName: 'icons',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
           },
         ],
       },

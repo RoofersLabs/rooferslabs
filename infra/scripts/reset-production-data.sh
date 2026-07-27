@@ -4,7 +4,7 @@
 # =============================================================================
 # Wipes ALL data while preserving schema + migration history. Requires an
 # explicit typed confirmation and a DATABASE_URL. NEVER run against a database
-# that already has real paying customers. See docs/PRODUCTION_READINESS.md.
+# that already has real paying customers.
 #
 # Usage:
 #   DATABASE_URL=postgresql://… ./infra/scripts/reset-production-data.sh

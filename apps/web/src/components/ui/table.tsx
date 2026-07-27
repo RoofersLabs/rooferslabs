@@ -1,5 +1,10 @@
 import { cn } from '@/lib/utils';
 
+/**
+ * Data table. Cells share the 24px gutter and 16px row height used by every
+ * other list surface in the product, so a table row and a dashboard list row
+ * are the same size whichever page they appear on.
+ */
 function Table({ className, ...props }: React.ComponentProps<'table'>) {
   return (
     <div data-slot="table-container" className="relative w-full overflow-x-auto">
@@ -47,7 +52,7 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
     <th
       data-slot="table-head"
       className={cn(
-        'whitespace-nowrap px-5 py-3 text-left text-table-header uppercase text-ink-faint',
+        'whitespace-nowrap px-6 py-3 text-left text-table-header uppercase text-ink-faint',
         className,
       )}
       {...props}
@@ -59,7 +64,7 @@ function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
   return (
     <td
       data-slot="table-cell"
-      className={cn('whitespace-nowrap px-5 py-3.5 align-middle text-ink', className)}
+      className={cn('whitespace-nowrap px-6 py-4 align-middle text-ink', className)}
       {...props}
     />
   );

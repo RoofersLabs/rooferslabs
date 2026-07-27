@@ -2,9 +2,12 @@ import type { ReactNode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { ClerkProvider, useAuth } from '@clerk/clerk-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Wrench } from 'lucide-react';
 import { config } from '@/config';
 import { ApiError, setTokenGetter } from '@/lib/api-client';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { Card } from '@/components/ui/card';
+import { IconTile } from '@/components/ui/IconTile';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,42 +44,57 @@ function TokenBridge({ children }: { children: ReactNode }) {
 function ConfigError({ errors }: { errors: string[] }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-base p-6">
-      <div className="max-w-lg rounded-2xl border border-line-subtle bg-surface p-8 text-ink shadow-card">
-        <h1 className="text-h4 text-ink">Configuration required</h1>
-        <p className="mt-3 text-body leading-6 text-ink-muted">
+      <Card className="max-w-lg px-8 py-8">
+        <IconTile icon={Wrench} tone="warning" size="xl" shape="square" />
+        <h1 className="mt-5 text-h4 text-ink">Configuration required</h1>
+        <p className="mt-1.5 text-body leading-6 text-ink-muted">
           The app can’t start until these environment variables in{' '}
-          <code className="font-num rounded bg-surface-3 px-1.5 py-0.5 text-ink">
+          <code className="font-num rounded-xs bg-surface-3 px-1.5 py-0.5 text-small text-ink">
             apps/web/.env
           </code>{' '}
-          are fixed, then restart the dev server:
+          are fixed. Correct them, then restart the dev server:
         </p>
-        <ul className="mt-4 space-y-2">
+        <ul className="mt-4 list-disc space-y-2 pl-5 text-small text-ink-muted">
           {errors.map((error) => (
-            <li key={error} className="flex gap-2 text-small leading-6 text-ink-muted">
-              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emergency" aria-hidden />
-              {error}
-            </li>
+            <li key={error}>{error}</li>
           ))}
         </ul>
-      </div>
+      </Card>
     </div>
   );
 }
 
+/**
+ * Everything every route needs: an error boundary and a router.
+ *
+ * Auth deliberately does *not* live here. The public marketing site is a route
+ * like any other, and mounting Clerk above it would make a page with no session
+ * wait on an auth SDK before it can paint — and take the whole site down with
+ * it whenever the key is wrong for the environment.
+ */
 export function AppProviders({ children }: { children: ReactNode }) {
+  return (
+    <ErrorBoundary>
+      <BrowserRouter>{children}</BrowserRouter>
+    </ErrorBoundary>
+  );
+}
+
+/**
+ * Wraps the authenticated area. Mounted by the route tree beneath the public
+ * surface, so configuration problems surface where they matter instead of
+ * blanking the marketing site.
+ */
+export function AuthenticatedProviders({ children }: { children: ReactNode }) {
   if (config.configErrors.length > 0) {
     return <ConfigError errors={config.configErrors} />;
   }
 
   return (
-    <ErrorBoundary>
-      <ClerkProvider publishableKey={config.clerkPublishableKey} afterSignOutUrl="/">
-        <QueryClientProvider client={queryClient}>
-          <TokenBridge>
-            <BrowserRouter>{children}</BrowserRouter>
-          </TokenBridge>
-        </QueryClientProvider>
-      </ClerkProvider>
-    </ErrorBoundary>
+    <ClerkProvider publishableKey={config.clerkPublishableKey} afterSignOutUrl="/">
+      <QueryClientProvider client={queryClient}>
+        <TokenBridge>{children}</TokenBridge>
+      </QueryClientProvider>
+    </ClerkProvider>
   );
 }

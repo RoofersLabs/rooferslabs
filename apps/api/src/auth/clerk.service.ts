@@ -18,7 +18,7 @@ export interface ClerkProfile {
 /**
  * Adapter isolating the Clerk identity provider. The rest of the platform never
  * imports Clerk directly — it depends only on this service, satisfying
- * "business logic must never depend on Clerk" (docs/00_GStack_Architecture).
+ * "business logic must never depend on Clerk".
  */
 @Injectable()
 export class ClerkService {

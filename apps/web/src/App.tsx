@@ -1,12 +1,15 @@
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { useAuth } from '@clerk/clerk-react';
-import { OnboardingStep } from '@rooferslabs/shared';
-import { useSessionQuery } from '@/hooks/queries';
-import { FullScreenSpinner } from '@/components/ui/spinner';
+import { Suspense, lazy } from 'react';
+import { Outlet, Route, Routes } from 'react-router-dom';
+import { AccessProvider } from '@/auth/AccessProvider';
+import { RouteGuard } from '@/auth/RouteGuard';
+import { ROUTES } from '@/auth/stages';
+import { AuthenticatedProviders } from '@/providers/AppProviders';
 import { AppLayout } from '@/layouts/AppLayout';
-import { LandingPage } from '@/features/landing/LandingPage';
-import { SignInPage, SignUpPage } from '@/features/auth/AuthPages';
-import { OnboardingPage } from '@/features/onboarding/OnboardingPage';
+import { SignInPage, SignUpPage } from '@/pages/AuthPages';
+import { OnboardingLayout } from '@/pages/onboarding/OnboardingLayout';
+import { PaymentPage } from '@/pages/PaymentPage';
+import { BillingPage } from '@/pages/BillingPage';
+import { NotFoundPage } from '@/pages/NotFoundPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { CallsPage } from '@/features/calls/CallsPage';
 import { ConversationDetailPage } from '@/features/calls/ConversationDetailPage';
@@ -15,84 +18,105 @@ import { AppointmentsPage } from '@/features/appointments/AppointmentsPage';
 import { KnowledgePage } from '@/features/knowledge/KnowledgePage';
 import { NotificationsPage } from '@/features/notifications/NotificationsPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
-import { NotFoundPage } from '@/features/misc/NotFoundPage';
+
+// The marketing site is the only route an unauthenticated visitor sees, and
+// the only one the application's own bundle never needs. Splitting it keeps
+// each audience off the other's critical path.
+const MarketingPage = lazy(() =>
+  import('@/marketing/MarketingPage').then((m) => ({ default: m.MarketingPage })),
+);
 
 /**
- * Guards the authenticated area: loads the session, then routes users without a
- * completed company through onboarding (the guided customer journey).
+ * Mounts the auth stack and the access context for every route beneath the
+ * public marketing site.
  */
-function Protected({ children }: { children: React.ReactNode }) {
-  const { isSignedIn, isLoaded } = useAuth();
-  const location = useLocation();
-  const session = useSessionQuery(Boolean(isLoaded && isSignedIn));
-
-  if (!isLoaded) return <FullScreenSpinner />;
-  if (!isSignedIn) return <Navigate to="/sign-in" replace />;
-  if (session.isLoading) return <FullScreenSpinner label="Loading your workspace…" />;
-  if (session.isError) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-base p-6">
-        <div className="card max-w-md p-8 text-center">
-          <h1 className="text-h5 text-ink">We couldn’t load your workspace</h1>
-          <p className="mt-2 text-body text-ink-muted">
-            {(session.error as Error).message || 'Please try again in a moment.'}
-          </p>
-          <button
-            className="focus-ring mt-4 rounded-md bg-accent px-4 py-2 text-button font-semibold text-ink-on-brand shadow-button transition-all duration-fast hover:bg-accent-hover active:scale-[0.98]"
-            onClick={() => session.refetch()}
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const company = session.data?.company ?? null;
-  const onboardingComplete = company?.onboardingStep === OnboardingStep.COMPLETE;
-  const onOnboardingRoute = location.pathname.startsWith('/onboarding');
-
-  if (!onboardingComplete && !onOnboardingRoute) return <Navigate to="/onboarding" replace />;
-  if (onboardingComplete && onOnboardingRoute) return <Navigate to="/dashboard" replace />;
-
-  return <>{children}</>;
+function AuthenticatedShell() {
+  return (
+    <AuthenticatedProviders>
+      <AccessProvider>
+        <Outlet />
+      </AccessProvider>
+    </AuthenticatedProviders>
+  );
 }
 
+/**
+ * The route table, and the whole of the application's routing policy.
+ *
+ * Every guarded path sits under a `<RouteGuard>` naming the route it protects;
+ * who may view it comes from the access table on the context. No page component
+ * redirects on its own — there is exactly one decision site (`redirectFor`) and
+ * one place that renders its outcome (`RouteGuard`), which is what makes the flow
+ *
+ *     visitor → sign in → onboarding (4 steps) → payment → dashboard
+ *
+ * enforceable in both directions without any page knowing about the others.
+ *
+ * The payment step drops out of that chain when the API reports payments as
+ * disabled, leaving onboarding → dashboard. The route entries below stay exactly
+ * as they are: the access table denies every stage, so the guard turns them away
+ * on its own and the Stripe pages remain wired up for the day billing returns.
+ */
 export function App() {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/sign-in/*" element={<SignInPage />} />
-      <Route path="/sign-up/*" element={<SignUpPage />} />
-
+      {/* The public marketing site. Deliberately outside the auth stack so a
+          page with no session never waits on an auth SDK to paint. */}
       <Route
-        path="/onboarding"
+        path={ROUTES.marketing}
         element={
-          <Protected>
-            <OnboardingPage />
-          </Protected>
+          <Suspense fallback={<div className="min-h-screen bg-black" />}>
+            <MarketingPage />
+          </Suspense>
         }
       />
 
-      <Route
-        element={
-          <Protected>
-            <AppLayout />
-          </Protected>
-        }
-      >
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/calls" element={<CallsPage />} />
-        <Route path="/conversations/:id" element={<ConversationDetailPage />} />
-        <Route path="/customers" element={<CustomersPage />} />
-        <Route path="/appointments" element={<AppointmentsPage />} />
-        <Route path="/knowledge" element={<KnowledgePage />} />
-        <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/settings/:tab" element={<SettingsPage />} />
-      </Route>
+      <Route element={<AuthenticatedShell />}>
+        {/* Signed out only — a signed-in visitor is moved to their stage. */}
+        <Route element={<RouteGuard route={ROUTES.signIn} />}>
+          <Route path="/sign-in/*" element={<SignInPage />} />
+          <Route path="/sign-up/*" element={<SignUpPage />} />
+        </Route>
 
-      <Route path="*" element={<NotFoundPage />} />
+        {/* Setup. Steps are URL-addressable so progress survives a reload; the
+            layout resolves the slug and resumes at the persisted step when it
+            is missing, unknown, or not yet unlocked. */}
+        <Route element={<RouteGuard route={ROUTES.onboarding} />}>
+          <Route path={ROUTES.onboarding} element={<OnboardingLayout />} />
+          <Route path={`${ROUTES.onboarding}/:step`} element={<OnboardingLayout />} />
+        </Route>
+
+        {/* The payment wall. Unreachable once subscribed — that guard is the
+            reason a paying tenant never sees this page again. */}
+        <Route element={<RouteGuard route={ROUTES.payment} />}>
+          <Route path={ROUTES.payment} element={<PaymentPage />} />
+        </Route>
+
+        {/* Billing is reachable while unpaid *and* while paying: Stripe returns
+            here after checkout, before the activation webhook has landed. */}
+        <Route element={<RouteGuard route={ROUTES.billing} />}>
+          <Route path={ROUTES.billing} element={<BillingPage />} />
+        </Route>
+
+        {/* The application proper — one guard, one shell, every feature page
+            beneath it. `ROUTES.dashboard` is the canonical landing route the
+            stage resolver sends a finished tenant to. */}
+        <Route element={<RouteGuard route={ROUTES.dashboard} />}>
+          <Route element={<AppLayout />}>
+            <Route path={ROUTES.dashboard} element={<DashboardPage />} />
+            <Route path={ROUTES.calls} element={<CallsPage />} />
+            <Route path={`${ROUTES.conversations}/:id`} element={<ConversationDetailPage />} />
+            <Route path={ROUTES.customers} element={<CustomersPage />} />
+            <Route path={ROUTES.appointments} element={<AppointmentsPage />} />
+            <Route path={ROUTES.knowledge} element={<KnowledgePage />} />
+            <Route path={ROUTES.notifications} element={<NotificationsPage />} />
+            <Route path={ROUTES.settings} element={<SettingsPage />} />
+            <Route path={`${ROUTES.settings}/:tab`} element={<SettingsPage />} />
+          </Route>
+        </Route>
+
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
     </Routes>
   );
 }

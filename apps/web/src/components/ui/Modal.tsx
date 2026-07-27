@@ -1,10 +1,15 @@
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 /**
  * Accessible modal dialog built on Radix Dialog (via shadcn): focus trapping,
  * portal rendering, Escape-to-close, and backdrop dismissal come from Radix.
+ *
+ * The header and body use the same 24px gutter and vertical rhythm as
+ * CardHeader/CardContent, so a form reads identically whether it is shown in a
+ * dialog or inline on a page.
  */
 export function Modal({
   open,
@@ -24,19 +29,21 @@ export function Modal({
       <DialogContent
         showCloseButton={false}
         className={cn(
-          'gap-0 rounded-2xl border border-line-subtle bg-surface p-0 text-ink ring-0 shadow-dialog',
-          wide ? 'max-w-2xl' : 'max-w-lg',
+          'gap-0 rounded-2xl border border-line-subtle bg-surface-overlay p-0 text-ink ring-0 shadow-dialog',
+          wide ? 'sm:max-w-2xl' : 'sm:max-w-lg',
         )}
       >
-        <div className="flex items-center justify-between border-b border-line-subtle px-6 py-4">
-          <DialogTitle className="text-h5 font-semibold text-ink">{title}</DialogTitle>
-          <button
+        <div className="flex items-center justify-between gap-4 border-b border-line-subtle px-6 py-4">
+          <DialogTitle>{title}</DialogTitle>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="-mr-1.5 shrink-0"
             onClick={onClose}
-            className="focus-ring rounded-md p-1 text-ink-faint transition-colors duration-fast hover:bg-surface-3 hover:text-ink"
             aria-label="Close dialog"
           >
-            <X className="h-5 w-5" />
-          </button>
+            <X className="h-4 w-4" aria-hidden />
+          </Button>
         </div>
         <div className="px-6 py-5">{children}</div>
       </DialogContent>

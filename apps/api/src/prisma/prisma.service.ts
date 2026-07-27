@@ -4,7 +4,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 /**
  * Wraps the generated Prisma client and manages its connection lifecycle.
  * Repositories depend on this service; business logic never talks to the
- * database directly (docs/03_Backend_Architecture.md §12/§18).
+ * database directly.
  */
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {

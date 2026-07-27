@@ -6,6 +6,7 @@ import { useAppointments, useUpdateAppointment } from '@/hooks/queries';
 import { formatDateTime, humanizeEnum, timeAgo } from '@/lib/utils';
 import { EnumBadge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { IconTile } from '@/components/ui/IconTile';
 import { Select } from '@/components/ui/input';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -28,6 +29,7 @@ export function AppointmentsPage() {
         description="Visit and estimate requests captured by your AI receptionist."
         actions={
           <Select
+            className="w-48"
             value={status}
             onChange={(e) => {
               setStatus(e.target.value);
@@ -65,11 +67,9 @@ export function AppointmentsPage() {
               {appointments.data.items.map((appointment) => (
                 <li
                   key={appointment.id}
-                  className="flex flex-col gap-3 px-5 py-4 transition-colors duration-fast hover:bg-surface-2 sm:flex-row sm:items-center"
+                  className="flex flex-col gap-4 px-6 py-4 transition-colors duration-fast hover:bg-surface-2 sm:flex-row sm:items-center"
                 >
-                  <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-subtle sm:flex">
-                    <CalendarClock className="h-5 w-5 text-accent" aria-hidden />
-                  </span>
+                  <IconTile icon={CalendarClock} className="hidden sm:flex" />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-body font-medium text-ink">
@@ -104,7 +104,7 @@ export function AppointmentsPage() {
                       <span>Requested {timeAgo(appointment.createdAt)}</span>
                     </p>
                   </div>
-                  <div className="shrink-0">
+                  <div className="shrink-0 sm:w-44">
                     <Select
                       value={appointment.status}
                       onChange={(e) =>

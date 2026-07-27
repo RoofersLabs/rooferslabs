@@ -5,6 +5,7 @@
  * and exposed as a strongly-typed, nested config object consumed via
  * {@link AppConfigService}. Secrets are never logged.
  */
+import { isPaymentsEnabled } from './payments.flag';
 
 export interface AppConfig {
   env: 'development' | 'test' | 'production';
@@ -27,6 +28,31 @@ export interface AppConfig {
     jwtKey: string | undefined;
     webhookSecret: string | undefined;
   };
+  payments: {
+    /**
+     * Master switch for the billing feature. When false the Stripe client is
+     * never constructed, the webhook route is not registered, the billing
+     * endpoints answer 503, and the payment wall is open — every tenant reaches
+     * the product without a subscription.
+     */
+    enabled: boolean;
+  };
+  stripe: {
+    secretKey: string;
+    webhookSecret: string;
+    /** Stripe Price IDs (recurring) backing each self-serve plan. */
+    prices: {
+      STARTER: string;
+      PROFESSIONAL: string;
+    };
+    /** Free-trial length applied to new checkout sessions; 0 disables trials. */
+    trialPeriodDays: number;
+    /**
+     * Companies created strictly before this instant are exempt from the
+     * payment wall. Null means no exemption: every tenant pays.
+     */
+    grandfatherBefore: Date | null;
+  };
   openai: {
     apiKey: string;
     realtimeModel: string;
@@ -40,10 +66,18 @@ export interface AppConfig {
     authToken: string;
     mediaStreamUrl: string;
   };
+  /**
+   * AWS resource coordinates.
+   *
+   * There are deliberately no access keys here. Every environment that talks to
+   * AWS gets its credentials from the provider chain the SDK already consults:
+   * the ECS task role in production, and whatever `aws configure`/SSO left in
+   * the environment locally. Threading a static key pair through application
+   * config would give the process a second, weaker way to authenticate that the
+   * task role makes unnecessary — and one that has to be rotated by hand.
+   */
   aws: {
     region: string;
-    accessKeyId: string | undefined;
-    secretAccessKey: string | undefined;
     s3RecordingsBucket: string;
     s3UploadsBucket: string;
     sqsQueueUrl: string | undefined;
@@ -92,6 +126,31 @@ export default (): AppConfig => {
       jwtKey: process.env.CLERK_JWT_KEY || undefined,
       webhookSecret: process.env.CLERK_WEBHOOK_SECRET || undefined,
     },
+    payments: {
+      enabled: isPaymentsEnabled(),
+    },
+    stripe: {
+      secretKey: process.env.STRIPE_SECRET_KEY ?? '',
+      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? '',
+      prices: {
+        STARTER: process.env.STRIPE_PRICE_STARTER ?? '',
+        PROFESSIONAL: process.env.STRIPE_PRICE_PROFESSIONAL ?? '',
+      },
+      trialPeriodDays: Number(process.env.STRIPE_TRIAL_PERIOD_DAYS ?? 0),
+      /**
+       * Companies created strictly before this instant keep full access without
+       * paying; everyone who signs up afterwards hits the payment wall as
+       * normal. Unset (the default) means no exemption at all — the cutoff has
+       * to be turned on deliberately, so a missing or malformed value can never
+       * silently hand the product away for free.
+       */
+      grandfatherBefore: (() => {
+        const raw = process.env.BILLING_GRANDFATHER_BEFORE;
+        if (!raw) return null;
+        const parsed = new Date(raw);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+      })(),
+    },
     openai: {
       apiKey: process.env.OPENAI_API_KEY ?? '',
       realtimeModel: process.env.OPENAI_REALTIME_MODEL ?? 'gpt-realtime',
@@ -107,8 +166,6 @@ export default (): AppConfig => {
     },
     aws: {
       region: process.env.AWS_REGION ?? 'us-east-1',
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID || undefined,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || undefined,
       s3RecordingsBucket: process.env.S3_BUCKET_RECORDINGS ?? 'rooferslabs-recordings-dev',
       s3UploadsBucket: process.env.S3_BUCKET_UPLOADS ?? 'rooferslabs-uploads-dev',
       sqsQueueUrl: process.env.SQS_QUEUE_URL || undefined,

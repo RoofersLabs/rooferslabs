@@ -7,7 +7,7 @@ import { OpenAiService } from './openai.service';
  * Retrieval-Augmented Generation over a company's knowledge base. Uses semantic
  * search (embedding cosine similarity) when OpenAI is configured, and falls back
  * to keyword matching otherwise. Retrieval is always tenant-scoped: the AI can
- * never read another company's knowledge (docs/00_GStack §Non-Negotiable Rules).
+ * never read another company's knowledge.
  */
 @Injectable()
 export class RagService {

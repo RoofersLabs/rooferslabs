@@ -8,25 +8,61 @@
   html {
     -webkit-tap-highlight-color: transparent;
   }
+
   body {
     @apply bg-base text-ink antialiased;
     font-family: var(--font-sans);
   }
+
   ::selection {
     background: var(--color-primary-subtle);
     color: var(--text-primary);
   }
+
   /* Numeric data (counts, times, currency, table figures) reads as data. */
   .font-num {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
   }
-  /* shadcn/ui components reference a bare `border` utility without a color —
-     default it to our token instead of Tailwind's stock gray. Focus rings are
-     handled by the .focus-ring component class below, not a global reset. */
+
+  /* shadcn/ui components reference a bare `border` utility without a colour, so
+     default it to our token rather than Tailwind's stock gray. Focus rings come
+     from the .focus-ring component class below, never from a global reset. */
   * {
     @apply border-border;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /**
+   * Claimed by the marketing route while it is mounted. The application's
+   * light surface is the default; this flips the document to the marketing
+   * site's black canvas so overscroll and the browser UI tint follow it.
+   */
+  html.marketing-surface {
+    background-color: #000000;
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+
+  html.marketing-surface body {
+    @apply bg-black text-white;
+  }
+
+  /**
+   * The marketing site's focus fallback, in the brand blue rather than the
+   * application's darker one. Components that draw their own ring opt out with
+   * `focus-visible:outline-none`; this stays as the safety net so a control
+   * that was never given a ring is still never invisible to the keyboard.
+   */
+  html.marketing-surface :focus-visible {
+    outline: 2px solid #4f7dff;
+    outline-offset: 2px;
   }
 }
 
@@ -35,10 +71,12 @@
   .card {
     @apply rounded-lg border border-line-subtle bg-surface shadow-card;
   }
+
   /* Card that lifts on hover (dashboard widgets, list rows, feature blocks). */
   .card-interactive {
     @apply card transition-shadow duration-base ease-standard hover:shadow-card-hover;
   }
+
   /* Focus ring shared by all interactive elements — never removed, only restyled. */
   .focus-ring {
     @apply outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-canvas;
@@ -46,12 +84,20 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html.marketing-surface {
+    scroll-behavior: auto;
+  }
+}
+
+/**
+ * Reduced motion means fewer and gentler animations, not none. Opacity
+ * transitions still aid comprehension, so they are kept; anything that loops is
+ * allowed a single pass and then stops.
+ */
+@media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
 }

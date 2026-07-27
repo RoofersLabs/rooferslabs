@@ -1,31 +1,37 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "module": "CommonJS",
-    "moduleResolution": "Node",
-    "target": "ES2022",
-    "lib": ["ES2022"],
-    "declaration": false,
-    "removeComments": true,
+    /* Restated rather than inherited: this is a deployed process, and the
+       module format it emits must not be able to change underneath it from an
+       edit to the shared base. NodeNext emits CommonJS here because
+       apps/api/package.json declares no "type", which is what `node
+       apps/api/dist/main.js` in the container expects. */
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    /* Nest resolves constructor dependencies from emitted decorator metadata. */
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "sourceMap": true,
+
+    /* The API is a deployed process, not a consumed package: nothing imports
+       its build output, so declarations are dead weight. */
+    "declaration": false,
+    "declarationMap": false,
+    "removeComments": true,
+
+    /* No rootDir on purpose. `nest build` compiles tsconfig.build.json, whose
+       only input root is src/, so main.js lands at dist/main.js — the path the
+       container's CMD uses. Naming a rootDir here would either move that output
+       or reject prisma/seed.ts below, which is typechecked but never built. */
     "outDir": "./dist",
-    "baseUrl": "./",
     "incremental": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "strictNullChecks": true,
-    "noImplicitAny": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": false,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "forceConsistentCasingInFileNames": true
+
+    /* Nest injects constructor parameters that a method body may never read
+       (guards, interceptors, lifecycle hooks), so an unused parameter is a
+       normal shape here rather than a defect. */
+    "noUnusedParameters": false
   },
   "include": ["src/**/*.ts", "prisma/seed.ts"],
-  "exclude": ["node_modules", "dist", "test"]
+  "exclude": ["node_modules", "dist"]
 }

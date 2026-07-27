@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
+  ArrowRight,
   Bot,
   User,
   ShieldAlert,
@@ -14,42 +15,55 @@ import { ApiError } from '@/lib/api-client';
 import { formatDateTime, formatDuration, formatPhone, humanizeEnum } from '@/lib/utils';
 import { Badge, EnumBadge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DetailRow } from '@/components/ui/DetailRow';
+import { IconTile } from '@/components/ui/IconTile';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { LoadingBlock } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { RecordingPlayer } from '@/components/RecordingPlayer';
+import { ROUTES } from '@/auth/stages';
 
 export function ConversationDetailPage() {
   const { id } = useParams<{ id: string }>();
   const conversation = useConversation(id);
 
-  if (conversation.isLoading) return <LoadingBlock label="Loading conversation…" />;
+  if (conversation.isLoading) {
+    return (
+      <Card>
+        <LoadingBlock label="Loading conversation…" />
+      </Card>
+    );
+  }
   if (conversation.isError) {
     const notFound = conversation.error instanceof ApiError && conversation.error.status === 404;
-    if (notFound) {
-      return (
+    return (
+      <Card>
+        {notFound ? (
+          <EmptyState
+            icon={PhoneCall}
+            title="Conversation not found"
+            description="It may have been removed or you may not have access to it."
+          />
+        ) : (
+          <ErrorState
+            title="Couldn’t load this conversation"
+            message={(conversation.error as Error).message}
+            onRetry={() => void conversation.refetch()}
+          />
+        )}
+      </Card>
+    );
+  }
+  if (!conversation.data) {
+    return (
+      <Card>
         <EmptyState
           icon={PhoneCall}
           title="Conversation not found"
           description="It may have been removed or you may not have access to it."
         />
-      );
-    }
-    return (
-      <ErrorState
-        title="Couldn’t load this conversation"
-        message={(conversation.error as Error).message}
-        onRetry={() => void conversation.refetch()}
-      />
-    );
-  }
-  if (!conversation.data) {
-    return (
-      <EmptyState
-        icon={PhoneCall}
-        title="Conversation not found"
-        description="It may have been removed or you may not have access to it."
-      />
+      </Card>
     );
   }
 
@@ -59,53 +73,47 @@ export function ConversationDetailPage() {
   return (
     <div>
       <Link
-        to="/calls"
-        className="focus-ring mb-4 inline-flex items-center gap-1.5 rounded text-small font-medium text-accent hover:underline"
+        to={ROUTES.calls}
+        className="focus-ring mb-4 inline-flex items-center gap-1.5 rounded-xs text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Back to calls
       </Link>
 
-      <div className="mb-6 flex flex-wrap items-center gap-4">
-        <span
-          className={
-            data.isEmergency
-              ? 'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emergency-subtle'
-              : 'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent-subtle'
-          }
-        >
-          {data.isEmergency ? (
-            <ShieldAlert className="h-6 w-6 text-emergency" aria-hidden />
-          ) : (
-            <Phone className="h-6 w-6 text-accent" aria-hidden />
-          )}
-        </span>
-        <div>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-h4 text-ink">
-              {data.customer?.fullName ?? formatPhone(call?.fromNumber)}
-            </h1>
+      {/* The title block is the shared PageHeader, so a conversation reads as
+          a page of this product rather than a detail view of its own. */}
+      <PageHeader
+        title={
+          <span className="flex flex-wrap items-center gap-3">
+            <IconTile
+              icon={data.isEmergency ? ShieldAlert : Phone}
+              tone={data.isEmergency ? 'emergency' : 'brand'}
+              size="lg"
+            />
+            {data.customer?.fullName ?? formatPhone(call?.fromNumber)}
             <EnumBadge value={data.outcome} />
             {data.isEmergency && (
               <Badge tone="danger">
-                <ShieldAlert className="mr-1 h-3 w-3" aria-hidden />
+                <ShieldAlert className="h-3 w-3" aria-hidden />
                 Emergency
               </Badge>
             )}
-          </div>
-          <p className="mt-0.5 text-small text-ink-muted">
+          </span>
+        }
+        description={
+          <span className="font-num text-body text-ink-muted">
             {formatDateTime(call?.createdAt)} · {formatDuration(call?.durationSeconds)} ·{' '}
             {formatPhone(call?.fromNumber)}
-          </p>
-        </div>
-      </div>
+          </span>
+        }
+      />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Transcript</CardTitle>
           </CardHeader>
-          <CardContent className="max-h-[32rem] space-y-4 overflow-y-auto py-5">
+          <CardContent className="max-h-[32rem] space-y-4 overflow-y-auto border-t border-line-subtle">
             {!data.transcript?.length ? (
               <p className="py-8 text-center text-small text-ink-muted">
                 No transcript was captured for this call.
@@ -120,19 +128,11 @@ export function ConversationDetailPage() {
                       : 'flex flex-row-reverse items-start gap-3'
                   }
                 >
-                  <span
-                    className={
-                      entry.role === 'assistant'
-                        ? 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-subtle'
-                        : 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-3'
-                    }
-                  >
-                    {entry.role === 'assistant' ? (
-                      <Bot className="h-4 w-4 text-accent" aria-hidden />
-                    ) : (
-                      <User className="h-4 w-4 text-ink-muted" aria-hidden />
-                    )}
-                  </span>
+                  <IconTile
+                    icon={entry.role === 'assistant' ? Bot : User}
+                    tone={entry.role === 'assistant' ? 'brand' : 'neutral'}
+                    size="sm"
+                  />
                   <div
                     className={
                       entry.role === 'assistant'
@@ -160,7 +160,7 @@ export function ConversationDetailPage() {
                 AI summary
               </CardTitle>
             </CardHeader>
-            <CardContent className="py-5">
+            <CardContent>
               <p className="text-small leading-6 text-ink">
                 {data.summary ?? 'No summary available.'}
               </p>
@@ -178,8 +178,8 @@ export function ConversationDetailPage() {
             <CardHeader>
               <CardTitle>Details</CardTitle>
             </CardHeader>
-            <CardContent className="py-5">
-              <dl className="space-y-2.5 text-small">
+            <CardContent>
+              <dl className="divide-y divide-line-subtle">
                 <DetailRow label="Intent" value={humanizeEnum(data.intent)} />
                 <DetailRow label="Lead quality" value={humanizeEnum(data.leadQuality)} />
                 <DetailRow label="Urgency" value={humanizeEnum(data.urgency)} />
@@ -206,8 +206,8 @@ export function ConversationDetailPage() {
                   Appointment request
                 </CardTitle>
               </CardHeader>
-              <CardContent className="py-5">
-                <dl className="space-y-2.5 text-small">
+              <CardContent>
+                <dl className="divide-y divide-line-subtle">
                   <DetailRow label="Service" value={data.appointment.serviceRequested ?? '—'} />
                   <DetailRow
                     label="Preferred"
@@ -216,25 +216,17 @@ export function ConversationDetailPage() {
                   <DetailRow label="Status" value={humanizeEnum(data.appointment.status)} />
                 </dl>
                 <Link
-                  to="/appointments"
-                  className="focus-ring mt-3 inline-block rounded text-caption font-medium text-accent hover:underline"
+                  to={ROUTES.appointments}
+                  className="focus-ring mt-4 inline-flex items-center gap-1 rounded-xs text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
                 >
-                  Manage in Appointments →
+                  Manage in Appointments
+                  <ArrowRight className="h-3.5 w-3.5" aria-hidden />
                 </Link>
               </CardContent>
             </Card>
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
-      <dt className="shrink-0 text-caption text-ink-muted">{label}</dt>
-      <dd className="truncate text-right font-medium text-ink">{value}</dd>
     </div>
   );
 }

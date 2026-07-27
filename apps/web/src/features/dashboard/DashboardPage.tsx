@@ -2,10 +2,12 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, PhoneForwarded } from 'lucide-react';
 import { useDashboard, usePhoneNumber, useReceptionistStatus } from '@/hooks/queries';
-import { useSessionStore } from '@/state/session.store';
+import { useAccess } from '@/auth/AccessProvider';
 import { formatPhone } from '@/lib/utils';
+import { Card } from '@/components/ui/card';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { ROUTES } from '@/auth/stages';
 import { DashboardHeader } from './components/DashboardHeader';
 import { AnalyticsPanel } from './components/AnalyticsPanel';
 import { RecentCalls } from './components/RecentCalls';
@@ -18,7 +20,7 @@ export function DashboardPage() {
   const dashboard = useDashboard();
   const phone = usePhoneNumber();
   const receptionist = useReceptionistStatus();
-  const firstName = useSessionStore((s) => s.user?.firstName);
+  const firstName = useAccess().user?.firstName;
 
   const conversations = useMemo(
     () => dashboard.data?.recentConversations ?? [],
@@ -34,13 +36,13 @@ export function DashboardPage() {
     return (
       <div>
         <PageHeader title="Dashboard" description="Today’s activity across your front office." />
-        <div className="card">
+        <Card>
           <ErrorState
             title="Couldn’t load your dashboard"
             message={(dashboard.error as Error).message}
             onRetry={() => void dashboard.refetch()}
           />
-        </div>
+        </Card>
       </div>
     );
   }
@@ -55,8 +57,8 @@ export function DashboardPage() {
 
       {(needsPhoneSetup || needsForwarding) && (
         <Link
-          to="/settings/phone"
-          className="focus-ring flex items-center gap-4 rounded-xl border border-accent-border bg-accent-subtle px-5 py-4 transition-colors duration-fast hover:border-accent"
+          to={`${ROUTES.settings}/phone`}
+          className="focus-ring flex items-center gap-4 rounded-xl border border-accent-border bg-accent-subtle px-6 py-5 transition-colors duration-fast hover:border-accent"
         >
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-ink-on-brand">
             <PhoneForwarded className="h-5 w-5" aria-hidden />
