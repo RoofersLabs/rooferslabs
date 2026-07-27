@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { ROUTES } from '@/auth/stages';
-import { formatPhone } from '@/lib/utils';
+import { cn, formatPhone } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Button, buttonClass } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { PriorityLead } from '../insights';
 import { StatusLabel } from './StatusLabel';
+import { useCardDeck } from './useCardDeck';
 
 /**
  * Priority as flat colored text — no fill, no border, no pill.
@@ -51,24 +52,111 @@ export function PriorityLeads({ leads, isLoading }: { leads: PriorityLead[]; isL
         </Link>
       </div>
 
-      {isLoading ? (
-        <ul className="space-y-4">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <li key={i}>
-              <LeadSkeleton />
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <ul className="space-y-4">
-          {leads.map((lead) => (
-            <li key={lead.id}>
-              <LeadCard lead={lead} />
-            </li>
-          ))}
-        </ul>
-      )}
+      {isLoading ? <LeadSkeleton /> : <LeadDeck leads={leads} />}
     </section>
+  );
+}
+
+/** Depth of the two shells behind the active card: offset down, scaled in. */
+const BEHIND = [
+  { translate: 10, scale: 0.97 },
+  { translate: 20, scale: 0.94 },
+] as const;
+
+/**
+ * The leads as a deck rather than a feed.
+ *
+ * One card is readable at a time and the rest sit behind it as edges, so the
+ * section is a pile of jobs to work through rather than a column to scroll. A
+ * roofer reads the top lead, calls if it warrants it, and flicks it away.
+ *
+ * Only three cards exist in the DOM at any moment, and the two behind are empty
+ * shells: they carry no content because their whole job is to say "there are
+ * more". That also makes it impossible to read two leads at once, and keeps the
+ * cost of a 200-lead deck identical to a 3-lead one.
+ */
+function LeadDeck({ leads }: { leads: PriorityLead[] }) {
+  const deck = useCardDeck(leads.length);
+  const lead = leads[deck.index];
+  if (!lead) return null;
+
+  const behind = Math.min(BEHIND.length, leads.length - deck.index - 1);
+  // While leaving, the card carries itself a full height off-screen; while
+  // dragging it tracks the finger exactly.
+  const y = deck.leaving ? deck.leaving * 120 : deck.offset;
+
+  return (
+    <div>
+      <div
+        className="relative"
+        role="group"
+        aria-roledescription="Lead deck"
+        aria-label={`Lead ${deck.index + 1} of ${leads.length}`}
+        tabIndex={0}
+        onKeyDown={deck.handlers.onKeyDown}
+      >
+        {/* Shells first so they paint underneath. `aria-hidden`: they are edges,
+            not content, and a screen reader announcing two blank cards would be
+            noise. */}
+        {BEHIND.slice(0, behind).map((depth, i) => (
+          <div
+            key={i}
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-full transition-transform duration-base ease-standard motion-reduce:transition-none"
+            style={{ transform: `translateY(${depth.translate}px) scale(${depth.scale})` }}
+          >
+            <div className="h-full rounded-lg border border-line-subtle bg-surface shadow-card" />
+          </div>
+        ))}
+
+        <div
+          {...deck.handlers}
+          className={cn(
+            'relative touch-pan-x select-none',
+            // No transition while the finger is down: the card must track it
+            // exactly, and easing a live drag reads as lag.
+            !deck.dragging && 'transition-transform duration-base ease-standard',
+            deck.leaving && 'opacity-0 transition-[transform,opacity] duration-base ease-standard',
+            'motion-reduce:transition-none',
+          )}
+          style={{ transform: `translateY(${y}px)` }}
+        >
+          <LeadCard lead={lead} position={deck.index + 1} total={leads.length} />
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between gap-4">
+        {/* Announced politely so the position is available without sight of the
+            counter printed on the card. */}
+        <p aria-live="polite" className="text-caption text-ink-faint">
+          {deck.canGoNext
+            ? `${leads.length - deck.index - 1} more to review`
+            : 'You’re all caught up.'}
+        </p>
+
+        {/* Gestures are not the only way through the deck. */}
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={deck.previous}
+            disabled={!deck.canGoPrevious}
+            aria-label="Previous lead"
+          >
+            <ChevronUp className="h-4 w-4" aria-hidden />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={deck.next}
+            disabled={!deck.canGoNext}
+            aria-label="Next lead"
+          >
+            <ChevronDown className="h-4 w-4" aria-hidden />
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -81,7 +169,15 @@ export function PriorityLeads({ leads, isLoading }: { leads: PriorityLead[]; isL
  * priority, 20px to the summary, 24px to the button — so the eye is handed
  * from section to section instead of meeting one even column of text.
  */
-function LeadCard({ lead }: { lead: PriorityLead }) {
+function LeadCard({
+  lead,
+  position,
+  total,
+}: {
+  lead: PriorityLead;
+  position: number;
+  total: number;
+}) {
   return (
     // Border, surface and shadow are the Card's untouched defaults; only the
     // radius steps to 14px and the padding to 24px. The portrait proportion
@@ -89,7 +185,14 @@ function LeadCard({ lead }: { lead: PriorityLead }) {
     // already spans ~92% of a phone inside the page gutter, and pulling it
     // narrower would break its alignment with every section below it.
     <Card as="article" className="rounded-lg p-6">
-      <h3 className="truncate text-h4 text-ink">{lead.name}</h3>
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="min-w-0 flex-1 truncate text-h4 text-ink">{lead.name}</h3>
+        {/* Position, not progress dots: "4 of 18" says how much work is left,
+            which is the thing a crew actually wants to know. */}
+        <span className="font-num shrink-0 pt-1 text-caption text-ink-faint">
+          Lead {position} of {total}
+        </span>
+      </div>
 
       {/* Identity block: the number and the address belong to the name above
           them, so they sit tight to it and the next section opens the gap. */}
