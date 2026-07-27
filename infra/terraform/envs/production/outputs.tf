@@ -33,9 +33,9 @@ output "web_url" {
   value       = "https://${var.root_domain}"
 }
 
-output "app_url" {
-  description = "Legacy app subdomain alias (redirect to the apex). Kept in CORS during the domain migration."
-  value       = "https://${var.app_subdomain}.${var.root_domain}"
+output "admin_url" {
+  description = "Planned internal admin portal origin. Allowed in the API's CORS list; no infrastructure is provisioned for it yet."
+  value       = "https://${var.admin_subdomain}.${var.root_domain}"
 }
 
 # ---- Frontend (S3 + CloudFront) ----------------------------------------------

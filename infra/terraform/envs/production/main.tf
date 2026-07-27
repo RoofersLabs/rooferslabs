@@ -14,20 +14,33 @@
 data "aws_caller_identity" "current" {}
 
 locals {
-  name       = "rooferslabs-${var.environment}"
-  api_domain = "${var.api_subdomain}.${var.root_domain}"
-  app_domain = "${var.app_subdomain}.${var.root_domain}"
-  api_url    = "https://${local.api_domain}"
-  app_url    = "https://${local.app_domain}"
-  root_url   = "https://${var.root_domain}"
+  name = "rooferslabs-${var.environment}"
 
-  # The frontend is the authenticated application SPA, served on the apex
-  # domain. WEB_PUBLIC_URL is the canonical public origin; CORS accepts the
-  # apex, www, and the legacy app.<domain> subdomain so the domain migration is
-  # non-breaking. Applies to the API only — Cloudflare DNS and the CloudFront
-  # domain aliases are configured out-of-band.
+  # The three hostnames the platform is built around:
+  #   <root>        the customer application (this SPA)
+  #   admin.<root>  the internal admin portal — not built yet, see below
+  #   api.<root>    the shared backend both of them call
+  api_domain   = "${var.api_subdomain}.${var.root_domain}"
+  admin_domain = "${var.admin_subdomain}.${var.root_domain}"
+  api_url      = "https://${local.api_domain}"
+  admin_url    = "https://${local.admin_domain}"
+  root_url     = "https://${var.root_domain}"
+
+  # WEB_PUBLIC_URL is the canonical public origin of the customer app, now the
+  # apex. The legacy app.<domain> origin has been dropped: it resolves to
+  # nothing, so it could not have been an origin for any live request.
+  #
+  # `admin.<domain>` is allowed ahead of the portal existing so the API needs no
+  # infrastructure change on the day it ships. Allowing an origin that nobody
+  # can serve costs nothing — reaching it would require control of the DNS zone.
+  # Applies to the API only; Cloudflare DNS and the CloudFront aliases are
+  # configured out-of-band.
   web_public_url = local.root_url
-  cors_origins   = join(",", [local.root_url, "https://www.${var.root_domain}", local.app_url])
+  cors_origins = join(",", [
+    local.root_url,
+    "https://www.${var.root_domain}",
+    local.admin_url,
+  ])
 }
 
 # ---- Networking -----------------------------------------------------------------

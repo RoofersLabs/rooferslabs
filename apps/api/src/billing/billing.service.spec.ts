@@ -90,7 +90,7 @@ function makeService(
   } as unknown as jest.Mocked<StripeService>;
 
   const config = {
-    api: { webPublicUrl: 'https://app.rooferslabs.com' },
+    api: { webPublicUrl: 'https://rooferslabs.com' },
     stripe: { trialPeriodDays: 0 },
     payments: { enabled: overrides.paymentsEnabled ?? true },
   } as unknown as AppConfigService;

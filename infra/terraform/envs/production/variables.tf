@@ -28,10 +28,10 @@ variable "api_subdomain" {
   default = "api"
 }
 
-variable "app_subdomain" {
-  description = "Legacy app subdomain, kept as an allowed CORS origin during the apex migration (redirect to the apex)."
+variable "admin_subdomain" {
+  description = "Internal admin portal subdomain. Allowed in CORS ahead of the portal being built; nothing is provisioned for it yet."
   type        = string
-  default     = "app"
+  default     = "admin"
 }
 
 variable "enable_https" {

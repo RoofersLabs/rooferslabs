@@ -372,13 +372,13 @@ which walks the customer through this):
 
 **Android (Chrome)**
 
-1. Open `https://app.rooferslabs.com`, sign in.
+1. Open `https://rooferslabs.com`, sign in.
 2. Tap **Add to Home Screen** in the top navigation (or Chrome menu ⋮ → _Add to Home screen_).
 3. Confirm — the RoofersLabs icon appears on the home screen and opens full-screen.
 
 **iPhone / iPad (Safari)**
 
-1. Open `https://app.rooferslabs.com` in **Safari**, sign in.
+1. Open `https://rooferslabs.com` in **Safari**, sign in.
 2. Tap the top-nav **Install** button to see guided steps, or directly:
    tap **Share** □↑ → **Add to Home Screen** → **Add**.
 3. Launch from the home-screen icon; it runs standalone like a native app.
