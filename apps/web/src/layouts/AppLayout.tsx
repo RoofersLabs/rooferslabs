@@ -161,7 +161,11 @@ export function AppLayout() {
 
           <GlobalSearch inputClassName={cn(softChrome && 'rounded-xl')} />
 
-          <div className="ml-auto flex items-center gap-1.5">
+          {/* `shrink-0`: these controls have a fixed size and the search does
+              not, so the row must give its space back from the search rather
+              than squeezing the buttons — which `whitespace-nowrap` would not
+              allow anyway, leaving the header to overflow instead. */}
+          <div className="ml-auto flex shrink-0 items-center gap-1.5">
             {/* `tracking-tight` is the only typographic change; the secondary
                 variant already puts the label at `text-ink`, the highest
                 contrast token on this surface, so nothing is recoloured. */}

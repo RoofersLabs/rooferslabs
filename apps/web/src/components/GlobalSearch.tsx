@@ -47,8 +47,14 @@ export function GlobalSearch({ inputClassName }: { inputClassName?: string }) {
       data.appointments.length ||
       data.knowledgeArticles.length);
 
+  // `min-w-0` below is load-bearing in the app header. As a flex item this
+  // container defaults to `min-width: auto`, which floors it at the intrinsic
+  // width of an `<input>` (~180px) and makes the row unshrinkable. Once the
+  // install button joined that row it no longer fit a 390px phone and the
+  // header scrolled sideways. The search is the elastic element there; the
+  // actions beside it are fixed.
   return (
-    <div ref={containerRef} className="relative w-full max-w-md">
+    <div ref={containerRef} className="relative w-full min-w-0 max-w-md">
       <SearchInput
         value={query}
         onFocus={() => setOpen(true)}

@@ -1,28 +1,34 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { Download, Share, PlusSquare, Smartphone, Monitor } from 'lucide-react';
+import { Download, Share, PlusSquare, Smartphone, Monitor, MoreVertical } from 'lucide-react';
 import { usePwaInstall } from '@/hooks/usePwaInstall';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/Modal';
 
 /**
  * "Add to Home Screen" button for the top navigation (MVP requirement).
- * Hidden entirely once the app is installed.
  *
- * - Android/Chrome mobile: triggers the native install prompt.
- * - iOS Safari (no native prompt): step-by-step instructions.
- * - Desktop: a QR code that opens the app on the owner's phone, plus the
- *   native desktop install when the browser offers one.
+ * Rendered on every platform and hidden only once the app is installed. The
+ * label is what adapts to width — the button itself is never conditionally
+ * removed, because a phone is precisely where installing matters most.
+ *
+ * Behaviour comes from `strategy` (see `usePwaInstall`):
+ *   native      → Android Chrome/Edge/Samsung: the OS prompt, no modal
+ *   ios         → iOS/iPadOS: Share-sheet steps, since Safari has no prompt
+ *   mobile-help → handheld without a prompt: browser-menu steps
+ *   desktop     → the unchanged QR flow, plus native install when offered
+ *
+ * A handheld can never reach `desktop`, so the QR code — which exists to move
+ * the user from a computer to their phone — is never shown on the phone.
  */
 export function InstallPwaButton({ className }: { className?: string }) {
-  const { canPrompt, installed, promptInstall, isIos, isMobile } = usePwaInstall();
+  const { canPrompt, promptInstall, strategy } = usePwaInstall();
   const [showModal, setShowModal] = useState(false);
 
-  if (installed) return null;
-  if (isMobile && !canPrompt && !isIos) return null;
+  if (strategy === 'hidden') return null;
 
   const onClick = () => {
-    if (isMobile && canPrompt) {
+    if (strategy === 'native') {
       void promptInstall();
       return;
     }
@@ -44,8 +50,10 @@ export function InstallPwaButton({ className }: { className?: string }) {
       </Button>
 
       <Modal open={showModal} onClose={() => setShowModal(false)} title="Install RoofersLabs">
-        {isMobile && isIos ? (
+        {strategy === 'ios' ? (
           <IosInstructions />
+        ) : strategy === 'mobile-help' ? (
+          <MobileInstructions />
         ) : (
           <DesktopInstall canPrompt={canPrompt} onInstall={promptInstall} />
         )}
@@ -54,33 +62,52 @@ export function InstallPwaButton({ className }: { className?: string }) {
   );
 }
 
+/** Step row shared by the two instruction lists. */
+function Step({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <li className="flex items-start gap-3">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-accent">
+        {icon}
+      </span>
+      <span className="pt-1">{children}</span>
+    </li>
+  );
+}
+
+/**
+ * Android and other handhelds whose browser offered no prompt — Firefox, or
+ * Chrome before `beforeinstallprompt` has fired. Every such browser still
+ * installs from its own menu, so this is guidance rather than a dead end.
+ */
+function MobileInstructions() {
+  return (
+    <ol className="space-y-4 text-body text-ink">
+      <Step icon={<MoreVertical className="h-4 w-4" aria-hidden />}>
+        Open your browser’s menu — the <strong>⋮</strong> or <strong>≡</strong> button.
+      </Step>
+      <Step icon={<PlusSquare className="h-4 w-4" aria-hidden />}>
+        Tap <strong>Install app</strong> or <strong>Add to Home screen</strong>.
+      </Step>
+      <Step icon={<Download className="h-4 w-4" aria-hidden />}>
+        Confirm. RoofersLabs will open full-screen from your Home Screen, and you’ll stay signed in.
+      </Step>
+    </ol>
+  );
+}
+
+/** iOS/iPadOS: Safari has never implemented `beforeinstallprompt`. */
 function IosInstructions() {
   return (
     <ol className="space-y-4 text-body text-ink">
-      <li className="flex items-start gap-3">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-accent">
-          <Share className="h-4 w-4" aria-hidden />
-        </span>
-        <span className="pt-1">
-          Tap the <strong>Share</strong> button in Safari’s toolbar.
-        </span>
-      </li>
-      <li className="flex items-start gap-3">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-accent">
-          <PlusSquare className="h-4 w-4" aria-hidden />
-        </span>
-        <span className="pt-1">
-          Scroll down and tap <strong>Add to Home Screen</strong>.
-        </span>
-      </li>
-      <li className="flex items-start gap-3">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-accent">
-          <Download className="h-4 w-4" aria-hidden />
-        </span>
-        <span className="pt-1">
-          Tap <strong>Add</strong>. RoofersLabs will appear on your Home Screen like a native app.
-        </span>
-      </li>
+      <Step icon={<Share className="h-4 w-4" aria-hidden />}>
+        Tap the <strong>Share</strong> button in Safari’s toolbar.
+      </Step>
+      <Step icon={<PlusSquare className="h-4 w-4" aria-hidden />}>
+        Scroll down and tap <strong>Add to Home Screen</strong>.
+      </Step>
+      <Step icon={<Download className="h-4 w-4" aria-hidden />}>
+        Tap <strong>Add</strong>. RoofersLabs will appear on your Home Screen like a native app.
+      </Step>
     </ol>
   );
 }

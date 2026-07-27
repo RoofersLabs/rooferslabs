@@ -19,7 +19,16 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
-        start_url: '/',
+        // Launch into the product, not the marketing site: '/' is the public
+        // landing page, so an installed app opened there showed a signed-in
+        // owner the sales pitch. The route guard still turns a signed-out
+        // launch toward sign-in, and returns them here afterwards.
+        start_url: '/dashboard',
+        // Pinned because the manifest identity defaults to `start_url` when
+        // absent. Without it, moving start_url would make browsers treat this
+        // as a brand-new app — offering a duplicate install and stranding
+        // anyone who installed the earlier build.
+        id: '/',
         icons: [
           { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
