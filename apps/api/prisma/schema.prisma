@@ -49,6 +49,7 @@ model Company {
   pushSubscriptions       PushSubscription[]
   subscription            Subscription?
   users                   User[]
+  notes                   CompanyNote[]
 
   @@index([status])
   @@map("companies")
@@ -83,6 +84,9 @@ model User {
   lastName           String?
   avatarUrl          String?
   role               UserRole           @default(OWNER)
+  /// Access to the internal admin portal. Defaults to NONE so a new account
+  /// never gains platform access by being created.
+  platformRole       PlatformRole       @default(NONE)
   emailNotifications Boolean            @default(true)
   lastActiveAt       DateTime?
   createdAt          DateTime           @default(now())
@@ -313,6 +317,24 @@ model PushSubscription {
 /// Billing state for a tenant, mirrored from Stripe by the webhook handler.
 /// Stripe is the source of truth; this table is a local read-model so that
 /// request-time authorization never depends on an outbound API call.
+/// A private operational note about a company, written by RoofersLabs staff.
+/// Never exposed through any customer-facing endpoint — the admin controller is
+/// the only route that reads or writes it.
+model CompanyNote {
+  id        String   @id @default(cuid())
+  companyId String
+  /// The staff user who wrote it. Kept as a plain id, not a relation, so
+  /// deleting a staff account never cascades into the operational record.
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, createdAt])
+  @@map("company_notes")
+}
+
 model Subscription {
   id                   String             @id @default(cuid())
   companyId            String             @unique
@@ -354,6 +376,14 @@ enum UserRole {
   OWNER
   ADMIN
   MEMBER
+}
+
+/// Authority over the platform itself, held by RoofersLabs staff. Separate from
+/// UserRole, which is authority inside one company — every customer is a
+/// UserRole.OWNER, so that role can never gate the internal admin portal.
+enum PlatformRole {
+  NONE
+  OWNER
 }
 
 enum CompanyStatus {

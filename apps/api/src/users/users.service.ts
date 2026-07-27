@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { User } from '@prisma/client';
-import { UserRole } from '@rooferslabs/shared';
+import { PlatformRole, UserRole } from '@rooferslabs/shared';
 import type { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
 import { NotFoundError } from '../common/exceptions/domain.exception';
 import { UsersRepository } from './users.repository';
@@ -79,6 +79,7 @@ export class UsersService {
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role as UserRole,
+      platformRole: user.platformRole as PlatformRole,
       companyId: user.companyId,
     };
   }

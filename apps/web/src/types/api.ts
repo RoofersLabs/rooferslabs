@@ -4,6 +4,7 @@
  * envelope come from @rooferslabs/shared — the single source of truth.
  */
 import type {
+  PlatformRole,
   AppointmentPriority,
   AppointmentStatus,
   CallDirection,
@@ -43,7 +44,131 @@ export interface SessionUser {
   firstName: string | null;
   lastName: string | null;
   role: UserRole;
+  /**
+   * Authority over the platform, not over a company. `role` is `OWNER` for
+   * every customer, so only this may decide who sees the admin portal — and it
+   * is a convenience for routing only: the API enforces it independently.
+   */
+  platformRole: PlatformRole;
   companyId: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Internal admin portal
+// ---------------------------------------------------------------------------
+
+export interface AdminOverview {
+  metrics: {
+    totalCompanies: number;
+    activeCompanies: number;
+    activeCompaniesToday: number;
+    callsToday: number;
+    leadsToday: number;
+    appointmentsToday: number;
+    emergenciesToday: number;
+    resolutionRate: number;
+    averageCallSeconds: number;
+  };
+  recentActivity: {
+    id: string;
+    kind: 'company_onboarded' | 'emergency' | 'lead' | 'appointment';
+    title: string;
+    description: string | null;
+    companyId: string | null;
+    companyName: string | null;
+    createdAt: string;
+  }[];
+  activeCompanies: AdminCompanyRow[];
+  dayStartsAt: string;
+}
+
+export interface AdminCompanyRow {
+  id: string;
+  name: string;
+  status?: CompanyStatus;
+  ownerName?: string | null;
+  ownerEmail?: string | null;
+  plan?: SubscriptionPlan | null;
+  subscriptionStatus?: SubscriptionStatus;
+  lastActiveAt: string | null;
+  createdAt?: string;
+  callsToday: number;
+  leadsToday: number;
+  appointmentsToday: number;
+}
+
+export interface AdminCompanyDetail {
+  company: {
+    id: string;
+    name: string;
+    status: CompanyStatus;
+    email: string | null;
+    phone: string | null;
+    city: string | null;
+    state: string | null;
+    timezone: string;
+    createdAt: string;
+    onboardedAt: string | null;
+    receptionistEnabled: boolean;
+    phoneNumbers: { phoneNumber: string; status: string }[];
+    ownerName: string | null;
+    ownerEmail: string | null;
+    lastActiveAt: string | null;
+    subscription: {
+      status: SubscriptionStatus;
+      plan: SubscriptionPlan | null;
+      currentPeriodEnd: string | null;
+      trialEndsAt: string | null;
+    } | null;
+  };
+  usage: {
+    totalCalls: number;
+    totalLeads: number;
+    totalAppointments: number;
+    emergencyCalls: number;
+    totalCustomers: number;
+    resolutionRate: number;
+    averageCallSeconds: number;
+  };
+  recentCalls: Conversation[];
+  recentCustomers: Customer[];
+  recentAppointments: Appointment[];
+  notes: CompanyNote[];
+}
+
+export interface CompanyNote {
+  id: string;
+  companyId: string;
+  authorId: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminLiveCall {
+  id: string;
+  fromNumber: string | null;
+  status: CallStatus;
+  startedAt: string | null;
+  createdAt: string;
+  companyId: string | null;
+  company: { name: string } | null;
+  conversation: { id: string; isEmergency: boolean } | null;
+}
+
+export interface AdminAnalytics {
+  window: number;
+  series: { day: string; calls: number; leads: number; appointments: number }[];
+  companies: {
+    companyId: string;
+    companyName: string;
+    calls: number;
+    leads: number;
+    appointments: number;
+    emergencies: number;
+    resolutionRate: number;
+    averageCallSeconds: number;
+  }[];
 }
 
 export interface SessionCompany {

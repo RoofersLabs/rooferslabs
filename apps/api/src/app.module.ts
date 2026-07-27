@@ -39,6 +39,7 @@ import { AppointmentsModule } from './appointments/appointments.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { CallsModule } from './calls/calls.module';
 import { TelephonyModule } from './telephony/telephony.module';
+import { AdminModule } from './admin/admin.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { SearchModule } from './search/search.module';
 import { HealthModule } from './health/health.module';
@@ -96,6 +97,7 @@ import { HealthModule } from './health/health.module';
     NotificationsModule,
     CallsModule,
     TelephonyModule,
+    AdminModule,
     DashboardModule,
     SearchModule,
     HealthModule,

@@ -5,6 +5,7 @@ import { RouteGuard } from '@/auth/RouteGuard';
 import { ROUTES } from '@/auth/stages';
 import { AuthenticatedProviders } from '@/providers/AppProviders';
 import { AppLayout } from '@/layouts/AppLayout';
+import { FullScreenSpinner } from '@/components/ui/spinner';
 import { SignInPage, SignUpPage } from '@/pages/AuthPages';
 import { OnboardingLayout } from '@/pages/onboarding/OnboardingLayout';
 import { PaymentPage } from '@/pages/PaymentPage';
@@ -25,6 +26,36 @@ import { SettingsPage } from '@/features/settings/SettingsPage';
 // each audience off the other's critical path.
 const MarketingPage = lazy(() =>
   import('@/marketing/MarketingPage').then((m) => ({ default: m.MarketingPage })),
+);
+
+// The internal admin portal. Lazy so a customer never downloads a byte of it —
+// and irrelevant to security either way, since every one of its requests is
+// refused by the API unless the caller holds the platform role.
+const AdminLayout = lazy(() =>
+  import('@/features/admin/AdminLayout').then((m) => ({ default: m.AdminLayout })),
+);
+const AdminDashboardPage = lazy(() =>
+  import('@/features/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })),
+);
+const AdminCompaniesPage = lazy(() =>
+  import('@/features/admin/AdminCompaniesPage').then((m) => ({ default: m.AdminCompaniesPage })),
+);
+const AdminCompanyDetailPage = lazy(() =>
+  import('@/features/admin/AdminCompanyDetailPage').then((m) => ({
+    default: m.AdminCompanyDetailPage,
+  })),
+);
+const AdminLiveCallsPage = lazy(() =>
+  import('@/features/admin/AdminLiveCallsPage').then((m) => ({ default: m.AdminLiveCallsPage })),
+);
+const AdminAnalyticsPage = lazy(() =>
+  import('@/features/admin/AdminAnalyticsPage').then((m) => ({ default: m.AdminAnalyticsPage })),
+);
+const AdminSettingsPage = lazy(() =>
+  import('@/features/admin/AdminSettingsPage').then((m) => ({ default: m.AdminSettingsPage })),
+);
+const AdminGuard = lazy(() =>
+  import('@/features/admin/AdminGuard').then((m) => ({ default: m.AdminGuard })),
 );
 
 /**
@@ -114,6 +145,26 @@ export function App() {
             <Route path={ROUTES.notifications} element={<NotificationsPage />} />
             <Route path={ROUTES.settings} element={<SettingsPage />} />
             <Route path={`${ROUTES.settings}/:tab`} element={<SettingsPage />} />
+
+            {/* Internal portal. It sits inside AppLayout so the header,
+                sidebar and search are the same components the customer app
+                renders — the portal adds its own section nav, nothing more. */}
+            <Route
+              element={
+                <Suspense fallback={<FullScreenSpinner label="Loading…" />}>
+                  <AdminGuard />
+                </Suspense>
+              }
+            >
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboardPage />} />
+                <Route path="companies" element={<AdminCompaniesPage />} />
+                <Route path="companies/:id" element={<AdminCompanyDetailPage />} />
+                <Route path="live-calls" element={<AdminLiveCallsPage />} />
+                <Route path="analytics" element={<AdminAnalyticsPage />} />
+                <Route path="settings" element={<AdminSettingsPage />} />
+              </Route>
+            </Route>
           </Route>
         </Route>
 

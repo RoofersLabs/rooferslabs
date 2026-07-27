@@ -12,6 +12,12 @@ import type {
   Call,
   Company,
   Conversation,
+  AdminAnalytics,
+  AdminCompanyDetail,
+  AdminCompanyRow,
+  AdminLiveCall,
+  AdminOverview,
+  CompanyNote,
   Customer,
   CustomerDetail,
   DashboardOverview,
@@ -42,6 +48,11 @@ export const queryKeys = {
   unreadCount: ['notifications', 'unread-count'] as const,
   search: (q: string) => ['search', q] as const,
   receptionistStatus: ['telephony', 'receptionist-status'] as const,
+  adminOverview: ['admin', 'overview'] as const,
+  adminCompanies: (params: object) => ['admin', 'companies', params] as const,
+  adminCompany: (id: string) => ['admin', 'companies', 'detail', id] as const,
+  adminLiveCalls: ['admin', 'live-calls'] as const,
+  adminAnalytics: (days: number) => ['admin', 'analytics', days] as const,
 };
 
 // ---------------------------------------------------------------------------
@@ -450,5 +461,76 @@ export function useGlobalSearch(q: string) {
     enabled: q.trim().length >= 2,
     queryFn: () => api.get<GlobalSearchResults>('/search', { q }),
     staleTime: 15_000,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Internal admin portal
+//
+// Every one of these hits an endpoint behind `PlatformAdminGuard`. A customer
+// reaching them gets a 403 from the server — the client-side routing is a
+// convenience, never the protection.
+// ---------------------------------------------------------------------------
+
+export function useAdminOverview() {
+  return useQuery({
+    queryKey: queryKeys.adminOverview,
+    queryFn: () => api.get<AdminOverview>('/admin/overview'),
+    refetchInterval: 60_000,
+  });
+}
+
+export function useAdminCompanies(params: ListParams & { subscription?: string }) {
+  return useQuery({
+    queryKey: queryKeys.adminCompanies(params),
+    queryFn: () => api.getPaginated<AdminCompanyRow>('/admin/companies', params),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useAdminCompany(id: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.adminCompany(id ?? ''),
+    enabled: Boolean(id),
+    queryFn: () => api.get<AdminCompanyDetail>(`/admin/companies/${id}`),
+  });
+}
+
+/**
+ * Polled rather than streamed. A call's lifetime is minutes and the portal is
+ * open on one screen in one office — a five-second poll is honest about the
+ * cost, where a socket would add reconnection logic and a second transport for
+ * no visible gain.
+ */
+export function useAdminLiveCalls() {
+  return useQuery({
+    queryKey: queryKeys.adminLiveCalls,
+    queryFn: () => api.get<AdminLiveCall[]>('/admin/live-calls'),
+    refetchInterval: 5_000,
+  });
+}
+
+export function useAdminAnalytics(days: number) {
+  return useQuery({
+    queryKey: queryKeys.adminAnalytics(days),
+    queryFn: () => api.get<AdminAnalytics>('/admin/analytics', { days: String(days) }),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useAddCompanyNote(companyId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: string) =>
+      api.post<CompanyNote>(`/admin/companies/${companyId}/notes`, { body }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.adminCompany(companyId) }),
+  });
+}
+
+export function useDeleteCompanyNote(companyId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (noteId: string) => api.delete<null>(`/admin/notes/${noteId}`),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.adminCompany(companyId) }),
   });
 }

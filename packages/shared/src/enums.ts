@@ -13,6 +13,22 @@ export enum UserRole {
   MEMBER = 'MEMBER',
 }
 
+/**
+ * Authority over the RoofersLabs platform itself, held by staff — deliberately
+ * separate from `UserRole`, which is authority *inside* one roofing company.
+ *
+ * Every customer is a `UserRole.OWNER` (it is the default assigned at signup),
+ * so gating the internal admin portal on that role would hand it to the entire
+ * customer base. This enum exists so the two authorities can never be confused,
+ * and it defaults to NONE so access fails closed.
+ */
+export enum PlatformRole {
+  /** No access to the admin portal. The default for every account. */
+  NONE = 'NONE',
+  /** RoofersLabs staff owner: full read access across every tenant. */
+  OWNER = 'OWNER',
+}
+
 /** Lifecycle status of a company (tenant). */
 export enum CompanyStatus {
   ONBOARDING = 'ONBOARDING',

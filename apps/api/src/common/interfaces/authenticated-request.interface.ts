@@ -1,5 +1,5 @@
 import type { Request } from 'express';
-import type { UserRole } from '@rooferslabs/shared';
+import type { PlatformRole, UserRole } from '@rooferslabs/shared';
 
 /**
  * The authenticated principal attached to every protected request after the
@@ -14,6 +14,12 @@ export interface AuthenticatedUser {
   firstName: string | null;
   lastName: string | null;
   role: UserRole;
+  /**
+   * Authority over the platform itself — the admin portal's only gate.
+   * Distinct from `role`, which is authority inside one company and is `OWNER`
+   * for every customer.
+   */
+  platformRole: PlatformRole;
   /** The tenant this user operates within. Null until a company is created. */
   companyId: string | null;
 }
