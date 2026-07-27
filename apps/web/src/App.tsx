@@ -36,9 +36,6 @@ const MarketingPage = lazy(() =>
 const AdminLayout = lazy(() =>
   import('@/features/admin/AdminLayout').then((m) => ({ default: m.AdminLayout })),
 );
-const AdminDashboardPage = lazy(() =>
-  import('@/features/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })),
-);
 const AdminCompaniesPage = lazy(() =>
   import('@/features/admin/AdminCompaniesPage').then((m) => ({ default: m.AdminCompaniesPage })),
 );
@@ -46,9 +43,6 @@ const AdminCompanyDetailPage = lazy(() =>
   import('@/features/admin/AdminCompanyDetailPage').then((m) => ({
     default: m.AdminCompanyDetailPage,
   })),
-);
-const AdminLiveCallsPage = lazy(() =>
-  import('@/features/admin/AdminLiveCallsPage').then((m) => ({ default: m.AdminLiveCallsPage })),
 );
 const AdminAnalyticsPage = lazy(() =>
   import('@/features/admin/AdminAnalyticsPage').then((m) => ({ default: m.AdminAnalyticsPage })),
@@ -197,10 +191,11 @@ function AdminApp() {
           }
         >
           <Route path={ADMIN_ROUTES.root} element={<AdminLayout />}>
-            <Route index element={<AdminDashboardPage />} />
-            <Route path="companies" element={<AdminCompaniesPage />} />
+            {/* Companies is the index, not a redirect from a summary page:
+                managing companies is the whole job, so /admin opens it
+                directly. */}
+            <Route index element={<AdminCompaniesPage />} />
             <Route path="companies/:id" element={<AdminCompanyDetailPage />} />
-            <Route path="live-calls" element={<AdminLiveCallsPage />} />
             <Route path="analytics" element={<AdminAnalyticsPage />} />
             <Route path="settings" element={<AdminSettingsPage />} />
           </Route>

@@ -57,31 +57,6 @@ export interface SessionUser {
 // Internal admin portal
 // ---------------------------------------------------------------------------
 
-export interface AdminOverview {
-  metrics: {
-    totalCompanies: number;
-    activeCompanies: number;
-    activeCompaniesToday: number;
-    callsToday: number;
-    leadsToday: number;
-    appointmentsToday: number;
-    emergenciesToday: number;
-    resolutionRate: number;
-    averageCallSeconds: number;
-  };
-  recentActivity: {
-    id: string;
-    kind: 'company_onboarded' | 'emergency' | 'lead' | 'appointment';
-    title: string;
-    description: string | null;
-    companyId: string | null;
-    companyName: string | null;
-    createdAt: string;
-  }[];
-  activeCompanies: AdminCompanyRow[];
-  dayStartsAt: string;
-}
-
 export interface AdminCompanyRow {
   id: string;
   name: string;
@@ -143,17 +118,6 @@ export interface CompanyNote {
   body: string;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface AdminLiveCall {
-  id: string;
-  fromNumber: string | null;
-  status: CallStatus;
-  startedAt: string | null;
-  createdAt: string;
-  companyId: string | null;
-  company: { name: string } | null;
-  conversation: { id: string; isEmergency: boolean } | null;
 }
 
 export interface AdminAnalytics {
