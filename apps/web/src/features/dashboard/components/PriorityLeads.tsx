@@ -82,25 +82,29 @@ export function PriorityLeads({ leads, isLoading }: { leads: PriorityLead[]; isL
  */
 function LeadCard({ lead }: { lead: PriorityLead }) {
   return (
-    <Card as="article" className="rounded-md p-4">
+    // `rounded-lg` is 14px — the one step on the radius scale that lands in the
+    // 14–16px band, between the dashboard's sharper `md` panels and the shared
+    // Card's own 16px. Border, surface and shadow are the Card's defaults; a
+    // lead card is not a special surface, it is the standard one.
+    <Card as="article" className="rounded-lg p-5">
       <div className="flex items-center justify-between gap-3">
         <h3 className="min-w-0 flex-1 truncate text-body-lg font-semibold text-ink">{lead.name}</h3>
         <Badge tone={TONES[lead.priority]}>{lead.priority}</Badge>
       </div>
 
-      {lead.address && <p className="mt-0.5 truncate text-small text-ink-muted">{lead.address}</p>}
+      {lead.address && <p className="mt-1 truncate text-small text-ink-muted">{lead.address}</p>}
 
       {lead.summary && (
-        // Three lines, at the body's own leading rather than a looser one: the
-        // summary has to explain the call without out-weighing the name above
-        // it or pushing the button off the first screen.
-        <p className="mt-2 line-clamp-3 text-small text-ink-muted">{lead.summary}</p>
+        // Three lines at the body's own leading: enough to say why they called
+        // without the summary out-weighing the name above it.
+        <p className="mt-3 line-clamp-3 text-small text-ink-muted">{lead.summary}</p>
       )}
 
-      {/* The CTA is inset rather than full-bleed. At 80% it still reads as the
-          card's primary action and stays an easy thumb target, without the
-          edge-to-edge bar that made the button the loudest thing on screen. */}
-      <div className="mt-4 flex justify-center">
+      {/* 20px above the CTA — more than any gap inside the text block, so the
+          action reads as its own zone rather than a fourth line of content.
+          Inset to 80%: still unmistakably the card's primary action, without
+          the edge-to-edge bar that made the button the loudest thing on screen. */}
+      <div className="mt-5 flex justify-center">
         {lead.phone ? (
           <a href={`tel:${lead.phone}`} className={buttonClass('primary', 'md', 'w-4/5')}>
             Call Homeowner
@@ -120,15 +124,15 @@ function LeadCard({ lead }: { lead: PriorityLead }) {
 /** Mirrors `LeadCard`'s metrics so the list does not resize when data lands. */
 function LeadSkeleton() {
   return (
-    <Card className="rounded-md p-4">
+    <Card className="rounded-lg p-5">
       <div className="flex items-center justify-between gap-3">
         <Skeleton className="h-6 w-40" />
         <Skeleton className="h-5 w-16 rounded-full" />
       </div>
-      <Skeleton className="mt-1.5 h-4 w-52" />
-      <Skeleton className="mt-3 h-4 w-full" />
+      <Skeleton className="mt-2 h-4 w-52" />
+      <Skeleton className="mt-4 h-4 w-full" />
       <Skeleton className="mt-1.5 h-4 w-3/4" />
-      <div className="mt-4 flex justify-center">
+      <div className="mt-5 flex justify-center">
         <Skeleton className="h-10 w-4/5" />
       </div>
     </Card>
