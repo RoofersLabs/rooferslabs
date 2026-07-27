@@ -14,6 +14,7 @@ import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { CallsPage } from '@/features/calls/CallsPage';
 import { ConversationDetailPage } from '@/features/calls/ConversationDetailPage';
 import { CustomersPage } from '@/features/customers/CustomersPage';
+import { CustomerDetailPage } from '@/features/customers/CustomerDetailPage';
 import { AppointmentsPage } from '@/features/appointments/AppointmentsPage';
 import { KnowledgePage } from '@/features/knowledge/KnowledgePage';
 import { NotificationsPage } from '@/features/notifications/NotificationsPage';
@@ -107,6 +108,7 @@ export function App() {
             <Route path={ROUTES.calls} element={<CallsPage />} />
             <Route path={`${ROUTES.conversations}/:id`} element={<ConversationDetailPage />} />
             <Route path={ROUTES.customers} element={<CustomersPage />} />
+            <Route path={`${ROUTES.customers}/:id`} element={<CustomerDetailPage />} />
             <Route path={ROUTES.appointments} element={<AppointmentsPage />} />
             <Route path={ROUTES.knowledge} element={<KnowledgePage />} />
             <Route path={ROUTES.notifications} element={<NotificationsPage />} />

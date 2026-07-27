@@ -13,6 +13,7 @@ import type {
   Company,
   Conversation,
   Customer,
+  CustomerDetail,
   DashboardOverview,
   GlobalSearchResults,
   KnowledgeArticle,
@@ -34,6 +35,7 @@ export const queryKeys = {
   call: (id: string) => ['calls', 'detail', id] as const,
   conversation: (id: string) => ['conversations', 'detail', id] as const,
   customers: (params: object) => ['customers', params] as const,
+  customer: (id: string) => ['customers', 'detail', id] as const,
   appointments: (params: object) => ['appointments', params] as const,
   knowledge: (params: object) => ['knowledge', params] as const,
   notifications: (params: object) => ['notifications', params] as const,
@@ -303,11 +305,30 @@ export function useCustomers(params: ListParams) {
   });
 }
 
+export function useCustomer(id: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.customer(id ?? ''),
+    enabled: Boolean(id),
+    queryFn: () => api.get<CustomerDetail>(`/customers/${id}`),
+  });
+}
+
 export function useSaveCustomer() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...body }: Partial<Customer> & { id?: string }) =>
       id ? api.patch<Customer>(`/customers/${id}`, body) : api.post<Customer>('/customers', body),
+    // Invalidating the `customers` root covers both the paginated lists and the
+    // `['customers','detail',id]` keys, so a profile reflects an edit made from
+    // the list and vice versa.
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['customers'] }),
+  });
+}
+
+export function useDeleteCustomer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete<null>(`/customers/${id}`),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['customers'] }),
   });
 }

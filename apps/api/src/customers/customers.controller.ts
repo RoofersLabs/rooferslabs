@@ -36,10 +36,12 @@ export class CustomersController {
     return respond(customer, 'Customer created.');
   }
 
+  // Returns the customer with their recent conversations and appointments, so
+  // the profile page renders from one request rather than three.
   @Get(':id')
-  @ApiOperation({ summary: 'Get a customer' })
+  @ApiOperation({ summary: 'Get a customer with their recent calls and appointments' })
   async get(@CurrentCompanyId() companyId: string, @Param('id') id: string) {
-    const customer = await this.customers.getById(companyId, id);
+    const customer = await this.customers.getDetailById(companyId, id);
     return respond(customer, 'Customer retrieved.');
   }
 

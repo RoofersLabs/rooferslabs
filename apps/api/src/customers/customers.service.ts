@@ -50,6 +50,15 @@ export class CustomersService {
     return customer;
   }
 
+  /** The customer profile: the record plus their recent calls and appointments. */
+  async getDetailById(companyId: string, id: string) {
+    const customer = await this.repo.findDetailById(companyId, id);
+    if (!customer) {
+      throw new NotFoundError('Customer not found.', ApiErrorCode.CUSTOMER_NOT_FOUND);
+    }
+    return customer;
+  }
+
   async list(
     companyId: string,
     query: CustomerQueryDto,

@@ -124,6 +124,10 @@ model Customer {
   propertyAddress String?
   propertyType    PropertyType   @default(UNKNOWN)
   status          CustomerStatus @default(NEW)
+  /// Starred by the company so their most important accounts stay reachable
+  /// from any device. Company-wide, not per-user: a small roofing office
+  /// shares one view of who matters.
+  isFavorite      Boolean        @default(false)
   notes           String?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt

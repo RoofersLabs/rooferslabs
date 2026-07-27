@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { CustomerStatus, PropertyType } from '@rooferslabs/shared';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
@@ -44,6 +44,12 @@ export class UpdateCustomerDto extends CreateCustomerDto {
   @IsOptional()
   @IsEnum(CustomerStatus)
   status?: CustomerStatus;
+
+  /** Starring is a plain update, so it needs no endpoint of its own. */
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isFavorite?: boolean;
 }
 
 export class CustomerQueryDto extends PaginationQueryDto {

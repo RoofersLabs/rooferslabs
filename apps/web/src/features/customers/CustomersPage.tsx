@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Users, Plus } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Users, Plus, Star, ChevronRight } from 'lucide-react';
 import { PropertyType } from '@rooferslabs/shared';
 import { useCustomers, useSaveCustomer } from '@/hooks/queries';
+import { ROUTES } from '@/auth/stages';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import type { Customer } from '@/types/api';
 import { cn, formatPhone, humanizeEnum, timeAgo } from '@/lib/utils';
@@ -31,9 +33,9 @@ export function CustomersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search);
-  const [editing, setEditing] = useState<Customer | null>(null);
   const [creating, setCreating] = useState(false);
   const customers = useCustomers({ page, search: debouncedSearch || undefined });
+  const navigate = useNavigate();
 
   return (
     <div>
@@ -82,66 +84,114 @@ export function CustomersPage() {
           />
         ) : (
           <>
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead className="hidden md:table-cell">Property</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden sm:table-cell">Added</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {customers.data.items.map((customer) => (
-                  <TableRow
-                    key={customer.id}
-                    onClick={() => setEditing(customer)}
-                    className="cursor-pointer"
+            {/* Below `md` the table is not rendered at all. Its container is
+                `overflow-x-auto`, which is what made the list scroll sideways
+                on a phone — hiding the columns would have kept the scroll. */}
+            <ul className="divide-y divide-line-subtle border-t border-line-subtle md:hidden">
+              {customers.data.items.map((customer) => (
+                <li key={customer.id}>
+                  <Link
+                    to={`${ROUTES.customers}/${customer.id}`}
+                    className="focus-ring flex items-center gap-3 px-4 py-3.5 transition-colors duration-fast hover:bg-surface-2"
                   >
-                    <TableCell className="font-medium">
-                      {customer.fullName ?? 'Unknown caller'}
-                    </TableCell>
-                    <TableCell className="text-ink-muted">
-                      <span className="block">{formatPhone(customer.phone)}</span>
-                      {customer.email && (
-                        <span className="block text-caption text-ink-faint">{customer.email}</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="hidden max-w-[16rem] truncate text-ink-muted md:table-cell">
-                      {customer.propertyAddress ?? '—'}
-                      <span className="block text-caption text-ink-faint">
-                        {humanizeEnum(customer.propertyType)}
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-1.5">
+                        <span className="truncate text-body font-medium text-ink">
+                          {customer.fullName ?? 'Unknown caller'}
+                        </span>
+                        {customer.isFavorite && (
+                          <Star
+                            className="h-3.5 w-3.5 shrink-0 fill-warning text-warning"
+                            aria-label="Favorite"
+                          />
+                        )}
                       </span>
-                    </TableCell>
-                    <TableCell>
-                      <EnumStatusText value={customer.status} />
-                    </TableCell>
-                    <TableCell className="hidden text-caption text-ink-faint sm:table-cell">
-                      {timeAgo(customer.createdAt)}
-                    </TableCell>
+                      <span className="font-num mt-0.5 block truncate text-small text-ink-muted">
+                        {formatPhone(customer.phone)}
+                      </span>
+                      {/* Always rendered, so every row is the same height —
+                          the address when there is one, otherwise when they
+                          were added. */}
+                      <span className="mt-0.5 block truncate text-caption text-ink-faint">
+                        {customer.propertyAddress ?? `Added ${timeAgo(customer.createdAt)}`}
+                      </span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2">
+                      <EnumStatusText value={customer.status} className="shrink-0" />
+                      <ChevronRight className="h-4 w-4 text-ink-faint" aria-hidden />
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Property</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="hidden lg:table-cell">Added</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {customers.data.items.map((customer) => (
+                    <TableRow
+                      key={customer.id}
+                      onClick={() => navigate(`${ROUTES.customers}/${customer.id}`)}
+                      className="cursor-pointer"
+                    >
+                      <TableCell className="font-medium">
+                        <span className="flex items-center gap-1.5">
+                          {customer.fullName ?? 'Unknown caller'}
+                          {customer.isFavorite && (
+                            <Star
+                              className="h-3.5 w-3.5 shrink-0 fill-warning text-warning"
+                              aria-label="Favorite"
+                            />
+                          )}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-ink-muted">
+                        <span className="block">{formatPhone(customer.phone)}</span>
+                        {customer.email && (
+                          <span className="block text-caption text-ink-faint">
+                            {customer.email}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="max-w-[16rem] truncate text-ink-muted">
+                        {customer.propertyAddress ?? '—'}
+                        <span className="block text-caption text-ink-faint">
+                          {humanizeEnum(customer.propertyType)}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <EnumStatusText value={customer.status} />
+                      </TableCell>
+                      <TableCell className="hidden text-caption text-ink-faint lg:table-cell">
+                        {timeAgo(customer.createdAt)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
             <Pagination pagination={customers.data.pagination} onPageChange={setPage} />
           </>
         )}
       </Card>
 
-      <CustomerModal
-        open={creating || editing !== null}
-        customer={editing}
-        onClose={() => {
-          setCreating(false);
-          setEditing(null);
-        }}
-      />
+      {/* Add only. Editing an existing customer now happens from their profile,
+          behind an explicit action, so opening a customer is a read. */}
+      <CustomerModal open={creating} customer={null} onClose={() => setCreating(false)} />
     </div>
   );
 }
 
-function CustomerModal({
+export function CustomerModal({
   open,
   customer,
   onClose,

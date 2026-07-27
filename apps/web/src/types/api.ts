@@ -155,9 +155,25 @@ export interface Customer {
   propertyAddress: string | null;
   propertyType: PropertyType;
   status: CustomerStatus;
+  /** Starred company-wide, so the accounts that matter surface on any device. */
+  isFavorite: boolean;
   notes: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * `GET /customers/:id` — the customer plus the history their profile is built
+ * from. Both lists are capped by the API and ordered newest first.
+ */
+export interface CustomerDetail extends Customer {
+  conversations: (Pick<
+    Conversation,
+    'id' | 'outcome' | 'intent' | 'isEmergency' | 'summary' | 'createdAt'
+  > & {
+    call: { durationSeconds: number | null; createdAt: string } | null;
+  })[];
+  appointments: Appointment[];
 }
 
 export interface CustomerRef {
