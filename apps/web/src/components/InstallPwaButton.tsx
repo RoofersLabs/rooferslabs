@@ -14,7 +14,7 @@ import { Modal } from '@/components/ui/Modal';
  * - Desktop: a QR code that opens the app on the owner's phone, plus the
  *   native desktop install when the browser offers one.
  */
-export function InstallPwaButton() {
+export function InstallPwaButton({ className }: { className?: string }) {
   const { canPrompt, installed, promptInstall, isIos, isMobile } = usePwaInstall();
   const [showModal, setShowModal] = useState(false);
 
@@ -34,6 +34,7 @@ export function InstallPwaButton() {
       <Button
         variant="secondary"
         size="sm"
+        className={className}
         onClick={onClick}
         aria-label="Add RoofersLabs to your Home Screen"
       >

@@ -42,9 +42,9 @@ function MetricColumn({ icon, label, value, tone }: Metric) {
 /**
  * Full-width analytics panel: one container holding the day's headline KPIs as
  * equal-width columns separated by hairline dividers. Reflows to two columns on
- * tablet and a single stacked column on mobile. It uses the shared `Card`
- * surface so its radius, border and elevation match every other panel in the
- * product rather than being a slightly rounder one-off.
+ * tablet and a single stacked column on mobile. It uses the shared `Card` for
+ * its border and elevation, overriding only the radius so it matches the other
+ * dashboard panels rather than being a rounder one-off among them.
  */
 export function AnalyticsPanel({ metrics }: { metrics: DashboardOverview['metrics'] | undefined }) {
   const items: Metric[] = [
@@ -65,7 +65,7 @@ export function AnalyticsPanel({ metrics }: { metrics: DashboardOverview['metric
   ];
 
   return (
-    <Card as="section" aria-label="Today’s key metrics" className="overflow-hidden">
+    <Card as="section" aria-label="Today’s key metrics" className="overflow-hidden rounded-md">
       <div className="grid grid-cols-1 gap-px bg-line-subtle sm:grid-cols-2 lg:grid-cols-4">
         {items.map((item) => (
           <MetricColumn key={item.label} {...item} />

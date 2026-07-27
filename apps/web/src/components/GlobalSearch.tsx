@@ -5,8 +5,14 @@ import { useGlobalSearch } from '@/hooks/queries';
 import { humanizeEnum, timeAgo } from '@/lib/utils';
 import { SearchInput } from '@/components/ui/SearchInput';
 
-/** Header search with debounced global results across all business entities. */
-export function GlobalSearch() {
+/**
+ * Header search with debounced global results across all business entities.
+ *
+ * `inputClassName` is forwarded to the field so the shell can soften its radius
+ * on the dashboard without the shared `SearchInput` changing for the Calls,
+ * Customers and Knowledge pages that also render it.
+ */
+export function GlobalSearch({ inputClassName }: { inputClassName?: string }) {
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
   const [open, setOpen] = useState(false);
@@ -52,6 +58,7 @@ export function GlobalSearch() {
         }}
         placeholder="Search customers, calls, appointments…"
         aria-label="Global search"
+        inputClassName={inputClassName}
       />
 
       {open && debounced.trim().length >= 2 && (

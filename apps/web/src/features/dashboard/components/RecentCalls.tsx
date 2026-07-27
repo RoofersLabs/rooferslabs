@@ -2,10 +2,10 @@ import { Link } from 'react-router-dom';
 import { Phone, ShieldAlert, Play } from 'lucide-react';
 import type { Conversation } from '@/types/api';
 import { formatDuration, formatPhone, humanizeEnum, timeAgo } from '@/lib/utils';
-import { EnumBadge } from '@/components/ui/badge';
 import { IconTile } from '@/components/ui/IconTile';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { EnumStatusLabel } from './StatusLabel';
 import { SectionCard } from './SectionCard';
 
 /**
@@ -57,7 +57,7 @@ export function RecentCalls({
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
                       <span className="truncate text-body font-medium text-ink">{name}</span>
-                      <EnumBadge value={conversation.outcome} />
+                      <EnumStatusLabel value={conversation.outcome} />
                     </span>
                     <span className="mt-0.5 flex items-center gap-1.5 text-small text-ink-muted">
                       <span className="truncate">{callType}</span>

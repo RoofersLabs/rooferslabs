@@ -7,10 +7,11 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 /**
  * A titled dashboard panel with an optional "view all" link in its header.
  *
- * The surface itself is the shared `Card`, so a dashboard panel and a feature
- * page's table shell are the same object — this component only adds the header
- * affordance. The body is supplied by the caller so one shell wraps lists,
- * tiles and timelines alike.
+ * The surface itself is the shared `Card` — this component adds the header
+ * affordance and tightens the radius for the dashboard's denser grid, leaving
+ * the border and elevation shared with every feature page's table shell. The
+ * body is supplied by the caller so one shell wraps lists, tiles and timelines
+ * alike.
  */
 export function SectionCard({
   title,
@@ -25,8 +26,10 @@ export function SectionCard({
   className?: string;
   bodyClassName?: string;
 }) {
+  // `rounded-md` (12px) sharpens the shared Card's 16px for the dashboard only —
+  // twMerge drops the base radius, and every other page keeps it.
   return (
-    <Card as="section" aria-label={title} className={cn('overflow-hidden', className)}>
+    <Card as="section" aria-label={title} className={cn('overflow-hidden rounded-md', className)}>
       <CardHeader className="items-center">
         <CardTitle as="h2">{title}</CardTitle>
         {action && (

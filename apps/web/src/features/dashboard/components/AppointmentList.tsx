@@ -1,9 +1,9 @@
 import { CalendarClock } from 'lucide-react';
 import type { Appointment } from '@/types/api';
 import { formatDate, humanizeEnum } from '@/lib/utils';
-import { EnumBadge } from '@/components/ui/badge';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { EnumStatusLabel } from './StatusLabel';
 import { SectionCard } from './SectionCard';
 
 /** A compact, timeline-style list of upcoming appointment requests. */
@@ -47,7 +47,7 @@ export function AppointmentList({
                     <span className="truncate text-body font-medium text-ink">
                       {appointment.customer?.fullName ?? 'Customer'}
                     </span>
-                    <EnumBadge value={appointment.priority} />
+                    <EnumStatusLabel value={appointment.priority} />
                   </div>
                   <p className="mt-0.5 truncate text-small text-ink-muted">
                     {appointment.serviceRequested ?? 'Service visit'}

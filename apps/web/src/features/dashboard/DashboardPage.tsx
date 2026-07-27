@@ -36,7 +36,7 @@ export function DashboardPage() {
     return (
       <div>
         <PageHeader title="Dashboard" description="Today’s activity across your front office." />
-        <Card>
+        <Card className="rounded-md">
           <ErrorState
             title="Couldn’t load your dashboard"
             message={(dashboard.error as Error).message}
@@ -52,13 +52,13 @@ export function DashboardPage() {
   const needsForwarding = Boolean(phone.data && !phone.data.forwardingVerifiedAt);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <DashboardHeader firstName={firstName} receptionist={receptionist.data} />
 
       {(needsPhoneSetup || needsForwarding) && (
         <Link
           to={`${ROUTES.settings}/phone`}
-          className="focus-ring flex items-center gap-4 rounded-xl border border-accent-border bg-accent-subtle px-6 py-5 transition-colors duration-fast hover:border-accent"
+          className="focus-ring flex items-center gap-4 rounded-md border border-accent-border bg-accent-subtle px-6 py-5 transition-colors duration-fast hover:border-accent"
         >
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-ink-on-brand">
             <PhoneForwarded className="h-5 w-5" aria-hidden />

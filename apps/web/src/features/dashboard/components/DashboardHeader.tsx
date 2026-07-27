@@ -28,7 +28,7 @@ export function DashboardHeader({
   const name = firstName?.trim();
   return (
     <PageHeader
-      // The dashboard's sections are spaced by the page's own `space-y-8`.
+      // The dashboard's sections are spaced by the page's own `space-y-6`.
       className="mb-0"
       title={`${greetingFor()}${name ? `, ${name}` : ''}!`}
       description="Here’s what’s happening with your business today."
@@ -52,7 +52,14 @@ export function DashboardHeader({
   );
 }
 
-/** Compact receptionist/forwarding status chip linking to Phone Setup. */
+/**
+ * Compact receptionist/forwarding status linking to Phone Setup.
+ *
+ * Flat colored text, matching the dashboard's other status indicators — no
+ * fill, no border, no pill. The dot stays because it is the only non-color
+ * signal here, and `rounded-xs` survives solely to keep the focus ring from
+ * boxing the text at a hard right angle; it never renders as a chip.
+ */
 function StatusChip({
   good,
   goodLabel,
@@ -66,10 +73,8 @@ function StatusChip({
     <Link
       to={`${ROUTES.settings}/phone`}
       className={cn(
-        'focus-ring inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-caption font-medium transition-colors duration-fast',
-        good
-          ? 'border-success-border bg-success-subtle text-success'
-          : 'border-warning-border bg-warning-subtle text-warning',
+        'focus-ring inline-flex items-center gap-1.5 rounded-xs text-caption font-semibold underline-offset-2 transition-colors duration-fast hover:underline',
+        good ? 'text-success' : 'text-warning',
       )}
     >
       <span

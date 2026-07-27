@@ -12,6 +12,7 @@ import {
   CreditCard,
 } from 'lucide-react';
 import { useAccess } from '@/auth/AccessProvider';
+import { cn } from '@/lib/utils';
 import { ROUTES } from '@/auth/stages';
 import { useUnreadCount } from '@/hooks/queries';
 import { GlobalSearch } from '@/components/GlobalSearch';
@@ -51,6 +52,19 @@ export function AppLayout() {
   const { pathname } = useLocation();
   const unreadCount = unread.data?.unreadCount ?? 0;
 
+  /**
+   * The dashboard's softer chrome.
+   *
+   * The header and sidebar are one persistent shell shared by every
+   * authenticated page, so these radii are scoped to the dashboard route rather
+   * than applied to the shared controls — Calls, Customers, Knowledge, Settings
+   * and Billing keep the chrome exactly as it is today. The trade-off is
+   * deliberate and was chosen explicitly: the affected corners animate as the
+   * user moves on and off /dashboard, because the elements themselves persist
+   * across that navigation.
+   */
+  const isDashboard = pathname === ROUTES.dashboard || pathname.startsWith(`${ROUTES.dashboard}/`);
+
   // Billing is appended rather than shown-and-broken: with payments disabled the
   // route guard turns the link away and the API answers 503.
   const navigation = paymentsEnabled
@@ -79,7 +93,12 @@ export function AppLayout() {
                     asChild
                     isActive={isActive}
                     size="lg"
-                    className="text-body font-medium text-ink-muted data-[active=true]:bg-accent-subtle data-[active=true]:text-accent data-[active=true]:hover:bg-accent-subtle data-[active=true]:hover:text-accent hover:bg-surface-3 hover:text-ink"
+                    className={cn(
+                      'text-body font-medium text-ink-muted data-[active=true]:bg-accent-subtle data-[active=true]:text-accent data-[active=true]:hover:bg-accent-subtle data-[active=true]:hover:text-accent hover:bg-surface-3 hover:text-ink',
+                      // One radius covers both the active fill and the hover
+                      // fill — they are the same element, not two layers.
+                      isDashboard && 'rounded-xl',
+                    )}
                   >
                     <NavLink to={item.to}>
                       <item.icon className="h-5 w-5 shrink-0" aria-hidden />
@@ -102,14 +121,17 @@ export function AppLayout() {
         <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line-subtle bg-[color-mix(in_oklab,var(--surface-1)_88%,transparent)] px-4 backdrop-blur sm:px-6">
           <SidebarTrigger className="text-ink-muted hover:bg-surface-3 hover:text-ink lg:hidden" />
 
-          <GlobalSearch />
+          <GlobalSearch inputClassName={cn(isDashboard && 'rounded-xl')} />
 
           <div className="ml-auto flex items-center gap-1.5">
-            <InstallPwaButton />
+            <InstallPwaButton className={cn(isDashboard && 'rounded-full')} />
             <Button
               variant="ghost"
               size="icon"
-              className="relative"
+              // `size="icon"` is already a 40px square with its contents
+              // centered, so `rounded-full` alone makes the ghost hover fill a
+              // true circle. The 150ms `transition-all` comes from the button.
+              className={cn('relative', isDashboard && 'rounded-full')}
               onClick={() => navigate(ROUTES.notifications)}
               aria-label={`Notifications${unreadCount ? ` (${unreadCount} unread)` : ''}`}
             >
