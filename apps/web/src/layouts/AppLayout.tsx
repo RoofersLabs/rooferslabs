@@ -53,33 +53,6 @@ export function AppLayout() {
   const unreadCount = unread.data?.unreadCount ?? 0;
 
   /**
-   * Routes that render the softer chrome.
-   *
-   * The header and sidebar are one persistent shell shared by every
-   * authenticated page, so these radii are scoped per route rather than applied
-   * to the shared controls. Calls, Settings and Billing keep the chrome exactly
-   * as it is today; the corners animate as the user crosses between the two
-   * groups, because the elements themselves persist across that navigation.
-   *
-   * That trade-off was chosen deliberately, but the list is now six of the
-   * eight authenticated routes. Past the halfway mark the scoping costs more
-   * than it saves: styling the controls once and deleting this list would give
-   * every page the same chrome and remove the animation entirely.
-   *
-   * `conversations` is here so a call's detail page carries the same header as
-   * the dashboard it was opened from — same search field, same controls, same
-   * radii. It was the one page that looked like a different product.
-   */
-  const softChrome = [
-    ROUTES.dashboard,
-    ROUTES.conversations,
-    ROUTES.customers,
-    ROUTES.appointments,
-    ROUTES.knowledge,
-    ROUTES.notifications,
-  ].some((route) => pathname === route || pathname.startsWith(`${route}/`));
-
-  /**
    * Guard against horizontal page overflow.
    *
    * `SidebarInset` is a flex item carrying `w-full`, and its default
@@ -140,7 +113,7 @@ export function AppLayout() {
                       'text-body font-medium text-ink-muted data-[active=true]:bg-accent-subtle data-[active=true]:text-accent data-[active=true]:hover:bg-accent-subtle data-[active=true]:hover:text-accent hover:bg-surface-3 hover:text-ink',
                       // One radius covers both the active fill and the hover
                       // fill — they are the same element, not two layers.
-                      softChrome && 'rounded-xl',
+                      'rounded-xl',
                     )}
                   >
                     <NavLink to={item.to}>
@@ -164,11 +137,11 @@ export function AppLayout() {
         <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line-subtle bg-[color-mix(in_oklab,var(--surface-1)_88%,transparent)] px-4 backdrop-blur sm:px-6">
           <SidebarTrigger className="text-ink-muted hover:bg-surface-3 hover:text-ink lg:hidden" />
 
-          {/* `rounded-full` on a 40px field reads as the pill the header's other
-              controls already are — the notification and install buttons take
-              the same radius under `softChrome`. Height, padding and behaviour
-              are untouched; only the corners move. */}
-          <GlobalSearch inputClassName={cn(softChrome && 'rounded-full')} />
+          {/* One header for the whole authenticated app: these radii are no
+              longer scoped per route, so the search field and the controls
+              beside it are pixel-identical on every page and nothing animates
+              as the user moves between them. No page overrides them. */}
+          <GlobalSearch inputClassName="rounded-full" />
 
           {/* `shrink-0`: these controls have a fixed size and the search does
               not, so the row must give its space back from the search rather
@@ -178,14 +151,14 @@ export function AppLayout() {
             {/* `tracking-tight` is the only typographic change; the secondary
                 variant already puts the label at `text-ink`, the highest
                 contrast token on this surface, so nothing is recoloured. */}
-            <InstallPwaButton className={cn(softChrome && 'rounded-full tracking-tight')} />
+            <InstallPwaButton className="rounded-full tracking-tight" />
             <Button
               variant="ghost"
               size="icon"
               // `size="icon"` is already a 40px square with its contents
               // centered, so `rounded-full` alone makes the ghost hover fill a
               // true circle. The 150ms `transition-all` comes from the button.
-              className={cn('relative', softChrome && 'rounded-full')}
+              className="relative rounded-full"
               onClick={() => navigate(ROUTES.notifications)}
               aria-label={`Notifications${unreadCount ? ` (${unreadCount} unread)` : ''}`}
             >

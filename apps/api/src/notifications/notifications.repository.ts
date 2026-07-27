@@ -45,6 +45,14 @@ export class NotificationsRepository {
     });
   }
 
+  /** Clears `readAt` too, so a restored notification is indistinguishable from one never opened. */
+  markUnread(companyId: string, id: string): Promise<Prisma.BatchPayload> {
+    return this.prisma.notification.updateMany({
+      where: { id, companyId, status: 'READ' },
+      data: { status: 'UNREAD', readAt: null },
+    });
+  }
+
   markAllRead(companyId: string): Promise<Prisma.BatchPayload> {
     return this.prisma.notification.updateMany({
       where: { companyId, status: 'UNREAD' },

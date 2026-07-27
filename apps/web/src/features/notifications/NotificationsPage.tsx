@@ -8,12 +8,14 @@ import {
   CalendarClock,
   Flame,
   Phone,
-  ChevronRight,
+  Check,
+  Undo2,
 } from 'lucide-react';
 import { NotificationType } from '@rooferslabs/shared';
 import {
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
+  useMarkNotificationUnread,
   useNotifications,
 } from '@/hooks/queries';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -39,30 +41,46 @@ function PushNotificationsCard() {
   if (status === 'unsupported' || status === 'loading') return null;
 
   return (
-    <Card className={cn('mb-6 flex-row flex-wrap items-center gap-4 px-6 py-5', REFINED_CARD)}>
-      <IconTile icon={BellRing} />
-      <div className="min-w-0 flex-1">
-        <p className="text-body font-semibold text-ink">
-          {status === 'subscribed'
-            ? 'Push notifications are on'
-            : 'Get notified the moment a lead calls'}
-        </p>
-        <p className="text-small text-ink-muted">
-          {status === 'denied'
-            ? 'Notifications are blocked for this site — enable them in your browser settings, then reload.'
-            : status === 'subscribed'
-              ? 'This device receives emergency and lead alerts, even when the app is closed.'
-              : 'Emergencies, new leads, and appointment requests — delivered to this device even when the app is closed.'}
-        </p>
+    // One row on a desktop, two on a phone — never the ragged three the
+    // wrapping copy used to produce. `sm:items-center` keeps the icon, the text
+    // and the button on one optical line once they fit.
+    <Card className={cn('mb-6 gap-3 px-5 py-4 sm:flex-row sm:items-center sm:gap-4', REFINED_CARD)}>
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <IconTile icon={BellRing} size="sm" />
+        <div className="min-w-0">
+          <p className="text-body font-semibold text-ink">
+            {status === 'subscribed' ? 'Push notifications are on' : 'Enable push notifications'}
+          </p>
+          {status === 'denied' ? (
+            <p className="mt-0.5 text-small text-ink-muted">
+              Blocked for this site — enable them in your browser settings, then reload.
+            </p>
+          ) : status === 'subscribed' ? (
+            <p className="mt-0.5 text-small text-ink-muted">
+              This device gets alerts even when the app is closed.
+            </p>
+          ) : (
+            // The three alert types on one line rather than stacked bullets:
+            // same information, a third of the height, and no orphaned words.
+            <ul className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-small text-ink-muted">
+              <li>Emergency calls</li>
+              <li aria-hidden>·</li>
+              <li>New leads</li>
+              <li aria-hidden>·</li>
+              <li>Appointment requests</li>
+            </ul>
+          )}
+        </div>
       </div>
       {status !== 'denied' && (
         <Button
-          className={REFINED_BUTTON}
+          className={cn(REFINED_BUTTON, 'shrink-0')}
+          size="sm"
           variant={status === 'subscribed' ? 'secondary' : 'primary'}
           loading={busy}
           onClick={() => void (status === 'subscribed' ? unsubscribe() : subscribe())}
         >
-          {status === 'subscribed' ? 'Turn off on this device' : 'Enable push notifications'}
+          {status === 'subscribed' ? 'Turn off' : 'Enable notifications'}
         </Button>
       )}
     </Card>
@@ -81,6 +99,7 @@ export function NotificationsPage() {
   const [page, setPage] = useState(1);
   const notifications = useNotifications({ page });
   const markRead = useMarkNotificationRead();
+  const markUnread = useMarkNotificationUnread();
   const markAll = useMarkAllNotificationsRead();
   const navigate = useNavigate();
 
@@ -139,32 +158,31 @@ export function NotificationsPage() {
                 const unread = notification.status === 'UNREAD';
                 const critical = notification.priority === 'CRITICAL';
                 return (
-                  <li key={notification.id}>
+                  <li
+                    key={notification.id}
+                    // The unread rail is drawn inside the 24px gutter, so the
+                    // row's content keeps the same left edge as every other
+                    // list in the product whether it is read or unread.
+                    className={cn(
+                      'group flex items-center border-l-2 pr-3 transition-colors duration-fast hover:bg-surface-2',
+                      unread ? 'border-accent bg-accent-subtle/40' : 'border-transparent',
+                    )}
+                  >
                     <button
                       onClick={() => open(notification)}
-                      className={cn(
-                        // The unread rail is drawn inside the 24px gutter, so
-                        // the row's content stays on the same left edge as
-                        // every other list in the product whether it is read
-                        // or unread.
-                        'group focus-ring flex w-full items-start gap-4 border-l-2 py-4 pl-[22px] pr-6 text-left transition-colors duration-fast hover:bg-surface-2',
-                        unread ? 'border-accent bg-accent-subtle/40' : 'border-transparent',
-                      )}
+                      className="focus-ring flex min-w-0 flex-1 items-start gap-4 py-4 pl-[22px] pr-3 text-left"
                     >
                       <IconTile icon={Icon} size="sm" tone={critical ? 'emergency' : 'neutral'} />
                       <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-2">
-                          <span
-                            className={cn(
-                              'text-body text-ink',
-                              unread ? 'font-semibold' : 'font-medium',
-                            )}
-                          >
-                            {notification.title}
-                          </span>
-                          {unread && (
-                            <span className="h-2 w-2 rounded-full bg-accent" aria-label="Unread" />
+                        {/* Weight carries the state as well as the rail does,
+                            and unlike colour it survives a sunlit screen. */}
+                        <span
+                          className={cn(
+                            'block text-body text-ink',
+                            unread ? 'font-semibold' : 'font-medium',
                           )}
+                        >
+                          {notification.title}
                         </span>
                         <span className="mt-0.5 block text-small text-ink-muted">
                           {notification.message}
@@ -173,10 +191,25 @@ export function NotificationsPage() {
                           {timeAgo(notification.createdAt)}
                         </span>
                       </span>
-                      <ChevronRight
-                        className="mt-1 h-4 w-4 shrink-0 self-center text-ink-faint opacity-0 transition-opacity duration-fast group-hover:opacity-100"
-                        aria-hidden
-                      />
+                    </button>
+
+                    {/* A sibling of the row button, not a child — a button
+                        cannot nest inside a button, and the row is one. */}
+                    <button
+                      onClick={() =>
+                        unread
+                          ? markRead.mutate(notification.id)
+                          : markUnread.mutate(notification.id)
+                      }
+                      title={unread ? 'Mark as read' : 'Mark as unread'}
+                      aria-label={`Mark “${notification.title}” as ${unread ? 'read' : 'unread'}`}
+                      className="focus-ring flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-ink-faint transition-colors duration-fast hover:bg-surface-3 hover:text-ink"
+                    >
+                      {unread ? (
+                        <Check className="h-4 w-4" aria-hidden />
+                      ) : (
+                        <Undo2 className="h-4 w-4" aria-hidden />
+                      )}
                     </button>
                   </li>
                 );

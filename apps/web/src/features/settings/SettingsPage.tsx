@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
-import { Building2, Clock, Bot, PhoneForwarded, Palette, CheckCircle2 } from 'lucide-react';
+import { Building2, Clock, Bot, PhoneForwarded, CheckCircle2, Pencil } from 'lucide-react';
 import { AiVoice } from '@rooferslabs/shared';
 import {
   useAiConfig,
@@ -13,6 +13,7 @@ import type { BusinessHour } from '@/types/api';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { DetailRow } from '@/components/ui/DetailRow';
 import { Checkbox, Input, Select, Textarea } from '@/components/ui/input';
 import { LoadingBlock } from '@/components/ui/spinner';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -23,7 +24,6 @@ const TABS = [
   { key: 'hours', label: 'Hours', icon: Clock },
   { key: 'ai', label: 'AI Receptionist', icon: Bot },
   { key: 'phone', label: 'Phone Setup', icon: PhoneForwarded },
-  { key: 'branding', label: 'Branding', icon: Palette },
 ] as const;
 
 export function SettingsPage() {
@@ -62,7 +62,6 @@ export function SettingsPage() {
           {tab === 'hours' && <HoursTab />}
           {tab === 'ai' && <AiTab />}
           {tab === 'phone' && <PhoneSetupTab />}
-          {tab === 'branding' && <BrandingTab />}
         </div>
       </div>
     </div>
@@ -74,7 +73,19 @@ export function SettingsPage() {
  * a divider above it, matching the wizard's step footer and CardFooter, so the
  * "save" affordance is in the same place and shape wherever it appears.
  */
-function SaveBar({ saving, saved, error }: { saving: boolean; saved: boolean; error?: string }) {
+function SaveBar({
+  saving,
+  saved,
+  error,
+  onCancel,
+}: {
+  saving: boolean;
+  saved: boolean;
+  error?: string;
+  /** Supplied only by forms that can be left — the tabs that are always
+      editable have nothing to cancel back to. */
+  onCancel?: () => void;
+}) {
   return (
     <div className="flex flex-wrap items-center justify-end gap-3 border-t border-line-subtle pt-5">
       {error && (
@@ -88,6 +99,11 @@ function SaveBar({ saving, saved, error }: { saving: boolean; saved: boolean; er
           Saved
         </p>
       )}
+      {onCancel && (
+        <Button type="button" variant="secondary" onClick={onCancel} disabled={saving}>
+          Cancel
+        </Button>
+      )}
       <Button type="submit" loading={saving}>
         Save changes
       </Button>
@@ -99,9 +115,19 @@ function SaveBar({ saving, saved, error }: { saving: boolean; saved: boolean; er
 // Business tab
 // ---------------------------------------------------------------------------
 
+/**
+ * Company details as a profile that can be edited, rather than a form that is
+ * always open.
+ *
+ * Landing straight in editable inputs made every visit look like unsaved work
+ * and put a dozen live fields one stray tap away. The page now reads as an
+ * account profile until someone explicitly chooses to change it; the edit form
+ * below is the original one, unchanged, including its validation and save.
+ */
 function BusinessTab() {
   const company = useCompany();
   const update = useUpdateCompany();
+  const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
   const [servicesText, setServicesText] = useState<string | null>(null);
   const [areasText, setAreasText] = useState<string | null>(null);
@@ -113,31 +139,80 @@ function BusinessTab() {
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
+  // Cancel discards by dropping the local edits, so the inputs fall back to
+  // the server's values the next time they mount. `update.reset()` clears a
+  // stale error or "Saved" flash from a previous attempt.
+  const cancel = () => {
+    setForm({});
+    setServicesText(null);
+    setAreasText(null);
+    update.reset();
+    setEditing(false);
+  };
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    update.mutate({
-      name: value('name', data.name) || undefined,
-      email: value('email', data.email) || undefined,
-      phone: value('phone', data.phone) || undefined,
-      website: value('website', data.website) || undefined,
-      addressLine1: value('addressLine1', data.addressLine1) || undefined,
-      city: value('city', data.city) || undefined,
-      state: value('state', data.state) || undefined,
-      postalCode: value('postalCode', data.postalCode) || undefined,
-      timezone: value('timezone', data.timezone) || undefined,
-      roofingServices: (servicesText ?? data.roofingServices.join('\n'))
-        .split('\n')
-        .map((s) => s.trim())
-        .filter(Boolean),
-      serviceAreas: (areasText ?? data.serviceAreas.join('\n'))
-        .split('\n')
-        .map((s) => s.trim())
-        .filter(Boolean),
-      emergencyPhone: value('emergencyPhone', data.emergencyPhone) || undefined,
-      emergencyInstructions:
-        value('emergencyInstructions', data.emergencyInstructions) || undefined,
-    });
+    update.mutate(
+      {
+        name: value('name', data.name) || undefined,
+        email: value('email', data.email) || undefined,
+        phone: value('phone', data.phone) || undefined,
+        website: value('website', data.website) || undefined,
+        addressLine1: value('addressLine1', data.addressLine1) || undefined,
+        city: value('city', data.city) || undefined,
+        state: value('state', data.state) || undefined,
+        postalCode: value('postalCode', data.postalCode) || undefined,
+        timezone: value('timezone', data.timezone) || undefined,
+        roofingServices: (servicesText ?? data.roofingServices.join('\n'))
+          .split('\n')
+          .map((s) => s.trim())
+          .filter(Boolean),
+        serviceAreas: (areasText ?? data.serviceAreas.join('\n'))
+          .split('\n')
+          .map((s) => s.trim())
+          .filter(Boolean),
+        emergencyPhone: value('emergencyPhone', data.emergencyPhone) || undefined,
+        emergencyInstructions:
+          value('emergencyInstructions', data.emergencyInstructions) || undefined,
+      },
+      { onSuccess: () => setEditing(false) },
+    );
   };
+
+  if (!editing) {
+    const list = (items: string[]) => (items.length ? items.join(', ') : null);
+    return (
+      <Card className="gap-5 px-6 py-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-h5 text-ink">Business details</h2>
+            <p className="mt-0.5 text-small text-ink-muted">
+              What your AI receptionist tells callers about you.
+            </p>
+          </div>
+          <Button variant="secondary" className="shrink-0" onClick={() => setEditing(true)}>
+            <Pencil className="h-4 w-4" aria-hidden />
+            Edit details
+          </Button>
+        </div>
+        <dl className="divide-y divide-line-subtle border-t border-line-subtle">
+          <DetailRow label="Company name" value={data.name} />
+          <DetailRow label="Business email" value={data.email} />
+          <DetailRow label="Business phone" value={data.phone} />
+          <DetailRow label="Website" value={data.website} />
+          <DetailRow label="Address" value={data.addressLine1} />
+          <DetailRow label="City" value={data.city} />
+          <DetailRow label="State" value={data.state} />
+          <DetailRow label="ZIP" value={data.postalCode} />
+          <DetailRow label="Timezone" value={data.timezone} />
+          <DetailRow label="Roofing services" value={list(data.roofingServices)} />
+          <DetailRow label="Service areas" value={list(data.serviceAreas)} />
+          <DetailRow label="Emergency phone" value={data.emergencyPhone} />
+          <DetailRow label="Emergency instructions" value={data.emergencyInstructions} />
+        </dl>
+      </Card>
+    );
+  }
 
   return (
     <Card as="form" onSubmit={onSubmit} className="gap-5 px-6 py-6">
@@ -200,6 +275,7 @@ function BusinessTab() {
         saving={update.isPending}
         saved={update.isSuccess}
         error={update.isError ? (update.error as Error).message : undefined}
+        onCancel={cancel}
       />
     </Card>
   );
@@ -401,56 +477,6 @@ function AiTab() {
           </label>
         ))}
       </div>
-      <SaveBar
-        saving={update.isPending}
-        saved={update.isSuccess}
-        error={update.isError ? (update.error as Error).message : undefined}
-      />
-    </Card>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Branding tab
-// ---------------------------------------------------------------------------
-
-function BrandingTab() {
-  const company = useCompany();
-  const update = useUpdateCompany();
-  const [primary, setPrimary] = useState<string | null>(null);
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-
-  if (company.isLoading || !company.data) return <LoadingBlock />;
-  const data = company.data;
-
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    update.mutate({
-      primaryColor: primary ?? data.primaryColor ?? undefined,
-      logoUrl: (logoUrl ?? data.logoUrl) || undefined,
-    });
-  };
-
-  return (
-    <Card as="form" onSubmit={onSubmit} className="gap-5 px-6 py-6">
-      <div>
-        <label htmlFor="brand-color" className="block text-form-label font-medium text-ink-muted">
-          Primary brand color
-        </label>
-        <input
-          id="brand-color"
-          type="color"
-          value={primary ?? data.primaryColor ?? '#0E3996'}
-          onChange={(e) => setPrimary(e.target.value)}
-          className="focus-ring mt-1.5 h-10 w-20 cursor-pointer rounded-md border border-line bg-surface p-1 transition-colors duration-fast hover:border-line-strong"
-        />
-      </div>
-      <Input
-        label="Logo URL"
-        hint="Direct link to your logo image (uploads to S3 arrive in a later release)."
-        value={logoUrl ?? data.logoUrl ?? ''}
-        onChange={(e) => setLogoUrl(e.target.value)}
-      />
       <SaveBar
         saving={update.isPending}
         saved={update.isSuccess}

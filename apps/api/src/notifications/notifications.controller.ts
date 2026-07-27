@@ -74,6 +74,15 @@ export class NotificationsController {
     return respond(notification, 'Notification marked as read.');
   }
 
+  // The counterpart to `:id/read`: opening a notification marks it read, so
+  // there has to be a way back for something that still needs acting on.
+  @Patch(':id/unread')
+  @ApiOperation({ summary: 'Mark a notification as unread' })
+  async markUnread(@CurrentCompanyId() companyId: string, @Param('id') id: string) {
+    const notification = await this.notifications.markUnread(companyId, id);
+    return respond(notification, 'Notification marked as unread.');
+  }
+
   @Post('read-all')
   @ApiOperation({ summary: 'Mark all notifications as read' })
   async markAllRead(@CurrentCompanyId() companyId: string) {

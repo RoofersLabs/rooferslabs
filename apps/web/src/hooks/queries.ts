@@ -421,6 +421,17 @@ export function useMarkNotificationRead() {
   });
 }
 
+/** Puts one back on the pile — the counterpart to opening it. */
+export function useMarkNotificationUnread() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.patch<Notification>(`/notifications/${id}/unread`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+}
+
 export function useMarkAllNotificationsRead() {
   const qc = useQueryClient();
   return useMutation({

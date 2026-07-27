@@ -85,6 +85,14 @@ export class NotificationsService {
     return updated ?? notification;
   }
 
+  async markUnread(companyId: string, id: string): Promise<Notification> {
+    const notification = await this.repo.findById(companyId, id);
+    if (!notification) throw new NotFoundError('Notification not found.');
+    await this.repo.markUnread(companyId, id);
+    const updated = await this.repo.findById(companyId, id);
+    return updated ?? notification;
+  }
+
   async markAllRead(companyId: string): Promise<{ updated: number }> {
     const result = await this.repo.markAllRead(companyId);
     return { updated: result.count };
