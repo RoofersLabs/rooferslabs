@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { AllowNoCompany } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
 import { paginated, respond } from '../common/response';
@@ -33,9 +34,23 @@ import {
  *
  * Read-only over tenant data. The only writes are company notes, which are
  * admin-owned and unreachable from any customer endpoint.
+ *
+ * `@AllowNoCompany` is required, not a loosening. `TenantGuard` and
+ * `SubscriptionGuard` are global and run *before* any controller guard, and both
+ * demand a `companyId` — they exist to stop a half-onboarded tenant reaching
+ * another tenant's data. Platform staff are not tenants: they belong to no
+ * company and pay no subscription, so without this every admin request was
+ * refused with "You must create or join a company" before `PlatformAdminGuard`
+ * was ever consulted.
+ *
+ * Opting out of the *tenant* checks does not opt out of authorisation. The
+ * guard below still runs, and still requires `platformRole === OWNER`. The two
+ * answer different questions: which company is this, versus may this person see
+ * every company.
  */
 @ApiTags('Admin')
 @ApiBearerAuth()
+@AllowNoCompany()
 @UseGuards(PlatformAdminGuard)
 @Controller({ path: 'admin', version: '1' })
 export class AdminController {
