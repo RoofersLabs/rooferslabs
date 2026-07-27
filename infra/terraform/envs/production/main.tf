@@ -143,8 +143,23 @@ module "frontend" {
   name        = local.name
   bucket_name = "${local.name}-web-${data.aws_caller_identity.current.account_id}"
 
-  # The SPA is served from the apex + www.
-  domain_aliases          = [var.root_domain, "www.${var.root_domain}"]
+  # The SPA is served from the apex + www, and — once enabled — the admin host.
+  # One distribution, one bucket, one build: the admin portal is a route inside
+  # this SPA, so a second distribution would serve identical bytes.
+  domain_aliases = concat(
+    [var.root_domain, "www.${var.root_domain}"],
+    var.enable_admin_alias ? [local.admin_domain] : [],
+  )
+
+  # Requested a stage earlier than the alias is attached, so the certificate can
+  # validate while the live site keeps serving on the one it already has.
+  certificate_domains = concat(
+    [var.root_domain, "www.${var.root_domain}"],
+    var.request_admin_certificate ? [local.admin_domain] : [],
+  )
+
+  # Only meaningful once the alias is live; harmless before then.
+  admin_host              = var.enable_admin_alias ? local.admin_domain : ""
   root_domain             = var.root_domain
   api_domain              = local.api_domain
   enable_custom_domain    = var.enable_web_custom_domain

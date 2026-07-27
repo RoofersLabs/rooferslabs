@@ -18,6 +18,30 @@ variable "domain_aliases" {
   default     = []
 }
 
+variable "certificate_domains" {
+  description = <<-EOT
+    Domains the ACM certificate covers. Defaults to `domain_aliases` when empty.
+
+    Kept separate from `domain_aliases` on purpose: adding a SAN replaces the
+    certificate, and the replacement stays PENDING_VALIDATION until its DNS
+    records are added in Cloudflare by hand. Requesting a hostname here first,
+    and attaching it to the distribution afterwards, means the live site keeps
+    serving on its current certificate throughout.
+  EOT
+  type        = list(string)
+  default     = []
+}
+
+variable "admin_host" {
+  description = <<-EOT
+    Hostname that should land on the admin portal instead of the marketing site,
+    e.g. admin.rooferslabs.com. Empty disables the edge redirect entirely and no
+    CloudFront function is created.
+  EOT
+  type        = string
+  default     = ""
+}
+
 variable "root_domain" {
   description = "Apex domain, used to build the Clerk/self CSP source list."
   type        = string

@@ -139,4 +139,40 @@ if [ "$STATUS" != "200" ]; then
   exit 1
 fi
 
+# ---- Admin hostname (only once it exists) ------------------------------------
+# The same bucket and distribution serve the admin portal, so there is nothing
+# extra to upload — but if the hostname is live, a deploy that broke its edge
+# redirect should fail here rather than be discovered by a person.
+#
+# Skipped silently while the hostname is unresolvable, so this stays quiet until
+# `enable-admin-domain.sh` has been run.
+ADMIN_URL="${WEB_ADMIN_VERIFY_URL:-$(tf_out admin_url)}"
+if [ -n "${ADMIN_URL:-}" ] && curl -s -o /dev/null --max-time 5 "$ADMIN_URL/" 2>/dev/null; then
+  echo "==> Verifying $ADMIN_URL/ redirects to the portal…"
+  ADMIN_CODE=$(curl -s -o /dev/null -w '%{http_code}' "$ADMIN_URL/")
+  ADMIN_TARGET=$(curl -s -o /dev/null -w '%{redirect_url}' "$ADMIN_URL/")
+  case "$ADMIN_CODE" in
+    301 | 302)
+      case "$ADMIN_TARGET" in
+        */admin) echo "    $ADMIN_CODE → $ADMIN_TARGET" ;;
+        *)
+          echo "error: $ADMIN_URL/ redirected to '$ADMIN_TARGET', expected /admin." >&2
+          exit 1
+          ;;
+      esac
+      ;;
+    *)
+      echo "error: $ADMIN_URL/ returned HTTP $ADMIN_CODE; expected a 302 to /admin." >&2
+      echo "       The CloudFront viewer-request function may be missing or unpublished." >&2
+      exit 1
+      ;;
+  esac
+  # The portal itself must still be served by the SPA fallback.
+  ADMIN_APP=$(curl -s -o /dev/null -w '%{http_code}' "$ADMIN_URL/admin")
+  [ "$ADMIN_APP" = "200" ] || { echo "error: $ADMIN_URL/admin returned HTTP $ADMIN_APP." >&2; exit 1; }
+  echo "    $ADMIN_URL/admin → $ADMIN_APP"
+else
+  echo "==> Admin hostname not reachable yet — skipping (run infra/scripts/enable-admin-domain.sh)."
+fi
+
 echo "✅ Deployed frontend to s3://$BUCKET via CloudFront $DISTRIBUTION_ID (HTTP $STATUS)."

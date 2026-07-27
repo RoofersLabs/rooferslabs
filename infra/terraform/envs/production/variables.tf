@@ -42,6 +42,29 @@ variable "enable_https" {
 
 # ---- Frontend (S3 + CloudFront) ----------------------------------------------
 
+variable "request_admin_certificate" {
+  description = <<-EOT
+    Stage 1 of exposing admin.<root_domain>: add it to the ACM certificate.
+
+    Replaces the certificate, so the new one is PENDING_VALIDATION until its
+    CNAMEs are added in Cloudflare. The distribution keeps serving on the old
+    certificate throughout. Run infra/scripts/enable-admin-domain.sh rather than
+    flipping this by hand — it applies the stages in the right order.
+  EOT
+  type        = bool
+  default     = false
+}
+
+variable "enable_admin_alias" {
+  description = <<-EOT
+    Stage 2: attach admin.<root_domain> to the distribution and publish the edge
+    function that sends its root to /admin. Only set this once the certificate
+    from stage 1 reports ISSUED.
+  EOT
+  type        = bool
+  default     = false
+}
+
 variable "enable_web_custom_domain" {
   description = "Attach the apex + www aliases and ACM cert to the CloudFront distribution. Two-phase, like enable_https: apply false → add the web cert validation CNAMEs in Cloudflare → apply true."
   type        = bool

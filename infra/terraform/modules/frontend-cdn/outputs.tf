@@ -41,6 +41,16 @@ output "certificate_validation_records" {
   ]
 }
 
+output "certificate_domains" {
+  description = "Domains the current ACM certificate covers (domain_name + SANs)."
+  value       = concat([aws_acm_certificate.this.domain_name], tolist(aws_acm_certificate.this.subject_alternative_names))
+}
+
+output "admin_redirect_function_arn" {
+  description = "ARN of the viewer-request function sending the admin host's root to /admin. Null when admin_host is unset."
+  value       = length(aws_cloudfront_function.admin_root_redirect) > 0 ? aws_cloudfront_function.admin_root_redirect[0].arn : null
+}
+
 output "logs_bucket_name" {
   value = aws_s3_bucket.logs.bucket
 }

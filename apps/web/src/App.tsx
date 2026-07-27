@@ -1,8 +1,10 @@
 import { Suspense, lazy } from 'react';
-import { Outlet, Route, Routes } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { AccessProvider } from '@/auth/AccessProvider';
 import { RouteGuard } from '@/auth/RouteGuard';
 import { ROUTES } from '@/auth/stages';
+import { currentSurface } from '@/lib/host';
+import { ADMIN_ROUTES } from '@/features/admin/routes';
 import { AuthenticatedProviders } from '@/providers/AppProviders';
 import { AppLayout } from '@/layouts/AppLayout';
 import { FullScreenSpinner } from '@/components/ui/spinner';
@@ -90,16 +92,29 @@ function AuthenticatedShell() {
  * on its own and the Stripe pages remain wired up for the day billing returns.
  */
 export function App() {
+  // Read once per mount: a document cannot change hostname without reloading.
+  const isAdminHost = currentSurface() === 'admin';
+
   return (
     <Routes>
       {/* The public marketing site. Deliberately outside the auth stack so a
-          page with no session never waits on an auth SDK to paint. */}
+          page with no session never waits on an auth SDK to paint.
+
+          On the admin hostname the root is the portal instead. CloudFront
+          already redirects `admin.<domain>/` at the edge, before any HTML is
+          served — this is the backstop for the paths that never reach it: local
+          development, the raw *.cloudfront.net domain, and a client-side
+          navigation back to `/`, which performs no request at all. */}
       <Route
         path={ROUTES.marketing}
         element={
-          <Suspense fallback={<div className="min-h-screen bg-black" />}>
-            <MarketingPage />
-          </Suspense>
+          isAdminHost ? (
+            <Navigate to={ADMIN_ROUTES.root} replace />
+          ) : (
+            <Suspense fallback={<div className="min-h-screen bg-black" />}>
+              <MarketingPage />
+            </Suspense>
+          )
         }
       />
 

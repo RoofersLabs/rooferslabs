@@ -27,11 +27,23 @@ services (Cloudflare DNS, Clerk, OpenAI, Twilio) that inherently require it.
 Traffic flow:
 
 ```text
-Browser/PWA ── Cloudflare ── rooferslabs.com / www ──► CloudFront ──► S3 (SPA)
-Twilio + PWA ─ Cloudflare ── api.<domain> ──────────► ALB ──► ECS api task (private)
+Browser/PWA ── Cloudflare ── rooferslabs.com / www ──┐
+Staff ──────── Cloudflare ── admin.<domain> ─────────┼► CloudFront ──► S3 (SPA)
+Twilio + PWA ─ Cloudflare ── api.<domain> ───────────► ALB ──► ECS api task (private)
                                                                 │
                                                   RDS · Redis · S3 · SQS · CloudWatch
 ```
+
+The admin portal is a route inside the same SPA, served by the same bucket and
+the same distribution — a second distribution would serve identical bytes. A
+CloudFront viewer-request function sends `admin.<domain>/` to `/admin`, so the
+marketing page is never delivered to the admin hostname. Its pages are separate
+lazy chunks, so a customer downloads none of it.
+
+To expose the hostname, run `infra/scripts/enable-admin-domain.sh`: it applies
+both Terraform stages and prints the Cloudflare records to add while the
+certificate validates. The apex and www keep serving on the existing certificate
+throughout.
 
 WebSockets (Twilio Media Streams) pass through the ALB natively.
 

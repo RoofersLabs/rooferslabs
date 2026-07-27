@@ -169,16 +169,54 @@ resource "aws_cloudfront_response_headers_policy" "this" {
 
 # ---- ACM certificate (us-east-1, required by CloudFront) ----------------------
 
+# The certificate's domain list is deliberately NOT `domain_aliases`. Adding a
+# SAN replaces the certificate, and a replacement is PENDING_VALIDATION until its
+# DNS records exist in Cloudflare — which is a manual step here. Keeping the two
+# lists separate lets a new hostname be requested and validated while the
+# distribution keeps serving on the certificate it already has.
+locals {
+  certificate_domains = length(var.certificate_domains) > 0 ? var.certificate_domains : var.domain_aliases
+}
+
 resource "aws_acm_certificate" "this" {
   provider = aws.us_east_1
 
   domain_name               = var.root_domain
-  subject_alternative_names = [for d in var.domain_aliases : d if d != var.root_domain]
+  subject_alternative_names = [for d in local.certificate_domains : d if d != var.root_domain]
   validation_method         = "DNS"
 
   lifecycle {
     create_before_destroy = true
   }
+}
+
+# Blocks until ACM reports ISSUED, so the distribution can never be handed a
+# certificate CloudFront will refuse. The DNS records come from the
+# `certificate_validation_records` output and are added in Cloudflare by hand;
+# `infra/scripts/enable-admin-domain.sh` drives that sequence.
+resource "aws_acm_certificate_validation" "this" {
+  count    = var.enable_custom_domain ? 1 : 0
+  provider = aws.us_east_1
+
+  certificate_arn = aws_acm_certificate.this.arn
+
+  timeouts {
+    create = "60m"
+  }
+}
+
+# ---- Edge function: admin host root → /admin ---------------------------------
+
+resource "aws_cloudfront_function" "admin_root_redirect" {
+  count = var.admin_host != "" ? 1 : 0
+
+  name    = "${var.name}-admin-root-redirect"
+  runtime = "cloudfront-js-2.0"
+  comment = "Sends ${var.admin_host}/ to /admin before any HTML is served"
+  publish = true
+  code = templatefile("${path.module}/functions/admin-root-redirect.js", {
+    admin_host = var.admin_host
+  })
 }
 
 # ---- Distribution -------------------------------------------------------------
@@ -206,6 +244,18 @@ resource "aws_cloudfront_distribution" "this" {
     compress                   = true
     cache_policy_id            = aws_cloudfront_cache_policy.this.id
     response_headers_policy_id = aws_cloudfront_response_headers_policy.this.id
+
+    # Viewer-request: runs before the cache is consulted, so the redirect cannot
+    # be served from — or poison — a cached object. The cache key carries no Host
+    # header, which is safe precisely because every host is served the same
+    # bytes; the hostname only ever changes what the edge decides here.
+    dynamic "function_association" {
+      for_each = var.admin_host != "" ? [1] : []
+      content {
+        event_type   = "viewer-request"
+        function_arn = aws_cloudfront_function.admin_root_redirect[0].arn
+      }
+    }
   }
 
   # SPA client-side routing: unknown keys return index.html (200), not S3's 403.
@@ -230,9 +280,11 @@ resource "aws_cloudfront_distribution" "this" {
 
   viewer_certificate {
     cloudfront_default_certificate = var.enable_custom_domain ? null : true
-    acm_certificate_arn            = var.enable_custom_domain ? aws_acm_certificate.this.arn : null
-    ssl_support_method             = var.enable_custom_domain ? "sni-only" : null
-    minimum_protocol_version       = var.enable_custom_domain ? "TLSv1.2_2021" : "TLSv1"
+    # The *validated* ARN, so an apply that adds a hostname waits for the
+    # certificate instead of failing against CloudFront.
+    acm_certificate_arn      = var.enable_custom_domain ? aws_acm_certificate_validation.this[0].certificate_arn : null
+    ssl_support_method       = var.enable_custom_domain ? "sni-only" : null
+    minimum_protocol_version = var.enable_custom_domain ? "TLSv1.2_2021" : "TLSv1"
   }
 
   logging_config {
