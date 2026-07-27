@@ -104,10 +104,19 @@ export function DashboardPage() {
         />
       </div>
 
-      {/* Sections 4 & 5 — Receptionist summary + Top customer insights */}
+      {/* Sections 4 & 5 — Receptionist summary + Top customer insights.
+          Insights is desktop-only: it is a breakdown to study, not something to
+          act on between jobs, and on a phone it sat below everything that is.
+          `hidden lg:flex` rather than an unmounted branch — the panel keeps one
+          definition, and the desktop grid is untouched. `flex`, not `block`,
+          because the Card it renders is a flex column. */}
       <div className="grid gap-6 lg:grid-cols-2">
         <ReceptionistSummary tiles={summaryTiles} isLoading={dashboard.isLoading} />
-        <InsightList rows={insightRows} isLoading={dashboard.isLoading} />
+        <InsightList
+          rows={insightRows}
+          isLoading={dashboard.isLoading}
+          className="hidden lg:flex"
+        />
       </div>
     </div>
   );

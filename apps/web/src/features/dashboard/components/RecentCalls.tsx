@@ -51,26 +51,27 @@ export function RecentCalls({
               <li key={conversation.id}>
                 <Link
                   to={`/conversations/${conversation.id}`}
-                  className="group focus-ring flex items-center gap-4 px-6 py-4 transition-colors duration-fast hover:bg-surface-2"
+                  className="focus-ring flex items-center gap-4 px-6 py-4 transition-colors duration-fast hover:bg-surface-2"
                 >
                   <IconTile
                     icon={conversation.isEmergency ? ShieldAlert : Phone}
                     tone={conversation.isEmergency ? 'emergency' : 'brand'}
                   />
 
+                  {/* `min-w-0` is what lets the two lines below actually
+                      truncate: a flex item defaults to `min-width: auto`, so
+                      without it the column refuses to shrink past its text and
+                      pushes the right-hand column off the row instead. */}
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2">
-                      <span className="truncate text-body font-medium text-ink">{name}</span>
-                      <EnumStatusLabel value={conversation.outcome} />
-                    </span>
-                    <span className="mt-0.5 flex items-center gap-1.5 text-small text-ink-muted">
-                      <span className="truncate">{callType}</span>
+                    <span className="block truncate text-body font-medium text-ink">{name}</span>
+                    <span className="mt-0.5 block truncate text-small text-ink-muted">
+                      {callType}
                       {conversation.customer?.fullName && conversation.call?.fromNumber && (
                         <>
                           <span aria-hidden className="text-ink-faint">
-                            ·
+                            {' · '}
                           </span>
-                          <span className="font-num truncate">
+                          <span className="font-num">
                             {formatPhone(conversation.call.fromNumber)}
                           </span>
                         </>
@@ -78,11 +79,14 @@ export function RecentCalls({
                     </span>
                   </span>
 
-                  {/* The time/duration block is now the row's right edge — the
-                      play button that used to close it is gone, and nothing
-                      holds its space. */}
-                  <span className="flex shrink-0 flex-col items-end text-right">
-                    <span className="text-small text-ink-muted">
+                  {/* Fixed width, so a long status can never widen this column
+                      and shove the name — the reason the old row sheared apart.
+                      Every row therefore breaks at the same x position. All
+                      three lines always render (`—` when a value is missing),
+                      which is what keeps row heights identical. */}
+                  <span className="flex w-28 shrink-0 flex-col items-end text-right sm:w-36">
+                    <EnumStatusLabel value={conversation.outcome} className="max-w-full truncate" />
+                    <span className="mt-1 text-small text-ink-muted">
                       {timeAgo(conversation.createdAt)}
                     </span>
                     <span className="font-num mt-0.5 text-caption text-ink-faint">

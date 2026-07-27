@@ -55,8 +55,15 @@ export function StatusLabel({
  * The tone rules are kept identical to `EnumBadge` on purpose — a call that is
  * "Missed" must not be orange on the dashboard and gray on the calls page.
  */
-export function EnumStatusLabel({ value }: { value: string | null | undefined }) {
-  if (!value) return <StatusLabel>—</StatusLabel>;
+export function EnumStatusLabel({
+  value,
+  className,
+}: {
+  value: string | null | undefined;
+  /** Forwarded so a caller can cap the label inside a fixed-width column. */
+  className?: string;
+}) {
+  if (!value) return <StatusLabel className={className}>—</StatusLabel>;
   const tone: Tone = /EMERGENCY/.test(value)
     ? 'danger'
     : /APPOINTMENT|CONFIRMED|HOT|COMPLETED|PUBLISHED|ACTIVE/.test(value)
@@ -66,5 +73,9 @@ export function EnumStatusLabel({ value }: { value: string | null | undefined })
         : /FAILED|CANCELLED|MISSED|NO_ANSWER/.test(value)
           ? 'warning'
           : 'neutral';
-  return <StatusLabel tone={tone}>{humanizeEnum(value)}</StatusLabel>;
+  return (
+    <StatusLabel tone={tone} className={className}>
+      {humanizeEnum(value)}
+    </StatusLabel>
+  );
 }
