@@ -1,0 +1,25 @@
+{
+  // ---------------------------------------------------------------------------
+  // Prisma
+  // ---------------------------------------------------------------------------
+  // This project is on Prisma 6 (6.19.3) and stays there. The VS Code extension
+  // ships its OWN language server rather than using the one in node_modules, and
+  // from extension v31 that bundled server is built from Prisma 7 — where a
+  // datasource `url` was replaced by prisma.config.ts. Left alone it validates a
+  // Prisma 6 schema against Prisma 7 grammar and reports
+  //   "The datasource property `url` is no longer supported…"
+  // on a schema the CLI accepts. The warning is the editor's, not the project's.
+  //
+  // `pinToPrisma6` makes the extension load its Prisma 6 language server, which
+  // is the same version the CLI runs, so the editor and `prisma validate` agree.
+  "prisma.pinToPrisma6": true,
+
+  // The upgrade prompts that accompany the above. Nothing here is pending an
+  // upgrade decision; the nag is noise.
+  "prisma.hidePrisma6Prompts": true,
+
+  // A monorepo: the schema is not at <root>/prisma/schema.prisma, so the
+  // extension's generate/format actions need pointing at it. The CLI is told
+  // separately via --schema in the npm scripts.
+  "prisma.schemaPath": "apps/api/prisma/schema.prisma"
+}

@@ -27,7 +27,10 @@ pnpm-debug.log*
 Thumbs.db
 
 # IDE
-.vscode/settings.json
+# `.vscode/settings.json` is tracked deliberately: it pins the Prisma extension
+# to its Prisma 6 language server. Without it the editor validates this schema
+# against Prisma 7 grammar and reports errors the CLI does not — a project fact,
+# not a personal preference, so everyone needs it.
 .idea/
 
 # Coverage
