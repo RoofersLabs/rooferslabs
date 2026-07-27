@@ -41,11 +41,21 @@ function useAfterAuthUrl(): string {
   return from && from !== ROUTES.signIn && from !== ROUTES.signUp ? from : ROUTES.dashboard;
 }
 
-export function SignInPage() {
-  const afterAuthUrl = useAfterAuthUrl();
+/**
+ * `afterAuthUrl` overrides where Clerk lands the browser once authentication
+ * succeeds. The admin hostname passes `/admin`, so the same widget serves both
+ * surfaces rather than a second copy existing for the portal. Left unset, the
+ * customer rules below are unchanged.
+ */
+export function SignInPage({ afterAuthUrl }: { afterAuthUrl?: string } = {}) {
+  const derived = useAfterAuthUrl();
   return (
     <AuthShell>
-      <SignIn path={ROUTES.signIn} signUpUrl={ROUTES.signUp} fallbackRedirectUrl={afterAuthUrl} />
+      <SignIn
+        path={ROUTES.signIn}
+        signUpUrl={ROUTES.signUp}
+        fallbackRedirectUrl={afterAuthUrl ?? derived}
+      />
     </AuthShell>
   );
 }

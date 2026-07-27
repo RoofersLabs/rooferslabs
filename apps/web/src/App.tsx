@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { Outlet, Route, Routes } from 'react-router-dom';
 import { AccessProvider } from '@/auth/AccessProvider';
 import { RouteGuard } from '@/auth/RouteGuard';
 import { ROUTES } from '@/auth/stages';
@@ -56,8 +56,11 @@ const AdminAnalyticsPage = lazy(() =>
 const AdminSettingsPage = lazy(() =>
   import('@/features/admin/AdminSettingsPage').then((m) => ({ default: m.AdminSettingsPage })),
 );
-const AdminGuard = lazy(() =>
-  import('@/features/admin/AdminGuard').then((m) => ({ default: m.AdminGuard })),
+const AdminAccessGate = lazy(() =>
+  import('@/features/admin/AdminAccessGate').then((m) => ({ default: m.AdminAccessGate })),
+);
+const AdminNotFound = lazy(() =>
+  import('@/features/admin/AdminAccessGate').then((m) => ({ default: m.AdminNotFound })),
 );
 
 /**
@@ -91,10 +94,11 @@ function AuthenticatedShell() {
  * as they are: the access table denies every stage, so the guard turns them away
  * on its own and the Stripe pages remain wired up for the day billing returns.
  */
-export function App() {
-  // Read once per mount: a document cannot change hostname without reloading.
-  const isAdminHost = currentSurface() === 'admin';
-
+/**
+ * The customer application: marketing, auth, onboarding, billing, dashboard.
+ * Unchanged, and not mounted at all on the admin hostname.
+ */
+function CustomerApp() {
   return (
     <Routes>
       {/* The public marketing site. Deliberately outside the auth stack so a
@@ -108,13 +112,9 @@ export function App() {
       <Route
         path={ROUTES.marketing}
         element={
-          isAdminHost ? (
-            <Navigate to={ADMIN_ROUTES.root} replace />
-          ) : (
-            <Suspense fallback={<div className="min-h-screen bg-black" />}>
-              <MarketingPage />
-            </Suspense>
-          )
+          <Suspense fallback={<div className="min-h-screen bg-black" />}>
+            <MarketingPage />
+          </Suspense>
         }
       />
 
@@ -160,26 +160,6 @@ export function App() {
             <Route path={ROUTES.notifications} element={<NotificationsPage />} />
             <Route path={ROUTES.settings} element={<SettingsPage />} />
             <Route path={`${ROUTES.settings}/:tab`} element={<SettingsPage />} />
-
-            {/* Internal portal. It sits inside AppLayout so the header,
-                sidebar and search are the same components the customer app
-                renders — the portal adds its own section nav, nothing more. */}
-            <Route
-              element={
-                <Suspense fallback={<FullScreenSpinner label="Loading…" />}>
-                  <AdminGuard />
-                </Suspense>
-              }
-            >
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<AdminDashboardPage />} />
-                <Route path="companies" element={<AdminCompaniesPage />} />
-                <Route path="companies/:id" element={<AdminCompanyDetailPage />} />
-                <Route path="live-calls" element={<AdminLiveCallsPage />} />
-                <Route path="analytics" element={<AdminAnalyticsPage />} />
-                <Route path="settings" element={<AdminSettingsPage />} />
-              </Route>
-            </Route>
           </Route>
         </Route>
 
@@ -187,4 +167,60 @@ export function App() {
       </Route>
     </Routes>
   );
+}
+
+/**
+ * The admin application.
+ *
+ * A separate route tree, not a branch inside the customer one. The portal used
+ * to be mounted under `RouteGuard route={ROUTES.dashboard}`, which required the
+ * *customer* stage `app` — so a staff account with no company resolved to
+ * `onboarding` and was sent into the setup wizard, never reaching the portal at
+ * all. Platform staff are not tenants, and routing them through a tenant's
+ * lifecycle was wrong in principle as well as in effect.
+ *
+ * Only two routes exist here: sign-in, and the portal. Everything else lands on
+ * the portal, so no customer surface is reachable on this hostname.
+ */
+function AdminApp() {
+  return (
+    <Routes>
+      <Route element={<AuthenticatedShell />}>
+        {/* The same Clerk widget the customer app uses, told where to return. */}
+        <Route path="/sign-in/*" element={<SignInPage afterAuthUrl={ADMIN_ROUTES.root} />} />
+
+        <Route
+          element={
+            <Suspense fallback={<FullScreenSpinner label="Loading…" />}>
+              <AdminAccessGate />
+            </Suspense>
+          }
+        >
+          <Route path={ADMIN_ROUTES.root} element={<AdminLayout />}>
+            <Route index element={<AdminDashboardPage />} />
+            <Route path="companies" element={<AdminCompaniesPage />} />
+            <Route path="companies/:id" element={<AdminCompanyDetailPage />} />
+            <Route path="live-calls" element={<AdminLiveCallsPage />} />
+            <Route path="analytics" element={<AdminAnalyticsPage />} />
+            <Route path="settings" element={<AdminSettingsPage />} />
+          </Route>
+        </Route>
+
+        {/* `/` included: CloudFront redirects it at the edge, but a client-side
+            navigation never reaches the edge. */}
+        <Route path="*" element={<AdminNotFound />} />
+      </Route>
+    </Routes>
+  );
+}
+
+/**
+ * One build, two applications, chosen by hostname.
+ *
+ * Read once at mount because a document cannot change hostname without
+ * reloading — and read here, at the root, so the decision is made before any
+ * route is mounted rather than inside one.
+ */
+export function App() {
+  return currentSurface() === 'admin' ? <AdminApp /> : <CustomerApp />;
 }
