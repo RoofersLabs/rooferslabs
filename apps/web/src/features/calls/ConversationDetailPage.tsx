@@ -10,7 +10,6 @@ import {
   CalendarClock,
   PhoneCall,
   Phone,
-  ListTree,
   MessageSquare,
 } from 'lucide-react';
 import { useConversation } from '@/hooks/queries';
@@ -28,13 +27,13 @@ import { RecordingDownload } from '@/components/RecordingDownload';
 import { ROUTES } from '@/auth/stages';
 
 /**
- * Ordered as the page is read: what happened, then the extracted facts, then
- * the raw conversation. Summary leads because it is the only one of the three
- * that answers "do I need to do something about this call".
+ * Two views, not three. Summary carries everything needed to act on the call —
+ * what happened, the extracted facts, the appointment — and Transcript holds
+ * the raw conversation for the times that is not enough. A third tab only made
+ * the reader click to assemble a picture they needed all of anyway.
  */
 const TABS = [
   { key: 'summary', label: 'Summary', icon: Sparkles },
-  { key: 'details', label: 'Details', icon: ListTree },
   { key: 'transcript', label: 'Transcript', icon: MessageSquare },
 ] as const;
 
@@ -162,34 +161,36 @@ export function ConversationDetailPage() {
         aria-labelledby={`call-tab-${tab}`}
         className="mt-6"
       >
+        {/* One tab now carries the whole overview: what happened, the facts
+            pulled out of the call, and the appointment it produced. Splitting
+            those across tabs made the reader click to assemble a picture they
+            needed all of anyway. */}
         {tab === 'summary' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-accent" aria-hidden />
-                Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-small leading-6 text-ink">
-                {data.summary ?? 'No summary available.'}
-              </p>
-              {data.keyPoints.length > 0 && (
-                <ul className="mt-3 list-inside list-disc space-y-1 text-small text-ink-muted">
-                  {data.keyPoints.map((point) => (
-                    <li key={point}>{point}</li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {tab === 'details' && (
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Details</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-accent" aria-hidden />
+                  Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-small leading-6 text-ink">
+                  {data.summary ?? 'No summary available.'}
+                </p>
+                {data.keyPoints.length > 0 && (
+                  <ul className="mt-3 list-inside list-disc space-y-1 text-small text-ink-muted">
+                    {data.keyPoints.map((point) => (
+                      <li key={point}>{point}</li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Call details</CardTitle>
               </CardHeader>
               <CardContent>
                 <dl className="divide-y divide-line-subtle">
