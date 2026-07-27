@@ -117,21 +117,18 @@ function LeadCard({ lead }: { lead: PriorityLead }) {
       )}
 
       {/* The widest gap on the card, so the action reads as the card's
-          conclusion rather than another line of content. `font-medium`
-          overrides the button's semibold per spec; the white label is the
-          primary variant's own `text-ink-on-brand` (#ffffff in both themes). */}
+          conclusion rather than another line of content. Nothing here restyles
+          the button: weight, radius and the white label all come from the
+          primary variant, which is the only place they should come from. */}
       <div className="mt-6 flex justify-center">
         {lead.phone ? (
-          <a
-            href={`tel:${lead.phone}`}
-            className={buttonClass('primary', 'lg', 'w-4/5 font-medium')}
-          >
+          <a href={`tel:${lead.phone}`} className={buttonClass('primary', 'lg', 'w-4/5')}>
             Call Homeowner
           </a>
         ) : (
           // A lead with no number keeps the same footprint, so a scrolling
           // column of cards never jumps.
-          <Button variant="primary" size="lg" className="w-4/5 font-medium" disabled>
+          <Button variant="primary" size="lg" className="w-4/5" disabled>
             No number captured
           </Button>
         )}

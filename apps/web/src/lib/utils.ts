@@ -1,6 +1,62 @@
 import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { extendTailwindMerge } from 'tailwind-merge';
 import { format, formatDistanceToNow } from 'date-fns';
+
+/**
+ * Every font size in the theme, by name.
+ *
+ * MUST stay in sync with `theme.extend.fontSize` in tailwind.config.js —
+ * `utils.spec.ts` compares the two and fails if they drift, because a size
+ * missing from this list silently becomes a *color* again (see below).
+ */
+const FONT_SIZES = [
+  'display',
+  'hero',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'body-lg',
+  'body',
+  'small',
+  'caption',
+  'label',
+  'button',
+  'metric',
+  'table-header',
+  'table-cell',
+  'form-label',
+  'form-input',
+] as const;
+
+/**
+ * `tailwind-merge`, taught this theme's `text-*` scale.
+ *
+ * Out of the box tailwind-merge only recognises Tailwind's own font sizes
+ * (`text-sm`, `text-lg`, …). Its `text-color` group matches *any* remaining
+ * value, so a custom size like `text-body-lg` and a custom color like
+ * `text-ink-on-brand` were indistinguishable — both landed in one conflict
+ * group, and the last one written won.
+ *
+ * That silently deleted a class on every component that sets a size and a
+ * color from different places. In `Button` the size is appended after the
+ * variant, so `text-body-lg` erased `text-ink-on-brand` and the button fell
+ * back to inherited near-black text on blue. In `Badge` and `StatusLabel` the
+ * order is reversed, so the tone erased `text-caption` and they rendered at
+ * whatever size they inherited.
+ *
+ * Declaring the sizes here makes the two groups distinguishable, so a size and
+ * a color no longer collide anywhere. This is the fix for all of it — the
+ * components themselves need no override, and must not be given one.
+ */
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      'font-size': [{ text: [...FONT_SIZES] }],
+    },
+  },
+});
 
 /**
  * Merge Tailwind class names with conflict resolution.
@@ -12,6 +68,9 @@ import { format, formatDistanceToNow } from 'date-fns';
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
 }
+
+/** Exported for the drift test only. */
+export const __FONT_SIZES_FOR_TEST = FONT_SIZES;
 
 /** "(512) 555-9000" for +1 E.164 numbers; pass-through otherwise. */
 export function formatPhone(phone: string | null | undefined): string {

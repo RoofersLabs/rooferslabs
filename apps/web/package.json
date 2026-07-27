@@ -27,13 +27,14 @@
       "^@/(.*)$": "<rootDir>/src/$1"
     },
     "transform": {
-      "^.+\\.ts$": [
+      "^.+\\.[tj]s$": [
         "ts-jest",
         {
           "tsconfig": {
             "module": "CommonJS",
             "moduleResolution": "Node",
             "verbatimModuleSyntax": false,
+            "allowJs": true,
             "baseUrl": ".",
             "paths": {
               "@/*": [

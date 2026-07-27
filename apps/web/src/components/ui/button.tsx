@@ -41,7 +41,10 @@ const sizes: Record<Size, string> = {
  */
 export function buttonClass(variant: Variant = 'primary', size: Size = 'md', className?: string) {
   return cn(
-    'focus-ring inline-flex select-none items-center justify-center whitespace-nowrap rounded-md font-semibold',
+    // `rounded-xl` is 16px. The variant's own text color survives this merge
+    // now that `cn` can tell a `text-*` size from a `text-*` color; before, the
+    // size class below silently deleted it and every button inherited near-black.
+    'focus-ring inline-flex select-none items-center justify-center whitespace-nowrap rounded-xl font-semibold',
     'transition-all duration-fast ease-standard active:scale-[0.98]',
     'disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100',
     variants[variant],
