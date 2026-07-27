@@ -1,7 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
 import { CheckCircle2, Clock, Timer, Flame } from 'lucide-react';
+import { ConversationOutcome, LeadQuality, UrgencyLevel } from '@rooferslabs/shared';
 import type { Conversation, DashboardOverview } from '@/types/api';
-import { formatDuration, humanizeEnum } from '@/lib/utils';
+import { formatDuration, formatPhone, humanizeEnum } from '@/lib/utils';
 
 /**
  * Everything below is derived on the client from data the dashboard already
@@ -68,6 +69,95 @@ export function deriveReceptionistSummary(
       hint: 'Captured by your AI',
     },
   ];
+}
+
+/**
+ * The three levels a lead card can carry. Deliberately fewer than the four
+ * `UrgencyLevel` values the API reports: on a phone, in the sun, between jobs,
+ * "is this on fire, does it need me today, or can it wait" is the only
+ * distinction that changes what the owner does next. LOW and MEDIUM urgency
+ * both mean "can wait", so they collapse.
+ */
+export type LeadPriority = 'Emergency' | 'High' | 'Medium';
+
+export interface PriorityLead {
+  /** The conversation id — the card links to the full transcript. */
+  id: string;
+  name: string;
+  /** Null when the caller never gave an address; the card omits the line. */
+  address: string | null;
+  priority: LeadPriority;
+  summary: string | null;
+  /** E.164, straight from the record — `tel:` wants the raw digits, not a display format. */
+  phone: string | null;
+}
+
+/** Outcomes that mean the AI captured something worth calling back. */
+const LEAD_OUTCOMES = new Set<string>([
+  ConversationOutcome.LEAD_CAPTURED,
+  ConversationOutcome.APPOINTMENT_REQUESTED,
+  ConversationOutcome.EMERGENCY,
+]);
+
+/** Ranked so the sort is a subtraction rather than a chain of comparisons. */
+const PRIORITY_RANK: Record<LeadPriority, number> = { Emergency: 3, High: 2, Medium: 1 };
+
+function priorityOf(conversation: Conversation): LeadPriority {
+  if (conversation.isEmergency || conversation.urgency === UrgencyLevel.EMERGENCY) {
+    return 'Emergency';
+  }
+  if (conversation.urgency === UrgencyLevel.HIGH || conversation.leadQuality === LeadQuality.HOT) {
+    return 'High';
+  }
+  return 'Medium';
+}
+
+/**
+ * Whether a conversation is a lead the owner should call back.
+ *
+ * Spam is excluded outright — it is the one outcome where showing the card at
+ * the top of the phone would be actively wrong. Everything else qualifies by
+ * the AI's own read of the call: an emergency, a lead-shaped outcome, or a
+ * quality tier it rated worth keeping.
+ */
+function isCapturedLead(conversation: Conversation): boolean {
+  if (conversation.outcome === ConversationOutcome.SPAM) return false;
+  return (
+    conversation.isEmergency ||
+    (conversation.outcome !== null && LEAD_OUTCOMES.has(conversation.outcome)) ||
+    conversation.leadQuality === LeadQuality.HOT ||
+    conversation.leadQuality === LeadQuality.WARM
+  );
+}
+
+/**
+ * The newest captured leads, most urgent first — the mobile dashboard's lead
+ * section.
+ *
+ * Derived from the conversations the dashboard already fetches, so the phone
+ * makes no extra request on a job site. Ordering is priority first and recency
+ * second: a two-hour-old emergency outranks a lead captured five minutes ago,
+ * because one of them is water coming through a ceiling.
+ */
+export function derivePriorityLeads(conversations: Conversation[], limit = 5): PriorityLead[] {
+  // `filter` already copied the array, so sorting here cannot reorder the
+  // caller's list. Recency is compared explicitly rather than leaning on the
+  // API's ordering surviving a stable sort.
+  return conversations
+    .filter(isCapturedLead)
+    .sort((a, b) => {
+      const byPriority = PRIORITY_RANK[priorityOf(b)] - PRIORITY_RANK[priorityOf(a)];
+      return byPriority !== 0 ? byPriority : Date.parse(b.createdAt) - Date.parse(a.createdAt);
+    })
+    .slice(0, limit)
+    .map((conversation) => ({
+      id: conversation.id,
+      name: conversation.customer?.fullName?.trim() || formatPhone(conversation.call?.fromNumber),
+      address: conversation.customer?.propertyAddress?.trim() || null,
+      priority: priorityOf(conversation),
+      summary: conversation.summary?.trim() || null,
+      phone: conversation.customer?.phone ?? conversation.call?.fromNumber ?? null,
+    }));
 }
 
 export interface InsightRow {

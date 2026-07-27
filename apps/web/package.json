@@ -33,7 +33,13 @@
           "tsconfig": {
             "module": "CommonJS",
             "moduleResolution": "Node",
-            "verbatimModuleSyntax": false
+            "verbatimModuleSyntax": false,
+            "baseUrl": ".",
+            "paths": {
+              "@/*": [
+                "src/*"
+              ]
+            }
           }
         }
       ]

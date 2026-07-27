@@ -52,7 +52,9 @@ export class DashboardService {
         orderBy: { createdAt: 'desc' },
         take: 5,
         include: {
-          customer: { select: { id: true, fullName: true, phone: true } },
+          // `propertyAddress` is what the mobile lead cards identify a job by —
+          // a name alone does not tell a crew where to drive.
+          customer: { select: { id: true, fullName: true, phone: true, propertyAddress: true } },
           call: { select: { durationSeconds: true, fromNumber: true } },
         },
       }),

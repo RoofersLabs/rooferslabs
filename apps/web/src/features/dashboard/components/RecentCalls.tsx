@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Phone, ShieldAlert, Play } from 'lucide-react';
+import { Phone, ShieldAlert } from 'lucide-react';
 import type { Conversation } from '@/types/api';
 import { formatDuration, formatPhone, humanizeEnum, timeAgo } from '@/lib/utils';
 import { IconTile } from '@/components/ui/IconTile';
@@ -11,6 +11,10 @@ import { SectionCard } from './SectionCard';
 /**
  * The primary dashboard surface: a readable log of the most recent answered
  * calls. Each row links to the full conversation (transcript + recording).
+ *
+ * The row carries no play control. Playback belongs to the conversation page,
+ * which is one tap away and is where the transcript sits beside it; a second
+ * entry point on every row only competed with the row's own link.
  */
 export function RecentCalls({
   conversations,
@@ -74,20 +78,16 @@ export function RecentCalls({
                     </span>
                   </span>
 
-                  <span className="hidden shrink-0 flex-col items-end text-right sm:flex">
+                  {/* The time/duration block is now the row's right edge — the
+                      play button that used to close it is gone, and nothing
+                      holds its space. */}
+                  <span className="flex shrink-0 flex-col items-end text-right">
                     <span className="text-small text-ink-muted">
                       {timeAgo(conversation.createdAt)}
                     </span>
                     <span className="font-num mt-0.5 text-caption text-ink-faint">
                       {formatDuration(conversation.call?.durationSeconds)}
                     </span>
-                  </span>
-
-                  <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line-subtle text-ink-muted transition-colors duration-fast group-hover:border-accent-border group-hover:text-accent"
-                    aria-hidden
-                  >
-                    <Play className="h-4 w-4" />
                   </span>
                 </Link>
               </li>

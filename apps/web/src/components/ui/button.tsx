@@ -32,8 +32,14 @@ const sizes: Record<Size, string> = {
   'icon-lg': 'h-12 w-12 shrink-0',
 };
 
-/** The shared appearance, so a link that acts as a button is not a second style. */
-function buttonClass(variant: Variant = 'primary', size: Size = 'md', className?: string) {
+/**
+ * The shared appearance, so a link that acts as a button is not a second style.
+ *
+ * Exported for the cases the two components below cannot cover: a plain `<a>`
+ * carrying a non-router href, such as `tel:`, which must stay an anchor for the
+ * phone to dial it.
+ */
+export function buttonClass(variant: Variant = 'primary', size: Size = 'md', className?: string) {
   return cn(
     'focus-ring inline-flex select-none items-center justify-center whitespace-nowrap rounded-md font-semibold',
     'transition-all duration-fast ease-standard active:scale-[0.98]',

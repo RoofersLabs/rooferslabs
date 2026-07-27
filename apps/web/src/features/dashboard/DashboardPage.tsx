@@ -14,7 +14,8 @@ import { RecentCalls } from './components/RecentCalls';
 import { AppointmentList } from './components/AppointmentList';
 import { ReceptionistSummary } from './components/ReceptionistSummary';
 import { InsightList } from './components/InsightList';
-import { deriveReceptionistSummary, deriveTopInsights } from './insights';
+import { PriorityLeads } from './components/PriorityLeads';
+import { derivePriorityLeads, deriveReceptionistSummary, deriveTopInsights } from './insights';
 
 export function DashboardPage() {
   const dashboard = useDashboard();
@@ -31,6 +32,7 @@ export function DashboardPage() {
     [conversations, dashboard.data?.metrics],
   );
   const insightRows = useMemo(() => deriveTopInsights(conversations), [conversations]);
+  const priorityLeads = useMemo(() => derivePriorityLeads(conversations), [conversations]);
 
   if (dashboard.isError) {
     return (
@@ -78,6 +80,12 @@ export function DashboardPage() {
           <ArrowRight className="h-4 w-4 shrink-0 text-accent" aria-hidden />
         </Link>
       )}
+
+      {/* Mobile only, and first: the newest captured leads are what an owner
+          opens the phone to act on. It sits below the setup banner because that
+          banner means the AI is not answering yet — there would be no leads to
+          show above it. */}
+      <PriorityLeads leads={priorityLeads} isLoading={dashboard.isLoading} />
 
       {/* Section 1 — analytics panel */}
       <AnalyticsPanel metrics={metrics} />

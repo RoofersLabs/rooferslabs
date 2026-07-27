@@ -159,7 +159,11 @@ export function AppLayout() {
         <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line-subtle bg-[color-mix(in_oklab,var(--surface-1)_88%,transparent)] px-4 backdrop-blur sm:px-6">
           <SidebarTrigger className="text-ink-muted hover:bg-surface-3 hover:text-ink lg:hidden" />
 
-          <GlobalSearch inputClassName={cn(softChrome && 'rounded-xl')} />
+          {/* `rounded-full` on a 40px field reads as the pill the header's other
+              controls already are — the notification and install buttons take
+              the same radius under `softChrome`. Height, padding and behaviour
+              are untouched; only the corners move. */}
+          <GlobalSearch inputClassName={cn(softChrome && 'rounded-full')} />
 
           {/* `shrink-0`: these controls have a fixed size and the search does
               not, so the row must give its space back from the search rather

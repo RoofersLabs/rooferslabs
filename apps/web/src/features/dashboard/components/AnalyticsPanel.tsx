@@ -19,7 +19,9 @@ type Metric = {
  */
 function MetricColumn({ icon, label, value, tone }: Metric) {
   return (
-    <div className="flex flex-col gap-4 bg-surface p-6">
+    // `p-5` on mobile, where two columns share the width; `p-6` from `sm` up,
+    // which is the gutter every other dashboard panel uses.
+    <div className="flex flex-col gap-4 bg-surface p-5 sm:p-6">
       <IconTile icon={icon} tone={tone} shape="square" />
       <div>
         {value === undefined ? (
@@ -41,8 +43,8 @@ function MetricColumn({ icon, label, value, tone }: Metric) {
 
 /**
  * Full-width analytics panel: one container holding the day's headline KPIs as
- * equal-width columns separated by hairline dividers. Reflows to two columns on
- * tablet and a single stacked column on mobile. It uses the shared `Card` for
+ * equal-width columns separated by hairline dividers. Four across on desktop,
+ * folding to a 2×2 grid of equal cells from tablet down. It uses the shared `Card` for
  * its border and elevation, overriding only the radius so it matches the other
  * dashboard panels rather than being a rounder one-off among them.
  */
@@ -66,7 +68,11 @@ export function AnalyticsPanel({ metrics }: { metrics: DashboardOverview['metric
 
   return (
     <Card as="section" aria-label="Today’s key metrics" className="overflow-hidden rounded-md">
-      <div className="grid grid-cols-1 gap-px bg-line-subtle sm:grid-cols-2 lg:grid-cols-4">
+      {/* Two up on a phone, not stacked: four full-width rows pushed the calls
+          list off the bottom of the screen. `auto-rows-fr` equalises the two
+          rows so all four cells are the same height whether or not a label
+          wraps — the grid stays square rather than ragged. */}
+      <div className="grid auto-rows-fr grid-cols-2 gap-px bg-line-subtle lg:grid-cols-4">
         {items.map((item) => (
           <MetricColumn key={item.label} {...item} />
         ))}
