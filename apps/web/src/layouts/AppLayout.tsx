@@ -65,6 +65,23 @@ export function AppLayout() {
    */
   const isDashboard = pathname === ROUTES.dashboard || pathname.startsWith(`${ROUTES.dashboard}/`);
 
+  /**
+   * Calls-only fix for the shell's horizontal overflow.
+   *
+   * `SidebarInset` is a flex item carrying `w-full` and the default
+   * `min-width: auto`, so it claims the full viewport width *beside* the 256px
+   * sidebar and pushes the document 256px wider than the screen. Measured at
+   * 1440px: inset renders 1440 wide starting at x=256, for a 1696px document.
+   * `min-w-0` lets it compress to the 1184px actually available.
+   *
+   * This is a bug in the shared shell, not in any one page — every
+   * authenticated route above the `md` breakpoint scrolls the same way, and no
+   * page's content contributes to it. Fixing it in `components/ui/sidebar.tsx`
+   * would clear all of them at once, but that reflows pages this change is
+   * scoped out of, so the fix is deliberately confined to /calls.
+   */
+  const isCalls = pathname === ROUTES.calls || pathname.startsWith(`${ROUTES.calls}/`);
+
   // Billing is appended rather than shown-and-broken: with payments disabled the
   // route guard turns the link away and the API answers 503.
   const navigation = paymentsEnabled
@@ -117,7 +134,7 @@ export function AppLayout() {
         </SidebarContent>
       </Sidebar>
 
-      <SidebarInset className="bg-base">
+      <SidebarInset className={cn('bg-base', isCalls && 'min-w-0')}>
         <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line-subtle bg-[color-mix(in_oklab,var(--surface-1)_88%,transparent)] px-4 backdrop-blur sm:px-6">
           <SidebarTrigger className="text-ink-muted hover:bg-surface-3 hover:text-ink lg:hidden" />
 

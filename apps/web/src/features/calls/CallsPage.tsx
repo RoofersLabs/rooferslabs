@@ -4,7 +4,6 @@ import { ChevronRight, Phone, PhoneMissed, ShieldAlert } from 'lucide-react';
 import { useCalls } from '@/hooks/queries';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { formatDateTime, formatDuration, formatPhone } from '@/lib/utils';
-import { EnumBadge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { FilterBar } from '@/components/ui/FilterBar';
 import { IconTile } from '@/components/ui/IconTile';
@@ -14,6 +13,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/pagination';
+import { CallStatusLabel } from './CallStatusLabel';
 
 export function CallsPage() {
   const [page, setPage] = useState(1);
@@ -32,6 +32,9 @@ export function CallsPage() {
         <FilterBar>
           <SearchInput
             className="sm:max-w-xs"
+            // Matches the dashboard header's field (12px → 16px). Height,
+            // padding, border and focus ring are untouched.
+            inputClassName="rounded-xl"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -69,13 +72,19 @@ export function CallsPage() {
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="truncate text-body font-medium text-ink">
+                        {/* `min-w-0` lets the name actually truncate: without it
+                            a nowrap flex item cannot compress past its text and
+                            spills out of the row instead. */}
+                        <span className="min-w-0 truncate text-body font-medium text-ink">
                           {call.customer?.fullName ?? formatPhone(call.fromNumber)}
                         </span>
-                        <EnumBadge value={call.conversation?.outcome ?? call.status} />
-                        {isEmergency && <EnumBadge value="EMERGENCY" />}
+                        <CallStatusLabel value={call.conversation?.outcome ?? call.status} />
+                        {isEmergency && <CallStatusLabel value="EMERGENCY" />}
                       </div>
-                      <p className="mt-0.5 truncate text-small text-ink-muted">
+                      {/* Wraps over two lines instead of truncating to one.
+                          `break-words` keeps an unbroken token (a long URL or
+                          address) from setting a wide min-content floor. */}
+                      <p className="mt-0.5 line-clamp-2 text-small break-words text-ink-muted">
                         {call.conversation?.summary ?? formatPhone(call.fromNumber)}
                       </p>
                     </div>
