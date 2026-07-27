@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import type { LucideIcon } from 'lucide-react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -119,8 +120,8 @@ export function CustomerDetailPage() {
             {name}
             <EnumStatusText value={data.status} />
             {data.isFavorite && (
-              <StatusText tone="warning" className="inline-flex items-center gap-1">
-                <Star className="h-3 w-3 fill-warning" aria-hidden />
+              <StatusText tone="brand" className="inline-flex items-center gap-1">
+                <Star className="h-3 w-3 fill-accent" aria-hidden />
                 Favorite
               </StatusText>
             )}
@@ -131,22 +132,6 @@ export function CustomerDetailPage() {
             <span className="font-num">{formatPhone(data.phone)}</span>
             {data.propertyAddress && ` · ${data.propertyAddress}`}
           </span>
-        }
-        actions={
-          <Button
-            variant="secondary"
-            onClick={toggleFavorite}
-            loading={save.isPending}
-            aria-pressed={data.isFavorite}
-          >
-            {!save.isPending && (
-              <Star
-                className={cn('h-4 w-4', data.isFavorite && 'fill-warning text-warning')}
-                aria-hidden
-              />
-            )}
-            {data.isFavorite ? 'Remove favorite' : 'Mark as favorite'}
-          </Button>
         }
       />
 
@@ -186,46 +171,47 @@ export function CustomerDetailPage() {
             <CardTitle>Quick actions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-3">
-              {data.phone ? (
-                <a href={`tel:${data.phone}`} className={buttonClass('primary', 'md')}>
-                  <Phone className="h-4 w-4" aria-hidden />
-                  Call customer
-                </a>
-              ) : (
-                <Button disabled>
-                  <Phone className="h-4 w-4" aria-hidden />
-                  Call customer
-                </Button>
-              )}
+            {/* One action carries the weight — calling back is what this page
+                exists for — and the rest step down to icons with labels. */}
+            {data.phone ? (
+              <a
+                href={`tel:${data.phone}`}
+                className={buttonClass('primary', 'lg', 'w-full rounded-full')}
+              >
+                <Phone className="h-4 w-4" aria-hidden />
+                Call customer
+              </a>
+            ) : (
+              <Button size="lg" className="w-full rounded-full" disabled>
+                <Phone className="h-4 w-4" aria-hidden />
+                Call customer
+              </Button>
+            )}
 
+            <div className="mt-4 grid grid-cols-4 gap-2">
+              <IconAction
+                icon={Star}
+                label={data.isFavorite ? 'Favorited' : 'Favorite'}
+                onClick={toggleFavorite}
+                active={data.isFavorite}
+                pressed={data.isFavorite}
+              />
+              <IconAction icon={Pencil} label="Edit" onClick={() => setEditing(true)} />
               {/* Outbound SMS is not wired up yet. Shown disabled rather than
                   hidden so the action is discoverable the day it lands, and
-                  labelled so nobody waits for a message that never sends. */}
-              <Button variant="secondary" disabled title="Text messaging is coming soon">
-                <MessageSquare className="h-4 w-4" aria-hidden />
-                Send SMS
-              </Button>
-
-              <Button variant="secondary" onClick={() => setEditing(true)}>
-                <Pencil className="h-4 w-4" aria-hidden />
-                Edit customer
-              </Button>
-
-              <Button variant="secondary" onClick={toggleFavorite} loading={save.isPending}>
-                {!save.isPending && (
-                  <Star
-                    className={cn('h-4 w-4', data.isFavorite && 'fill-warning text-warning')}
-                    aria-hidden
-                  />
-                )}
-                {data.isFavorite ? 'Remove favorite' : 'Mark as favorite'}
-              </Button>
-
-              <Button variant="destructive" onClick={() => setConfirmingDelete(true)}>
-                <Trash2 className="h-4 w-4" aria-hidden />
-                Delete customer
-              </Button>
+                  nobody waits for a message that never sends. */}
+              <IconAction
+                icon={MessageSquare}
+                label="SMS"
+                disabled
+                title="Text messaging is coming soon"
+              />
+              <IconAction
+                icon={Trash2}
+                label="Delete"
+                onClick={() => setConfirmingDelete(true)}
+                tone="danger"
+              />
             </div>
             {save.isError && (
               <p className="mt-3 text-small text-emergency" role="alert">
@@ -266,6 +252,83 @@ export function CustomerDetailPage() {
         </div>
       </Modal>
     </div>
+  );
+}
+
+/**
+ * A secondary action: icon in a bordered circle, label underneath.
+ *
+ * The whole control is the tap target, not just the circle, so all four have
+ * the same touch area and sit on one four-column grid — equal widths and equal
+ * gaps without any of them declaring a size.
+ *
+ * `danger` outlines rather than fills. A filled red button belongs to a
+ * confirmation step, not to a row of options someone is still reading.
+ */
+function IconAction({
+  icon: Icon,
+  label,
+  onClick,
+  disabled,
+  title,
+  tone = 'neutral',
+  active = false,
+  pressed,
+}: {
+  icon: LucideIcon;
+  label: string;
+  onClick?: () => void;
+  disabled?: boolean;
+  title?: string;
+  tone?: 'neutral' | 'danger';
+  /** Filled treatment — the favourite, once it is one. */
+  active?: boolean;
+  pressed?: boolean;
+}) {
+  const danger = tone === 'danger';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      aria-pressed={pressed}
+      className={cn(
+        'focus-ring group flex flex-col items-center gap-2 rounded-md px-1 py-2',
+        'transition-colors duration-fast ease-standard',
+        'disabled:cursor-not-allowed disabled:opacity-40',
+        !disabled && 'hover:bg-surface-2',
+      )}
+    >
+      <span
+        className={cn(
+          'flex h-11 w-11 items-center justify-center rounded-full border',
+          'transition-colors duration-fast ease-standard',
+          active
+            ? 'border-accent bg-accent text-ink-on-brand'
+            : danger
+              ? 'border-emergency-border bg-surface text-emergency'
+              : 'border-line bg-surface text-ink-muted',
+          !disabled && !active && !danger && 'group-hover:border-line-strong group-hover:text-ink',
+        )}
+      >
+        <Icon
+          className={cn(
+            'h-4 w-4 transition-all duration-fast ease-standard',
+            active && 'fill-ink-on-brand',
+          )}
+          aria-hidden
+        />
+      </span>
+      <span
+        className={cn(
+          'text-caption font-medium',
+          danger ? 'text-emergency' : active ? 'text-accent' : 'text-ink-muted',
+        )}
+      >
+        {label}
+      </span>
+    </button>
   );
 }
 

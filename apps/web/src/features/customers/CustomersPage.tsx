@@ -101,7 +101,7 @@ export function CustomersPage() {
                         </span>
                         {customer.isFavorite && (
                           <Star
-                            className="h-3.5 w-3.5 shrink-0 fill-warning text-warning"
+                            className="h-3.5 w-3.5 shrink-0 fill-accent text-accent"
                             aria-label="Favorite"
                           />
                         )}
@@ -148,7 +148,7 @@ export function CustomersPage() {
                           {customer.fullName ?? 'Unknown caller'}
                           {customer.isFavorite && (
                             <Star
-                              className="h-3.5 w-3.5 shrink-0 fill-warning text-warning"
+                              className="h-3.5 w-3.5 shrink-0 fill-accent text-accent"
                               aria-label="Favorite"
                             />
                           )}
