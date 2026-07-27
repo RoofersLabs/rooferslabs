@@ -8,8 +8,11 @@
 # VPC, as a one-off ECS task using the same image, the same secrets and the same
 # security group as the API itself.
 #
-#   infra/scripts/db.sh status     # which migrations are applied (default)
-#   infra/scripts/db.sh deploy     # apply pending migrations by hand
+#   infra/scripts/db.sh status              # which migrations are applied (default)
+#   infra/scripts/db.sh deploy              # apply pending migrations by hand
+#   infra/scripts/db.sh platform-users      # who can reach the admin portal
+#   infra/scripts/db.sh grant-owner <email> # give an account platform access
+#   infra/scripts/db.sh revoke-owner <email>
 #
 # `deploy` is rarely needed: the API container runs `prisma migrate deploy` on
 # every start (docker/api-entrypoint.sh), so shipping the API applies the
@@ -23,12 +26,31 @@
 set -euo pipefail
 
 ACTION="${1:-status}"
+EMAIL="${2:-}"
+
+# Platform access is granted by hand, deliberately. There is no self-service
+# path to it and no endpoint that sets it: a role that reads every tenant's data
+# should require someone with database access to decide, and leave a record of
+# having decided. `node -e` rather than raw SQL so the update goes through the
+# same Prisma client and enum the application uses — a typo in a role name fails
+# here instead of writing a value nothing can read.
+node_script() {
+  printf 'node -e %s' "$(printf '%s' "$1" | sed 's/"/\\"/g; s/^/"/; s/$/"/')"
+}
+
 case "$ACTION" in
   status) PRISMA_CMD="migrate status" ;;
   deploy) PRISMA_CMD="migrate deploy" ;;
+  platform-users | grant-owner | revoke-owner) PRISMA_CMD="" ;;
   *)
-    echo "usage: $0 [status|deploy]" >&2
+    echo "usage: $0 [status|deploy|platform-users|grant-owner <email>|revoke-owner <email>]" >&2
     exit 2
+    ;;
+esac
+
+case "$ACTION" in
+  grant-owner | revoke-owner)
+    [ -n "$EMAIL" ] || { echo "usage: $0 $ACTION <email>" >&2; exit 2; }
     ;;
 esac
 
@@ -55,14 +77,28 @@ TASK_DEF=$(echo "$SERVICE_JSON" | jq -r '.taskDefinition')
 # parser mangles nested lists and reports a nonsense security-group id.
 NETWORK=$(echo "$SERVICE_JSON" | jq -c '{awsvpcConfiguration: .networkConfiguration.awsvpcConfiguration}')
 
-echo "==> prisma $PRISMA_CMD  (one-off task in the API's VPC)"
+echo "==> $ACTION  (one-off task in the API's VPC)"
 echo "    task definition: ${TASK_DEF##*/}"
 
-# shellcheck disable=SC2016
-OVERRIDES=$(jq -n --arg cmd "$PRISMA_CMD" '{
+case "$ACTION" in
+  status | deploy)
+    CONTAINER_CMD="npx prisma $PRISMA_CMD --schema apps/api/prisma/schema.prisma"
+    ;;
+  platform-users)
+    CONTAINER_CMD='node -e "const{PrismaClient}=require(\"@prisma/client\");const p=new PrismaClient();p.user.findMany({where:{platformRole:\"OWNER\",deletedAt:null},select:{id:true,email:true,clerkUserId:true}}).then(u=>console.log(u.length?JSON.stringify(u,null,1):\"No accounts hold platform access.\")).finally(()=>p.\$disconnect())"'
+    ;;
+  grant-owner | revoke-owner)
+    ROLE=$([ "$ACTION" = "grant-owner" ] && echo OWNER || echo NONE)
+    # Matched on email and reported by count, so granting to a typo — or to an
+    # address that turns out to have two records — is visible rather than silent.
+    CONTAINER_CMD="node -e \"const{PrismaClient}=require('@prisma/client');const p=new PrismaClient();p.user.updateMany({where:{email:'$EMAIL',deletedAt:null},data:{platformRole:'$ROLE'}}).then(r=>p.user.findMany({where:{email:'$EMAIL',deletedAt:null},select:{id:true,email:true,platformRole:true}}).then(u=>console.log('updated '+r.count+' record(s): '+JSON.stringify(u)))).finally(()=>p.\\\$disconnect())\""
+    ;;
+esac
+
+OVERRIDES=$(jq -n --arg cmd "$CONTAINER_CMD" '{
   containerOverrides: [{
     name: "api",
-    command: ["sh", "-c", ("npx prisma " + $cmd + " --schema apps/api/prisma/schema.prisma")],
+    command: ["sh", "-c", $cmd],
     environment: [{ name: "MIGRATE_ON_START", value: "false" }]
   }]
 }')
@@ -85,7 +121,7 @@ EXIT_CODE=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TASK_ARN" \
   --query 'tasks[0].containers[0].exitCode' --output text)
 
 echo
-echo "──────────────── prisma output ────────────────"
+echo "──────────────── output ────────────────"
 # `--output text` joins events with tabs, which flattens multi-line Prisma
 # output onto one line; JSON keeps one message per line.
 aws logs get-log-events \
@@ -94,10 +130,10 @@ aws logs get-log-events \
   --limit 200 --query 'events[].message' --output json 2>/dev/null |
   jq -r '.[]' | grep -v '^npm notice' | sed 's/^/  /' ||
   echo "  (no log stream yet — try again in a moment)"
-echo "───────────────────────────────────────────────"
+echo "────────────────────────────────────────"
 
 if [ "$EXIT_CODE" != "0" ]; then
-  echo "error: prisma exited $EXIT_CODE." >&2
+  echo "error: the task exited $EXIT_CODE." >&2
   exit 1
 fi
-echo "✅ prisma $PRISMA_CMD completed against production."
+echo "✅ $ACTION completed against production."
