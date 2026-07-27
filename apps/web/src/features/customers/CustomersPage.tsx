@@ -4,8 +4,9 @@ import { PropertyType } from '@rooferslabs/shared';
 import { useCustomers, useSaveCustomer } from '@/hooks/queries';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import type { Customer } from '@/types/api';
-import { formatPhone, humanizeEnum, timeAgo } from '@/lib/utils';
-import { EnumBadge } from '@/components/ui/badge';
+import { cn, formatPhone, humanizeEnum, timeAgo } from '@/lib/utils';
+import { EnumStatusText } from '@/components/ui/StatusText';
+import { REFINED_BUTTON, REFINED_CARD, REFINED_FIELD } from '@/components/ui/refinedControls';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { FilterBar } from '@/components/ui/FilterBar';
@@ -40,17 +41,18 @@ export function CustomersPage() {
         title="Customers"
         description="Everyone who has called or been added to your front office."
         actions={
-          <Button onClick={() => setCreating(true)}>
+          <Button className={REFINED_BUTTON} onClick={() => setCreating(true)}>
             <Plus className="h-4 w-4" aria-hidden />
             Add customer
           </Button>
         }
       />
 
-      <Card className="overflow-hidden">
+      <Card className={cn('overflow-hidden', REFINED_CARD)}>
         <FilterBar>
           <SearchInput
             className="sm:max-w-xs"
+            inputClassName={REFINED_FIELD}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -75,6 +77,7 @@ export function CustomersPage() {
             title="No customers yet"
             description="Customers are created automatically from inbound calls, or add one manually."
             actionLabel="Add customer"
+            actionClassName={REFINED_BUTTON}
             onAction={() => setCreating(true)}
           />
         ) : (
@@ -112,7 +115,7 @@ export function CustomersPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <EnumBadge value={customer.status} />
+                      <EnumStatusText value={customer.status} />
                     </TableCell>
                     <TableCell className="hidden text-caption text-ink-faint sm:table-cell">
                       {timeAgo(customer.createdAt)}

@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import { CalendarClock, MapPin } from 'lucide-react';
 import { AppointmentStatus } from '@rooferslabs/shared';
 import { useAppointments, useUpdateAppointment } from '@/hooks/queries';
-import { formatDateTime, humanizeEnum, timeAgo } from '@/lib/utils';
-import { EnumBadge } from '@/components/ui/badge';
+import { cn, formatDateTime, humanizeEnum, timeAgo } from '@/lib/utils';
+import { EnumStatusText } from '@/components/ui/StatusText';
+import { REFINED_CARD, REFINED_FIELD } from '@/components/ui/refinedControls';
 import { Card } from '@/components/ui/card';
 import { IconTile } from '@/components/ui/IconTile';
 import { Select } from '@/components/ui/input';
@@ -29,7 +30,7 @@ export function AppointmentsPage() {
         description="Visit and estimate requests captured by your AI receptionist."
         actions={
           <Select
-            className="w-48"
+            className={cn('w-48', REFINED_FIELD)}
             value={status}
             onChange={(e) => {
               setStatus(e.target.value);
@@ -46,7 +47,7 @@ export function AppointmentsPage() {
         }
       />
 
-      <Card className="overflow-hidden">
+      <Card className={cn('overflow-hidden', REFINED_CARD)}>
         {appointments.isLoading ? (
           <ListSkeleton />
         ) : appointments.isError ? (
@@ -75,7 +76,7 @@ export function AppointmentsPage() {
                       <span className="text-body font-medium text-ink">
                         {appointment.customer?.fullName ?? 'Customer'}
                       </span>
-                      <EnumBadge value={appointment.priority} />
+                      <EnumStatusText value={appointment.priority} />
                       {appointment.conversationId && (
                         <Link
                           to={`/conversations/${appointment.conversationId}`}
@@ -106,6 +107,7 @@ export function AppointmentsPage() {
                   </div>
                   <div className="shrink-0 sm:w-44">
                     <Select
+                      className={REFINED_FIELD}
                       value={appointment.status}
                       onChange={(e) =>
                         update.mutate({

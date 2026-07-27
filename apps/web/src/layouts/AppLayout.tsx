@@ -53,34 +53,55 @@ export function AppLayout() {
   const unreadCount = unread.data?.unreadCount ?? 0;
 
   /**
-   * The dashboard's softer chrome.
+   * Routes that render the softer chrome.
    *
    * The header and sidebar are one persistent shell shared by every
-   * authenticated page, so these radii are scoped to the dashboard route rather
-   * than applied to the shared controls — Calls, Customers, Knowledge, Settings
-   * and Billing keep the chrome exactly as it is today. The trade-off is
-   * deliberate and was chosen explicitly: the affected corners animate as the
-   * user moves on and off /dashboard, because the elements themselves persist
-   * across that navigation.
+   * authenticated page, so these radii are scoped per route rather than applied
+   * to the shared controls. Calls, Settings and Billing keep the chrome exactly
+   * as it is today; the corners animate as the user crosses between the two
+   * groups, because the elements themselves persist across that navigation.
+   *
+   * That trade-off was chosen deliberately, but the list is now five of the
+   * eight authenticated routes. Past the halfway mark the scoping costs more
+   * than it saves: styling the controls once and deleting this list would give
+   * every page the same chrome and remove the animation entirely.
    */
-  const isDashboard = pathname === ROUTES.dashboard || pathname.startsWith(`${ROUTES.dashboard}/`);
+  const softChrome = [
+    ROUTES.dashboard,
+    ROUTES.customers,
+    ROUTES.appointments,
+    ROUTES.knowledge,
+    ROUTES.notifications,
+  ].some((route) => pathname === route || pathname.startsWith(`${route}/`));
 
   /**
-   * Calls-only fix for the shell's horizontal overflow.
+   * Guard against horizontal page overflow.
    *
-   * `SidebarInset` is a flex item carrying `w-full` and the default
-   * `min-width: auto`, so it claims the full viewport width *beside* the 256px
-   * sidebar and pushes the document 256px wider than the screen. Measured at
-   * 1440px: inset renders 1440 wide starting at x=256, for a 1696px document.
-   * `min-w-0` lets it compress to the 1184px actually available.
+   * `SidebarInset` is a flex item carrying `w-full`, and its default
+   * `min-width: auto` resolves to `min(width suggestion, min-content)`. The
+   * width suggestion is the full viewport, so whenever a page's min-content
+   * reaches that figure the inset stops compressing and sits at viewport width
+   * *beside* the 256px sidebar — a document 256px too wide. `min-w-0` removes
+   * that floor.
    *
-   * This is a bug in the shared shell, not in any one page — every
-   * authenticated route above the `md` breakpoint scrolls the same way, and no
-   * page's content contributes to it. Fixing it in `components/ui/sidebar.tsx`
-   * would clear all of them at once, but that reflows pages this change is
-   * scoped out of, so the fix is deliberately confined to /calls.
+   * It takes wide content to trigger: measured at 1440px, Calls overflowed by
+   * 256px only with a long summary under the old `truncate` (nowrap ⇒ enormous
+   * min-content), and Customers' table overflowed by 22px at 1280px. Pages
+   * whose content fits — the dashboard, Settings — never overflowed, and adding
+   * `min-w-0` leaves them byte-identical, since their min-content is already
+   * below the space available.
+   *
+   * Applied per route rather than in `components/ui/sidebar.tsx` to stay inside
+   * the scope each pass was given, though a single `min-w-0` there would retire
+   * this list for good.
    */
-  const isCalls = pathname === ROUTES.calls || pathname.startsWith(`${ROUTES.calls}/`);
+  const guardOverflow = [
+    ROUTES.calls,
+    ROUTES.customers,
+    ROUTES.appointments,
+    ROUTES.knowledge,
+    ROUTES.notifications,
+  ].some((route) => pathname === route || pathname.startsWith(`${route}/`));
 
   // Billing is appended rather than shown-and-broken: with payments disabled the
   // route guard turns the link away and the API answers 503.
@@ -114,7 +135,7 @@ export function AppLayout() {
                       'text-body font-medium text-ink-muted data-[active=true]:bg-accent-subtle data-[active=true]:text-accent data-[active=true]:hover:bg-accent-subtle data-[active=true]:hover:text-accent hover:bg-surface-3 hover:text-ink',
                       // One radius covers both the active fill and the hover
                       // fill — they are the same element, not two layers.
-                      isDashboard && 'rounded-xl',
+                      softChrome && 'rounded-xl',
                     )}
                   >
                     <NavLink to={item.to}>
@@ -134,21 +155,24 @@ export function AppLayout() {
         </SidebarContent>
       </Sidebar>
 
-      <SidebarInset className={cn('bg-base', isCalls && 'min-w-0')}>
+      <SidebarInset className={cn('bg-base', guardOverflow && 'min-w-0')}>
         <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line-subtle bg-[color-mix(in_oklab,var(--surface-1)_88%,transparent)] px-4 backdrop-blur sm:px-6">
           <SidebarTrigger className="text-ink-muted hover:bg-surface-3 hover:text-ink lg:hidden" />
 
-          <GlobalSearch inputClassName={cn(isDashboard && 'rounded-xl')} />
+          <GlobalSearch inputClassName={cn(softChrome && 'rounded-xl')} />
 
           <div className="ml-auto flex items-center gap-1.5">
-            <InstallPwaButton className={cn(isDashboard && 'rounded-full')} />
+            {/* `tracking-tight` is the only typographic change; the secondary
+                variant already puts the label at `text-ink`, the highest
+                contrast token on this surface, so nothing is recoloured. */}
+            <InstallPwaButton className={cn(softChrome && 'rounded-full tracking-tight')} />
             <Button
               variant="ghost"
               size="icon"
               // `size="icon"` is already a 40px square with its contents
               // centered, so `rounded-full` alone makes the ghost hover fill a
               // true circle. The 150ms `transition-all` comes from the button.
-              className={cn('relative', isDashboard && 'rounded-full')}
+              className={cn('relative', softChrome && 'rounded-full')}
               onClick={() => navigate(ROUTES.notifications)}
               aria-label={`Notifications${unreadCount ? ` (${unreadCount} unread)` : ''}`}
             >

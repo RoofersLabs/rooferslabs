@@ -19,6 +19,7 @@ import {
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import type { Notification } from '@/types/api';
 import { cn, timeAgo } from '@/lib/utils';
+import { REFINED_BUTTON, REFINED_CARD } from '@/components/ui/refinedControls';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { IconTile } from '@/components/ui/IconTile';
@@ -38,7 +39,7 @@ function PushNotificationsCard() {
   if (status === 'unsupported' || status === 'loading') return null;
 
   return (
-    <Card className="mb-6 flex-row flex-wrap items-center gap-4 px-6 py-5">
+    <Card className={cn('mb-6 flex-row flex-wrap items-center gap-4 px-6 py-5', REFINED_CARD)}>
       <IconTile icon={BellRing} />
       <div className="min-w-0 flex-1">
         <p className="text-body font-semibold text-ink">
@@ -56,6 +57,7 @@ function PushNotificationsCard() {
       </div>
       {status !== 'denied' && (
         <Button
+          className={REFINED_BUTTON}
           variant={status === 'subscribed' ? 'secondary' : 'primary'}
           loading={busy}
           onClick={() => void (status === 'subscribed' ? unsubscribe() : subscribe())}
@@ -100,6 +102,7 @@ export function NotificationsPage() {
         actions={
           unreadCount > 0 ? (
             <Button
+              className={REFINED_BUTTON}
               variant="secondary"
               loading={markAll.isPending}
               onClick={() => markAll.mutate()}
@@ -113,7 +116,7 @@ export function NotificationsPage() {
 
       <PushNotificationsCard />
 
-      <Card className="overflow-hidden">
+      <Card className={cn('overflow-hidden', REFINED_CARD)}>
         {notifications.isLoading ? (
           <ListSkeleton />
         ) : notifications.isError ? (

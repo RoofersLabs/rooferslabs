@@ -8,8 +8,9 @@ import {
 } from '@/hooks/queries';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import type { KnowledgeArticle } from '@/types/api';
-import { humanizeEnum, timeAgo } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import { cn, humanizeEnum, timeAgo } from '@/lib/utils';
+import { StatusText, EnumStatusText } from '@/components/ui/StatusText';
+import { REFINED_BUTTON, REFINED_CARD, REFINED_FIELD } from '@/components/ui/refinedControls';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { FilterBar } from '@/components/ui/FilterBar';
@@ -43,17 +44,18 @@ export function KnowledgePage() {
         title="Knowledge Base"
         description="Everything your AI receptionist knows about your business. It answers callers using only this content."
         actions={
-          <Button onClick={() => setCreating(true)}>
+          <Button className={REFINED_BUTTON} onClick={() => setCreating(true)}>
             <Plus className="h-4 w-4" aria-hidden />
             New article
           </Button>
         }
       />
 
-      <Card className="mb-6">
+      <Card className={cn('mb-6', REFINED_CARD)}>
         <FilterBar className="border-b-0">
           <SearchInput
             className="flex-1 sm:max-w-xs"
+            inputClassName={REFINED_FIELD}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -69,7 +71,7 @@ export function KnowledgePage() {
               setPage(1);
             }}
             aria-label="Filter by category"
-            className="sm:w-52"
+            className={cn('sm:w-52', REFINED_FIELD)}
           >
             <option value="">All categories</option>
             {Object.values(KnowledgeCategory).map((value) => (
@@ -84,7 +86,7 @@ export function KnowledgePage() {
       {articles.isLoading ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }, (_, i) => (
-            <Card key={i} className="px-6 py-5">
+            <Card key={i} className={cn('px-6 py-5', REFINED_CARD)}>
               <Skeleton className="h-10 w-10 rounded-lg" />
               <Skeleton className="mt-4 h-4 w-4/5" />
               <Skeleton className="mt-2.5 h-3 w-full" />
@@ -94,7 +96,7 @@ export function KnowledgePage() {
           ))}
         </div>
       ) : articles.isError ? (
-        <Card>
+        <Card className={REFINED_CARD}>
           <ErrorState
             title="Couldn’t load the knowledge base"
             message={(articles.error as Error).message}
@@ -102,12 +104,13 @@ export function KnowledgePage() {
           />
         </Card>
       ) : !articles.data?.items.length ? (
-        <Card>
+        <Card className={REFINED_CARD}>
           <EmptyState
             icon={BookOpen}
             title="No articles yet"
             description="Add FAQs, services, warranty terms, pricing guidance, and policies so the AI can answer accurately."
             actionLabel="Write your first article"
+            actionClassName={REFINED_BUTTON}
             onAction={() => setCreating(true)}
           />
         </Card>
@@ -118,7 +121,13 @@ export function KnowledgePage() {
               <button
                 key={article.id}
                 onClick={() => setEditing(article)}
-                className="card-interactive focus-ring flex flex-col items-start px-6 py-5 text-left"
+                className={cn(
+                  'card-interactive focus-ring flex flex-col items-start px-6 py-5 text-left',
+                  // `.card-interactive` composes `.card`, whose 14px radius is
+                  // applied via @apply and so is not a class twMerge can see —
+                  // the override has to be listed here explicitly.
+                  REFINED_CARD,
+                )}
               >
                 <IconTile icon={BookOpen} shape="square" />
                 <span className="mt-4 line-clamp-2 text-body font-medium text-ink">
@@ -127,9 +136,12 @@ export function KnowledgePage() {
                 <span className="mt-2 line-clamp-3 text-small text-ink-muted">
                   {article.content.slice(0, 140)}
                 </span>
-                <span className="mt-4 flex flex-wrap items-center gap-1.5">
-                  <Badge tone="brand">{humanizeEnum(article.category)}</Badge>
-                  {article.status !== 'PUBLISHED' && <Badge>{humanizeEnum(article.status)}</Badge>}
+                {/* The category is flattened alongside the status: leaving one
+                    pill beside one bare label inside the same tile reads as an
+                    unfinished state rather than a deliberate distinction. */}
+                <span className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                  <StatusText tone="brand">{humanizeEnum(article.category)}</StatusText>
+                  {article.status !== 'PUBLISHED' && <EnumStatusText value={article.status} />}
                 </span>
                 <span className="mt-3 block text-caption text-ink-faint">
                   Updated {timeAgo(article.updatedAt)} · v{article.version}
@@ -137,7 +149,7 @@ export function KnowledgePage() {
               </button>
             ))}
           </div>
-          <Card className="mt-6">
+          <Card className={cn('mt-6', REFINED_CARD)}>
             <Pagination
               className="border-t-0"
               pagination={articles.data.pagination}
