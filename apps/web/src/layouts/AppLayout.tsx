@@ -61,13 +61,18 @@ export function AppLayout() {
    * as it is today; the corners animate as the user crosses between the two
    * groups, because the elements themselves persist across that navigation.
    *
-   * That trade-off was chosen deliberately, but the list is now five of the
+   * That trade-off was chosen deliberately, but the list is now six of the
    * eight authenticated routes. Past the halfway mark the scoping costs more
    * than it saves: styling the controls once and deleting this list would give
    * every page the same chrome and remove the animation entirely.
+   *
+   * `conversations` is here so a call's detail page carries the same header as
+   * the dashboard it was opened from — same search field, same controls, same
+   * radii. It was the one page that looked like a different product.
    */
   const softChrome = [
     ROUTES.dashboard,
+    ROUTES.conversations,
     ROUTES.customers,
     ROUTES.appointments,
     ROUTES.knowledge,
