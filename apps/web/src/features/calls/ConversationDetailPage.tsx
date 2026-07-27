@@ -15,7 +15,7 @@ import {
 import { useConversation } from '@/hooks/queries';
 import { ApiError } from '@/lib/api-client';
 import { cn, formatDateTime, formatDuration, formatPhone, humanizeEnum } from '@/lib/utils';
-import { Badge, EnumBadge } from '@/components/ui/badge';
+import { StatusText, EnumStatusText } from '@/components/ui/StatusText';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DetailRow } from '@/components/ui/DetailRow';
 import { IconTile } from '@/components/ui/IconTile';
@@ -110,12 +110,16 @@ export function ConversationDetailPage() {
               size="lg"
             />
             {data.customer?.fullName ?? formatPhone(call?.fromNumber)}
-            <EnumBadge value={data.outcome} />
+            {/* Flat colored text, via the shared `StatusText` that Customers,
+                Appointments and Knowledge already use — no fill, no border, no
+                pill. The status gives context; it should not outweigh the name
+                it sits beside. */}
+            <EnumStatusText value={data.outcome} />
             {data.isEmergency && (
-              <Badge tone="danger">
+              <StatusText tone="danger" className="inline-flex items-center gap-1">
                 <ShieldAlert className="h-3 w-3" aria-hidden />
                 Emergency
-              </Badge>
+              </StatusText>
             )}
           </span>
         }
