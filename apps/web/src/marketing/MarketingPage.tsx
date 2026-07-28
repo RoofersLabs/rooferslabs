@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Nav } from './sections/Nav';
+import { MarketingHeader } from './sections/MarketingHeader';
 import { Hero } from './sections/Hero';
 import { Workflow } from './sections/Workflow';
 import { Showcase } from './sections/Showcase';
@@ -31,7 +31,7 @@ export function MarketingPage() {
         Skip to content
       </a>
 
-      <Nav />
+      <MarketingHeader />
 
       <main id="main">
         <Hero />

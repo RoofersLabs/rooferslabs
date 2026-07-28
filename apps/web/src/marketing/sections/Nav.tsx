@@ -64,7 +64,9 @@ export function Nav() {
   return (
     <header
       className={cn(
-        'fixed inset-x-0 top-0 z-40 transition-[background-color,border-color,backdrop-filter] duration-300 ease-smooth',
+        // Positioning belongs to `MarketingHeader`, which pins the whole
+        // announcement-bar-plus-navigation stack to the top of the viewport.
+        'relative transition-[background-color,border-color,backdrop-filter] duration-300 ease-smooth',
         scrolled
           ? 'border-b border-mk-line bg-black/70 backdrop-blur-xl'
           : 'border-b border-transparent bg-transparent',
