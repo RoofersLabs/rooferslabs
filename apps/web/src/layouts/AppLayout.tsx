@@ -8,7 +8,6 @@ import {
   BookOpen,
   Bell,
   Settings,
-  HardHat,
   CreditCard,
 } from 'lucide-react';
 import { useAccess } from '@/auth/AccessProvider';
@@ -17,6 +16,7 @@ import { ROUTES } from '@/auth/stages';
 import { useUnreadCount } from '@/hooks/queries';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { InstallPwaButton } from '@/components/InstallPwaButton';
+import { LogoMark } from '@/components/Brand';
 import { Button } from '@/components/ui/button';
 import {
   Sidebar,
@@ -91,11 +91,11 @@ export function AppLayout() {
     <SidebarProvider className="bg-base">
       <Sidebar collapsible="offcanvas" className="border-line-subtle">
         <SidebarHeader className="h-16 flex-row items-center gap-2.5 px-5 py-0">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-ink-on-brand shadow-button">
-            <HardHat className="h-5 w-5" aria-hidden />
-          </span>
+          <LogoMark className="h-[13px] text-brand-950" />
           <div className="min-w-0">
-            <p className="truncate text-body font-bold text-ink">RoofersLabs</p>
+            <p className="truncate text-body font-semibold tracking-[-0.02em] text-ink">
+              rooferslabs
+            </p>
             {company && <p className="truncate text-caption text-ink-faint">{company.name}</p>}
           </div>
         </SidebarHeader>

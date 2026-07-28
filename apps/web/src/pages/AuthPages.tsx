@@ -1,7 +1,7 @@
 import { SignIn, SignUp } from '@clerk/clerk-react';
 import { Link, useLocation } from 'react-router-dom';
-import { HardHat } from 'lucide-react';
 import { ROUTES } from '@/auth/stages';
+import { Logo } from '@/components/Brand';
 
 /** Shared centered shell for the Clerk auth widgets. */
 function AuthShell({ children }: { children: React.ReactNode }) {
@@ -10,12 +10,9 @@ function AuthShell({ children }: { children: React.ReactNode }) {
       <Link
         to={ROUTES.marketing}
         className="focus-ring mb-8 flex items-center gap-2.5 rounded-md"
-        aria-label="RoofersLabs home"
+        aria-label="rooferslabs home"
       >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent text-ink-on-brand shadow-button">
-          <HardHat className="h-5 w-5" aria-hidden />
-        </span>
-        <span className="text-h5 font-bold text-ink">RoofersLabs</span>
+        <Logo size="lg" className="text-brand-950" />
       </Link>
       {children}
     </div>

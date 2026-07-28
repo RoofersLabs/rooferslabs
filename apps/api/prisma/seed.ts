@@ -14,7 +14,7 @@ const prisma = new PrismaClient();
 const DEMO_SLUG = 'summit-roofing-co';
 
 async function main(): Promise<void> {
-  console.log('🌱 Seeding RoofersLabs demo data…');
+  console.log('🌱 Seeding rooferslabs demo data…');
 
   const company = await prisma.company.upsert({
     where: { slug: DEMO_SLUG },

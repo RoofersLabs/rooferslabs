@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { HardHat } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/auth/stages';
+import { Logo } from '@/components/Brand';
 
 /**
  * The shell for authenticated pages that sit outside the sidebar: onboarding,
@@ -27,10 +27,7 @@ export function StandaloneLayout({
 }) {
   const brand = (
     <>
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-ink-on-brand shadow-button">
-        <HardHat className="h-5 w-5" aria-hidden />
-      </span>
-      <span className="text-body font-bold text-ink">RoofersLabs</span>
+      <Logo size="md" className="text-brand-950" />
     </>
   );
 
@@ -47,7 +44,7 @@ export function StandaloneLayout({
             <Link
               to={ROUTES.marketing}
               className="focus-ring flex items-center gap-2.5 rounded-md"
-              aria-label="RoofersLabs home"
+              aria-label="rooferslabs home"
             >
               {brand}
             </Link>

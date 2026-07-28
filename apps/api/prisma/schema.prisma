@@ -317,7 +317,7 @@ model PushSubscription {
 /// Billing state for a tenant, mirrored from Stripe by the webhook handler.
 /// Stripe is the source of truth; this table is a local read-model so that
 /// request-time authorization never depends on an outbound API call.
-/// A private operational note about a company, written by RoofersLabs staff.
+/// A private operational note about a company, written by rooferslabs staff.
 /// Never exposed through any customer-facing endpoint — the admin controller is
 /// the only route that reads or writes it.
 model CompanyNote {
@@ -378,7 +378,7 @@ enum UserRole {
   MEMBER
 }
 
-/// Authority over the platform itself, held by RoofersLabs staff. Separate from
+/// Authority over the platform itself, held by rooferslabs staff. Separate from
 /// UserRole, which is authority inside one company — every customer is a
 /// UserRole.OWNER, so that role can never gate the internal admin portal.
 enum PlatformRole {

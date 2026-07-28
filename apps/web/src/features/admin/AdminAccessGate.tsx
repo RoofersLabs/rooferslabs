@@ -1,7 +1,8 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
-import { ShieldAlert, HardHat } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 import { useAccess } from '@/auth/AccessProvider';
+import { LogoMark } from '@/components/Brand';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { IconTile } from '@/components/ui/IconTile';
@@ -21,9 +22,7 @@ import { resolveAdminAccess } from './adminAccess';
 function AdminLoading({ label }: { label: string }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-base px-4">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent text-ink-on-brand shadow-button">
-        <HardHat className="h-5 w-5" aria-hidden />
-      </span>
+      <LogoMark className="h-5 text-brand-950" />
       <div className="flex items-center gap-2.5 text-ink-muted">
         <Spinner className="h-4 w-4" />
         <p className="text-small">{label}</p>
@@ -50,10 +49,10 @@ function AdminAccessDenied({ email }: { email: string | null }) {
         <h1 className="mt-5 text-h4 text-ink">Access denied</h1>
         <p className="mt-2 max-w-sm text-body leading-6 text-ink-muted">
           {email ? <span className="font-medium text-ink">{email}</span> : 'This account'} is not
-          authorized to use the RoofersLabs Admin Portal. It is restricted to RoofersLabs staff.
+          authorized to use the rooferslabs Admin Portal. It is restricted to rooferslabs staff.
         </p>
         <p className="mt-3 max-w-sm text-small text-ink-faint">
-          If you are a RoofersLabs customer, your dashboard is at{' '}
+          If you are a rooferslabs customer, your dashboard is at{' '}
           <a
             className="focus-ring rounded-xs text-accent transition-colors duration-fast hover:text-accent-hover"
             href="https://rooferslabs.com/dashboard"

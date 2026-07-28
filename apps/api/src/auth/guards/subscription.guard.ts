@@ -46,7 +46,7 @@ export class SubscriptionGuard implements CanActivate {
 
     throw new DomainException(
       ApiErrorCode.SUBSCRIPTION_REQUIRED,
-      'An active subscription is required to use RoofersLabs. Please complete payment to continue.',
+      'An active subscription is required to use rooferslabs. Please complete payment to continue.',
       HttpStatus.PAYMENT_REQUIRED,
     );
   }

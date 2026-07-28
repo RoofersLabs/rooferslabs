@@ -1,5 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#1E40AF"/>
-  <path d="M32 14 L54 36 L46 36 L46 50 L18 50 L18 36 L10 36 Z" fill="#ffffff"/>
-  <rect x="40" y="18" width="6" height="10" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="rooferslabs">
+  <style>
+    /* The tab strip is the one surface the brand cannot choose. Navy on a light
+       strip, white on a dark one — same geometry either way. */
+    path { fill: #081C3A }
+    @media (prefers-color-scheme: dark) { path { fill: #FFFFFF } }
+  </style>
+  <g transform="translate(3 21.34) scale(0.06216)">
+    <path d="M373 0H817L447 343H0Z"/>
+    <path d="M555 343L750 159L933 343Z"/>
+  </g>
 </svg>

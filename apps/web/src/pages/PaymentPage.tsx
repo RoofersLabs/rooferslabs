@@ -49,7 +49,7 @@ export function PaymentPage() {
     <StandaloneLayout>
       <PageHeader
         title="Choose your plan"
-        description="A subscription is required to use RoofersLabs. You can change or cancel it at any time."
+        description="A subscription is required to use rooferslabs. You can change or cancel it at any time."
       />
 
       {params.get('checkout') === 'cancelled' && (

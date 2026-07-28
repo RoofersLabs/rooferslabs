@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import { LogoMark } from '@/components/Brand';
 import { Container } from '../components/Container';
 
 const LINKS = [
@@ -17,7 +18,10 @@ export function Footer() {
     <footer className="border-t border-mk-line bg-black py-6 sm:py-7">
       <Container>
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between sm:gap-6">
-          <p className="text-[13px] text-white/45">&copy; 2026 RoofersLabs</p>
+          <p className="flex items-center gap-2.5 text-[13px] text-white/45">
+            <LogoMark className="h-[10px] text-white/70" />
+            &copy; 2026 rooferslabs
+          </p>
 
           <nav
             aria-label="Footer"

@@ -11,7 +11,7 @@ self.addEventListener('push', (event) => {
     payload = { message: event.data ? event.data.text() : '' };
   }
 
-  const title = payload.title || 'RoofersLabs';
+  const title = payload.title || 'rooferslabs';
   const options = {
     body: payload.message || '',
     icon: '/icons/icon-192.png',

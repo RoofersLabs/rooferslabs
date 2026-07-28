@@ -6,7 +6,7 @@ const CAPABILITIES = [
     label: 'Answer',
     title: 'Every call is picked up instantly',
     detail:
-      'RoofersLabs answers in your company’s name, follows your greeting, and stays available after hours.',
+      'rooferslabs answers in your company’s name, follows your greeting, and stays available after hours.',
   },
   {
     label: 'Qualify',

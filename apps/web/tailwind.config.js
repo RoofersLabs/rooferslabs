@@ -1,5 +1,5 @@
 /**
- * RoofersLabs Tailwind theme.
+ * rooferslabs Tailwind theme.
  *
  * Two palettes live here on purpose, and they must not be mixed:
  *
@@ -22,7 +22,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primitive RoofersLabs blue scale — also re-themes legacy `brand-*`.
+        // Primitive rooferslabs blue scale — also re-themes legacy `brand-*`.
         brand: {
           50: 'var(--brand-50)',
           100: 'var(--brand-100)',
@@ -34,6 +34,7 @@ export default {
           700: 'var(--brand-700)',
           800: 'var(--brand-800)',
           900: 'var(--brand-900)',
+          950: 'var(--brand-950)',
         },
         // Teal — the brand's secondary accent.
         teal: {
@@ -166,7 +167,7 @@ export default {
           fg: '#FFFFFF',
           secondary: 'rgba(255,255,255,0.70)',
           muted: 'rgba(255,255,255,0.45)',
-          // The RoofersLabs blue ramp, tuned for a black canvas. 600 carries
+          // The rooferslabs blue ramp, tuned for a black canvas. 600 carries
           // white text at 5.56:1; 400 reads 7.80:1 as link text.
           'accent-700': '#0E3996',
           accent: '#2B5CE6',

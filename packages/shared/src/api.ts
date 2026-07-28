@@ -1,7 +1,7 @@
 /**
  * Standard API response contract.
  *
- * Every RoofersLabs API response — success or error — follows one of these two
+ * Every rooferslabs API response — success or error — follows one of these two
  * shapes, so clients can consume any endpoint without bespoke parsing.
  */
 

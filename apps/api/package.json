@@ -2,7 +2,7 @@
   "name": "@rooferslabs/api",
   "version": "0.1.0",
   "private": true,
-  "description": "RoofersLabs backend API (NestJS)",
+  "description": "rooferslabs backend API (NestJS)",
   "scripts": {
     "build": "nest build",
     "dev": "nest start --watch",

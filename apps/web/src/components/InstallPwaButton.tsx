@@ -42,14 +42,14 @@ export function InstallPwaButton({ className }: { className?: string }) {
         size="sm"
         className={className}
         onClick={onClick}
-        aria-label="Add RoofersLabs to your Home Screen"
+        aria-label="Add rooferslabs to your Home Screen"
       >
         <Download className="h-4 w-4" aria-hidden />
         <span className="hidden sm:inline">Add to Home Screen</span>
         <span className="sm:hidden">Install</span>
       </Button>
 
-      <Modal open={showModal} onClose={() => setShowModal(false)} title="Install RoofersLabs">
+      <Modal open={showModal} onClose={() => setShowModal(false)} title="Install rooferslabs">
         {strategy === 'ios' ? (
           <IosInstructions />
         ) : strategy === 'mobile-help' ? (
@@ -89,7 +89,7 @@ function MobileInstructions() {
         Tap <strong>Install app</strong> or <strong>Add to Home screen</strong>.
       </Step>
       <Step icon={<Download className="h-4 w-4" aria-hidden />}>
-        Confirm. RoofersLabs will open full-screen from your Home Screen, and you’ll stay signed in.
+        Confirm. rooferslabs will open full-screen from your Home Screen, and you’ll stay signed in.
       </Step>
     </ol>
   );
@@ -106,7 +106,7 @@ function IosInstructions() {
         Scroll down and tap <strong>Add to Home Screen</strong>.
       </Step>
       <Step icon={<Download className="h-4 w-4" aria-hidden />}>
-        Tap <strong>Add</strong>. RoofersLabs will appear on your Home Screen like a native app.
+        Tap <strong>Add</strong>. rooferslabs will appear on your Home Screen like a native app.
       </Step>
     </ol>
   );
@@ -137,13 +137,13 @@ function DesktopInstall({
         <div className="min-w-0 flex-1">
           <p className="text-body font-semibold text-ink">On your phone (recommended)</p>
           <p className="mt-0.5 text-small text-ink-muted">
-            Scan this code with your phone’s camera, sign in, then add RoofersLabs to your Home
+            Scan this code with your phone’s camera, sign in, then add rooferslabs to your Home
             Screen. You’ll get lead alerts wherever you are — even on the roof.
           </p>
           {qrDataUrl && (
             <img
               src={qrDataUrl}
-              alt="QR code that opens RoofersLabs on your phone"
+              alt="QR code that opens rooferslabs on your phone"
               className="mt-3 h-40 w-40 rounded-lg border border-line-subtle"
             />
           )}
@@ -158,7 +158,7 @@ function DesktopInstall({
           <div className="min-w-0 flex-1">
             <p className="text-body font-semibold text-ink">On this computer</p>
             <p className="mt-0.5 text-small text-ink-muted">
-              Install RoofersLabs as a desktop app for quick access from your dock or taskbar.
+              Install rooferslabs as a desktop app for quick access from your dock or taskbar.
             </p>
             <Button className="mt-3" size="sm" variant="secondary" onClick={() => void onInstall()}>
               <Download className="h-4 w-4" aria-hidden />

@@ -179,7 +179,7 @@ export class CallProcessingService {
           body:
             `${kind} — ${who}${callback ? ` (${callback})` : ''}. ` +
             `${structured.summary}`.slice(0, 480) +
-            ' — via RoofersLabs',
+            ' — via rooferslabs',
         });
       }
 

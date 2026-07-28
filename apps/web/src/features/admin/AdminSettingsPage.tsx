@@ -51,7 +51,7 @@ export function AdminSettingsPage() {
         </CardHeader>
         <CardContent>
           <dl className="divide-y divide-line-subtle">
-            <DetailRow label="Application" value="RoofersLabs Admin" />
+            <DetailRow label="Application" value="rooferslabs Admin" />
             <DetailRow label="Version" value={__APP_VERSION__} />
             <DetailRow label="Mode" value={import.meta.env.MODE} />
             <DetailRow label="API base URL" value={config.apiBaseUrl || 'same origin'} />

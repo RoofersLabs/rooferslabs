@@ -83,7 +83,7 @@ describe('provisionForCompany', () => {
     expect(twilio.searchAvailableLocalNumber).toHaveBeenCalledWith('512');
     expect(twilio.purchaseNumber).toHaveBeenCalledWith({
       phoneNumber: PURCHASED.phoneNumber,
-      friendlyName: 'Acme Roofing — RoofersLabs AI line',
+      friendlyName: 'Acme Roofing — rooferslabs AI line',
     });
     expect(repo.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -170,7 +170,7 @@ describe('provisionForCompany', () => {
     expect(twilio.listOwnedNumbers).toHaveBeenCalled();
     expect(twilio.configureNumberWebhooks).toHaveBeenCalledWith(
       OWNED.sid,
-      'Acme Roofing — RoofersLabs AI line',
+      'Acme Roofing — rooferslabs AI line',
     );
     expect(repo.create).toHaveBeenCalledWith(
       expect.objectContaining({

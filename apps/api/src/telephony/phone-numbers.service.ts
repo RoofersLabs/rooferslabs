@@ -67,8 +67,8 @@ export class PhoneNumbersService {
     }
 
     const friendlyName = options.companyName
-      ? `${options.companyName} — RoofersLabs AI line`
-      : 'RoofersLabs AI line';
+      ? `${options.companyName} — rooferslabs AI line`
+      : 'rooferslabs AI line';
 
     // 1. Adopt a number the Twilio account already owns but that no company is
     //    using — this heals a provision interrupted between purchase and

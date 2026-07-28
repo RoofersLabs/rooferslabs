@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useMotionValueEvent, useReducedMotion, useScroll } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { Logo } from '@/components/Brand';
 import { Button } from '../components/Button';
 import { Container } from '../components/Container';
-import { Wordmark } from '../components/Wordmark';
 import { transition } from '../motion';
 
 const LINKS = [
@@ -78,8 +78,8 @@ export function Nav() {
             to="/"
             className="rounded-md text-white transition-opacity duration-200 ease-smooth hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mk-accent-ring focus-visible:ring-offset-4 focus-visible:ring-offset-black"
           >
-            <Wordmark />
-            <span className="sr-only">RoofersLabs home</span>
+            <Logo size="sm" />
+            <span className="sr-only">rooferslabs home</span>
           </Link>
 
           <nav

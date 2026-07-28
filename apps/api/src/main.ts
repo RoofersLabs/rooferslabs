@@ -103,7 +103,7 @@ async function bootstrap(): Promise<void> {
 
   // OpenAPI / Swagger documentation at /docs.
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('RoofersLabs API')
+    .setTitle('rooferslabs API')
     .setDescription('AI-Powered Front Office Platform for roofing companies (r1 echo).')
     .setVersion('1.0.0')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
@@ -115,7 +115,7 @@ async function bootstrap(): Promise<void> {
 
   await app.listen(config.api.port, '0.0.0.0');
   logger.log(
-    `RoofersLabs API listening on ${config.api.publicUrl} (env: ${config.env}) — docs at /docs`,
+    `rooferslabs API listening on ${config.api.publicUrl} (env: ${config.env}) — docs at /docs`,
     'Bootstrap',
   );
 }

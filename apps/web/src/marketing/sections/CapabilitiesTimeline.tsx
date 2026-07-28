@@ -165,7 +165,7 @@ export function CapabilitiesTimeline() {
               <span className="block text-white/70">Leads captured</span>
             </h2>
             <p className="mt-6 max-w-[58ch] text-[15px] leading-[1.65] text-mk-secondary sm:text-[16.5px]">
-              RoofersLabs turns calls into booked work, emergency context, and clean follow-up
+              rooferslabs turns calls into booked work, emergency context, and clean follow-up
               records without adding another person to the phones.
             </p>
             <a
@@ -180,7 +180,7 @@ export function CapabilitiesTimeline() {
         <Reveal delay={0.08} className="mt-14 sm:mt-16">
           <div
             role="region"
-            aria-label="RoofersLabs capabilities"
+            aria-label="rooferslabs capabilities"
             tabIndex={0}
             className="-mx-6 overflow-x-auto overscroll-x-contain px-6 [-ms-overflow-style:none] [-webkit-overflow-scrolling:touch] [scrollbar-width:none] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mk-accent-ring focus-visible:ring-offset-4 focus-visible:ring-offset-black sm:-mx-8 sm:px-8 lg:mx-0 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden"
           >

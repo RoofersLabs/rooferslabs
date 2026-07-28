@@ -1,7 +1,7 @@
 /*
- * RoofersLabs design tokens — the single source of truth for color, type,
+ * rooferslabs design tokens — the single source of truth for color, type,
  * spacing, radius, elevation and motion. Ported verbatim from the
- * "RoofersLabs Design System" Claude Design project (the approved source of
+ * "rooferslabs Design System" Claude Design project (the approved source of
  * truth). Tailwind (tailwind.config.js) maps utilities onto these variables;
  * nothing in the app should hardcode a raw color/shadow/radius.
  *
@@ -17,7 +17,7 @@
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   /* ── Primitive scales (theme-independent) ─────────────────────────────── */
-  /* Brand — RoofersLabs blue. 300/400/600 interpolated between the anchors. */
+  /* Brand — rooferslabs blue. 300/400/600 interpolated between the anchors. */
   --brand-50: #f4f7ff;
   --brand-100: #e8eeff;
   --brand-200: #c7d6ff;
@@ -28,6 +28,9 @@
   --brand-700: #0e3996;
   --brand-800: #0b2f7c;
   --brand-900: #092865;
+  /* The identity navy. This is the logo's colour and the darkest brand value;
+     it is deliberately not an interactive one — actions stay on --brand-700. */
+  --brand-950: #081c3a;
   --brand-teal: #0f8b7d;
   --brand-teal-dark: #0b6d62;
   --brand-teal-subtle: #e6f5f3;

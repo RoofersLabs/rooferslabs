@@ -14,7 +14,7 @@ export enum UserRole {
 }
 
 /**
- * Authority over the RoofersLabs platform itself, held by staff — deliberately
+ * Authority over the rooferslabs platform itself, held by staff — deliberately
  * separate from `UserRole`, which is authority *inside* one roofing company.
  *
  * Every customer is a `UserRole.OWNER` (it is the default assigned at signup),
@@ -25,7 +25,7 @@ export enum UserRole {
 export enum PlatformRole {
   /** No access to the admin portal. The default for every account. */
   NONE = 'NONE',
-  /** RoofersLabs staff owner: full read access across every tenant. */
+  /** rooferslabs staff owner: full read access across every tenant. */
   OWNER = 'OWNER',
 }
 

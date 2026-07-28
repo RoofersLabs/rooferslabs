@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
+import { LogoMark } from '@/components/Brand';
 import { cn } from '@/lib/utils';
 import { transition } from '../motion';
 import type { CallStatus } from './data';
@@ -133,9 +134,7 @@ export function AppFrame({
       {/* Title bar */}
       <div className="flex h-12 shrink-0 items-center gap-4 border-b border-mk-line px-4">
         <div className="flex items-center gap-2 text-white">
-          <svg viewBox="0 0 64 64" aria-hidden="true" className="h-4 w-4" fill="currentColor">
-            <path d="M32 14 L54 36 L46 36 L46 50 L18 50 L18 36 L10 36 Z" />
-          </svg>
+          <LogoMark className="h-[11px]" />
           <span className="text-[12.5px] font-semibold tracking-[-0.01em]">Summit Roofing</span>
         </div>
         <div className="ml-auto hidden items-center gap-2 rounded-md border border-mk-line bg-white/[0.02] px-2.5 py-1 sm:flex">

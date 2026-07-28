@@ -1,15 +1,24 @@
 import { Loader2 } from 'lucide-react';
+import { LogoMark } from '@/components/Brand';
 import { cn } from '@/lib/utils';
 
 export function Spinner({ className }: { className?: string }) {
   return <Loader2 className={cn('h-5 w-5 animate-spin text-accent', className)} aria-hidden />;
 }
 
+/**
+ * The whole-page wait. The mark carries it rather than a bare spinner: this is
+ * the first thing a returning user sees while the session resolves, and an
+ * unbranded screen there is the one moment the product looks like nobody's.
+ */
 export function FullScreenSpinner({ label }: { label?: string }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-base">
-      <Spinner className="h-8 w-8" />
-      {label && <p className="text-body text-ink-muted">{label}</p>}
+    <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-base">
+      <LogoMark className="h-5 text-brand-950" />
+      <div className="flex items-center gap-2.5">
+        <Spinner className="h-4 w-4" />
+        {label && <p className="text-body text-ink-muted">{label}</p>}
+      </div>
     </div>
   );
 }

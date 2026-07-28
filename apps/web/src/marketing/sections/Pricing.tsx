@@ -103,7 +103,7 @@ export function Pricing() {
               the same strings as the column headers, so nothing is duplicated
               into a second hidden copy of the table. */}
           <table
-            aria-label="Traditional receptionist compared with RoofersLabs AI"
+            aria-label="Traditional receptionist compared with rooferslabs AI"
             className="w-full border-collapse text-left max-md:block"
           >
             <thead className="max-md:hidden">
@@ -124,7 +124,7 @@ export function Pricing() {
                   scope="col"
                   className="border-x border-mk-line bg-white/[0.03] px-4 py-4 text-[12.5px] font-medium text-white sm:px-6 sm:text-[13.5px]"
                 >
-                  RoofersLabs AI
+                  rooferslabs AI
                 </th>
               </tr>
             </thead>
@@ -148,7 +148,7 @@ export function Pricing() {
                   </td>
                   <td className="border-x border-mk-line bg-white/[0.03] px-4 py-4 align-top sm:px-6 max-md:mt-3 max-md:block max-md:rounded-lg max-md:border-x-0 max-md:bg-white/[0.05] max-md:p-3">
                     <span className="mb-1 hidden text-[11px] uppercase tracking-[0.06em] text-mk-accent-fg max-md:block">
-                      RoofersLabs AI
+                      rooferslabs AI
                     </span>
                     <span className="flex gap-2 text-[12.5px] leading-[1.5] text-white sm:text-[14px]">
                       <Check />

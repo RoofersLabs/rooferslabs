@@ -42,7 +42,7 @@ export class StripeService {
       // change payload shapes under a running deployment.
       apiVersion: '2025-08-27.basil',
       typescript: true,
-      appInfo: { name: 'RoofersLabs', version: '1.0.0' },
+      appInfo: { name: 'rooferslabs', version: '1.0.0' },
       maxNetworkRetries: 2,
     });
     return this.client;

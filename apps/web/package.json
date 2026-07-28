@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "RoofersLabs frontend PWA (React + Vite)",
+  "description": "rooferslabs frontend PWA (React + Vite)",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

@@ -17,11 +17,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'RoofersLabs',
-        short_name: 'RoofersLabs',
+        name: 'rooferslabs',
+        short_name: 'rooferslabs',
         description: 'AI Front Office for roofing companies — never miss a call.',
-        theme_color: '#0E3996',
-        background_color: '#ffffff',
+        theme_color: '#081C3A',
+        background_color: '#FFFFFF',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
@@ -36,8 +36,8 @@ export default defineConfig({
         // anyone who installed the earlier build.
         id: '/',
         icons: [
-          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
           {
             src: '/icons/icon-512-maskable.png',
             sizes: '512x512',
