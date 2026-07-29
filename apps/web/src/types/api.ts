@@ -202,6 +202,8 @@ export interface CheckoutHandle {
   provider: PaymentProvider;
   url: string | null;
   transactionId: string | null;
+  /** Where the server wants the browser sent once payment succeeds. */
+  successUrl: string;
 }
 
 export interface Session {

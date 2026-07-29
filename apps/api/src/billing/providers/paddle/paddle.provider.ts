@@ -162,13 +162,21 @@ export class PaddleProvider implements BillingProvider {
    * own price) is what stops a tenant from checking out at a price we did not
    * offer them.
    *
-   * `checkout.url` is Paddle's default payment link with the transaction
-   * appended, and is returned alongside the id so a client that cannot run
-   * Paddle.js still has a way through.
+   * The response's `checkout.url` is the configured default payment link with
+   * `?_ptxn=` appended, and is returned alongside the id so a client that cannot
+   * run Paddle.js still has a way through.
    *
-   * Note on trials: Paddle attaches a free trial to the *price*, not to the
-   * checkout, so `input.trialPeriodDays` cannot be honoured here. Trials are
-   * configured on the price in the Paddle dashboard — see docs/billing.md.
+   * Two Paddle behaviours worth knowing, both different from Stripe:
+   *
+   *  - **No success URL here.** A transaction's `checkout.url` field sets the
+   *    *checkout page domain*, not a post-payment redirect — writing our billing
+   *    URL into it would produce a payment link pointing at a page that cannot
+   *    take a payment. It is deliberately left unset so Paddle uses the approved
+   *    default payment link, and the success URL travels on the handle for the
+   *    browser to pass to Paddle.js instead.
+   *  - **No trials here.** Paddle attaches a free trial to the *price*, so
+   *    `input.trialPeriodDays` cannot be honoured. Trials are configured on the
+   *    price in the Paddle dashboard — see docs/billing.md.
    */
   async createCheckout(input: CreateCheckoutInput): Promise<CheckoutHandle> {
     const priceId = this.priceIdFor(input.selection);
@@ -187,13 +195,13 @@ export class PaddleProvider implements BillingProvider {
         // Mirrored onto the resulting subscription, which is how every later
         // webhook resolves the tenant.
         customData: { companyId: input.companyId },
-        checkout: { url: input.successUrl },
       });
 
       return {
         provider: this.provider,
         url: transaction.checkout?.url ?? null,
         transactionId: transaction.id,
+        successUrl: input.successUrl,
       };
     } catch (error) {
       throw this.wrap(error, 'start a checkout');

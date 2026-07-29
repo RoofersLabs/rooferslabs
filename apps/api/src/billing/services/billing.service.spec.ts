@@ -99,8 +99,9 @@ function makeService(
     customerExists: jest.fn().mockResolvedValue(true),
     createCheckout: jest.fn().mockResolvedValue({
       provider: PaymentProvider.PADDLE,
-      url: 'https://pay.example.com/?_ptxn=txn_1',
+      url: 'https://pay.example.com/checkout?_ptxn=txn_1',
       transactionId: 'txn_1',
+      successUrl: 'https://app.example.com/billing?checkout=success',
     }),
     createPortalSession: jest.fn().mockResolvedValue({ url: 'https://portal.example.com' }),
     getSubscription: jest.fn().mockResolvedValue(makeProviderSubscription()),

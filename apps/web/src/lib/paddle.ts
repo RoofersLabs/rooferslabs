@@ -55,7 +55,12 @@ export async function openCheckout(handle: CheckoutHandle, config: BillingConfig
   if (handle.provider === PaymentProvider.PADDLE && handle.transactionId && config.clientToken) {
     const paddle = await loadPaddle(config);
     if (paddle) {
-      paddle.Checkout.open({ transactionId: handle.transactionId });
+      paddle.Checkout.open({
+        transactionId: handle.transactionId,
+        // Paddle takes the post-payment destination from the browser rather
+        // than from the transaction, so the server-chosen URL is applied here.
+        settings: { successUrl: handle.successUrl },
+      });
       return;
     }
     // Paddle.js failed to load — an ad blocker, an offline CDN. Fall through to

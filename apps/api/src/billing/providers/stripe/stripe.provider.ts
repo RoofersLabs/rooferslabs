@@ -186,8 +186,14 @@ export class StripeProvider implements BillingProvider {
     if (!session.url) {
       throw new ExternalServiceError('Stripe did not return a checkout URL.');
     }
-    // Stripe's Checkout is a hosted page, so there is no client-side handle.
-    return { provider: this.provider, url: session.url, transactionId: null };
+    // Stripe's Checkout is a hosted page, so there is no client-side handle —
+    // and the success URL was already baked into the session above.
+    return {
+      provider: this.provider,
+      url: session.url,
+      transactionId: null,
+      successUrl: input.successUrl,
+    };
   }
 
   async createPortalSession(input: {

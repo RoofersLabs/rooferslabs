@@ -45,7 +45,13 @@ export function CheckoutPage() {
           );
           return;
         }
-        paddle.Checkout.open({ transactionId });
+        paddle.Checkout.open({
+          transactionId,
+          // This transaction came from one of Paddle's own emails rather than
+          // from our checkout call, so there is no server-chosen destination to
+          // honour — send the tenant to its billing page to see the result.
+          settings: { successUrl: `${window.location.origin}${ROUTES.billing}?checkout=success` },
+        });
       })
       .catch(() => {
         if (!cancelled) setError('The payment form could not be loaded. Please try again.');

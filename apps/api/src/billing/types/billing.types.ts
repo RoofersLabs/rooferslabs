@@ -64,6 +64,16 @@ export interface CheckoutHandle {
   provider: PaymentProvider;
   url: string | null;
   transactionId: string | null;
+  /**
+   * Where to send the browser once payment succeeds.
+   *
+   * Carried on the handle because providers disagree about who sets it: Stripe
+   * bakes it into the hosted session server-side, while Paddle takes it from
+   * the browser SDK at open time. Deciding it here keeps the destination under
+   * server control either way, rather than leaving it to a dashboard setting or
+   * to whatever the client feels like.
+   */
+  successUrl: string;
 }
 
 /**

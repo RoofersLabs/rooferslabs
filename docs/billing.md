@@ -345,6 +345,7 @@ Recorded for the Stripe → Paddle change, July 2026.
 | --------------- | ----------------------------------- | ----------------------------------------------------- |
 | Checkout        | Server-created hosted session + URL | Server-created **transaction**; browser opens it       |
 | Hosted page     | Fully hosted by Stripe              | **None** — you host the page running Paddle.js         |
+| Success URL     | Baked into the session server-side  | Passed by the **browser** via Paddle.js `settings`      |
 | Trials          | Per-checkout (`trial_period_days`)  | Per-**price**, in the dashboard                        |
 | Cancellation    | `cancel_at_period_end` flag         | A `scheduledChange` object; status stays `active`      |
 | Undo cancel     | Clear the flag                      | `PATCH` with `scheduledChange: null`                   |

@@ -17,7 +17,7 @@ import { RedisService } from '../../redis/redis.service';
 import { BILLING_PROVIDER, type BillingProvider } from '../interfaces/billing-provider.interface';
 import { BillingRepository } from '../repositories/billing.repository';
 import { InvoiceRepository } from '../repositories/invoice.repository';
-import type { PlanSelection, ProviderSubscription } from '../types/billing.types';
+import type { CheckoutHandle, PlanSelection, ProviderSubscription } from '../types/billing.types';
 
 /** The billing view the frontend renders and gates on. */
 export interface SubscriptionSummary {
@@ -227,10 +227,7 @@ export class BillingService {
    * returned handle is whatever the active provider offers — a URL to navigate
    * to, an id for its browser SDK, or both.
    */
-  async createCheckout(
-    companyId: string,
-    selection: PlanSelection,
-  ): Promise<{ provider: PaymentProvider; url: string | null; transactionId: string | null }> {
+  async createCheckout(companyId: string, selection: PlanSelection): Promise<CheckoutHandle> {
     const existing = await this.repo.findByCompanyId(companyId);
     if (existing && ACTIVE_SUBSCRIPTION_STATUSES.includes(existing.status as SubscriptionStatus)) {
       throw new BusinessRuleError(
