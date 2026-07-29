@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { CompanyStatus, OnboardingStep } from '@rooferslabs/shared';
 import type { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
-import { BillingService, type SubscriptionSummary } from '../billing/billing.service';
+import { BillingService, type SubscriptionSummary } from '../billing/services/billing.service';
 import { AppConfigService } from '../config/app-config.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';

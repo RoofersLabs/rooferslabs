@@ -17,11 +17,30 @@ import {
   queryKeys,
   useCancelSubscription,
   useCreatePortalSession,
+  useInvoices,
   useResumeSubscription,
   useSubscription,
 } from '@/hooks/queries';
 import { ApiError } from '@/lib/api-client';
 import { formatDate, humanizeEnum } from '@/lib/utils';
+
+/**
+ * Minor units → a readable amount.
+ *
+ * Money arrives as an integer number of cents and is divided only here, at the
+ * point of display — never in transit, and never in storage.
+ */
+function formatMoney(minorUnits: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(
+      minorUnits / 100,
+    );
+  } catch {
+    // An unrecognized currency code should degrade to a readable number rather
+    // than blanking the row.
+    return `${(minorUnits / 100).toFixed(2)} ${currency}`;
+  }
+}
 
 /** Plain-language explanation of each billing state the tenant can be in. */
 const STATUS_HELP: Partial<Record<SubscriptionStatus, string>> = {
@@ -45,6 +64,7 @@ export function BillingPage() {
   // Activation happens on the webhook, which can land after the browser is
   // redirected back, so poll until the subscription flips to active.
   const subscription = useSubscription({ pollUntilActive: returningFromCheckout });
+  const invoices = useInvoices();
   const portal = useCreatePortalSession();
   const cancel = useCancelSubscription();
   const resume = useResumeSubscription();
@@ -95,6 +115,9 @@ export function BillingPage() {
             </CardHeader>
             <dl className="divide-y divide-line-subtle border-t border-line-subtle px-6 py-2">
               <DetailRow label="Plan" value={data.plan ? humanizeEnum(data.plan) : '—'} />
+              {data.interval && (
+                <DetailRow label="Billed" value={humanizeEnum(data.interval) + 'ly'} />
+              )}
               <DetailRow
                 label={data.cancelAtPeriodEnd ? 'Access ends' : 'Renews on'}
                 value={formatDate(data.currentPeriodEnd)}
@@ -117,7 +140,7 @@ export function BillingPage() {
           {mutationError && <Alert tone="danger">{mutationError.message}</Alert>}
 
           <div className="flex flex-wrap gap-3">
-            {data.hasStripeCustomer && (
+            {data.hasBillingAccount && (
               <Button
                 variant="secondary"
                 loading={portal.isPending}
@@ -147,6 +170,57 @@ export function BillingPage() {
 
             {!isActive && <ButtonLink to={ROUTES.payment}>Choose a plan</ButtonLink>}
           </div>
+
+          {/* Payment history. Synchronized from the provider by webhook, so it
+              renders from our own database rather than an outbound call — the
+              page stays fast and keeps working if the provider is briefly
+              unreachable. Hidden entirely until there is something to show. */}
+          {invoices.data && invoices.data.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle as="h2">Payment history</CardTitle>
+              </CardHeader>
+              <div className="overflow-x-auto border-t border-line-subtle">
+                <table className="w-full text-small">
+                  <thead className="text-ink-muted">
+                    <tr className="border-b border-line-subtle">
+                      <th className="px-6 py-3 text-left font-medium">Date</th>
+                      <th className="px-6 py-3 text-left font-medium">Invoice</th>
+                      <th className="px-6 py-3 text-left font-medium">Status</th>
+                      <th className="px-6 py-3 text-right font-medium">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line-subtle">
+                    {invoices.data.map((invoice) => (
+                      <tr key={invoice.id}>
+                        <td className="px-6 py-3 text-ink">{formatDate(invoice.issuedAt)}</td>
+                        <td className="px-6 py-3 text-ink-muted">
+                          {invoice.invoiceUrl ? (
+                            <a
+                              href={invoice.invoiceUrl}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              className="focus-ring rounded-xs font-medium text-accent hover:text-accent-hover"
+                            >
+                              {invoice.number ?? 'View'}
+                            </a>
+                          ) : (
+                            (invoice.number ?? '—')
+                          )}
+                        </td>
+                        <td className="px-6 py-3">
+                          <EnumBadge value={invoice.status} />
+                        </td>
+                        <td className="px-6 py-3 text-right font-num text-ink">
+                          {formatMoney(invoice.amountDue, invoice.currency)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
         </div>
       ) : null}
 

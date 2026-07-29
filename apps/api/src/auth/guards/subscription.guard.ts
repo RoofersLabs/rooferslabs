@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, HttpStatus, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ApiErrorCode } from '@rooferslabs/shared';
-import { BillingService } from '../../billing/billing.service';
+import { BillingService } from '../../billing/services/billing.service';
 import {
   ALLOW_INACTIVE_SUBSCRIPTION_KEY,
   ALLOW_NO_COMPANY_KEY,

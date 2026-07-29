@@ -76,6 +76,14 @@ export enum ApiErrorCode {
    * — and access is not restricted while it applies.
    */
   PAYMENTS_DISABLED = 'PAYMENTS_DISABLED',
+  /**
+   * The billing operation was addressed to a provider that is not the active
+   * one (the API's PAYMENT_PROVIDER). Distinct from PAYMENTS_DISABLED: billing
+   * as a whole is on, but this particular processor is dormant.
+   */
+  BILLING_PROVIDER_DISABLED = 'BILLING_PROVIDER_DISABLED',
+  /** The active billing provider is missing the credentials it needs to run. */
+  BILLING_PROVIDER_UNCONFIGURED = 'BILLING_PROVIDER_UNCONFIGURED',
   COMPANY_NOT_FOUND = 'COMPANY_NOT_FOUND',
   CUSTOMER_NOT_FOUND = 'CUSTOMER_NOT_FOUND',
   CONVERSATION_NOT_FOUND = 'CONVERSATION_NOT_FOUND',

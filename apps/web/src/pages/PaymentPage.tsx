@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { SubscriptionPlan } from '@rooferslabs/shared';
+import { BillingInterval, SubscriptionPlan } from '@rooferslabs/shared';
 import { ROUTES } from '@/auth/stages';
-import { useCreateCheckoutSession } from '@/hooks/queries';
+import { useBillingConfig, useCreateCheckoutSession } from '@/hooks/queries';
 import { ApiError } from '@/lib/api-client';
+import { openCheckout } from '@/lib/paddle';
 import { StandaloneLayout } from '@/layouts/StandaloneLayout';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/button';
@@ -26,7 +28,7 @@ export const PLANS: { plan: SubscriptionPlan; name: string; price: string; blurb
 
 /**
  * The payment step. A tenant lands here once setup is finished and cannot reach
- * the application until Stripe Checkout completes successfully.
+ * the application until a subscription is active.
  *
  * There is no subscribed check here on purpose. This page used to redirect to
  * `/dashboard` when `/billing/subscription` reported active, while the route
@@ -38,12 +40,33 @@ export const PLANS: { plan: SubscriptionPlan; name: string; price: string; blurb
 export function PaymentPage() {
   const [params] = useSearchParams();
   const checkout = useCreateCheckoutSession();
+  const config = useBillingConfig();
+  const [openError, setOpenError] = useState<string | null>(null);
 
   const start = async (plan: SubscriptionPlan) => {
-    const { url } = await checkout.mutateAsync(plan);
-    // Stripe-hosted Checkout — a full navigation, not a client-side route.
-    window.location.assign(url);
+    setOpenError(null);
+    try {
+      const handle = await checkout.mutateAsync({ plan, interval: BillingInterval.MONTH });
+      // The checkout opens over this page rather than navigating away; payment
+      // completion arrives by webhook, so nothing here is treated as proof of
+      // payment. `config.data` is loaded by now in practice, and openCheckout
+      // falls back to the hosted URL when it is not.
+      await openCheckout(
+        handle,
+        config.data ?? { provider: handle.provider, clientToken: '', environment: 'sandbox' },
+      );
+    } catch (error) {
+      // The mutation renders its own error; this catches a failure to *open*
+      // the checkout, which would otherwise leave a dead button.
+      if (!(error instanceof ApiError)) {
+        setOpenError(
+          error instanceof Error ? error.message : 'Could not open the checkout. Please try again.',
+        );
+      }
+    }
   };
+
+  const error = openError ?? (checkout.isError ? (checkout.error as ApiError).message : null);
 
   return (
     <StandaloneLayout>
@@ -58,9 +81,9 @@ export function PaymentPage() {
         </Alert>
       )}
 
-      {checkout.isError && (
+      {error && (
         <Alert className="mb-6" tone="danger">
-          {(checkout.error as ApiError).message || 'Could not start checkout. Please try again.'}
+          {error || 'Could not start checkout. Please try again.'}
         </Alert>
       )}
 
@@ -77,7 +100,7 @@ export function PaymentPage() {
               loading={checkout.isPending}
               onClick={() => void start(p.plan)}
             >
-              {checkout.isPending ? 'Redirecting…' : `Subscribe to ${p.name}`}
+              {checkout.isPending ? 'Opening…' : `Subscribe to ${p.name}`}
             </Button>
           </Card>
         ))}

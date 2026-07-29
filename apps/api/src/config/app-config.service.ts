@@ -43,6 +43,10 @@ export class AppConfigService {
     return this.root.payments;
   }
 
+  get paddle(): AppConfig['paddle'] {
+    return this.root.paddle;
+  }
+
   get stripe(): AppConfig['stripe'] {
     return this.root.stripe;
   }

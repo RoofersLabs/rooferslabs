@@ -215,11 +215,41 @@ export enum AiVoice {
 }
 
 /**
+ * The payment processor a billing record belongs to.
+ *
+ * Persisted alongside every provider-issued identifier so a row is always
+ * self-describing: `providerCustomerId` is meaningless without knowing which
+ * system minted it. Exactly one provider is active at a time (the API's
+ * PAYMENT_PROVIDER), but historical rows from a previous one stay readable.
+ */
+export enum PaymentProvider {
+  PADDLE = 'PADDLE',
+  STRIPE = 'STRIPE',
+}
+
+/**
+ * How often a subscription renews.
+ *
+ * Only {@link BillingInterval.MONTH} is offered today. `YEAR` is modelled from
+ * the start so adding annual plans is a price-configuration change rather than
+ * a schema migration.
+ */
+export enum BillingInterval {
+  MONTH = 'MONTH',
+  YEAR = 'YEAR',
+}
+
+/**
  * Billing status of a company's subscription.
  *
- * Values mirror Stripe's `subscription.status` plus `NONE` for a tenant that
- * has never started checkout. Only `ACTIVE` and `TRIALING` grant access to the
- * application (see {@link ACTIVE_SUBSCRIPTION_STATUSES}).
+ * A provider-neutral superset: every processor's subscription states map onto
+ * these, plus `NONE` for a tenant that has never started checkout. Only
+ * `ACTIVE` and `TRIALING` grant access (see {@link ACTIVE_SUBSCRIPTION_STATUSES}).
+ *
+ * Some members are unreachable under some providers — Paddle has no notion of
+ * `INCOMPLETE` or `UNPAID`, for instance. That is deliberate: the enum is the
+ * union of what any provider can report, so switching providers never needs a
+ * data migration.
  */
 export enum SubscriptionStatus {
   NONE = 'NONE',
@@ -239,8 +269,22 @@ export const ACTIVE_SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = [
   SubscriptionStatus.TRIALING,
 ];
 
-/** Self-serve subscription plans available through Stripe Checkout. */
+/** Self-serve subscription plans available at checkout. */
 export enum SubscriptionPlan {
   STARTER = 'STARTER',
   PROFESSIONAL = 'PROFESSIONAL',
+}
+
+/**
+ * Lifecycle of a synchronized invoice.
+ *
+ * Mirrors the provider's billing document so the tenant can see its payment
+ * history without a round-trip to the provider on every page load.
+ */
+export enum InvoiceStatus {
+  DRAFT = 'DRAFT',
+  OPEN = 'OPEN',
+  PAID = 'PAID',
+  VOID = 'VOID',
+  UNCOLLECTIBLE = 'UNCOLLECTIBLE',
 }

@@ -5,7 +5,18 @@
  * and exposed as a strongly-typed, nested config object consumed via
  * {@link AppConfigService}. Secrets are never logged.
  */
-import { isPaymentsEnabled } from './payments.flag';
+import { BillingInterval, PaymentProvider, SubscriptionPlan } from '@rooferslabs/shared';
+import { activePaymentProvider, isPaymentsEnabled } from './payments.flag';
+
+/**
+ * Price identifiers for every plan/interval a provider offers.
+ *
+ * An empty string means "not sold": annual pricing ships unconfigured, and the
+ * provider adapter refuses a checkout for a combination with no price rather
+ * than inventing one. That is what makes annual plans a dashboard-and-env
+ * change rather than a code change.
+ */
+export type PriceTable = Record<SubscriptionPlan, Record<BillingInterval, string>>;
 
 export interface AppConfig {
   env: 'development' | 'test' | 'production';
@@ -30,28 +41,45 @@ export interface AppConfig {
   };
   payments: {
     /**
-     * Master switch for the billing feature. When false the Stripe client is
-     * never constructed, the webhook route is not registered, the billing
-     * endpoints answer 503, and the payment wall is open — every tenant reaches
-     * the product without a subscription.
+     * Master switch for the billing feature. When false no provider client is
+     * ever constructed, no webhook route is registered, the billing endpoints
+     * answer 503, and the payment wall is open — every tenant reaches the
+     * product without a subscription.
      */
     enabled: boolean;
-  };
-  stripe: {
-    secretKey: string;
-    webhookSecret: string;
-    /** Stripe Price IDs (recurring) backing each self-serve plan. */
-    prices: {
-      STARTER: string;
-      PROFESSIONAL: string;
-    };
-    /** Free-trial length applied to new checkout sessions; 0 disables trials. */
+    /**
+     * The processor that handles money. Exactly one is active; the others are
+     * compiled but never constructed and refuse every call.
+     */
+    provider: PaymentProvider;
+    /** Free-trial length applied to new checkouts; 0 disables trials. */
     trialPeriodDays: number;
     /**
      * Companies created strictly before this instant are exempt from the
      * payment wall. Null means no exemption: every tenant pays.
+     *
+     * Provider-independent by design — the exemption is a fact about when a
+     * tenant signed up, so it must survive a change of processor.
      */
     grandfatherBefore: Date | null;
+  };
+  paddle: {
+    apiKey: string;
+    /**
+     * The browser-side token Paddle.js initializes with. Public by design — it
+     * identifies the seller account and can only open checkouts, never read or
+     * mutate anything. Served to the frontend from /v1/billing/config rather
+     * than baked into the bundle, so rotating it does not need a rebuild.
+     */
+    clientToken: string;
+    webhookSecret: string;
+    environment: 'sandbox' | 'production';
+    prices: PriceTable;
+  };
+  stripe: {
+    secretKey: string;
+    webhookSecret: string;
+    prices: PriceTable;
   };
   openai: {
     apiKey: string;
@@ -128,15 +156,13 @@ export default (): AppConfig => {
     },
     payments: {
       enabled: isPaymentsEnabled(),
-    },
-    stripe: {
-      secretKey: process.env.STRIPE_SECRET_KEY ?? '',
-      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? '',
-      prices: {
-        STARTER: process.env.STRIPE_PRICE_STARTER ?? '',
-        PROFESSIONAL: process.env.STRIPE_PRICE_PROFESSIONAL ?? '',
-      },
-      trialPeriodDays: Number(process.env.STRIPE_TRIAL_PERIOD_DAYS ?? 0),
+      provider: activePaymentProvider(),
+      // BILLING_TRIAL_PERIOD_DAYS supersedes the Stripe-specific name it grew
+      // up under; the old variable is still read so an environment that has not
+      // been updated yet keeps the trial length it was configured with.
+      trialPeriodDays: Number(
+        process.env.BILLING_TRIAL_PERIOD_DAYS ?? process.env.STRIPE_TRIAL_PERIOD_DAYS ?? 0,
+      ),
       /**
        * Companies created strictly before this instant keep full access without
        * paying; everyone who signs up afterwards hits the payment wall as
@@ -150,6 +176,39 @@ export default (): AppConfig => {
         const parsed = new Date(raw);
         return Number.isNaN(parsed.getTime()) ? null : parsed;
       })(),
+    },
+    paddle: {
+      apiKey: process.env.PADDLE_API_KEY ?? '',
+      clientToken: process.env.PADDLE_CLIENT_TOKEN ?? '',
+      webhookSecret: process.env.PADDLE_WEBHOOK_SECRET ?? '',
+      // Anything other than an explicit 'production' is treated as sandbox, so
+      // a typo bills nobody rather than charging real cards against a
+      // half-configured account.
+      environment: process.env.PADDLE_ENVIRONMENT === 'production' ? 'production' : 'sandbox',
+      prices: {
+        [SubscriptionPlan.STARTER]: {
+          [BillingInterval.MONTH]: process.env.PADDLE_PRICE_STARTER_MONTHLY ?? '',
+          [BillingInterval.YEAR]: process.env.PADDLE_PRICE_STARTER_ANNUAL ?? '',
+        },
+        [SubscriptionPlan.PROFESSIONAL]: {
+          [BillingInterval.MONTH]: process.env.PADDLE_PRICE_PROFESSIONAL_MONTHLY ?? '',
+          [BillingInterval.YEAR]: process.env.PADDLE_PRICE_PROFESSIONAL_ANNUAL ?? '',
+        },
+      },
+    },
+    stripe: {
+      secretKey: process.env.STRIPE_SECRET_KEY ?? '',
+      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? '',
+      prices: {
+        [SubscriptionPlan.STARTER]: {
+          [BillingInterval.MONTH]: process.env.STRIPE_PRICE_STARTER ?? '',
+          [BillingInterval.YEAR]: process.env.STRIPE_PRICE_STARTER_ANNUAL ?? '',
+        },
+        [SubscriptionPlan.PROFESSIONAL]: {
+          [BillingInterval.MONTH]: process.env.STRIPE_PRICE_PROFESSIONAL ?? '',
+          [BillingInterval.YEAR]: process.env.STRIPE_PRICE_PROFESSIONAL_ANNUAL ?? '',
+        },
+      },
     },
     openai: {
       apiKey: process.env.OPENAI_API_KEY ?? '',

@@ -7,9 +7,12 @@ import type {
   PlatformRole,
   AppointmentPriority,
   AppointmentStatus,
+  BillingInterval,
   CallDirection,
   CallStatus,
   CompanyStatus,
+  InvoiceStatus,
+  PaymentProvider,
   ConversationIntent,
   ConversationOutcome,
   ConversationStatus,
@@ -145,16 +148,60 @@ export interface SessionCompany {
   primaryColor: string | null;
 }
 
-/** Billing state for the tenant, mirrored from Stripe by the backend. */
+/**
+ * Billing state for the tenant, mirrored from the payment provider by the
+ * backend.
+ *
+ * Nothing here names a processor. The frontend deliberately cannot tell which
+ * one is in use — that is what makes switching providers invisible to the UI.
+ */
 export interface SubscriptionSummary {
   status: SubscriptionStatus;
   plan: SubscriptionPlan | null;
+  interval: BillingInterval | null;
   /** True when the tenant may use the application right now. */
   isActive: boolean;
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
   trialEndsAt: string | null;
-  hasStripeCustomer: boolean;
+  /** Whether a billing account exists, and therefore whether a portal can open. */
+  hasBillingAccount: boolean;
+}
+
+/** One row of the tenant's payment history. */
+export interface InvoiceSummary {
+  id: string;
+  number: string | null;
+  status: InvoiceStatus;
+  currency: string;
+  /** Minor units (cents) — formatted for display by the client. */
+  amountDue: number;
+  amountPaid: number;
+  issuedAt: string | null;
+  invoiceUrl: string | null;
+}
+
+/**
+ * What the browser needs to open a checkout.
+ *
+ * Fetched from the API rather than baked into the bundle, so rotating the
+ * client token does not require rebuilding and redeploying the web app.
+ */
+export interface BillingConfig {
+  provider: PaymentProvider;
+  /** Publishable by design: it can only open checkouts, never read anything. */
+  clientToken: string;
+  environment: string;
+}
+
+/**
+ * A started checkout. Exactly which field is populated depends on the active
+ * provider: a transaction id opens an in-page overlay, a URL is navigated to.
+ */
+export interface CheckoutHandle {
+  provider: PaymentProvider;
+  url: string | null;
+  transactionId: string | null;
 }
 
 export interface Session {

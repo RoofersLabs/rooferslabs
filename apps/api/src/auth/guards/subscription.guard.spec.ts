@@ -2,7 +2,7 @@ import type { ExecutionContext } from '@nestjs/common';
 import type { Reflector } from '@nestjs/core';
 import { ApiErrorCode } from '@rooferslabs/shared';
 import { DomainException } from '../../common/exceptions/domain.exception';
-import type { BillingService } from '../../billing/billing.service';
+import type { BillingService } from '../../billing/services/billing.service';
 import { SubscriptionGuard } from './subscription.guard';
 
 const COMPANY = 'company_1';

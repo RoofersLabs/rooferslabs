@@ -177,21 +177,41 @@ module "sqs" {
 
 # Turning the payment wall on without the credentials to enforce it would boot an
 # API that rejects every customer, so fail the plan instead of the deployment.
+#
+# Only the *selected* provider's credentials are demanded. That is what lets the
+# stack run with no Stripe account at all while Paddle is active, and would let
+# it run with no Paddle account if the two were ever swapped back.
+locals {
+  billing_credentials_present = (
+    var.payment_provider == "paddle"
+    ? (
+      var.paddle_api_key != "" &&
+      var.paddle_client_token != "" &&
+      var.paddle_webhook_secret != "" &&
+      var.paddle_price_starter_monthly != "" &&
+      var.paddle_price_professional_monthly != ""
+    )
+    : (
+      var.stripe_secret_key != "" &&
+      var.stripe_webhook_secret != "" &&
+      var.stripe_price_starter != "" &&
+      var.stripe_price_professional != ""
+    )
+  )
+}
+
 resource "terraform_data" "payments_config_check" {
-  input = var.payments_enabled
+  input = "${var.payments_enabled}-${var.payment_provider}"
 
   lifecycle {
     precondition {
-      condition = !var.payments_enabled || (
-        var.stripe_secret_key != "" &&
-        var.stripe_webhook_secret != "" &&
-        var.stripe_price_starter != "" &&
-        var.stripe_price_professional != ""
-      )
+      condition = !var.payments_enabled || local.billing_credentials_present
       error_message = join(" ", [
-        "payments_enabled = true requires stripe_secret_key, stripe_webhook_secret,",
-        "stripe_price_starter and stripe_price_professional to be set.",
-        "Set payments_enabled = false to run without Stripe.",
+        "payments_enabled = true with payment_provider = \"paddle\" requires paddle_api_key,",
+        "paddle_client_token, paddle_webhook_secret, paddle_price_starter_monthly and",
+        "paddle_price_professional_monthly. With payment_provider = \"stripe\" it requires",
+        "stripe_secret_key, stripe_webhook_secret, stripe_price_starter and",
+        "stripe_price_professional. Set payments_enabled = false to run without billing.",
       ])
     }
   }
@@ -203,11 +223,11 @@ module "secrets" {
   name         = local.name
   database_url = module.rds.database_url
 
-  # Stripe keys are written only while payments are enabled. They are omitted
-  # rather than stored empty because the task definition below reads individual
-  # JSON keys out of this secret — a key that exists but is blank would start a
-  # task that then fails env validation, which is harder to diagnose than a key
-  # that is simply not wired.
+  # Billing keys are written only while payments are enabled, and only for the
+  # provider actually in use. They are omitted rather than stored empty because
+  # the task definition below reads individual JSON keys out of this secret — a
+  # key that exists but is blank would start a task that then fails env
+  # validation, which is harder to diagnose than a key that is simply not wired.
   app_secrets = merge(
     {
       CLERK_SECRET_KEY   = var.clerk_secret_key
@@ -216,8 +236,14 @@ module "secrets" {
       TWILIO_AUTH_TOKEN  = var.twilio_auth_token
     },
     # Billing gates every tenant's access, so with payments on the API refuses
-    # to boot without these.
-    var.payments_enabled ? {
+    # to boot without these. The dormant provider's keys are never stored — the
+    # platform holds no credentials for a processor it is not using.
+    var.payments_enabled && var.payment_provider == "paddle" ? {
+      PADDLE_API_KEY        = var.paddle_api_key
+      PADDLE_WEBHOOK_SECRET = var.paddle_webhook_secret
+      PADDLE_CLIENT_TOKEN   = var.paddle_client_token
+    } : {},
+    var.payments_enabled && var.payment_provider == "stripe" ? {
       STRIPE_SECRET_KEY     = var.stripe_secret_key
       STRIPE_WEBHOOK_SECRET = var.stripe_webhook_secret
     } : {},
@@ -335,12 +361,22 @@ module "api_service" {
     # Queue is provisioned and permitted; consumers arrive in a later release.
     SQS_QUEUE_URL          = module.sqs.queue_url
     BACKGROUND_JOBS_INLINE = "true"
-    # Master switch for billing. False boots the API with no Stripe at all.
+    # Master switch for billing. False boots the API with no provider at all.
     PAYMENTS_ENABLED = tostring(var.payments_enabled)
-    # Stripe Price IDs are configuration, not credentials.
-    STRIPE_PRICE_STARTER      = var.stripe_price_starter
-    STRIPE_PRICE_PROFESSIONAL = var.stripe_price_professional
-    STRIPE_TRIAL_PERIOD_DAYS  = tostring(var.stripe_trial_period_days)
+    # Which processor is active. The other stays compiled but never constructed.
+    PAYMENT_PROVIDER = var.payment_provider
+    # Price IDs are configuration, not credentials — they identify what is for
+    # sale and grant nothing, so they live in plain environment.
+    PADDLE_ENVIRONMENT                = var.paddle_environment
+    PADDLE_PRICE_STARTER_MONTHLY      = var.paddle_price_starter_monthly
+    PADDLE_PRICE_PROFESSIONAL_MONTHLY = var.paddle_price_professional_monthly
+    # Empty until annual plans launch; the API refuses a checkout for an
+    # interval with no configured price rather than inventing one.
+    PADDLE_PRICE_STARTER_ANNUAL      = var.paddle_price_starter_annual
+    PADDLE_PRICE_PROFESSIONAL_ANNUAL = var.paddle_price_professional_annual
+    STRIPE_PRICE_STARTER             = var.stripe_price_starter
+    STRIPE_PRICE_PROFESSIONAL        = var.stripe_price_professional
+    BILLING_TRIAL_PERIOD_DAYS        = tostring(var.billing_trial_period_days)
     # Tenants that predate the payment wall keep access without paying.
     BILLING_GRANDFATHER_BEFORE = var.billing_grandfather_before
   }
@@ -354,8 +390,16 @@ module "api_service" {
       TWILIO_AUTH_TOKEN  = "${module.secrets.app_secret_arn}:TWILIO_AUTH_TOKEN::"
 
     },
-    # Kept in lockstep with app_secrets above: wired only when payments are on.
-    var.payments_enabled
+    # Kept in lockstep with app_secrets above: wired only when payments are on,
+    # and only for the provider actually in use.
+    var.payments_enabled && var.payment_provider == "paddle"
+    ? {
+      PADDLE_API_KEY        = "${module.secrets.app_secret_arn}:PADDLE_API_KEY::"
+      PADDLE_WEBHOOK_SECRET = "${module.secrets.app_secret_arn}:PADDLE_WEBHOOK_SECRET::"
+      PADDLE_CLIENT_TOKEN   = "${module.secrets.app_secret_arn}:PADDLE_CLIENT_TOKEN::"
+    }
+    : {},
+    var.payments_enabled && var.payment_provider == "stripe"
     ? {
       STRIPE_SECRET_KEY     = "${module.secrets.app_secret_arn}:STRIPE_SECRET_KEY::"
       STRIPE_WEBHOOK_SECRET = "${module.secrets.app_secret_arn}:STRIPE_WEBHOOK_SECRET::"

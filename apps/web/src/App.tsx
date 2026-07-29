@@ -12,6 +12,7 @@ import { SignInPage, SignUpPage } from '@/pages/AuthPages';
 import { OnboardingLayout } from '@/pages/onboarding/OnboardingLayout';
 import { PaymentPage } from '@/pages/PaymentPage';
 import { BillingPage } from '@/pages/BillingPage';
+import { CheckoutPage } from '@/pages/CheckoutPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { CallsPage } from '@/features/calls/CallsPage';
@@ -86,7 +87,7 @@ function AuthenticatedShell() {
  * The payment step drops out of that chain when the API reports payments as
  * disabled, leaving onboarding → dashboard. The route entries below stay exactly
  * as they are: the access table denies every stage, so the guard turns them away
- * on its own and the Stripe pages remain wired up for the day billing returns.
+ * on its own and the billing pages remain wired up for the day billing returns.
  */
 /**
  * The customer application: marketing, auth, onboarding, billing, dashboard.
@@ -133,10 +134,17 @@ function CustomerApp() {
           <Route path={ROUTES.payment} element={<PaymentPage />} />
         </Route>
 
-        {/* Billing is reachable while unpaid *and* while paying: Stripe returns
-            here after checkout, before the activation webhook has landed. */}
+        {/* Billing is reachable while unpaid *and* while paying: a tenant lands
+            here after paying, before the activation webhook has landed. */}
         <Route element={<RouteGuard route={ROUTES.billing} />}>
           <Route path={ROUTES.billing} element={<BillingPage />} />
+        </Route>
+
+        {/* The payment provider's link target. Paddle sends customers here from
+            its own "update your payment method" and dunning emails, with the
+            transaction in `_ptxn`. Same access as /billing. */}
+        <Route element={<RouteGuard route={ROUTES.checkout} />}>
+          <Route path={ROUTES.checkout} element={<CheckoutPage />} />
         </Route>
 
         {/* The application proper — one guard, one shell, every feature page

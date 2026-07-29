@@ -25,7 +25,7 @@ documented where it is implemented.
 | AI             | OpenAI Realtime API (voice) · OpenAI Responses API (structured outputs) · RAG knowledge base            |
 | Telephony      | Twilio Programmable Voice + Media Streams                                                               |
 | Infrastructure | AWS (ECS/Fargate, S3, Secrets Manager, CloudWatch), Docker, Cloudflare                                  |
-| Payments       | Stripe (Checkout, Customer Portal, webhooks) — subscription required to use the app                     |
+| Payments       | Paddle Billing (checkout, customer portal, webhooks) — subscription required to use the app             |
 
 ---
 
@@ -38,7 +38,7 @@ rooferslabs/
 │   │   ├── prisma/             #   schema, migrations, seed
 │   │   └── src/
 │   │       ├── auth/           #   Clerk adapter, guards (auth/tenant/subscription/roles)
-│   │       ├── billing/        #   Stripe checkout, portal, webhooks, gating
+│   │       ├── billing/        #   provider-agnostic checkout, portal, webhooks, gating
 │   │       ├── companies/      #   onboarding, business + AI configuration
 │   │       ├── knowledge/      #   knowledge base CRUD + chunk indexing
 │   │       ├── ai/             #   OpenAI adapter + RAG retrieval
@@ -72,7 +72,7 @@ rooferslabs/
 | **Twilio**     | Phone numbers, inbound calls, Media Streams            | https://twilio.com          |
 | **AWS**        | RDS, ECS/Fargate, S3, SQS, Secrets Manager, CloudWatch | https://aws.amazon.com      |
 | **Cloudflare** | DNS, TLS, WebSocket proxy, edge caching                | https://cloudflare.com      |
-| **Stripe**     | Subscription billing (Checkout, Customer Portal)       | https://stripe.com          |
+| **Paddle**     | Subscription billing (merchant of record)              | https://paddle.com          |
 
 ## Every environment variable
 
@@ -97,11 +97,16 @@ Backend (root `.env`):
 | `OPENAI_RESPONSES_MODEL`                     | no       | default `gpt-4.1`                                           |
 | `OPENAI_EMBEDDING_MODEL`                     | no       | default `text-embedding-3-small`                            |
 | `PAYMENTS_ENABLED`                           | no       | default `true`; `false` disables billing entirely (below)   |
-| `STRIPE_SECRET_KEY`                          | **yes†** | Stripe `sk_…` (server only, never exposed)                  |
-| `STRIPE_WEBHOOK_SECRET`                      | **yes†** | `whsec_…` signing secret for `/v1/billing/webhook`          |
-| `STRIPE_PRICE_STARTER`                       | **yes†** | Recurring Price ID for the Starter plan                     |
-| `STRIPE_PRICE_PROFESSIONAL`                  | **yes†** | Recurring Price ID for the Professional plan                |
-| `STRIPE_TRIAL_PERIOD_DAYS`                   | no       | Free-trial length on new checkouts (`0` = none)             |
+| `PAYMENT_PROVIDER`                           | no       | default `paddle`; `paddle` \| `stripe`                      |
+| `PADDLE_API_KEY`                             | **yes†** | Paddle `pdl_…` (server only, never exposed)                 |
+| `PADDLE_CLIENT_TOKEN`                        | **yes†** | Browser token, served via `GET /v1/billing/config`          |
+| `PADDLE_WEBHOOK_SECRET`                      | **yes†** | Secret for `/v1/billing/webhook/paddle`                     |
+| `PADDLE_ENVIRONMENT`                         | no       | `sandbox` (default) \| `production`                         |
+| `PADDLE_PRICE_STARTER_MONTHLY`               | **yes†** | Paddle Price ID for the Starter plan                        |
+| `PADDLE_PRICE_PROFESSIONAL_MONTHLY`          | **yes†** | Paddle Price ID for the Professional plan                   |
+| `PADDLE_PRICE_*_ANNUAL`                      | no       | Empty = annual billing is not offered                       |
+| `STRIPE_*`                                   | no       | Dormant provider; never required (see docs/billing.md)      |
+| `BILLING_TRIAL_PERIOD_DAYS`                  | no       | Stripe only — Paddle sets trials on the price               |
 | `BILLING_GRANDFATHER_BEFORE`                 | no       | RFC3339 instant; tenants created before it skip the paywall |
 | `TWILIO_ACCOUNT_SID`                         | **yes*** | Twilio account SID (*telephony)                             |
 | `TWILIO_AUTH_TOKEN`                          | **yes*** | Twilio auth token (webhook signatures)                      |
@@ -113,8 +118,10 @@ Backend (root `.env`):
 | `MIGRATE_ON_START`                           | no       | Container-only: run `migrate deploy` on boot                |
 | `LOG_LEVEL`                                  | no       | pino level (default `debug` dev / `info` prod)              |
 
-† Required only while `PAYMENTS_ENABLED` is `true` (the default). See
-[Running without Stripe](#running-without-stripe).
+† Required in production only while `PAYMENTS_ENABLED` is `true` (the default)
+**and** that provider is the active one. Only the active provider's variables are
+ever enforced, so the platform boots with no Stripe account at all. See
+[docs/billing.md](./docs/billing.md).
 
 Frontend (`apps/web/.env` — see [`apps/web/.env.example`](./apps/web/.env.example)):
 
@@ -129,7 +136,7 @@ Frontend (`apps/web/.env` — see [`apps/web/.env.example`](./apps/web/.env.exam
 2. **Clerk secret key** (`sk_test_…`/`sk_live_…`) — same page → backend `.env` only.
 3. **OpenAI API key** (`sk-…`) — platform.openai.com → API keys → backend `.env`. Must have access to the Realtime and Responses APIs.
 4. **Twilio Account SID + Auth Token** — Twilio Console home → backend `.env`.
-5. **Stripe secret key + webhook secret + two Price IDs** — see [Billing](#billing-stripe) below.
+5. **Paddle API key + client token + webhook secret + two Price IDs** — see [docs/billing.md](./docs/billing.md).
 6. **AWS credentials** — not application config. Production authenticates with the ECS task
    role; locally the AWS CLI/SDK provider chain (`aws configure`, SSO, or `AWS_*` in your shell)
    is used, so no key pair is read from `.env`.
@@ -146,7 +153,7 @@ Frontend (`apps/web/.env` — see [`apps/web/.env.example`](./apps/web/.env.exam
 npm install
 
 # 2. Environment
-cp .env.example .env                 # fill in Clerk/OpenAI/Twilio/Stripe keys
+cp .env.example .env                 # fill in Clerk/OpenAI/Twilio/Paddle keys
 cp apps/web/.env.example apps/web/.env   # set VITE_CLERK_PUBLISHABLE_KEY
 
 # 3. Database
@@ -170,23 +177,33 @@ To exercise a real phone call locally, expose the API with a tunnel
 `TWILIO_MEDIA_STREAM_URL=wss://<tunnel>/v1/telephony/media-stream`, and point a
 Twilio number's voice webhook at `https://<tunnel>/v1/telephony/incoming`.
 
-## Billing (Stripe)
+## Billing (Paddle)
 
 A subscription is **mandatory** while `PAYMENTS_ENABLED` is `true`: a tenant can
 sign up and complete the four-step onboarding wizard, but the dashboard and every
-gated API stay locked until Stripe Checkout completes.
+gated API stay locked until checkout completes.
 
-### Running without Stripe
+Billing is provider-agnostic. `BillingService` is the single entry point and
+depends only on a `BillingProvider` port; Paddle and Stripe are adapters behind
+it, and exactly one is active (`PAYMENT_PROVIDER`). No page, route, service, or
+database column names a processor. **Stripe is preserved but dormant** — never
+constructed, never loaded, and it refuses every call.
+
+**→ [docs/billing.md](./docs/billing.md)** covers the architecture, Paddle
+dashboard setup, every environment variable, webhook verification and
+idempotency, deployment, and the checklist for re-enabling Stripe.
+
+### Running without billing
 
 `PAYMENTS_ENABLED=false` switches billing off platform-wide, so the platform runs
-before a Stripe account exists. It is a supported configuration, not a stopgap —
-no Stripe code is removed or bypassed, and flipping the flag back needs no code
+before a payment account exists. It is a supported configuration, not a stopgap —
+no billing code is removed or bypassed, and flipping the flag back needs no code
 change:
 
 | Concern                 | `PAYMENTS_ENABLED=true` (default)   | `PAYMENTS_ENABLED=false`                     |
 | ----------------------- | ----------------------------------- | -------------------------------------------- |
-| `STRIPE_*` env          | Required in production (boot fails) | Not required at all                          |
-| Stripe client           | Constructed on first use            | Never constructed                            |
+| Provider env            | Required in production (boot fails) | Not required at all                          |
+| Provider client         | Constructed on first use            | Never constructed                            |
 | `/v1/billing/*`         | Live                                | `503 PAYMENTS_DISABLED`                      |
 | Webhook route           | Registered                          | Not registered (the route does not exist)    |
 | Payment wall            | Enforced on every gated endpoint    | Open — every tenant has full access          |
@@ -200,30 +217,8 @@ value keeps the wall up rather than silently giving the product away.
 
 In production the flag is `payments_enabled` in
 `infra/terraform/envs/production/terraform.tfvars`. Setting it to `true` without
-all four `stripe_*` variables fails `terraform plan`, so the wall can never be
-switched on without the credentials to enforce it.
-
-One-time setup:
-
-1. **Products & prices** — Stripe Dashboard → Product catalogue. Create two
-   recurring monthly prices (Starter, Professional) and copy the `price_…` IDs
-   into `STRIPE_PRICE_STARTER` / `STRIPE_PRICE_PROFESSIONAL`.
-2. **Secret key** — Developers → API keys → `STRIPE_SECRET_KEY` (backend `.env`
-   only; the browser never sees a Stripe key of any kind).
-3. **Webhook** — Developers → Webhooks → add endpoint
-   `https://<api-origin>/v1/billing/webhook`, subscribed to:
-   `checkout.session.completed`, `customer.subscription.created`,
-   `customer.subscription.updated`, `customer.subscription.deleted`,
-   `invoice.paid`, `invoice.payment_failed`. Copy the signing secret into
-   `STRIPE_WEBHOOK_SECRET`.
-4. **Customer Portal** — Settings → Billing → Customer portal → activate it.
-
-Locally, forward events with the Stripe CLI instead of step 3:
-
-```bash
-stripe listen --forward-to localhost:4000/v1/billing/webhook   # prints whsec_…
-stripe trigger checkout.session.completed
-```
+the active provider's credentials fails `terraform plan`, so the wall can never
+be switched on without the means to enforce it.
 
 ## Database migrations
 

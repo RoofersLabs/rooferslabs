@@ -50,6 +50,7 @@
   "dependencies": {
     "@clerk/clerk-react": "^5.22.0",
     "@hookform/resolvers": "^3.10.0",
+    "@paddle/paddle-js": "^1.6.4",
     "@rooferslabs/shared": "*",
     "@tanstack/react-query": "^5.64.2",
     "class-variance-authority": "^0.7.1",

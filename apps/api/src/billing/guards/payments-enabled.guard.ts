@@ -6,8 +6,9 @@ import { AppConfigService } from '../../config/app-config.service';
  * Closes the tenant-facing billing surface while PAYMENTS_ENABLED is off.
  *
  * Applied at the controller so every current and future billing endpoint is
- * covered by one decision — a new route cannot forget it. The Stripe adapter
- * refuses independently, so this is the polite answer rather than the only
+ * covered by one decision — a new route cannot forget it. The provider adapters
+ * refuse independently (an unconfigured or dormant one throws before it can
+ * reach the network), so this is the polite answer rather than the only
  * safeguard.
  */
 @Injectable()

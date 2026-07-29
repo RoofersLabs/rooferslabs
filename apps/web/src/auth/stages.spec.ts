@@ -116,16 +116,19 @@ describe('redirectFor', () => {
   });
 
   it('keeps billing reachable both before and after activation', () => {
-    // Stripe returns to /billing before the activation webhook lands, so the
+    // Checkout returns to /billing before the activation webhook lands, so the
     // page must render in both stages or every payer bounces off their receipt.
     expect(redirectFor('payment', withPayments[ROUTES.billing], withPayments)).toBeNull();
     expect(redirectFor('app', withPayments[ROUTES.billing], withPayments)).toBeNull();
   });
 });
 
+/** Every route that exists only because billing does. */
+const BILLING_ROUTES: GuardedRoute[] = [ROUTES.payment, ROUTES.billing, ROUTES.checkout];
+
 describe('billing routes with payments disabled', () => {
-  it('turns everyone away from /payment and /billing', () => {
-    for (const route of [ROUTES.payment, ROUTES.billing] as GuardedRoute[]) {
+  it('turns everyone away from /payment, /billing and /checkout', () => {
+    for (const route of BILLING_ROUTES) {
       expect(withoutPayments[route]).toEqual([]);
       for (const stage of reachableStages(false)) {
         expect(redirectFor(stage, withoutPayments[route], withoutPayments)).toBe(home(stage));
@@ -135,11 +138,18 @@ describe('billing routes with payments disabled', () => {
 
   it('leaves the rest of the table untouched', () => {
     const unaffected = (Object.keys(withPayments) as GuardedRoute[]).filter(
-      (route) => route !== ROUTES.payment && route !== ROUTES.billing,
+      (route) => !BILLING_ROUTES.includes(route),
     );
     for (const route of unaffected) {
       expect(withoutPayments[route]).toEqual(withPayments[route]);
     }
+  });
+
+  it('lets a paying and a past-due tenant both reach /checkout', () => {
+    // The provider mails this link when a card needs replacing, which can
+    // happen while the tenant still has access ('app') or after dunning has
+    // already pushed it back to the wall ('payment'). Both must be able to pay.
+    expect(withPayments[ROUTES.checkout]).toEqual(['payment', 'app']);
   });
 });
 

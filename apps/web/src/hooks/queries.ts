@@ -3,7 +3,7 @@
  *. Components never call fetch.
  */
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import type { OnboardingStep, SubscriptionPlan } from '@rooferslabs/shared';
+import type { BillingInterval, OnboardingStep, SubscriptionPlan } from '@rooferslabs/shared';
 import { api, type PaginatedResult } from '@/lib/api-client';
 import type {
   AiConfiguration,
@@ -15,10 +15,13 @@ import type {
   AdminAnalytics,
   AdminCompanyDetail,
   AdminCompanyRow,
+  BillingConfig,
+  CheckoutHandle,
   Customer,
   CustomerDetail,
   DashboardOverview,
   GlobalSearchResults,
+  InvoiceSummary,
   KnowledgeArticle,
   Notification,
   PhoneNumberSummary,
@@ -31,6 +34,8 @@ export const queryKeys = {
   session: ['session'] as const,
   company: ['company'] as const,
   subscription: ['billing', 'subscription'] as const,
+  invoices: ['billing', 'invoices'] as const,
+  billingConfig: ['billing', 'config'] as const,
   aiConfig: ['company', 'ai-config'] as const,
   phoneNumber: ['company', 'phone-number'] as const,
   dashboard: ['dashboard'] as const,
@@ -157,12 +162,32 @@ export function useCompleteOnboarding() {
 }
 
 // ---------------------------------------------------------------------------
-// Billing (Stripe)
+// Billing
 // ---------------------------------------------------------------------------
+//
+// Provider-agnostic throughout: every hook talks to our own API, and no payment
+// processor's SDK, key, or vocabulary appears in this file. Swapping providers
+// changes nothing here.
 
 /**
- * The tenant's live subscription state. Polled briefly after returning from
- * Stripe Checkout, because activation arrives asynchronously by webhook.
+ * What the browser needs to open a checkout.
+ *
+ * Long-lived: the token and environment only change when someone rotates
+ * credentials, so this is fetched once and reused rather than re-requested on
+ * every mount of the payment page.
+ */
+export function useBillingConfig() {
+  return useQuery({
+    queryKey: queryKeys.billingConfig,
+    queryFn: () => api.get<BillingConfig>('/billing/config'),
+    staleTime: 60 * 60 * 1000,
+  });
+}
+
+/**
+ * The tenant's live subscription state. Polled briefly after checkout, because
+ * activation arrives asynchronously by webhook and can land after the browser
+ * is back on our own pages.
  */
 export function useSubscription(options: { pollUntilActive?: boolean } = {}) {
   return useQuery({
@@ -173,18 +198,43 @@ export function useSubscription(options: { pollUntilActive?: boolean } = {}) {
   });
 }
 
-/** Start Stripe Checkout; the caller redirects the browser to the returned URL. */
-export function useCreateCheckoutSession() {
-  return useMutation({
-    mutationFn: (plan: SubscriptionPlan) =>
-      api.post<{ url: string }>('/billing/checkout-session', { plan }),
+/** The tenant's payment history, synchronized from the provider by webhook. */
+export function useInvoices() {
+  return useQuery({
+    queryKey: queryKeys.invoices,
+    queryFn: () => api.get<InvoiceSummary[]>('/billing/invoices'),
   });
 }
 
-/** Open the Stripe Customer Portal (payment methods, invoices, plan changes). */
+/**
+ * Start a checkout. Returns a handle the caller passes to `openCheckout`,
+ * which decides between an in-page overlay and a redirect.
+ */
+export function useCreateCheckoutSession() {
+  return useMutation({
+    mutationFn: (selection: { plan: SubscriptionPlan; interval?: BillingInterval }) =>
+      api.post<CheckoutHandle>('/billing/checkout-session', selection),
+  });
+}
+
+/** Open the hosted customer portal (payment methods, invoices, receipts). */
 export function useCreatePortalSession() {
   return useMutation({
     mutationFn: () => api.post<{ url: string }>('/billing/portal-session'),
+  });
+}
+
+/** Move to a different plan. Upgrades apply now, downgrades at renewal. */
+export function useChangePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (selection: { plan: SubscriptionPlan; interval?: BillingInterval }) =>
+      api.post<SubscriptionSummary>('/billing/subscription/plan', selection),
+    onSuccess: (subscription) => {
+      qc.setQueryData(queryKeys.subscription, subscription);
+      void qc.invalidateQueries({ queryKey: queryKeys.invoices });
+      void qc.invalidateQueries({ queryKey: queryKeys.session });
+    },
   });
 }
 

@@ -39,6 +39,12 @@ export const ROUTES = {
   onboarding: '/onboarding',
   payment: '/payment',
   billing: '/billing',
+  /**
+   * The payment provider's link target. Paddle appends `_ptxn` and sends
+   * customers here from its own emails, so it must be reachable by anyone who
+   * still has an account to pay for.
+   */
+  checkout: '/checkout',
   /** The canonical dashboard. `home('app')` resolves here. */
   dashboard: '/dashboard',
   calls: '/calls',
@@ -96,7 +102,7 @@ export interface AccessFacts {
   isSignedIn: boolean;
   /** Null until the tenant creates its company in wizard step 1. */
   onboardingStep: OnboardingStep | null;
-  /** Mirrors Stripe via the backend. Grandfathered tenants also read true. */
+  /** Mirrors the payment provider via the backend. Grandfathered tenants also read true. */
   isSubscribed: boolean;
   /**
    * Whether billing is switched on platform-wide, reported by the API so the
@@ -175,10 +181,10 @@ export type RouteAccess = Record<GuardedRoute, readonly Stage[]>;
 /**
  * Which stages may view each guarded route.
  *
- * `/billing` is intentionally reachable from both `payment` and `app`: Stripe
- * returns there after checkout, when the webhook that flips the tenant to
- * active has usually not landed yet. Excluding `payment` would bounce every
- * successful payer off their own receipt.
+ * `/billing` is intentionally reachable from both `payment` and `app`: a tenant
+ * lands there after paying, when the webhook that flips it to active has usually
+ * not landed yet. Excluding `payment` would bounce every successful payer off
+ * their own receipt.
  *
  * With payments off both billing routes admit no stage at all, so any attempt
  * to reach them redirects to the visitor's own landing route. Expressing it in
@@ -192,6 +198,10 @@ export function routeAccess(paymentsEnabled: boolean): RouteAccess {
     [ROUTES.onboarding]: ['onboarding'],
     [ROUTES.payment]: paymentsEnabled ? ['payment'] : [],
     [ROUTES.billing]: paymentsEnabled ? ['payment', 'app'] : [],
+    // Same audience as /billing: a tenant following a "update your payment
+    // method" email is usually past due (stage 'app' or 'payment' depending on
+    // how far the dunning has gone), and either must be able to pay.
+    [ROUTES.checkout]: paymentsEnabled ? ['payment', 'app'] : [],
     // The application proper. Every one of these requires a finished tenant.
     [ROUTES.dashboard]: ['app'],
     [ROUTES.calls]: ['app'],

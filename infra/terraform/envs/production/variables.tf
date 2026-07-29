@@ -123,21 +123,114 @@ variable "twilio_auth_token" {
 
 variable "payments_enabled" {
   description = <<-EOT
-    Master switch for billing. When false the API boots with no Stripe
-    credentials at all: the client is never constructed, the webhook route is
-    not registered, the billing endpoints answer 503, and every tenant reaches
-    the product without a subscription (onboarding leads straight to the
-    dashboard). Set to true — together with the four stripe_* variables — to
-    restore the payment wall.
+    Master switch for billing. When false the API boots with no payment
+    credentials at all: no provider client is constructed, no webhook route is
+    registered, the billing endpoints answer 503, and every tenant reaches the
+    product without a subscription (onboarding leads straight to the
+    dashboard). Set to true — together with the active provider's credentials —
+    to restore the payment wall.
   EOT
   type        = bool
   default     = true
 }
 
-# The four variables below default to empty so the stack can be applied before a
-# Stripe account exists. The validations make that safe: they are mandatory the
-# moment payments_enabled is true, so a production apply can never turn the wall
-# on without the credentials to enforce it.
+variable "payment_provider" {
+  description = <<-EOT
+    Which processor handles money: "paddle" or "stripe". Exactly one is active;
+    the other stays implemented in the codebase but is never constructed and
+    refuses every call. Switching is a configuration change — set this and
+    supply that provider's credentials below.
+  EOT
+  type        = string
+  default     = "paddle"
+
+  validation {
+    # Guessing at an unrecognized value would bill through a processor nobody
+    # chose, so fail the plan instead.
+    condition     = contains(["paddle", "stripe"], var.payment_provider)
+    error_message = "payment_provider must be either \"paddle\" or \"stripe\"."
+  }
+}
+
+# ---- Paddle (the active provider) ---------------------------------------------------
+#
+# These default to empty so the stack can be applied before the Paddle account
+# is live. The precondition in main.tf makes that safe: they become mandatory
+# the moment payments_enabled is true and paddle is selected, so an apply can
+# never turn the wall on without the credentials to enforce it.
+
+variable "paddle_api_key" {
+  description = "Paddle → Developer tools → Authentication → API key (pdl_live_…)."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "paddle_client_token" {
+  description = <<-EOT
+    Paddle → Developer tools → Authentication → client-side token (live_…).
+    Publishable by design: it only opens checkouts and is served to the browser
+    by the API. Marked sensitive anyway so it is not echoed in plan output.
+  EOT
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "paddle_webhook_secret" {
+  description = <<-EOT
+    Paddle → Developer tools → Notifications → destination secret key
+    (pdl_ntfset_…) for the /v1/billing/webhook/paddle endpoint.
+  EOT
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "paddle_environment" {
+  description = "Which Paddle system to bill against: \"sandbox\" or \"production\"."
+  type        = string
+  default     = "production"
+
+  validation {
+    condition     = contains(["sandbox", "production"], var.paddle_environment)
+    error_message = "paddle_environment must be either \"sandbox\" or \"production\"."
+  }
+}
+
+variable "paddle_price_starter_monthly" {
+  description = "Paddle recurring Price ID (pri_…) backing the monthly Starter plan."
+  type        = string
+  default     = ""
+}
+
+variable "paddle_price_professional_monthly" {
+  description = "Paddle recurring Price ID (pri_…) backing the monthly Professional plan."
+  type        = string
+  default     = ""
+}
+
+variable "paddle_price_starter_annual" {
+  description = <<-EOT
+    Paddle Price ID for annual Starter. Optional: empty means annual billing is
+    not offered, and the API refuses a checkout for it rather than inventing a
+    price. Launching annual plans is setting this and its Professional twin.
+  EOT
+  type        = string
+  default     = ""
+}
+
+variable "paddle_price_professional_annual" {
+  description = "Paddle Price ID for annual Professional. Optional; see the Starter twin."
+  type        = string
+  default     = ""
+}
+
+# ---- Stripe (dormant) ---------------------------------------------------------------
+#
+# Retained so moving back to Stripe is a configuration change rather than a
+# rewrite. Never required while payment_provider = "paddle"; the API boots with
+# no Stripe account whatsoever.
 
 variable "stripe_secret_key" {
   description = "Stripe Dashboard → Developers → API keys → secret key (sk_live_…)."
@@ -147,7 +240,7 @@ variable "stripe_secret_key" {
 }
 
 variable "stripe_webhook_secret" {
-  description = "Signing secret (whsec_…) for the /v1/billing/webhook endpoint."
+  description = "Signing secret (whsec_…) for the /v1/billing/webhook/stripe endpoint."
   type        = string
   sensitive   = true
   default     = ""
@@ -165,8 +258,14 @@ variable "stripe_price_professional" {
   default     = ""
 }
 
-variable "stripe_trial_period_days" {
-  description = "Free-trial length applied to new checkouts. 0 disables trials."
+variable "billing_trial_period_days" {
+  description = <<-EOT
+    Free-trial length applied to new checkouts. 0 disables trials.
+
+    Honoured by Stripe only. Paddle attaches trials to the *price* rather than
+    to the checkout, so under Paddle this is configured in the Paddle dashboard
+    and the API logs a warning if this is set to anything but 0.
+  EOT
   type        = number
   default     = 0
 }
