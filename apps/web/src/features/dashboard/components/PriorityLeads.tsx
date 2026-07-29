@@ -1,13 +1,14 @@
+import { useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ROUTES } from '@/auth/stages';
-import { cn, formatPhone } from '@/lib/utils';
+import { formatPhone } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Button, buttonClass } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { PriorityLead } from '../insights';
 import { StatusLabel } from './StatusLabel';
-import { useCardDeck } from './useCardDeck';
+import { useCardCarousel } from './useCardCarousel';
 
 /**
  * Priority as flat colored text — no fill, no border, no pill.
@@ -52,85 +53,118 @@ export function PriorityLeads({ leads, isLoading }: { leads: PriorityLead[]; isL
         </Link>
       </div>
 
-      {isLoading ? <LeadSkeleton /> : <LeadDeck leads={leads} />}
+      {isLoading ? <LeadSkeleton /> : <LeadCarousel leads={leads} />}
     </section>
   );
 }
 
-/** Depth of the two shells behind the active card: offset down, scaled in. */
-const BEHIND = [
-  { translate: 10, scale: 0.97 },
-  { translate: 20, scale: 0.94 },
-] as const;
+/**
+ * The scroll track: one row of cards the browser scrolls and snaps itself.
+ *
+ * Reading it outwards —
+ *
+ *   `-mx-4 px-4` bleeds the track through the page gutter to the screen edge
+ *   and puts the gutter back as padding, so a snapped card lines up with every
+ *   section above and below it while the card behind it runs off the display
+ *   rather than stopping at an invisible margin. `scroll-px-4` makes that same
+ *   gutter the snap reference, so "aligned" means aligned to the page, not to
+ *   the track's border. Both step at `sm:` because the shell's gutter does.
+ *
+ *   `-my-2 py-2` is headroom, not spacing: `overflow-y-hidden` clips at the
+ *   padding box, and without 8px of it the cards' `shadow-card` would be shaved
+ *   off along the top and bottom edges. The negative margin returns the section
+ *   to the exact height it had before.
+ *
+ *   `snap-x snap-mandatory` with `overflow-y-hidden` means the track scrolls on
+ *   one axis only and always comes to rest on a card — never between two. The
+ *   page still scrolls vertically through the carousel, because no `touch-action`
+ *   is set: the browser locks the gesture to an axis on its own, and taking that
+ *   over would trap a downward flick that happened to start on a card.
+ *
+ *   `overscroll-x-contain` keeps a swipe past the last card from reaching the
+ *   browser's back-navigation gesture.
+ *
+ * The scrollbar is hidden four ways because no single property covers Firefox,
+ * legacy Edge and WebKit. `-webkit-overflow-scrolling` buys momentum on older
+ * iOS; current Safari does it by default.
+ */
+const TRACK = [
+  '-mx-4 -my-2 flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-px-4 px-4 py-2',
+  'sm:-mx-6 sm:scroll-px-6 sm:px-6',
+  '[-ms-overflow-style:none] [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+  // The track is focusable, so it must show a ring — drawn inside its own box
+  // because the box now reaches the screen edge, where an outset ring would be
+  // clipped by the viewport.
+  'focus-visible:[outline-offset:-2px]',
+].join(' ');
 
 /**
- * The leads as a deck rather than a feed.
+ * One slide.
  *
- * One card is readable at a time and the rest sit behind it as edges, so the
- * section is a pile of jobs to work through rather than a column to scroll. A
- * roofer reads the top lead, calls if it warrants it, and flicks it away.
+ * `calc(100% - 2.5rem)` is the card at nearly the full width it had as a static
+ * block, minus just enough for the next card's edge to show past the gutter —
+ * the only cue that a swipe is available, and cheaper than a row of dots.
  *
- * Only three cards exist in the DOM at any moment, and the two behind are empty
- * shells: they carry no content because their whole job is to say "there are
- * more". That also makes it impossible to read two leads at once, and keeps the
- * cost of a 200-lead deck identical to a 3-lead one.
+ * `snap-always` forbids skipping a snap point, so a hard flick advances exactly
+ * one card instead of throwing three past the eye. `last:snap-end` gives the
+ * final card a snap position it can actually reach: aligned to the start it
+ * would need 2.5rem of scroll room that does not exist, so it would come to
+ * rest fractionally off — the one place this layout could show a partial card.
  */
-function LeadDeck({ leads }: { leads: PriorityLead[] }) {
-  const deck = useCardDeck(leads.length);
-  const lead = leads[deck.index];
-  if (!lead) return null;
+const SLIDE = 'w-[calc(100%-2.5rem)] shrink-0 snap-start snap-always last:snap-end';
 
-  const behind = Math.min(BEHIND.length, leads.length - deck.index - 1);
-  // While leaving, the card carries itself a full height off-screen; while
-  // dragging it tracks the finger exactly.
-  const y = deck.leaving ? deck.leaving * 120 : deck.offset;
+/**
+ * The leads as a horizontal carousel: one card at a time, swiped through.
+ *
+ * A phone reads one card and moves on; a vertical list of tall cards buries the
+ * second lead below the fold and asks the reader to scroll the page to reach
+ * it. Sideways, the deck is a single gesture wide and the sections below stay
+ * exactly where they were.
+ *
+ * Everything about the gesture — touch tracking, momentum, rubber-banding, the
+ * snap — is the browser's native scroller, running off the main thread. The
+ * hook alongside it only reads which card is showing and moves the scroller for
+ * the buttons and the arrow keys.
+ */
+function LeadCarousel({ leads }: { leads: PriorityLead[] }) {
+  const track = useRef<HTMLDivElement>(null);
+  const carousel = useCardCarousel(track, leads.length);
 
   return (
     <div>
+      {/* The APG carousel pattern: the track is a labelled group announced as a
+          carousel, each card a slide inside it. `tabIndex` because a scrollable
+          region must be reachable by keyboard in its own right — tabbing to a
+          card's call button scrolls that card into view, but a lead with no
+          number contributes no focusable element to stop at. */}
       <div
-        className="relative"
+        ref={track}
+        {...carousel.handlers}
         role="group"
-        aria-roledescription="Lead deck"
-        aria-label={`Lead ${deck.index + 1} of ${leads.length}`}
+        aria-roledescription="carousel"
+        aria-label="Priority leads"
         tabIndex={0}
-        onKeyDown={deck.handlers.onKeyDown}
+        className={TRACK}
       >
-        {/* Shells first so they paint underneath. `aria-hidden`: they are edges,
-            not content, and a screen reader announcing two blank cards would be
-            noise. */}
-        {BEHIND.slice(0, behind).map((depth, i) => (
+        {leads.map((lead, i) => (
           <div
-            key={i}
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 h-full transition-transform duration-base ease-standard motion-reduce:transition-none"
-            style={{ transform: `translateY(${depth.translate}px) scale(${depth.scale})` }}
+            key={lead.id}
+            role="group"
+            aria-roledescription="slide"
+            aria-label={`Lead ${i + 1} of ${leads.length}`}
+            className={SLIDE}
           >
-            <div className="h-full rounded-lg border border-line-subtle bg-surface shadow-card" />
+            <LeadCard lead={lead} position={i + 1} total={leads.length} />
           </div>
         ))}
-
-        <div
-          {...deck.handlers}
-          className={cn(
-            'relative touch-pan-x select-none',
-            // No transition while the finger is down: the card must track it
-            // exactly, and easing a live drag reads as lag.
-            !deck.dragging && 'transition-transform duration-base ease-standard',
-            deck.leaving && 'opacity-0 transition-[transform,opacity] duration-base ease-standard',
-            'motion-reduce:transition-none',
-          )}
-          style={{ transform: `translateY(${y}px)` }}
-        >
-          <LeadCard lead={lead} position={deck.index + 1} total={leads.length} />
-        </div>
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-4">
         {/* Announced politely so the position is available without sight of the
             counter printed on the card. */}
         <p aria-live="polite" className="text-caption text-ink-faint">
-          {deck.canGoNext
-            ? `${leads.length - deck.index - 1} more to review`
+          {carousel.canGoNext
+            ? `${leads.length - carousel.index - 1} more to review`
             : 'You’re all caught up.'}
         </p>
 
@@ -139,20 +173,20 @@ function LeadDeck({ leads }: { leads: PriorityLead[] }) {
           <Button
             variant="ghost"
             size="icon-sm"
-            onClick={deck.previous}
-            disabled={!deck.canGoPrevious}
+            onClick={carousel.previous}
+            disabled={!carousel.canGoPrevious}
             aria-label="Previous lead"
           >
-            <ChevronUp className="h-4 w-4" aria-hidden />
+            <ChevronLeft className="h-4 w-4" aria-hidden />
           </Button>
           <Button
             variant="ghost"
             size="icon-sm"
-            onClick={deck.next}
-            disabled={!deck.canGoNext}
+            onClick={carousel.next}
+            disabled={!carousel.canGoNext}
             aria-label="Next lead"
           >
-            <ChevronDown className="h-4 w-4" aria-hidden />
+            <ChevronRight className="h-4 w-4" aria-hidden />
           </Button>
         </div>
       </div>
@@ -181,10 +215,14 @@ function LeadCard({
   return (
     // Border, surface and shadow are the Card's untouched defaults; only the
     // radius steps to 14px and the padding to 24px. The portrait proportion
-    // comes from the stacked content, not from a width constraint — the card
-    // already spans ~92% of a phone inside the page gutter, and pulling it
-    // narrower would break its alignment with every section below it.
-    <Card as="article" className="rounded-lg p-6">
+    // comes from the stacked content, not from a width constraint — the slide
+    // sets the width, and the card fills it.
+    //
+    // `h-full` is the one addition the carousel asks for: slides are flex items
+    // and stretch to the tallest, so without it a lead with no summary would
+    // leave a short card floating in a tall row. Filling instead means the
+    // section's height is fixed and swiping never resizes the page underneath.
+    <Card as="article" className="h-full rounded-lg p-6">
       <div className="flex items-start justify-between gap-3">
         <h3 className="min-w-0 flex-1 truncate text-h4 text-ink">{lead.name}</h3>
         {/* Position, not progress dots: "4 of 18" says how much work is left,
@@ -222,8 +260,13 @@ function LeadCard({
       {/* The widest gap on the card, so the action reads as the card's
           conclusion rather than another line of content. Nothing here restyles
           the button: weight, radius and the white label all come from the
-          primary variant, which is the only place they should come from. */}
-      <div className="mt-6 flex justify-center">
+          primary variant, which is the only place they should come from.
+          `mt-auto pt-6` rather than `mt-6`: 24px is still the minimum gap, but
+          on a slide taller than its content — a lead with no summary beside one
+          with three lines of it — the slack collects above the button instead
+          of below it, so the action stays the card's last line and the call
+          buttons line up as you swipe. */}
+      <div className="mt-auto flex justify-center pt-6">
         {lead.phone ? (
           <a href={`tel:${lead.phone}`} className={buttonClass('primary', 'lg', 'w-4/5')}>
             Call Homeowner
@@ -240,8 +283,23 @@ function LeadCard({
   );
 }
 
-/** Mirrors `LeadCard`'s metrics so the list does not resize when data lands. */
+/**
+ * Mirrors `LeadCard`'s metrics so the section does not resize when data lands —
+ * including the slide's width, which is why the placeholder sits in the same
+ * track rather than spanning the page. It is not scrollable and holds one card:
+ * there is nothing yet to swipe between.
+ */
 function LeadSkeleton() {
+  return (
+    <div className={TRACK}>
+      <div className={SLIDE}>
+        <LeadSkeletonCard />
+      </div>
+    </div>
+  );
+}
+
+function LeadSkeletonCard() {
   return (
     <Card className="rounded-lg p-6">
       <Skeleton className="h-7 w-44" />
@@ -251,7 +309,7 @@ function LeadSkeleton() {
       <Skeleton className="mt-5 h-3 w-24" />
       <Skeleton className="mt-2.5 h-4 w-full" />
       <Skeleton className="mt-1.5 h-4 w-3/4" />
-      <div className="mt-6 flex justify-center">
+      <div className="mt-auto flex justify-center pt-6">
         <Skeleton className="h-12 w-4/5" />
       </div>
     </Card>
