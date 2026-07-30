@@ -81,6 +81,43 @@
   .focus-ring {
     @apply outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-canvas;
   }
+
+  /**
+   * The focus ring for text entry, which is a different problem from the one
+   * `.focus-ring` solves.
+   *
+   * A button is a solid shape, so an offset ring floating clear of it reads as
+   * "this thing is focused". A field is an outline, and the same offset ring
+   * draws a second rectangle around the first — two competing borders. Here the
+   * ring hugs the control instead and the border itself turns brand, so a
+   * focused field looks like one object that has come forward rather than a box
+   * inside a box. Both rings use the same --focus-ring token.
+   */
+  .focus-field {
+    @apply outline-none transition-[border-color,box-shadow] duration-fast ease-standard;
+    @apply focus-visible:border-accent focus-visible:ring-[3px] focus-visible:ring-focus focus-visible:ring-offset-0;
+  }
+
+  /**
+   * A native <select> carrying the product's own chevron.
+   *
+   * The platform arrow is a different glyph, weight and inset on every OS, so a
+   * select never quite matched the inputs beside it. `appearance: none` plus one
+   * inline SVG makes it identical everywhere. The stroke is --text-tertiary,
+   * written out because a data URI cannot read a custom property.
+   */
+  .select-chevron {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236f7682' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.875rem center;
+    background-size: 1rem 1rem;
+  }
+
+  [data-theme='dark'] .select-chevron,
+  .theme-dark .select-chevron {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2398a1b0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -99,5 +136,17 @@
   *::before,
   *::after {
     animation-iteration-count: 1 !important;
+  }
+
+  /* Entrances keep their fade and drop the travel: the content still announces
+     itself as new, without anything sliding across the viewport. */
+  .animate-rise-in {
+    animation-name: fade-in;
+  }
+
+  /* Progress still moves — it just arrives rather than sweeping. */
+  .motion-safe-fill {
+    transition-duration: var(--duration-instant) !important;
+    transition-delay: 0ms !important;
   }
 }

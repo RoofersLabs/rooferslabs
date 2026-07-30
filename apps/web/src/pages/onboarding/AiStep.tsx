@@ -5,17 +5,19 @@ import { AiVoice, OnboardingStep } from '@rooferslabs/shared';
 import { z } from 'zod';
 import { stepPath } from '@/auth/stages';
 import { useAiConfig, useUpdateAiConfig } from '@/hooks/queries';
-import { cn } from '@/lib/utils';
-import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/input';
 import {
   Field,
+  FieldGroup,
+  RevealedField,
   StepActions,
+  StepCard,
   StepError,
   StepHeading,
   StepLoading,
+  ToggleCard,
   fieldClass,
-  labelClass,
+  selectClass,
   textareaClass,
 } from './fields';
 import { useOnboarding } from './useOnboarding';
@@ -40,15 +42,24 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>;
 
-const VOICES: { value: AiVoice; label: string }[] = [
-  { value: AiVoice.ALLOY, label: 'Alloy — neutral, even' },
-  { value: AiVoice.ASH, label: 'Ash — warm, grounded' },
-  { value: AiVoice.CORAL, label: 'Coral — bright, friendly' },
-  { value: AiVoice.ECHO, label: 'Echo — calm, measured' },
-  { value: AiVoice.SAGE, label: 'Sage — steady, reassuring' },
-  { value: AiVoice.SHIMMER, label: 'Shimmer — light, upbeat' },
-  { value: AiVoice.VERSE, label: 'Verse — expressive' },
+const VOICES: { value: AiVoice; name: string; character: string }[] = [
+  { value: AiVoice.ALLOY, name: 'Alloy', character: 'neutral, even' },
+  { value: AiVoice.ASH, name: 'Ash', character: 'warm, grounded' },
+  { value: AiVoice.CORAL, name: 'Coral', character: 'bright, friendly' },
+  { value: AiVoice.ECHO, name: 'Echo', character: 'calm, measured' },
+  { value: AiVoice.SAGE, name: 'Sage', character: 'steady, reassuring' },
+  { value: AiVoice.SHIMMER, name: 'Shimmer', character: 'light, upbeat' },
+  { value: AiVoice.VERSE, name: 'Verse', character: 'expressive' },
 ];
+
+/**
+ * The display name for a stored voice id, so the review step can show "Sage"
+ * where the record holds `sage`. Derived from the list above rather than
+ * written twice, which is what stops the two drifting.
+ */
+export const VOICE_NAMES: Record<string, string> = Object.fromEntries(
+  VOICES.map((voice) => [voice.value, voice.name]),
+);
 
 const CAPABILITIES = [
   {
@@ -96,6 +107,10 @@ export function AiStep() {
   });
 
   const transferToHuman = useWatch({ control, name: 'transferToHuman' });
+  const capabilities = useWatch({
+    control,
+    name: ['captureLeads', 'detectEmergencies', 'requestAppointments'],
+  });
 
   const onSubmit = handleSubmit(async (values) => {
     await updateConfig.mutateAsync({
@@ -117,31 +132,28 @@ export function AiStep() {
   if (config.isLoading) return <StepLoading />;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 sm:space-y-10">
       <StepHeading
         title="Your AI receptionist"
         blurb="How it introduces itself, and what it handles while you’re on a roof."
       />
 
-      <Card as="form" onSubmit={onSubmit} className="gap-6 px-6 py-6">
+      <StepCard onSubmit={onSubmit}>
         <Field label="Receptionist name" htmlFor="assistantName" error={errors.assistantName}>
           <input
             id="assistantName"
             className={fieldClass}
             placeholder="Riley"
+            autoComplete="off"
             {...register('assistantName')}
           />
         </Field>
 
         <Field label="Voice" htmlFor="voice" error={errors.voice}>
-          <select
-            id="voice"
-            className={cn(fieldClass, 'cursor-pointer pr-8')}
-            {...register('voice')}
-          >
+          <select id="voice" className={selectClass} {...register('voice')}>
             {VOICES.map((voice) => (
               <option key={voice.value} value={voice.value}>
-                {voice.label}
+                {voice.name} — {voice.character}
               </option>
             ))}
           </select>
@@ -171,38 +183,39 @@ export function AiStep() {
           <input id="persona" className={fieldClass} {...register('persona')} />
         </Field>
 
-        <fieldset>
-          <legend className={labelClass}>What it handles</legend>
-          <div className="mt-2 space-y-2">
-            {CAPABILITIES.map((capability) => (
-              <label
+        <FieldGroup label="What it handles">
+          <div className="space-y-2.5">
+            {CAPABILITIES.map((capability, index) => (
+              <ToggleCard
                 key={capability.name}
-                className="flex cursor-pointer items-start gap-3 rounded-md border border-line-subtle p-4 transition-colors duration-fast hover:border-line-strong"
+                checked={Boolean(capabilities[index])}
+                title={capability.label}
+                blurb={capability.blurb}
               >
-                <Checkbox className="mt-0.5" {...register(capability.name)} />
-                <span className="min-w-0">
-                  <span className="block text-body font-medium text-ink">{capability.label}</span>
-                  <span className="block text-small text-ink-muted">{capability.blurb}</span>
-                </span>
-              </label>
+                <Checkbox {...register(capability.name)} />
+              </ToggleCard>
             ))}
           </div>
-        </fieldset>
+        </FieldGroup>
 
-        <div className="space-y-4">
-          <label className="flex cursor-pointer items-center gap-3 text-body font-medium text-ink">
+        {/* Escalation is a different question from what the receptionist can do
+            on its own, so it gets a rule rather than another panel in the stack. */}
+        <div className="space-y-4 border-t border-line-subtle pt-6">
+          <ToggleCard checked={Boolean(transferToHuman)} title="Transfer to a person on request">
             <Checkbox {...register('transferToHuman')} />
-            Transfer to a person on request
-          </label>
+          </ToggleCard>
           {transferToHuman && (
-            <Field label="Transfer number" htmlFor="transferPhone" error={errors.transferPhone}>
-              <input
-                id="transferPhone"
-                className={fieldClass}
-                placeholder="+15125550100"
-                {...register('transferPhone')}
-              />
-            </Field>
+            <RevealedField>
+              <Field label="Transfer number" htmlFor="transferPhone" error={errors.transferPhone}>
+                <input
+                  id="transferPhone"
+                  type="tel"
+                  className={fieldClass}
+                  placeholder="+15125550100"
+                  {...register('transferPhone')}
+                />
+              </Field>
+            </RevealedField>
           )}
         </div>
 
@@ -211,7 +224,7 @@ export function AiStep() {
           submitting={isSubmitting}
           onBack={() => navigate(stepPath(OnboardingStep.BUSINESS))}
         />
-      </Card>
+      </StepCard>
     </div>
   );
 }

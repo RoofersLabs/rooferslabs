@@ -7,16 +7,19 @@ import { stepPath } from '@/auth/stages';
 import { useCompany, useSetBusinessHours, useUpdateCompany } from '@/hooks/queries';
 import type { BusinessHour } from '@/types/api';
 import { cn } from '@/lib/utils';
-import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/input';
 import {
   Field,
+  FieldGroup,
+  RevealedField,
   StepActions,
+  StepCard,
   StepError,
   StepHeading,
   StepLoading,
+  ToggleCard,
   fieldClass,
-  labelClass,
+  selectClass,
   textareaClass,
 } from './fields';
 import { useOnboarding } from './useOnboarding';
@@ -111,6 +114,9 @@ export function BusinessStep() {
   });
 
   const emergencyEnabled = useWatch({ control, name: 'emergencyServiceEnabled' });
+  // Watched only to mute a closed day's times; the values themselves are
+  // untouched, so a day reopened later still has the hours it had before.
+  const hours = useWatch({ control, name: 'hours' });
 
   const onSubmit = handleSubmit(async (values) => {
     await updateCompany.mutateAsync({
@@ -131,30 +137,36 @@ export function BusinessStep() {
   if (company.isLoading) return <StepLoading />;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 sm:space-y-10">
       <StepHeading
         title="Business details"
         blurb="Where you work and when. Your AI receptionist uses this to answer questions and book jobs."
       />
 
-      <Card as="form" onSubmit={onSubmit} className="gap-6 px-6 py-6">
+      <StepCard onSubmit={onSubmit}>
         <Field label="Street address" htmlFor="addressLine1" error={errors.addressLine1}>
-          <input id="addressLine1" className={fieldClass} {...register('addressLine1')} />
+          <input
+            id="addressLine1"
+            className={fieldClass}
+            autoComplete="address-line1"
+            {...register('addressLine1')}
+          />
         </Field>
 
         <div className="flex gap-4">
-          <div className="w-32">
+          <div className="w-24 shrink-0 sm:w-32">
             <Field label="ZIP" htmlFor="postalCode" error={errors.postalCode}>
-              <input id="postalCode" className={fieldClass} {...register('postalCode')} />
+              <input
+                id="postalCode"
+                className={fieldClass}
+                autoComplete="postal-code"
+                {...register('postalCode')}
+              />
             </Field>
           </div>
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <Field label="Timezone" htmlFor="timezone" error={errors.timezone}>
-              <select
-                id="timezone"
-                className={cn(fieldClass, 'cursor-pointer pr-8')}
-                {...register('timezone')}
-              >
+              <select id="timezone" className={selectClass} {...register('timezone')}>
                 <option value="America/New_York">Eastern</option>
                 <option value="America/Chicago">Central</option>
                 <option value="America/Denver">Mountain</option>
@@ -195,62 +207,98 @@ export function BusinessStep() {
           />
         </Field>
 
-        <fieldset>
-          <legend className={labelClass}>Business hours</legend>
-          <div className="mt-2 space-y-2">
-            {DAYS.map((day, index) => (
-              <div
-                key={day}
-                className="flex flex-wrap items-center gap-3 rounded-md border border-line-subtle px-4 py-2.5 transition-colors duration-fast hover:border-line-strong"
-              >
-                <span className="w-24 shrink-0 text-body font-medium capitalize text-ink">
-                  {day}
-                </span>
-                <input
-                  aria-label={`${day} opening time`}
-                  className={cn(fieldClass, 'mt-0 w-28')}
-                  {...register(`hours.${index}.open`)}
-                />
-                <span className="text-small text-ink-faint">to</span>
-                <input
-                  aria-label={`${day} closing time`}
-                  className={cn(fieldClass, 'mt-0 w-28')}
-                  {...register(`hours.${index}.close`)}
-                />
-                <label className="ml-auto flex cursor-pointer items-center gap-2 text-small text-ink-muted">
-                  <Checkbox {...register(`hours.${index}.closed`)} />
-                  Closed
-                </label>
-                <input type="hidden" {...register(`hours.${index}.day`)} />
-              </div>
-            ))}
-          </div>
-          {errors.hours && (
-            <p className="mt-1.5 text-small text-emergency" role="alert">
-              Check the opening and closing times — each must be HH:mm (24-hour).
-            </p>
-          )}
-        </fieldset>
+        {/* Seven days drawn as seven bordered boxes read as seven separate
+            questions. One bordered list divided by hairlines reads as one
+            answer with seven lines, which is what it is. */}
+        <FieldGroup
+          label="Business hours"
+          hint="Times are 24-hour, as HH:mm."
+          error={
+            errors.hours
+              ? 'Check the opening and closing times — each must be HH:mm (24-hour).'
+              : undefined
+          }
+        >
+          <div className="divide-y divide-line-subtle overflow-hidden rounded-xl border border-line">
+            {DAYS.map((day, index) => {
+              const closed = hours?.[index]?.closed ?? false;
+              return (
+                <div
+                  key={day}
+                  className={cn(
+                    'grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-3 px-4 py-3 transition-colors duration-fast ease-standard sm:grid-cols-[6.5rem_1fr_auto]',
+                    closed ? 'bg-surface-2' : 'hover:bg-surface-2',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'col-start-1 row-start-1 text-body font-medium capitalize',
+                      closed ? 'text-ink-faint' : 'text-ink',
+                    )}
+                  >
+                    {day}
+                  </span>
 
-        <div className="space-y-4">
-          <label className="flex cursor-pointer items-center gap-3 text-body font-medium text-ink">
+                  {/* Below `sm` the times drop to their own row rather than
+                      wrapping mid-pair and orphaning the word "to". */}
+                  <div className="col-span-2 col-start-1 row-start-2 flex items-center gap-2 sm:col-span-1 sm:col-start-2 sm:row-start-1">
+                    <input
+                      aria-label={`${day} opening time`}
+                      className={cn(
+                        fieldClass,
+                        'font-num mt-0 w-24 px-2 text-center',
+                        closed && 'text-ink-faint',
+                      )}
+                      {...register(`hours.${index}.open`)}
+                    />
+                    <span className="text-small text-ink-faint">to</span>
+                    <input
+                      aria-label={`${day} closing time`}
+                      className={cn(
+                        fieldClass,
+                        'font-num mt-0 w-24 px-2 text-center',
+                        closed && 'text-ink-faint',
+                      )}
+                      {...register(`hours.${index}.close`)}
+                    />
+                  </div>
+
+                  {/* The negative margin buys the tick a 36px-tall hit area
+                      without the row growing to match it. */}
+                  <label className="col-start-2 row-start-1 -my-2 flex cursor-pointer items-center gap-2 justify-self-end py-2 text-small text-ink-muted sm:col-start-3">
+                    <Checkbox {...register(`hours.${index}.closed`)} />
+                    Closed
+                  </label>
+
+                  <input type="hidden" {...register(`hours.${index}.day`)} />
+                </div>
+              );
+            })}
+          </div>
+        </FieldGroup>
+
+        {/* Out-of-hours cover is a policy question, not another opening time. */}
+        <div className="space-y-4 border-t border-line-subtle pt-6">
+          <ToggleCard checked={Boolean(emergencyEnabled)} title="Offer 24/7 emergency service">
             <Checkbox {...register('emergencyServiceEnabled')} />
-            Offer 24/7 emergency service
-          </label>
+          </ToggleCard>
           {emergencyEnabled && (
-            <Field
-              label="Emergency contact number"
-              htmlFor="emergencyPhone"
-              error={errors.emergencyPhone}
-              hint="Where urgent calls are escalated outside business hours."
-            >
-              <input
-                id="emergencyPhone"
-                className={fieldClass}
-                placeholder="+15125550100"
-                {...register('emergencyPhone')}
-              />
-            </Field>
+            <RevealedField>
+              <Field
+                label="Emergency contact number"
+                htmlFor="emergencyPhone"
+                error={errors.emergencyPhone}
+                hint="Where urgent calls are escalated outside business hours."
+              >
+                <input
+                  id="emergencyPhone"
+                  type="tel"
+                  className={fieldClass}
+                  placeholder="+15125550100"
+                  {...register('emergencyPhone')}
+                />
+              </Field>
+            </RevealedField>
           )}
         </div>
 
@@ -259,7 +307,7 @@ export function BusinessStep() {
           submitting={isSubmitting}
           onBack={() => navigate(stepPath(OnboardingStep.COMPANY))}
         />
-      </Card>
+      </StepCard>
     </div>
   );
 }

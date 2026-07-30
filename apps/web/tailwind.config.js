@@ -291,10 +291,19 @@ export default {
           from: { opacity: '0', transform: 'translateY(4px) scale(0.98)' },
           to: { opacity: '1', transform: 'translateY(0) scale(1)' },
         },
+        // Content settling into place. `translate3d` keeps it on the compositor,
+        // so a step entrance costs no layout and no paint.
+        'rise-in': {
+          from: { opacity: '0', transform: 'translate3d(0, 10px, 0)' },
+          to: { opacity: '1', transform: 'translate3d(0, 0, 0)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in var(--duration-base) var(--ease-standard)',
         'scale-in': 'scale-in var(--duration-base) var(--ease-decelerate)',
+        // `both` so a delayed element holds at opacity 0 rather than flashing in
+        // at full opacity before its turn.
+        'rise-in': 'rise-in var(--duration-slow) var(--ease-decelerate) both',
       },
     },
   },

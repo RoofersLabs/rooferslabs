@@ -4,8 +4,15 @@ import { OnboardingStep } from '@rooferslabs/shared';
 import { z } from 'zod';
 import { useAccess } from '@/auth/AccessProvider';
 import { useCompany, useCreateCompany, useUpdateCompany } from '@/hooks/queries';
-import { Card } from '@/components/ui/card';
-import { Field, StepActions, StepError, StepHeading, StepLoading, fieldClass } from './fields';
+import {
+  Field,
+  StepActions,
+  StepCard,
+  StepError,
+  StepHeading,
+  StepLoading,
+  fieldClass,
+} from './fields';
 import { useOnboarding } from './useOnboarding';
 
 /** Mirrors CreateCompanyDto / the matching subset of UpdateCompanyDto. */
@@ -74,19 +81,30 @@ export function CompanyStep() {
   if (hasCompany && company.isLoading) return <StepLoading />;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 sm:space-y-10">
       <StepHeading
         title="Create your organization"
         blurb="Tell us about your business. This takes about two minutes."
       />
 
-      <Card as="form" onSubmit={onSubmit} className="gap-5 px-6 py-6">
+      <StepCard onSubmit={onSubmit}>
         <Field label="Business name" htmlFor="name" error={errors.name}>
-          <input id="name" className={fieldClass} {...register('name')} />
+          <input
+            id="name"
+            className={fieldClass}
+            autoComplete="organization"
+            {...register('name')}
+          />
         </Field>
 
         <Field label="Business email" htmlFor="email" error={errors.email}>
-          <input id="email" type="email" className={fieldClass} {...register('email')} />
+          <input
+            id="email"
+            type="email"
+            className={fieldClass}
+            autoComplete="email"
+            {...register('email')}
+          />
         </Field>
 
         <Field
@@ -97,28 +115,43 @@ export function CompanyStep() {
         >
           <input
             id="phone"
+            type="tel"
             className={fieldClass}
             placeholder="+15125550100"
+            autoComplete="tel"
             {...register('phone')}
           />
         </Field>
 
+        {/* City takes the room it needs; a state abbreviation never needs more
+            than four characters, and on a phone the pair stays side by side
+            rather than costing a whole extra row. */}
         <div className="flex gap-4">
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <Field label="City" htmlFor="city" error={errors.city}>
-              <input id="city" className={fieldClass} {...register('city')} />
+              <input
+                id="city"
+                className={fieldClass}
+                autoComplete="address-level2"
+                {...register('city')}
+              />
             </Field>
           </div>
-          <div className="w-28">
+          <div className="w-24 shrink-0 sm:w-28">
             <Field label="State" htmlFor="state" error={errors.state}>
-              <input id="state" className={fieldClass} {...register('state')} />
+              <input
+                id="state"
+                className={fieldClass}
+                autoComplete="address-level1"
+                {...register('state')}
+              />
             </Field>
           </div>
         </div>
 
         <StepError error={createCompany.error ?? updateCompany.error} />
         <StepActions submitting={isSubmitting} />
-      </Card>
+      </StepCard>
     </div>
   );
 }

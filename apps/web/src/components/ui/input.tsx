@@ -9,9 +9,14 @@ import { cn } from '@/lib/utils';
  * size (40px), so a field, a select and a button standing side by side in a
  * toolbar or a card footer line up on both edges. Textareas opt out of the
  * fixed height below, since they grow by rows.
+ *
+ * Focus is `.focus-field` rather than the `.focus-ring` a button uses: the ring
+ * hugs the control instead of floating clear of it, which stops a focused field
+ * from reading as two nested rectangles. `.focus-field` owns the transition, so
+ * there is deliberately no `transition-colors` here to fight it.
  */
 const baseField =
-  'focus-ring block w-full rounded-md border border-line bg-surface px-3 text-form-input text-ink placeholder:text-ink-faint transition-colors duration-fast ease-standard hover:border-line-strong disabled:cursor-not-allowed disabled:bg-surface-disabled disabled:text-ink-disabled disabled:hover:border-line';
+  'focus-field block w-full rounded-md border border-line bg-surface px-3 text-form-input text-ink placeholder:text-ink-faint hover:border-line-strong disabled:cursor-not-allowed disabled:bg-surface-disabled disabled:text-ink-disabled disabled:hover:border-line';
 
 /** Single-line controls sit at the shared 40px control height. */
 const fixedHeightField = cn(baseField, 'h-10 py-0');
@@ -115,7 +120,9 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         aria-invalid={error ? true : undefined}
         className={cn(
           fixedHeightField,
-          'cursor-pointer pr-8',
+          // The product's own chevron, so a select matches the inputs beside it
+          // on every platform instead of wearing the OS arrow.
+          'select-chevron cursor-pointer pr-10',
           error && 'border-emergency',
           className,
         )}

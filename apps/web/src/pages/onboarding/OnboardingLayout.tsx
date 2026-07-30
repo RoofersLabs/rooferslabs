@@ -1,6 +1,5 @@
 import { Navigate, useParams } from 'react-router-dom';
 import { UserButton } from '@clerk/clerk-react';
-import { Check } from 'lucide-react';
 import { OnboardingStep } from '@rooferslabs/shared';
 import { cn } from '@/lib/utils';
 import { StandaloneLayout } from '@/layouts/StandaloneLayout';
@@ -25,50 +24,68 @@ const STEP_SCREENS: Record<WizardStep, () => JSX.Element> = {
 };
 
 /**
- * Numbered progress rail.
+ * Progress rail.
  *
- * Three states, each carrying its own shape as well as its own colour: a
- * completed step is a filled tick, the current step is a filled number, and an
- * upcoming step is an outline. Colour alone never distinguishes them.
+ * Four numbered chips wrapped onto two lines on a phone and cost more vertical
+ * space than the first question of the form. This says the same thing in one
+ * line of type and a 3px rule: a caption naming the position and the step, over
+ * a segment per step. Nothing here competes with the heading below it.
+ *
+ * Three states, and none of them is signalled by colour alone — the caption
+ * states the position in words, and each segment carries its own text for a
+ * screen reader. A segment already visited but stepped back from keeps a pale
+ * fill, so returning to step 1 to fix a typo does not read as having lost the
+ * work behind it.
+ *
+ * The fill is a scaled child rather than an animated width: transform stays on
+ * the compositor, so advancing a step costs no layout.
  */
-function Stepper({ currentIndex, furthestIndex }: { currentIndex: number; furthestIndex: number }) {
+function Stepper({ current, furthestIndex }: { current: WizardStep; furthestIndex: number }) {
+  const currentIndex = stepIndex(current);
   return (
-    <ol className="mb-10 flex flex-wrap items-center gap-x-5 gap-y-3">
-      {ONBOARDING_STEPS.map((step, index) => {
-        const state =
-          index === currentIndex ? 'current' : index < furthestIndex ? 'done' : 'upcoming';
-        return (
-          <li key={step} className="flex items-center gap-2.5">
-            <span
-              aria-hidden
-              className={cn(
-                'font-num flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-caption font-semibold transition-colors duration-base ease-standard',
-                state === 'upcoming'
-                  ? 'border border-line text-ink-faint'
-                  : state === 'done'
-                    ? 'bg-success text-ink-on-brand'
-                    : 'bg-accent text-ink-on-brand',
-              )}
+    <nav aria-label="Setup progress" className="mb-8 sm:mb-10">
+      <div className="flex items-baseline justify-between gap-4">
+        <p className="text-caption font-medium uppercase tracking-[0.08em] text-ink-faint">
+          Step {currentIndex + 1} of {ONBOARDING_STEPS.length}
+        </p>
+        <p className="truncate text-caption font-medium text-ink-muted">{STEP_LABELS[current]}</p>
+      </div>
+
+      <ol className="mt-3 flex gap-1.5">
+        {ONBOARDING_STEPS.map((step, index) => {
+          const state =
+            index <= currentIndex ? 'current' : index <= furthestIndex ? 'visited' : 'upcoming';
+          return (
+            <li
+              key={step}
+              className="flex-1"
+              aria-current={index === currentIndex ? 'step' : undefined}
             >
-              {state === 'done' ? <Check className="h-3.5 w-3.5" /> : index + 1}
-            </span>
-            <span
-              className={cn(
-                'text-small transition-colors duration-base ease-standard',
-                state === 'current'
-                  ? 'font-semibold text-ink'
-                  : state === 'done'
-                    ? 'font-medium text-ink-muted'
-                    : 'text-ink-faint',
-              )}
-              aria-current={state === 'current' ? 'step' : undefined}
-            >
-              {STEP_LABELS[step]}
-            </span>
-          </li>
-        );
-      })}
-    </ol>
+              <span className="sr-only">
+                {STEP_LABELS[step]} —{' '}
+                {index < currentIndex
+                  ? 'completed'
+                  : index === currentIndex
+                    ? 'current step'
+                    : state === 'visited'
+                      ? 'completed, revisit later'
+                      : 'not started'}
+              </span>
+              <span aria-hidden className="block h-[3px] rounded-full bg-line">
+                <span
+                  style={{ transitionDelay: `${index * 60}ms` }}
+                  className={cn(
+                    'motion-safe-fill block h-full origin-left rounded-full transition-transform duration-slow ease-decelerate',
+                    state === 'upcoming' ? 'scale-x-0' : 'scale-x-100',
+                    state === 'visited' ? 'bg-accent-border' : 'bg-accent',
+                  )}
+                />
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
   );
 }
 
@@ -100,7 +117,7 @@ export function OnboardingLayout() {
 
   return (
     <StandaloneLayout action={<UserButton />}>
-      <Stepper currentIndex={stepIndex(step)} furthestIndex={stepIndex(furthest)} />
+      <Stepper current={step} furthestIndex={stepIndex(furthest)} />
       <StepScreen />
     </StandaloneLayout>
   );
