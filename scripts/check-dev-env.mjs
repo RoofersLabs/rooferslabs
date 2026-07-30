@@ -70,6 +70,28 @@ function parseEnvFile(path) {
   return out;
 }
 
+/**
+ * The Clerk Frontend API host a publishable key points at.
+ *
+ * Clerk encodes the host in the key itself: `pk_test_<base64>` decodes to
+ * something like `immortal-adder-67.clerk.accounts.dev$`, and `pk_live_<base64>`
+ * to `clerk.rooferslabs.com$`. That is why a wrong key silently loads clerk-js
+ * from the production domain with no proxyUrl or domain setting anywhere — and
+ * why this check reports the decoded host rather than just the prefix.
+ */
+function clerkFrontendApi(key) {
+  const body = key.split('_').slice(2).join('_');
+  if (!body) return null;
+  try {
+    const decoded = Buffer.from(body + '='.repeat((4 - (body.length % 4)) % 4), 'base64').toString(
+      'utf8',
+    );
+    return /^[a-z0-9.-]+$/i.test(decoded.replace(/\$$/, '')) ? decoded.replace(/\$$/, '') : null;
+  } catch {
+    return null;
+  }
+}
+
 const envPath = join(ROOT, '.env');
 if (!existsSync(envPath)) {
   console.log(`\n${RED}No .env file.${RESET}\n\n  cp .env.example .env\n`);
@@ -142,7 +164,37 @@ if (!QUIET) console.log(`\n${DIM}Credentials${RESET}`);
       'Expected pk_test_… and sk_test_… from the Development instance.',
     );
   } else {
-    ok('Clerk', 'development instance (pk_test_)');
+    ok('Clerk (api)', clerkFrontendApi(pk) ?? 'development instance');
+  }
+
+  // The web app has its OWN key, in its own file. Checking only .env is what
+  // let a stale pk_live_ sit in apps/web/.env.local while this reported a clean
+  // development setup — the API was correct and the browser was loading
+  // production Clerk.
+  const webEnv = parseEnvFile(join(ROOT, 'apps/web/.env.local'));
+  const webPk = (webEnv.VITE_CLERK_PUBLISHABLE_KEY ?? '').trim();
+
+  if (!webPk) {
+    fail(
+      'apps/web/.env.local has no VITE_CLERK_PUBLISHABLE_KEY',
+      'bun run setup   (regenerates it from .env)',
+    );
+  } else if (webPk.startsWith('pk_live_')) {
+    fail(
+      `Web Clerk key is PRODUCTION — the browser would load clerk-js from ${clerkFrontendApi(webPk) ?? 'the production domain'}`,
+      'The key encodes the Clerk Frontend API host, so this signs users in\n' +
+        '       against the LIVE user directory. Fix: bun run setup',
+    );
+  } else if (pk && webPk !== pk) {
+    // Same instance on both sides, or the browser and the API disagree about
+    // who is signed in — tokens minted by one are rejected by the other.
+    fail(
+      'Web and API Clerk keys are different instances',
+      `api: ${clerkFrontendApi(pk) ?? '?'}\n       web: ${clerkFrontendApi(webPk) ?? '?'}\n` +
+        '       Fix: bun run setup   (re-syncs the web key from .env)',
+    );
+  } else {
+    ok('Clerk (web)', clerkFrontendApi(webPk) ?? 'development instance');
   }
 }
 

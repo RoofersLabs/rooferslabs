@@ -20,6 +20,16 @@ function validateConfig(): ValidatedConfig {
   const errors: string[] = [];
   const isProd = import.meta.env.PROD;
 
+  // The deployment TIER, read from the env var rather than the __APP_ENV__
+  // define. Vite substitutes `define` values only when it bundles — a module
+  // served by the dev server still contains the bare identifier, so referencing
+  // it here directly throws a ReferenceError at import time and blanks the app.
+  // import.meta.env is populated in both dev and build, and this file already
+  // reads everything else that way.
+  //
+  // Distinct from import.meta.env.PROD above, which is the BUILD mode.
+  const appEnv = import.meta.env.VITE_APP_ENV ?? 'development';
+
   // ── Clerk publishable key — required in every environment ────────────────
   const clerkPublishableKey =
     (import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined)?.trim() ?? '';
@@ -31,6 +41,24 @@ function validateConfig(): ValidatedConfig {
   } else if (!clerkPublishableKey.startsWith('pk_')) {
     errors.push(
       'VITE_CLERK_PUBLISHABLE_KEY does not look like a Clerk publishable key (expected pk_…).',
+    );
+  } else if (appEnv !== 'production' && clerkPublishableKey.startsWith('pk_live_')) {
+    // The publishable key is not merely a credential — it ENCODES the Clerk
+    // Frontend API host, which is what clerk-js is fetched from. A pk_live_ key
+    // base64-decodes to `clerk.rooferslabs.com`, so a development build holding
+    // one silently loads the PRODUCTION Clerk instance and authenticates against
+    // the live user directory. There is no proxyUrl or domain prop involved and
+    // nothing visible in the code to explain it; the only evidence is the script
+    // origin in the network tab.
+    //
+    // Refusing to boot is therefore the only way this is noticeable at all.
+    errors.push(
+      'VITE_CLERK_PUBLISHABLE_KEY is a Clerk PRODUCTION key (pk_live_…) in a ' +
+        `${appEnv} build. That key encodes the production Clerk Frontend API ` +
+        'host, so the app would load clerk-js from clerk.rooferslabs.com and sign ' +
+        'users in against the LIVE user directory. Use the Development instance ' +
+        'key (pk_test_…) — Clerk Dashboard → instance selector → Development → ' +
+        'API Keys — or re-run `bun run setup` to re-sync it from .env.',
     );
   }
 

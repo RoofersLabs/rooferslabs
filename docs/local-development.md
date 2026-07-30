@@ -91,6 +91,15 @@ Only these need your attention:
 `DATABASE_URL` and `REDIS_URL` already point at the Docker services and need no
 edit.
 
+> **The Clerk publishable key encodes the Frontend API host.** `pk_test_…`
+> base64-decodes to `<slug>.clerk.accounts.dev`; `pk_live_…` decodes to
+> `clerk.rooferslabs.com`. So the *key alone* decides where the browser fetches
+> clerk-js from and which user directory it authenticates against — there is no
+> `proxyUrl` or `domain` setting anywhere in this codebase, and nothing in the
+> code will look wrong when it is wrong. `bun run check` decodes both keys and
+> prints the host each resolves to; the web app refuses to boot on a `pk_live_`
+> key outside a production build.
+
 **`APP_ENV=development` is load-bearing.** It disables the private-beta launch
 gate, selects the development service-worker cache namespace, and drives the
 API's cross-environment guard — which refuses to boot production against
@@ -155,6 +164,8 @@ to type.
 | `Prisma client is not generated` | `bun run prisma:generate` |
 | `Database is reachable but has no schema` | `bun run db:migrate` |
 | `Clerk PRODUCTION keys in a local .env` | Switch the Clerk dashboard to its Development instance and copy `pk_test_`/`sk_test_` |
+| `Web and API Clerk keys are different instances` | `bun run setup` re-syncs the web key from `.env` |
+| Browser loads clerk-js from `clerk.rooferslabs.com` | A `pk_live_` key reached `apps/web/.env.local`. The publishable key **encodes** the Clerk Frontend API host — there is no proxy setting. `bun run setup` |
 | `PAYMENTS_ENABLED=true but Paddle sandbox credentials are missing` | Set `PAYMENTS_ENABLED=false`, or supply sandbox keys |
 | `EADDRINUSE :4000` or `:5173` | A previous run is still alive: `pkill -f 'nest start'; pkill -f vite` |
 | Docker says "Cannot connect to the Docker daemon" | Start Docker Desktop and wait for **Running** |
