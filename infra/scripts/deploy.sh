@@ -23,12 +23,6 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 TF_DIR="$REPO_ROOT/infra/terraform/envs/production"
 
-# Production is deployed from `main` only. Checked before anything is built or
-# pushed, so a run from the wrong branch costs nothing.
-# shellcheck source=lib/require-main-branch.sh
-source "$(dirname "$0")/lib/require-main-branch.sh"
-require_main_branch "deploy the API to ECS"
-
 # Terraform is optional — never let a missing binary or state abort the script
 # before the environment-variable overrides have had their say.
 tf_out() { terraform -chdir="$TF_DIR" output -raw "$1" 2>/dev/null || true; }

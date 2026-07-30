@@ -1,8 +1,6 @@
 import { Suspense, lazy } from 'react';
 import { Outlet, Route, Routes } from 'react-router-dom';
 import { AccessProvider } from '@/auth/AccessProvider';
-import { LaunchPage } from '@/launch/LaunchPage';
-import { useLaunchMode } from '@/launch/useLaunchMode';
 import { RouteGuard } from '@/auth/RouteGuard';
 import { ROUTES } from '@/auth/stages';
 import { currentSurface } from '@/lib/host';
@@ -96,17 +94,6 @@ function AuthenticatedShell() {
  * Unchanged, and not mounted at all on the admin hostname.
  */
 function CustomerApp() {
-  // The public surface is decided here rather than in a wrapper above the
-  // router: mounting a gate above this tree would have to mount Clerk to know
-  // who the visitor is, and the whole point of keeping the marketing route
-  // outside the auth stack is that a page with no session never waits on an
-  // auth SDK. This hook needs no session — it asks the API for the mode alone.
-  //
-  // Every authenticated route below is gated by RouteGuard instead, which
-  // already owns this application's routing policy.
-  const launch = useLaunchMode();
-  const gated = launch.mode === 'private';
-
   return (
     <Routes>
       {/* The public marketing site. Deliberately outside the auth stack so a
@@ -120,13 +107,9 @@ function CustomerApp() {
       <Route
         path={ROUTES.marketing}
         element={
-          gated ? (
-            <LaunchPage />
-          ) : (
-            <Suspense fallback={<div className="min-h-screen bg-black" />}>
-              <MarketingPage />
-            </Suspense>
-          )
+          <Suspense fallback={<div className="min-h-screen bg-black" />}>
+            <MarketingPage />
+          </Suspense>
         }
       />
 

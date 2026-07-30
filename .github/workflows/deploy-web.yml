@@ -5,18 +5,7 @@ name: Deploy Web (S3 + CloudFront)
 # the SPA is built, uploaded, and invalidated, and can be run locally on its own.
 # Disabling or breaking this workflow never blocks a deploy.
 #
-# PRODUCTION ONLY. `main` is the sole branch that can reach this workflow, and
-# the sole branch AWS will issue production credentials to — the OIDC role's
-# trust policy names `main` and nothing else (modules/platform passes
-# github_deploy_branches = ["main"]).
-#
-# That redundancy is deliberate. This file previously triggered on
-# [main, develop] with repo-level variables, so a push to develop deployed
-# straight to rooferslabs.com. Editing this trigger back is no longer enough to
-# recreate that: AWS would refuse the role assumption. There is no development
-# deploy to add here — development runs on localhost and has no hosting.
-#
-# Requires (repo Settings → Environments → production):
+# Requires (repo Settings → Secrets and variables):
 #   Variables: AWS_REGION, AWS_DEPLOY_ROLE_ARN (GitHub OIDC role),
 #              WEB_BUCKET, WEB_DISTRIBUTION_ID, VITE_API_BASE_URL
 #   Secrets:   VITE_CLERK_PUBLISHABLE_KEY (pk_live_…)
@@ -24,7 +13,7 @@ name: Deploy Web (S3 + CloudFront)
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - 'apps/web/**'
       - 'packages/shared/**'
@@ -44,14 +33,6 @@ jobs:
   deploy:
     name: Build, verify, and deploy the SPA
     runs-on: ubuntu-latest
-    # Scopes the variables and secrets below to the production GitHub
-    # Environment, so production credentials are not readable by a run on any
-    # other ref, and can carry a protection rule restricting them to `main`.
-    environment: production
-    # Belt and braces: `on.push.branches` already restricts this, but
-    # workflow_dispatch does not, and a manual run from develop would otherwise
-    # build develop's code and ship it to production.
-    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
 

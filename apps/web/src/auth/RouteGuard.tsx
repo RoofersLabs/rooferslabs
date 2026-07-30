@@ -4,9 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { IconTile } from '@/components/ui/IconTile';
 import { FullScreenSpinner } from '@/components/ui/spinner';
-import { LaunchPage } from '@/launch/LaunchPage';
 import { useAccess } from './AccessProvider';
-import { ROUTES, redirectFor, type GuardedRoute } from './stages';
+import { redirectFor, type GuardedRoute } from './stages';
 
 /** The session request failed — routing cannot be decided, so offer a retry. */
 function SessionError({ message, onRetry }: { message: string; onRetry: () => void }) {
@@ -41,25 +40,6 @@ export function RouteGuard({ route }: { route: GuardedRoute }) {
   const location = useLocation();
 
   if (access.isLoading) return <FullScreenSpinner label="Loading your workspace…" />;
-
-  // The private-beta gate, checked before anything else that could render.
-  //
-  // Rendered in place rather than redirected to: a redirect to `/` would be a
-  // second decision site competing with `redirectFor`, and this must not be
-  // able to form a loop with it. Showing the launch page at whatever URL was
-  // requested also means a shared link keeps working the moment the gate lifts.
-  //
-  // Sign-in is the one exemption. It is linked from nowhere, but an allowlisted
-  // operator has to be able to reach it — gating it too would leave the beta
-  // with no way in at all. The page grants nothing on its own: a session from
-  // it is refused by the API unless the address is on the allowlist.
-  //
-  // This precedes the error branch deliberately. In private mode /auth/me
-  // answers 403 to a non-allowlisted caller, and that is a launch-page
-  // condition, not the "we couldn't load your workspace" failure.
-  if (access.launchMode === 'private' && !access.launchAllowed && route !== ROUTES.signIn) {
-    return <LaunchPage />;
-  }
 
   // A signed-in visitor whose session will not load has no derivable stage.
   // Anonymous visitors are unaffected — their stage needs no session.

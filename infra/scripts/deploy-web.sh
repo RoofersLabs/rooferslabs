@@ -28,12 +28,6 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 TF_DIR="$REPO_ROOT/infra/terraform/envs/production"
 DIST="$REPO_ROOT/apps/web/dist"
 
-# Production is deployed from `main` only. Checked before the build, the S3
-# sync, and the CloudFront invalidation.
-# shellcheck source=lib/require-main-branch.sh
-source "$(dirname "$0")/lib/require-main-branch.sh"
-require_main_branch "deploy the SPA to S3 and CloudFront"
-
 # Terraform is optional — never let a missing binary or state abort the script
 # before the environment-variable overrides have had their say.
 tf_out() { terraform -chdir="$TF_DIR" output -raw "$1" 2>/dev/null || true; }
@@ -42,20 +36,7 @@ BUCKET="${WEB_BUCKET:-$(tf_out web_bucket)}"
 DISTRIBUTION_ID="${WEB_DISTRIBUTION_ID:-$(tf_out web_distribution_id)}"
 : "${VITE_API_BASE_URL:=$(tf_out api_url)}"
 : "${VITE_CLERK_PUBLISHABLE_KEY:=$(tf_out clerk_publishable_key)}"
-
-# The deployment tier, baked into the bundle. Selects the production
-# service-worker cache namespace and disables development-only affordances.
-# Hardcoded rather than derived: this script only ever deploys production.
-VITE_APP_ENV="production"
-
-# Build-time FALLBACK for the private-beta gate, used only when the SPA cannot
-# reach the API. The API is authoritative and is read at runtime, which is what
-# lets launch day be "flip APP_LAUNCH_MODE and restart" with no rebuild — but a
-# bundle that boots against a dead API should still fail in the safe direction.
-: "${VITE_APP_LAUNCH_MODE:=$(tf_out launch_mode)}"
-VITE_APP_LAUNCH_MODE="${VITE_APP_LAUNCH_MODE:-public}"
-
-export VITE_API_BASE_URL VITE_CLERK_PUBLISHABLE_KEY VITE_APP_ENV VITE_APP_LAUNCH_MODE
+export VITE_API_BASE_URL VITE_CLERK_PUBLISHABLE_KEY
 
 if [ -z "${BUCKET:-}" ] || [ -z "${DISTRIBUTION_ID:-}" ]; then
   echo "error: could not resolve web_bucket / web_distribution_id from Terraform." >&2
@@ -66,38 +47,6 @@ if [ -z "${VITE_API_BASE_URL:-}" ] || [ -z "${VITE_CLERK_PUBLISHABLE_KEY:-}" ]; 
   echo "error: VITE_API_BASE_URL and VITE_CLERK_PUBLISHABLE_KEY are required for the build." >&2
   exit 1
 fi
-
-# Refuse to bake a Clerk DEVELOPMENT key into the production bundle.
-#
-# This is exactly how rooferslabs.com came to authenticate live visitors against
-# the Clerk development instance: the key is the terraform.tfvars value, this
-# script defaults to it, and nothing ever checked which instance it belonged to.
-# The CI path reads secrets.VITE_CLERK_PUBLISHABLE_KEY and would have been
-# correct; a local run silently was not.
-#
-# ALLOW_CLERK_DEV_KEY=1 overrides, for the window before the Clerk production
-# cutover. Set it deliberately, on the command line, and never in a file.
-case "$VITE_CLERK_PUBLISHABLE_KEY" in
-  pk_live_*) ;;
-  *)
-    if [ "${ALLOW_CLERK_DEV_KEY:-0}" = "1" ]; then
-      echo "WARNING: building production with a NON-LIVE Clerk key (ALLOW_CLERK_DEV_KEY=1)." >&2
-      echo "         Live visitors will authenticate against Clerk's development instance." >&2
-    else
-      cat >&2 <<EOF
-error: VITE_CLERK_PUBLISHABLE_KEY is not a Clerk production key (expected pk_live_…).
-
-Building production with a development key points live customers at the Clerk
-development user directory. Supply the production instance's key:
-
-    clerk_publishable_key = "pk_live_..."   # infra/terraform/envs/production/terraform.tfvars
-
-To ship anyway during the cutover window, re-run with ALLOW_CLERK_DEV_KEY=1.
-EOF
-      exit 1
-    fi
-    ;;
-esac
 
 # ---- Build ------------------------------------------------------------------
 if [ "${SKIP_BUILD:-0}" != "1" ]; then

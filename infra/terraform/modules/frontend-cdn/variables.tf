@@ -52,30 +52,6 @@ variable "api_domain" {
   type        = string
 }
 
-variable "cert_primary_domain" {
-  description = <<-EOT
-    Hostname ACM issues the certificate under, with certificate_domains carried
-    as SANs. Empty (the default) uses root_domain, which is what production
-    wants. A subordinate environment must set this to its own hostname —
-    otherwise it would request a certificate for the production apex and race
-    production over the renewal.
-  EOT
-  type        = string
-  default     = ""
-}
-
-variable "clerk_frontend_host" {
-  description = <<-EOT
-    Clerk Frontend API hostname to allow in the CSP. Empty uses
-    clerk.<root_domain>, correct for a Clerk *production* instance served over
-    the customer domain. A Clerk *development* instance lives on
-    <slug>.clerk.accounts.dev and is already covered by the wildcard, so a
-    development environment can leave this empty too.
-  EOT
-  type        = string
-  default     = ""
-}
-
 variable "enable_custom_domain" {
   description = <<-EOT
     Two-phase HTTPS, mirroring the ALB module. Apply with false first: the
@@ -114,21 +90,4 @@ variable "log_retention_days" {
 variable "tags" {
   type    = map(string)
   default = {}
-}
-
-variable "discourage_indexing" {
-  description = <<-EOT
-    Emit `X-Robots-Tag: noindex, nofollow` on every response.
-
-    Used while the site is in private beta. Preferred over a robots.txt
-    Disallow for this purpose: a Disallow only asks a crawler not to FETCH a
-    URL, and a page already in an index stays there (and can still rank from
-    inbound links). X-Robots-Tag instructs removal, and being a header it
-    applies to every response — assets and non-HTML included — rather than only
-    to what robots.txt happens to enumerate.
-
-    Set from launch_mode, so lifting the beta clears it in the same apply.
-  EOT
-  type        = bool
-  default     = false
 }

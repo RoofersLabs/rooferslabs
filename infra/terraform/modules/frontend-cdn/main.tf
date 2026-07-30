@@ -35,27 +35,16 @@ locals {
   #               not knowable from this repo — hence the wildcard.
   #   connect-src paddle.js calls its own services to price and complete the
   #               transaction.
-  # Clerk's Frontend API host. A production instance runs on a CNAME under the
-  # customer domain (clerk.<root>); a development instance runs on
-  # <slug>.clerk.accounts.dev, already covered by the wildcard. Overridable so a
-  # subdomain environment is not forced to name the production apex.
-  clerk_frontend_host = var.clerk_frontend_host != "" ? var.clerk_frontend_host : "clerk.${var.root_domain}"
-
-  # Both Paddle systems are reachable through the same wildcards: sandbox serves
-  # the same cdn.paddle.com bootstrap script and differs only in the hosts it
-  # then talks to (sandbox-buy, sandbox-api), which *.paddle.com already covers.
-  # So this CSP is correct for sandbox and live alike, and needs no per-provider
-  # branch — one less thing to get wrong when development points at sandbox.
   default_csp = join(" ", [
     "default-src 'self';",
     "base-uri 'self';",
     "object-src 'none';",
     "frame-ancestors 'none';",
-    "script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://${local.clerk_frontend_host} https://challenges.cloudflare.com https://cdn.paddle.com;",
+    "script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://clerk.${var.root_domain} https://challenges.cloudflare.com https://cdn.paddle.com;",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
     "font-src 'self' https://fonts.gstatic.com;",
     "img-src 'self' data: blob: https:;",
-    "connect-src 'self' https://${var.api_domain} wss://${var.api_domain} https://*.clerk.accounts.dev https://${local.clerk_frontend_host} https://*.paddle.com;",
+    "connect-src 'self' https://${var.api_domain} wss://${var.api_domain} https://*.clerk.accounts.dev https://clerk.${var.root_domain} https://*.paddle.com;",
     "frame-src 'self' https://*.clerk.accounts.dev https://challenges.cloudflare.com https://*.paddle.com;",
     "worker-src 'self' blob:;",
     "manifest-src 'self';",
@@ -189,21 +178,6 @@ resource "aws_cloudfront_response_headers_policy" "this" {
       override                = true
     }
   }
-
-  # Keeps an unlaunched site out of search results. Absent entirely once
-  # indexing is allowed, rather than sent with a permissive value — a header
-  # that is not present is unambiguous, and `X-Robots-Tag: all` invites a
-  # future reader to wonder whether it is doing something.
-  dynamic "custom_headers_config" {
-    for_each = var.discourage_indexing ? [1] : []
-    content {
-      items {
-        header   = "X-Robots-Tag"
-        value    = "noindex, nofollow"
-        override = true
-      }
-    }
-  }
 }
 
 # ---- ACM certificate (us-east-1, required by CloudFront) ----------------------
@@ -215,20 +189,13 @@ resource "aws_cloudfront_response_headers_policy" "this" {
 # distribution keeps serving on the certificate it already has.
 locals {
   certificate_domains = length(var.certificate_domains) > 0 ? var.certificate_domains : var.domain_aliases
-
-  # The name ACM issues under, with the rest carried as SANs. Defaults to the
-  # apex, which is right for production. A subordinate environment served from
-  # devstage.<root> must override it: leaving the apex here would have the
-  # development stack request a certificate for the production hostname, and
-  # two stacks renewing the same name is a race nobody wins.
-  cert_primary_domain = var.cert_primary_domain != "" ? var.cert_primary_domain : var.root_domain
 }
 
 resource "aws_acm_certificate" "this" {
   provider = aws.us_east_1
 
-  domain_name               = local.cert_primary_domain
-  subject_alternative_names = [for d in local.certificate_domains : d if d != local.cert_primary_domain]
+  domain_name               = var.root_domain
+  subject_alternative_names = [for d in local.certificate_domains : d if d != var.root_domain]
   validation_method         = "DNS"
 
   lifecycle {

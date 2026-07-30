@@ -4,8 +4,6 @@
 interface ImportMetaEnv {
   readonly VITE_CLERK_PUBLISHABLE_KEY?: string;
   readonly VITE_API_BASE_URL?: string;
-  /** Deployment tier. Mirrors the API's APP_ENV; see __APP_ENV__ below. */
-  readonly VITE_APP_ENV?: 'production' | 'development';
 }
 
 interface ImportMeta {
@@ -14,19 +12,3 @@ interface ImportMeta {
 
 /** Injected by Vite from package.json — see `define` in vite.config.ts. */
 declare const __APP_VERSION__: string;
-
-/**
- * Deployment tier, resolved at build time from VITE_APP_ENV.
- *
- * Anything unrecognised — including it being unset — becomes 'development', so
- * a build acquires production behaviour only by naming it. Also namespaces the
- * service worker's Cache Storage buckets, which is why it is baked in at build
- * time rather than read from import.meta.env at runtime.
- */
-declare const __APP_ENV__: 'production' | 'development';
-
-/**
- * Private-beta fallback baked in at build time. Consulted only when the API is
- * unreachable; the API's answer wins whenever there is one.
- */
-declare const __APP_LAUNCH_MODE__: 'private' | 'public';

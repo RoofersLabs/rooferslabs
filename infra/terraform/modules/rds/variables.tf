@@ -11,42 +11,8 @@ variable "private_subnet_ids" {
 }
 
 variable "allowed_security_group_ids" {
-  description = "Security groups permitted to reach PostgreSQL (the API service). Empty for an instance with no in-VPC compute."
+  description = "Security groups permitted to reach PostgreSQL (the API service)."
   type        = list(string)
-  default     = []
-}
-
-variable "allowed_cidr_blocks" {
-  description = <<-EOT
-    CIDRs permitted to reach PostgreSQL directly. Empty in production, where
-    the only source is a security group.
-
-    Used by the development instance, which has no in-VPC compute to name: the
-    only client is a workstation on the public internet. Keep these to single
-    addresses. Anything wider than a /32 should be justified in the tfvars file
-    that sets it.
-  EOT
-  type        = list(string)
-  default     = []
-
-  validation {
-    condition     = !contains(var.allowed_cidr_blocks, "0.0.0.0/0")
-    error_message = "0.0.0.0/0 would expose PostgreSQL to the entire internet behind only a password. Use specific addresses."
-  }
-}
-
-variable "publicly_accessible" {
-  description = <<-EOT
-    Give the instance a public endpoint. False everywhere that has in-VPC
-    compute — production is unreachable from outside the VPC and stays that way.
-
-    True only for the development instance, whose entire purpose is to be
-    reachable from a laptop with no bastion or VPN. Turning this on also
-    attaches a parameter group with rds.force_ssl = 1, so the endpoint refuses
-    plaintext connections.
-  EOT
-  type        = bool
-  default     = false
 }
 
 variable "engine_version" {

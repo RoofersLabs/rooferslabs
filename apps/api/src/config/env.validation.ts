@@ -13,7 +13,6 @@
  */
 import { PaymentProvider } from '@rooferslabs/shared';
 import { PROVIDER_REQUIRED_ENV, activePaymentProvider, isPaymentsEnabled } from './payments.flag';
-import { assertEnvironmentIsolation, resolveAppEnv } from './environment-guard';
 
 const REQUIRED_ALWAYS = ['DATABASE_URL'] as const;
 
@@ -78,17 +77,6 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
         `See .env.example for guidance.`,
     );
   }
-
-  // Cross-environment isolation. Runs after the required-variable check so the
-  // values it inspects are known to be present, and before anything else so no
-  // connection is ever opened to the wrong environment.
-  //
-  // APP_ENV, not NODE_ENV: NODE_ENV selects a build mode and is "production" in
-  // every deployed environment, including any future devstage. The tier is a
-  // separate question, and this guard is asking about the tier.
-  const appEnv = resolveAppEnv(env);
-  assertEnvironmentIsolation(env, appEnv);
-  console.warn(`[env] APP_ENV=${appEnv}.`);
 
   // The structured logger is not constructed yet at env-validation time.
   if (!paymentsEnabled) {

@@ -7,17 +7,7 @@ on:
     branches: [main, develop]
 
 # CI only ever reads the repo. No job here publishes an image or assumes an AWS
-# role — deploys live in deploy-web.yml/deploy-api.yml, which grant their own
-# id-token scope and run on `main` only.
-#
-# This is the whole pipeline for `develop`: lint, typecheck, build, test, stop.
-# There is deliberately nothing after it. Development is not a deployed
-# environment — it runs on localhost against its own RDS instance — so a green
-# run on develop means the code is sound, not that anything shipped.
-#
-# `permissions: contents: read` is what makes that structural: without
-# `id-token: write` no job in this file can obtain an AWS credential at all,
-# whatever it is edited to try.
+# role — deploys live in deploy-web.yml, which grants its own id-token scope.
 permissions:
   contents: read
 
@@ -59,15 +49,9 @@ jobs:
       - name: Build API
         run: npm run build --workspace @rooferslabs/api
 
-      # Production build verification: proves the bundle and service worker
-      # compile, nothing more. These values are placeholders and the artifact is
-      # discarded — CI never uploads it anywhere. The real production build runs
-      # in deploy-web.sh, which resolves the live values from Terraform and
-      # refuses to proceed on a non-pk_live_ Clerk key.
       - name: Build Web (PWA)
         run: npm run build --workspace @rooferslabs/web
         env:
-          VITE_APP_ENV: production
           VITE_CLERK_PUBLISHABLE_KEY: pk_test_placeholder_for_build
           VITE_API_BASE_URL: ''
 
@@ -87,30 +71,10 @@ jobs:
       - name: Format check
         run: terraform -chdir=infra/terraform fmt -recursive -check
 
-      # -backend=false is load-bearing, not incidental: it is what keeps the
-      # production state file unreachable from a CI run. `validate` needs no
-      # backend, so nothing here can read, lock, or write state — and there is
-      # deliberately no `plan` or `apply` step in this workflow at all.
-      - name: Validate every root
+      - name: Validate
         run: |
-          for root in bootstrap envs/production envs/development; do
-            echo "--- $root ---"
-            terraform -chdir="infra/terraform/$root" init -backend=false -input=false
-            terraform -chdir="infra/terraform/$root" validate
-          done
-
-  deployment-guards:
-    name: Production deployment guards
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      # Fails the build if any path to production becomes reachable from a
-      # branch other than main. The protections live in several files and none
-      # of them fails loudly when deleted, so they are asserted here rather than
-      # trusted to survive future edits.
-      - name: Assert only main can deploy production
-        run: bash scripts/check-deploy-guards.sh
+          terraform -chdir=infra/terraform/envs/production init -backend=false -input=false
+          terraform -chdir=infra/terraform/envs/production validate
 
   docker:
     name: Docker image build

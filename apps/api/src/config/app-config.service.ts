@@ -39,11 +39,6 @@ export class AppConfigService {
     return this.root.clerk;
   }
 
-  /** Private-beta gate: the mode and the internal allowlist. */
-  get launch(): AppConfig['launch'] {
-    return this.root.launch;
-  }
-
   get payments(): AppConfig['payments'] {
     return this.root.payments;
   }
