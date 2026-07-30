@@ -1,416 +1,221 @@
 # =============================================================================
-# RoofersLabs — production environment
+# RoofersLabs — PRODUCTION
 # =============================================================================
-# Composes the reusable modules into the backend stack:
-#   VPC → ALB (+ACM) → ECR → RDS → Redis → S3 → SQS → Secrets → IAM
-#   → CloudWatch → ECS Fargate (api)
+# Live customer traffic. Deployed only from `main`.
 #
-# The frontend (apps/web) is a static Vite SPA served from S3 + CloudFront
-# (module "frontend" below). This stack owns the full production footprint:
-# frontend CDN + backend API.
+#   https://rooferslabs.com
+#   https://www.rooferslabs.com
+#   https://api.rooferslabs.com
 #
-# See infra/terraform/README.md for the from-scratch walkthrough.
-
-data "aws_caller_identity" "current" {}
+# This root owns the VPC (modules/networking) and composes one environment out
+# of modules/platform. The development environment calls the same platform
+# module with different arguments — see envs/development. Anything that should
+# be true of both environments belongs in the module, not here.
+#
+# State is per-environment (see providers.tf). A development apply cannot read
+# or write this state, and therefore cannot plan a change against any resource
+# below.
+#
+# See infra/terraform/README.md for the from-scratch walkthrough and
+# docs/environments.md for the two-environment architecture.
 
 locals {
-  name = "rooferslabs-${var.environment}"
-
-  # The three hostnames the platform is built around:
-  #   <root>        the customer application (this SPA)
-  #   admin.<root>  the internal admin portal — not built yet, see below
-  #   api.<root>    the shared backend both of them call
   api_domain   = "${var.api_subdomain}.${var.root_domain}"
   admin_domain = "${var.admin_subdomain}.${var.root_domain}"
-  api_url      = "https://${local.api_domain}"
-  admin_url    = "https://${local.admin_domain}"
-  root_url     = "https://${var.root_domain}"
-
-  # WEB_PUBLIC_URL is the canonical public origin of the customer app, now the
-  # apex. The legacy app.<domain> origin has been dropped: it resolves to
-  # nothing, so it could not have been an origin for any live request.
-  #
-  # `admin.<domain>` is allowed ahead of the portal existing so the API needs no
-  # infrastructure change on the day it ships. Allowing an origin that nobody
-  # can serve costs nothing — reaching it would require control of the DNS zone.
-  # Applies to the API only; Cloudflare DNS and the CloudFront aliases are
-  # configured out-of-band.
-  web_public_url = local.root_url
-  cors_origins = join(",", [
-    local.root_url,
-    "https://www.${var.root_domain}",
-    local.admin_url,
-  ])
 }
 
-# ---- Networking -----------------------------------------------------------------
+# ---- Networking ---------------------------------------------------------------
+# Production creates and owns the VPC. Development attaches to it read-only and
+# adds its own subnets, so this stays the single owner of the address space.
 
 module "networking" {
   source = "../../modules/networking"
 
-  name = local.name
+  name = "rooferslabs-${var.environment}"
 }
 
-# ---- Container registry -----------------------------------------------------------
+# ---- The environment ----------------------------------------------------------
 
-module "ecr" {
-  source = "../../modules/ecr"
-
-  name         = "rooferslabs"
-  repositories = ["api"]
-}
-
-# ---- Load balancer -----------------------------------------------------------------
-
-module "alb" {
-  source = "../../modules/alb"
-
-  name              = local.name
-  vpc_id            = module.networking.vpc_id
-  public_subnet_ids = module.networking.public_subnet_ids
-  api_domain        = local.api_domain
-  enable_https      = var.enable_https
-}
-
-# ---- API service security group ---------------------------------------------------
-# Created here (not inside the ecs-service module) so RDS and Redis can
-# whitelist it without a module dependency cycle.
-
-resource "aws_security_group" "api_service" {
-  name        = "${local.name}-api-svc"
-  description = "Ingress from the ALB to the API service"
-  vpc_id      = module.networking.vpc_id
-
-  ingress {
-    description     = "API port from the ALB"
-    from_port       = 4000
-    to_port         = 4000
-    protocol        = "tcp"
-    security_groups = [module.alb.alb_security_group_id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = { Name = "${local.name}-api-svc" }
-}
-
-# ---- Data stores -----------------------------------------------------------------
-
-module "rds" {
-  source = "../../modules/rds"
-
-  name                       = local.name
-  vpc_id                     = module.networking.vpc_id
-  private_subnet_ids         = module.networking.private_subnet_ids
-  allowed_security_group_ids = [aws_security_group.api_service.id]
-  instance_class             = var.db_instance_class
-  multi_az                   = var.db_multi_az
-  deletion_protection        = var.db_deletion_protection
-}
-
-module "redis" {
-  source = "../../modules/redis"
-
-  name                       = local.name
-  vpc_id                     = module.networking.vpc_id
-  private_subnet_ids         = module.networking.private_subnet_ids
-  allowed_security_group_ids = [aws_security_group.api_service.id]
-  node_type                  = var.redis_node_type
-}
-
-module "s3" {
-  source = "../../modules/s3"
-
-  name = "${local.name}-${data.aws_caller_identity.current.account_id}"
-}
-
-# ---- Frontend (S3 + CloudFront + OAC) ---------------------------------------
-# The Vite SPA is uploaded by infra/scripts/deploy-web.sh; this owns the CDN.
-
-module "frontend" {
-  source = "../../modules/frontend-cdn"
+module "platform" {
+  source = "../../modules/platform"
 
   providers = {
     aws           = aws
     aws.us_east_1 = aws.us_east_1
   }
 
-  name        = local.name
-  bucket_name = "${local.name}-web-${data.aws_caller_identity.current.account_id}"
+  environment = var.environment
+  aws_region  = var.aws_region
 
-  # The SPA is served from the apex + www, and — once enabled — the admin host.
-  # One distribution, one bucket, one build: the admin portal is a route inside
-  # this SPA, so a second distribution would serve identical bytes.
-  domain_aliases = concat(
-    [var.root_domain, "www.${var.root_domain}"],
-    var.enable_admin_alias ? [local.admin_domain] : [],
-  )
+  vpc_id             = module.networking.vpc_id
+  public_subnet_ids  = module.networking.public_subnet_ids
+  private_subnet_ids = module.networking.private_subnet_ids
 
-  # Requested a stage earlier than the alias is attached, so the certificate can
-  # validate while the live site keeps serving on the one it already has.
-  certificate_domains = concat(
-    [var.root_domain, "www.${var.root_domain}"],
-    var.request_admin_certificate ? [local.admin_domain] : [],
-  )
+  # Domains
+  root_domain        = var.root_domain
+  web_domain         = var.root_domain
+  web_domain_aliases = ["www.${var.root_domain}"]
+  api_domain         = local.api_domain
+  admin_domain       = local.admin_domain
+  enable_https       = var.enable_https
 
-  # Only meaningful once the alias is live; harmless before then.
-  admin_host              = var.enable_admin_alias ? local.admin_domain : ""
-  root_domain             = var.root_domain
-  api_domain              = local.api_domain
-  enable_custom_domain    = var.enable_web_custom_domain
-  price_class             = var.web_price_class
-  content_security_policy = var.web_content_security_policy
+  # Frontend
+  web_bucket_name             = "rooferslabs-${var.environment}-web-${data.aws_caller_identity.current.account_id}"
+  enable_web_custom_domain    = var.enable_web_custom_domain
+  request_admin_certificate   = var.request_admin_certificate
+  enable_admin_alias          = var.enable_admin_alias
+  web_price_class             = var.web_price_class
+  web_content_security_policy = var.web_content_security_policy
+
+  # Historical value: production's repository is rooferslabs/api and renaming it
+  # would replace it, orphaning every image the running service can roll back to.
+  ecr_namespace = "rooferslabs"
+
+  # Credentials
+  clerk_secret_key      = var.clerk_secret_key
+  clerk_publishable_key = var.clerk_publishable_key
+  clerk_webhook_secret  = var.clerk_webhook_secret
+  openai_api_key        = var.openai_api_key
+  twilio_account_sid    = var.twilio_account_sid
+  twilio_auth_token     = var.twilio_auth_token
+
+  # Billing
+  payments_enabled                  = var.payments_enabled
+  payment_provider                  = var.payment_provider
+  paddle_environment                = var.paddle_environment
+  paddle_api_key                    = var.paddle_api_key
+  paddle_client_token               = var.paddle_client_token
+  paddle_webhook_secret             = var.paddle_webhook_secret
+  paddle_price_starter_monthly      = var.paddle_price_starter_monthly
+  paddle_price_professional_monthly = var.paddle_price_professional_monthly
+  paddle_price_starter_annual       = var.paddle_price_starter_annual
+  paddle_price_professional_annual  = var.paddle_price_professional_annual
+  stripe_secret_key                 = var.stripe_secret_key
+  stripe_webhook_secret             = var.stripe_webhook_secret
+  stripe_price_starter              = var.stripe_price_starter
+  stripe_price_professional         = var.stripe_price_professional
+  billing_trial_period_days         = var.billing_trial_period_days
+  billing_grandfather_before        = var.billing_grandfather_before
+
+  # Known, temporary deviations from the production guardrails. Both are
+  # tracked in docs/environments.md; clearing them is the launch checklist.
+  allow_clerk_instance_mismatch     = var.allow_clerk_instance_mismatch
+  allow_paddle_environment_mismatch = var.allow_paddle_environment_mismatch
+
+  # Web Push
+  vapid_public_key  = var.vapid_public_key
+  vapid_private_key = var.vapid_private_key
+  vapid_subject     = var.vapid_subject
+
+  # Sizing — production defaults
+  api_cpu                = var.api_cpu
+  api_memory             = var.api_memory
+  api_desired_count      = var.api_desired_count
+  db_instance_class      = var.db_instance_class
+  db_multi_az            = var.db_multi_az
+  db_deletion_protection = var.db_deletion_protection
+  redis_node_type        = var.redis_node_type
+  log_level              = "info"
+  log_retention_days     = var.log_retention_days
+  alarm_email            = var.alarm_email
+  openai_realtime_model  = var.openai_realtime_model
+  openai_responses_model = var.openai_responses_model
+  openai_embedding_model = var.openai_embedding_model
+
+  # Only `main` may deploy production. This is the AWS-side half of the
+  # branch→environment mapping; the workflow's half is in .github/workflows.
+  github_repository      = var.github_repository
+  github_deploy_branches = ["main"]
+  github_org_id          = var.github_org_id
+  github_repository_id   = var.github_repository_id
 }
 
-module "sqs" {
-  source = "../../modules/sqs"
+data "aws_caller_identity" "current" {}
 
-  name = local.name
-}
-
-# ---- Secrets -----------------------------------------------------------------------
-
-# Turning the payment wall on without the credentials to enforce it would boot an
-# API that rejects every customer, so fail the plan instead of the deployment.
+# ---- State moves for the platform-module refactor ----------------------------
+# Composing production out of modules/platform changed these resources' state
+# addresses but not the resources themselves. Without these blocks Terraform
+# would read the new addresses as new resources and propose destroying and
+# recreating the entire production environment — the database included.
 #
-# Only the *selected* provider's credentials are demanded. That is what lets the
-# stack run with no Stripe account at all while Paddle is active, and would let
-# it run with no Paddle account if the two were ever swapped back.
-locals {
-  billing_credentials_present = (
-    var.payment_provider == "paddle"
-    ? (
-      var.paddle_api_key != "" &&
-      var.paddle_client_token != "" &&
-      var.paddle_webhook_secret != "" &&
-      var.paddle_price_starter_monthly != "" &&
-      var.paddle_price_professional_monthly != ""
-    )
-    : (
-      var.stripe_secret_key != "" &&
-      var.stripe_webhook_secret != "" &&
-      var.stripe_price_starter != "" &&
-      var.stripe_price_professional != ""
-    )
-  )
+# `moved` for a module block carries every resource inside it, so one entry per
+# module is enough. Verify with: terraform plan → "0 to add, 0 to change,
+# 0 to destroy". Anything else means a move is missing; do not apply.
+#
+# These can be deleted once a plan has confirmed the moves in every workspace
+# that tracks this environment.
+
+moved {
+  from = module.ecr
+  to   = module.platform.module.ecr
 }
 
-resource "terraform_data" "payments_config_check" {
-  input = "${var.payments_enabled}-${var.payment_provider}"
-
-  lifecycle {
-    precondition {
-      condition = !var.payments_enabled || local.billing_credentials_present
-      error_message = join(" ", [
-        "payments_enabled = true with payment_provider = \"paddle\" requires paddle_api_key,",
-        "paddle_client_token, paddle_webhook_secret, paddle_price_starter_monthly and",
-        "paddle_price_professional_monthly. With payment_provider = \"stripe\" it requires",
-        "stripe_secret_key, stripe_webhook_secret, stripe_price_starter and",
-        "stripe_price_professional. Set payments_enabled = false to run without billing.",
-      ])
-    }
-  }
+moved {
+  from = module.alb
+  to   = module.platform.module.alb
 }
 
-module "secrets" {
-  source = "../../modules/secrets"
-
-  name         = local.name
-  database_url = module.rds.database_url
-
-  # Billing keys are written only while payments are enabled, and only for the
-  # provider actually in use. They are omitted rather than stored empty because
-  # the task definition below reads individual JSON keys out of this secret — a
-  # key that exists but is blank would start a task that then fails env
-  # validation, which is harder to diagnose than a key that is simply not wired.
-  app_secrets = merge(
-    {
-      CLERK_SECRET_KEY   = var.clerk_secret_key
-      OPENAI_API_KEY     = var.openai_api_key
-      TWILIO_ACCOUNT_SID = var.twilio_account_sid
-      TWILIO_AUTH_TOKEN  = var.twilio_auth_token
-    },
-    # Billing gates every tenant's access, so with payments on the API refuses
-    # to boot without these. The dormant provider's keys are never stored — the
-    # platform holds no credentials for a processor it is not using.
-    var.payments_enabled && var.payment_provider == "paddle" ? {
-      PADDLE_API_KEY        = var.paddle_api_key
-      PADDLE_WEBHOOK_SECRET = var.paddle_webhook_secret
-      PADDLE_CLIENT_TOKEN   = var.paddle_client_token
-    } : {},
-    var.payments_enabled && var.payment_provider == "stripe" ? {
-      STRIPE_SECRET_KEY     = var.stripe_secret_key
-      STRIPE_WEBHOOK_SECRET = var.stripe_webhook_secret
-    } : {},
-    var.clerk_webhook_secret != "" ? { CLERK_WEBHOOK_SECRET = var.clerk_webhook_secret } : {},
-    var.vapid_private_key != "" ? { VAPID_PRIVATE_KEY = var.vapid_private_key } : {},
-  )
+moved {
+  from = aws_security_group.api_service
+  to   = module.platform.aws_security_group.api_service
 }
 
-# ---- IAM -----------------------------------------------------------------------------
-
-module "iam" {
-  source = "../../modules/iam"
-
-  name = local.name
-  secret_arns = [
-    module.secrets.database_secret_arn,
-    module.secrets.app_secret_arn,
-  ]
-  s3_bucket_arns = values(module.s3.bucket_arns)
-  sqs_queue_arns = [module.sqs.queue_arn, module.sqs.dead_letter_queue_arn]
+moved {
+  from = module.rds
+  to   = module.platform.module.rds
 }
 
-# ---- CI deploy role (GitHub Actions OIDC) --------------------------------------------
-# Scoped to this repo's main/develop branches and to exactly the resources the
-# two deploy workflows touch: the SPA bucket, its distribution, the api ECR
-# repository, and the api ECS service.
-
-module "github_oidc" {
-  source = "../../modules/github-oidc"
-
-  name                 = local.name
-  github_repository    = var.github_repository
-  github_org_id        = var.github_org_id
-  github_repository_id = var.github_repository_id
-  allowed_branches     = var.github_deploy_branches
-
-  web_bucket_arn              = module.frontend.bucket_arn
-  cloudfront_distribution_arn = module.frontend.distribution_arn
-  ecr_repository_arns         = values(module.ecr.repository_arns)
-
-  # Built here rather than taken from the module: aws_ecs_service exposes the
-  # ARN as `id`, which reads as an accident at the call site.
-  ecs_service_arns = [
-    "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:service/${local.name}/${local.name}-api",
-  ]
+moved {
+  from = module.redis
+  to   = module.platform.module.redis
 }
 
-# ---- CloudWatch ------------------------------------------------------------------------
-
-module "observability" {
-  source = "../../modules/observability"
-
-  name               = local.name
-  services           = ["api"]
-  log_retention_days = var.log_retention_days
-  alarm_email        = var.alarm_email
-  alb_arn_suffix     = module.alb.alb_arn_suffix
-  cluster_name       = local.name
-  api_service_name   = "${local.name}-api"
+moved {
+  from = module.s3
+  to   = module.platform.module.s3
 }
 
-# ---- ECS ------------------------------------------------------------------------------
-
-resource "aws_ecs_cluster" "this" {
-  name = local.name
-
-  setting {
-    name  = "containerInsights"
-    value = "enabled"
-  }
+moved {
+  from = module.frontend
+  to   = module.platform.module.frontend
 }
 
-module "api_service" {
-  source = "../../modules/ecs-service"
-
-  name                  = "${local.name}-api"
-  region                = var.aws_region
-  cluster_arn           = aws_ecs_cluster.this.arn
-  vpc_id                = module.networking.vpc_id
-  private_subnet_ids    = module.networking.private_subnet_ids
-  alb_security_group_id = module.alb.alb_security_group_id
-  create_security_group = false # plan-time literal; the SG below is created in this root
-  security_group_id     = aws_security_group.api_service.id
-  target_group_arn      = module.alb.api_target_group_arn
-
-  container_name       = "api"
-  container_port       = 4000
-  image_repository_url = module.ecr.repository_urls["api"]
-  cpu                  = var.api_cpu
-  memory               = var.api_memory
-  desired_count        = var.api_desired_count
-
-  execution_role_arn = module.iam.execution_role_arn
-  task_role_arn      = module.iam.task_role_arn
-  log_group_name     = module.observability.log_group_names["api"]
-
-  environment = {
-    NODE_ENV                = "production"
-    API_PORT                = "4000"
-    API_PUBLIC_URL          = local.api_url
-    WEB_PUBLIC_URL          = local.web_public_url
-    CORS_ORIGINS            = local.cors_origins
-    REDIS_URL               = module.redis.redis_url
-    LOG_LEVEL               = "info"
-    OPENAI_REALTIME_MODEL   = var.openai_realtime_model
-    OPENAI_RESPONSES_MODEL  = var.openai_responses_model
-    OPENAI_EMBEDDING_MODEL  = var.openai_embedding_model
-    TWILIO_MEDIA_STREAM_URL = "wss://${local.api_domain}/v1/telephony/media-stream"
-    CLERK_PUBLISHABLE_KEY   = var.clerk_publishable_key
-    VAPID_PUBLIC_KEY        = var.vapid_public_key
-    VAPID_SUBJECT           = var.vapid_subject
-    AWS_REGION              = var.aws_region
-    S3_BUCKET_RECORDINGS    = module.s3.bucket_names["recordings"]
-    S3_BUCKET_UPLOADS       = module.s3.bucket_names["uploads"]
-    # Queue is provisioned and permitted; consumers arrive in a later release.
-    SQS_QUEUE_URL          = module.sqs.queue_url
-    BACKGROUND_JOBS_INLINE = "true"
-    # Master switch for billing. False boots the API with no provider at all.
-    PAYMENTS_ENABLED = tostring(var.payments_enabled)
-    # Which processor is active. The other stays compiled but never constructed.
-    PAYMENT_PROVIDER = var.payment_provider
-    # Price IDs are configuration, not credentials — they identify what is for
-    # sale and grant nothing, so they live in plain environment.
-    PADDLE_ENVIRONMENT                = var.paddle_environment
-    PADDLE_PRICE_STARTER_MONTHLY      = var.paddle_price_starter_monthly
-    PADDLE_PRICE_PROFESSIONAL_MONTHLY = var.paddle_price_professional_monthly
-    # Empty until annual plans launch; the API refuses a checkout for an
-    # interval with no configured price rather than inventing one.
-    PADDLE_PRICE_STARTER_ANNUAL      = var.paddle_price_starter_annual
-    PADDLE_PRICE_PROFESSIONAL_ANNUAL = var.paddle_price_professional_annual
-    STRIPE_PRICE_STARTER             = var.stripe_price_starter
-    STRIPE_PRICE_PROFESSIONAL        = var.stripe_price_professional
-    BILLING_TRIAL_PERIOD_DAYS        = tostring(var.billing_trial_period_days)
-    # Tenants that predate the payment wall keep access without paying.
-    BILLING_GRANDFATHER_BEFORE = var.billing_grandfather_before
-  }
-
-  secrets = merge(
-    {
-      DATABASE_URL       = "${module.secrets.database_secret_arn}:DATABASE_URL::"
-      CLERK_SECRET_KEY   = "${module.secrets.app_secret_arn}:CLERK_SECRET_KEY::"
-      OPENAI_API_KEY     = "${module.secrets.app_secret_arn}:OPENAI_API_KEY::"
-      TWILIO_ACCOUNT_SID = "${module.secrets.app_secret_arn}:TWILIO_ACCOUNT_SID::"
-      TWILIO_AUTH_TOKEN  = "${module.secrets.app_secret_arn}:TWILIO_AUTH_TOKEN::"
-
-    },
-    # Kept in lockstep with app_secrets above: wired only when payments are on,
-    # and only for the provider actually in use.
-    var.payments_enabled && var.payment_provider == "paddle"
-    ? {
-      PADDLE_API_KEY        = "${module.secrets.app_secret_arn}:PADDLE_API_KEY::"
-      PADDLE_WEBHOOK_SECRET = "${module.secrets.app_secret_arn}:PADDLE_WEBHOOK_SECRET::"
-      PADDLE_CLIENT_TOKEN   = "${module.secrets.app_secret_arn}:PADDLE_CLIENT_TOKEN::"
-    }
-    : {},
-    var.payments_enabled && var.payment_provider == "stripe"
-    ? {
-      STRIPE_SECRET_KEY     = "${module.secrets.app_secret_arn}:STRIPE_SECRET_KEY::"
-      STRIPE_WEBHOOK_SECRET = "${module.secrets.app_secret_arn}:STRIPE_WEBHOOK_SECRET::"
-    }
-    : {},
-    var.clerk_webhook_secret != ""
-    ? { CLERK_WEBHOOK_SECRET = "${module.secrets.app_secret_arn}:CLERK_WEBHOOK_SECRET::" }
-    : {},
-    var.vapid_private_key != ""
-    ? { VAPID_PRIVATE_KEY = "${module.secrets.app_secret_arn}:VAPID_PRIVATE_KEY::" }
-    : {},
-  )
+moved {
+  from = module.sqs
+  to   = module.platform.module.sqs
 }
 
+moved {
+  from = terraform_data.payments_config_check
+  to   = module.platform.terraform_data.payments_config_check
+}
+
+moved {
+  from = module.secrets
+  to   = module.platform.module.secrets
+}
+
+moved {
+  from = module.iam
+  to   = module.platform.module.iam
+}
+
+moved {
+  from = module.github_oidc
+  to   = module.platform.module.github_oidc
+}
+
+moved {
+  from = module.observability
+  to   = module.platform.module.observability
+}
+
+moved {
+  from = aws_ecs_cluster.this
+  to   = module.platform.aws_ecs_cluster.this
+}
+
+moved {
+  from = module.api_service
+  to   = module.platform.module.api_service
+}

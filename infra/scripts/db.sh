@@ -56,6 +56,14 @@ esac
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 TF_DIR="$REPO_ROOT/infra/terraform/envs/production"
+
+# Only the WRITE actions are branch-gated (see the case below). `status` and
+# `platform-users` read production and answer questions you need answered while
+# working on a branch — gating those would train people to bypass the guard
+# rather than respect it.
+# shellcheck source=lib/require-main-branch.sh
+source "$(dirname "$0")/lib/require-main-branch.sh"
+
 command -v jq >/dev/null || { echo "error: jq is required." >&2; exit 1; }
 
 tf_out() { terraform -chdir="$TF_DIR" output -raw "$1" 2>/dev/null || true; }
@@ -79,6 +87,27 @@ NETWORK=$(echo "$SERVICE_JSON" | jq -c '{awsvpcConfiguration: .networkConfigurat
 
 echo "==> $ACTION  (one-off task in the API's VPC)"
 echo "    task definition: ${TASK_DEF##*/}"
+
+# This script targets PRODUCTION and only production — TF_DIR is pinned to
+# envs/production above. Local development has its own database, reachable
+# directly with ordinary Prisma commands (see infra/scripts/dev-env.sh), so
+# there is no longer any reason to reach for this during normal development.
+#
+# `deploy` and the grant/revoke actions write to the live database. Require the
+# intent to be typed out rather than arriving via shell history or a stray
+# repeat of the last command.
+case "$ACTION" in
+  deploy | grant-owner | revoke-owner)
+    require_main_branch "run '$ACTION' against the production database"
+    if [ "${DB_CONFIRM:-}" != "production" ]; then
+      echo
+      echo "    This writes to the PRODUCTION database ($CLUSTER)."
+      printf "    Type 'production' to continue: "
+      read -r reply
+      [ "$reply" = "production" ] || { echo "aborted." >&2; exit 1; }
+    fi
+    ;;
+esac
 
 case "$ACTION" in
   status | deploy)

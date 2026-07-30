@@ -5,14 +5,22 @@ name: Deploy API (ECR + ECS)
 # API image is built, pushed, and rolled out, and can be run locally on its own.
 # Disabling or breaking this workflow never blocks a deploy.
 #
-# Requires (repo Settings → Secrets and variables → Actions):
+# PRODUCTION ONLY. `main` is the sole branch that can reach this workflow, and
+# the sole branch AWS will issue production credentials to — the OIDC role's
+# trust policy names `main` and nothing else.
+#
+# This previously triggered on [main, develop], so a push to develop rolled a
+# new task definition onto the live ECS service. Development has no deployed
+# API to replace it with: it runs on localhost.
+#
+# Requires (repo Settings → Environments → production):
 #   Variables: AWS_REGION, AWS_DEPLOY_ROLE_ARN (GitHub OIDC role),
 #              ECS_CLUSTER, API_SERVICE, API_REPO
 # The role comes from infra/terraform/modules/github-oidc.
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - 'apps/api/**'
       - 'packages/shared/**'
@@ -35,6 +43,11 @@ jobs:
   deploy:
     name: Build, push, and roll out the API
     runs-on: ubuntu-latest
+    # Production credentials are scoped to this GitHub Environment, so no run on
+    # another ref can read them.
+    environment: production
+    # workflow_dispatch ignores on.push.branches, so pin the ref here too.
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
 

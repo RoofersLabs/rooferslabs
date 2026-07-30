@@ -1,0 +1,683 @@
+module.platform.terraform_data.payments_config_check: Refreshing state... [id=1fe493c6-7734-f03a-0adb-8770fb600665]
+module.platform.module.rds.random_password.master: Refreshing state... [id=none]
+module.platform.module.secrets.aws_secretsmanager_secret.database: Refreshing state... [id=arn:aws:secretsmanager:us-east-1:462292557780:secret:rooferslabs-production/database-13nams]
+module.networking.aws_vpc.this: Refreshing state... [id=vpc-0c33a0671b884ac25]
+module.networking.data.aws_availability_zones.available: Reading...
+module.platform.module.frontend.aws_cloudfront_origin_access_control.this: Refreshing state... [id=E2UFXT2B515V64]
+module.platform.module.github_oidc.aws_iam_openid_connect_provider.github[0]: Refreshing state... [id=arn:aws:iam::462292557780:oidc-provider/token.actions.githubusercontent.com]
+module.platform.module.frontend.aws_cloudfront_function.admin_root_redirect[0]: Refreshing state... [id=rooferslabs-production-admin-root-redirect]
+module.networking.aws_eip.nat[0]: Refreshing state... [id=eipalloc-00afbcb6d81834e23]
+module.platform.aws_ecs_cluster.this: Refreshing state... [id=arn:aws:ecs:us-east-1:462292557780:cluster/rooferslabs-production]
+module.platform.data.aws_caller_identity.current: Reading...
+module.platform.module.iam.data.aws_iam_policy_document.ecs_assume: Reading...
+module.platform.module.iam.data.aws_iam_policy_document.ecs_assume: Read complete after 0s [id=1077804475]
+module.platform.module.frontend.aws_cloudfront_response_headers_policy.this: Refreshing state... [id=8e26703f-f65c-416b-b542-e4607677cc4e]
+module.platform.data.aws_caller_identity.current: Read complete after 0s [id=462292557780]
+module.platform.module.sqs.aws_sqs_queue.dead_letter: Refreshing state... [id=https://sqs.us-east-1.amazonaws.com/462292557780/rooferslabs-production-jobs-dlq]
+module.platform.module.frontend.aws_cloudfront_cache_policy.this: Refreshing state... [id=b7a4b30f-5e06-48e7-87ea-79e42a660056]
+module.platform.module.iam.data.aws_iam_policy_document.task_exec: Reading...
+module.platform.module.secrets.aws_secretsmanager_secret.app: Refreshing state... [id=arn:aws:secretsmanager:us-east-1:462292557780:secret:rooferslabs-production/app-g6oGLt]
+module.platform.module.iam.data.aws_iam_policy_document.task_exec: Read complete after 0s [id=4220690459]
+module.networking.data.aws_availability_zones.available: Read complete after 1s [id=us-east-1]
+module.platform.module.observability.aws_cloudwatch_log_group.this["api"]: Refreshing state... [id=/rooferslabs-production/api]
+module.platform.module.alb.aws_acm_certificate.this: Refreshing state... [id=arn:aws:acm:us-east-1:462292557780:certificate/1a9d1c77-d871-484b-a88b-c4d389322642]
+data.aws_caller_identity.current: Reading...
+module.platform.module.ecr.aws_ecr_repository.this["api"]: Refreshing state... [id=rooferslabs/api]
+data.aws_caller_identity.current: Read complete after 0s [id=462292557780]
+module.platform.module.iam.aws_iam_role.task: Refreshing state... [id=rooferslabs-production-ecs-task]
+module.platform.module.frontend.aws_acm_certificate.this: Refreshing state... [id=arn:aws:acm:us-east-1:462292557780:certificate/ae930349-1cb4-4b32-9314-e052c0be859e]
+module.platform.module.iam.aws_iam_role.execution: Refreshing state... [id=rooferslabs-production-ecs-execution]
+module.platform.module.observability.aws_cloudwatch_metric_alarm.api_cpu: Refreshing state... [id=rooferslabs-production-api-cpu-high]
+module.platform.module.sqs.aws_sqs_queue.jobs: Refreshing state... [id=https://sqs.us-east-1.amazonaws.com/462292557780/rooferslabs-production-jobs]
+module.platform.module.s3.aws_s3_bucket.this["recordings"]: Refreshing state... [id=rooferslabs-production-462292557780-recordings]
+module.platform.module.s3.aws_s3_bucket.this["uploads"]: Refreshing state... [id=rooferslabs-production-462292557780-uploads]
+module.platform.module.github_oidc.data.aws_iam_policy_document.assume: Reading...
+module.platform.module.github_oidc.data.aws_iam_policy_document.assume: Read complete after 0s [id=1596479787]
+module.platform.module.secrets.aws_secretsmanager_secret_version.app: Refreshing state... [id=arn:aws:secretsmanager:us-east-1:462292557780:secret:rooferslabs-production/app-g6oGLt|terraform-ZpzxYXnmyvnWeULZ862QvF3y39]
+module.platform.module.sqs.aws_sqs_queue_redrive_allow_policy.dead_letter: Refreshing state... [id=https://sqs.us-east-1.amazonaws.com/462292557780/rooferslabs-production-jobs-dlq]
+module.platform.module.ecr.aws_ecr_lifecycle_policy.this["api"]: Refreshing state... [id=rooferslabs/api]
+module.platform.module.github_oidc.aws_iam_role.deploy: Refreshing state... [id=rooferslabs-production-github-deploy]
+module.platform.module.frontend.aws_s3_bucket.site: Refreshing state... [id=rooferslabs-production-web-462292557780]
+module.platform.module.frontend.aws_s3_bucket.logs: Refreshing state... [id=rooferslabs-production-web-462292557780-logs]
+module.platform.module.frontend.aws_acm_certificate_validation.this[0]: Refreshing state... [id=2026-07-27 16:06:06.568 +0000 UTC]
+module.networking.aws_internet_gateway.this: Refreshing state... [id=igw-041a6c6f513cb730a]
+module.networking.aws_subnet.public[0]: Refreshing state... [id=subnet-0db691aa35313c191]
+module.networking.aws_subnet.public[1]: Refreshing state... [id=subnet-09f50ef8df058bc27]
+module.networking.aws_subnet.private[0]: Refreshing state... [id=subnet-01a567604df2d2e4a]
+module.networking.aws_subnet.private[1]: Refreshing state... [id=subnet-09af96cfbeb32e843]
+module.platform.module.iam.data.aws_iam_policy_document.read_secrets: Reading...
+module.platform.module.iam.data.aws_iam_policy_document.read_secrets: Read complete after 0s [id=4142153908]
+module.platform.module.iam.data.aws_iam_policy_document.task_sqs: Reading...
+module.platform.module.iam.data.aws_iam_policy_document.task_sqs: Read complete after 0s [id=3034136407]
+module.platform.module.iam.aws_iam_role_policy_attachment.execution_managed: Refreshing state... [id=rooferslabs-production-ecs-execution/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy]
+module.networking.aws_route_table.public: Refreshing state... [id=rtb-0fd0d9ba2d36e4fac]
+module.platform.module.iam.aws_iam_role_policy.execution_secrets: Refreshing state... [id=rooferslabs-production-ecs-execution:read-app-secrets]
+module.networking.aws_nat_gateway.this[0]: Refreshing state... [id=nat-0d25a7e308c859de9]
+module.platform.module.iam.aws_iam_role_policy.task_exec: Refreshing state... [id=rooferslabs-production-ecs-task:ecs-exec]
+module.platform.module.iam.aws_iam_role_policy.task_sqs[0]: Refreshing state... [id=rooferslabs-production-ecs-task:sqs-background-jobs]
+module.platform.module.alb.aws_lb_target_group.api: Refreshing state... [id=arn:aws:elasticloadbalancing:us-east-1:462292557780:targetgroup/rooferslabs-production-api/bf9bb10f0e35bfb6]
+module.platform.module.alb.aws_security_group.alb: Refreshing state... [id=sg-048d38ebda0c25e71]
+module.networking.aws_route_table_association.public[0]: Refreshing state... [id=rtbassoc-0e8394c42a6430308]
+module.networking.aws_route_table_association.public[1]: Refreshing state... [id=rtbassoc-0f8e362ce3f74cde5]
+module.networking.aws_route_table.private[0]: Refreshing state... [id=rtb-064453f8ff929b65b]
+module.platform.module.rds.aws_db_subnet_group.this: Refreshing state... [id=rooferslabs-production]
+module.platform.module.redis.aws_elasticache_subnet_group.this: Refreshing state... [id=rooferslabs-production]
+module.platform.aws_security_group.api_service: Refreshing state... [id=sg-0dcd82fffcb8922f9]
+module.platform.module.alb.aws_lb.this: Refreshing state... [id=arn:aws:elasticloadbalancing:us-east-1:462292557780:loadbalancer/app/rooferslabs-production/b138083d07c5b315]
+module.networking.aws_route_table_association.private[0]: Refreshing state... [id=rtbassoc-0cc092e09b795a766]
+module.networking.aws_route_table_association.private[1]: Refreshing state... [id=rtbassoc-0bdb39ac5da4c7f2b]
+module.platform.module.redis.aws_security_group.this: Refreshing state... [id=sg-09369d8a37f2df938]
+module.platform.module.rds.aws_security_group.this: Refreshing state... [id=sg-0d2df025d383bff0a]
+module.platform.module.rds.aws_db_instance.this: Refreshing state... [id=db-VPYL7PYBKO73X55SL6KAOZNC6M]
+module.platform.module.redis.aws_elasticache_replication_group.this: Refreshing state... [id=rooferslabs-production]
+module.platform.module.secrets.aws_secretsmanager_secret_version.database: Refreshing state... [id=arn:aws:secretsmanager:us-east-1:462292557780:secret:rooferslabs-production/database-13nams|terraform-Nl4eo9YAndjWjTXJI7P1ZuR771]
+module.platform.module.observability.aws_cloudwatch_metric_alarm.alb_5xx: Refreshing state... [id=rooferslabs-production-alb-5xx]
+module.platform.module.alb.aws_lb_listener.http: Refreshing state... [id=arn:aws:elasticloadbalancing:us-east-1:462292557780:listener/app/rooferslabs-production/b138083d07c5b315/ff10a74634244b33]
+module.platform.module.alb.aws_lb_listener.https[0]: Refreshing state... [id=arn:aws:elasticloadbalancing:us-east-1:462292557780:listener/app/rooferslabs-production/b138083d07c5b315/d31b695474add4af]
+module.platform.module.s3.aws_s3_bucket_versioning.this["recordings"]: Refreshing state... [id=rooferslabs-production-462292557780-recordings]
+module.platform.module.s3.aws_s3_bucket_versioning.this["uploads"]: Refreshing state... [id=rooferslabs-production-462292557780-uploads]
+module.platform.module.s3.aws_s3_bucket_public_access_block.this["recordings"]: Refreshing state... [id=rooferslabs-production-462292557780-recordings]
+module.platform.module.s3.aws_s3_bucket_public_access_block.this["uploads"]: Refreshing state... [id=rooferslabs-production-462292557780-uploads]
+module.platform.module.s3.aws_s3_bucket_server_side_encryption_configuration.this["uploads"]: Refreshing state... [id=rooferslabs-production-462292557780-uploads]
+module.platform.module.s3.aws_s3_bucket_server_side_encryption_configuration.this["recordings"]: Refreshing state... [id=rooferslabs-production-462292557780-recordings]
+module.platform.module.iam.data.aws_iam_policy_document.task_s3: Reading...
+module.platform.module.iam.data.aws_iam_policy_document.task_s3: Read complete after 0s [id=322057061]
+module.platform.module.api_service.aws_ecs_task_definition.this: Refreshing state... [id=rooferslabs-production-api]
+module.platform.module.iam.aws_iam_role_policy.task_s3[0]: Refreshing state... [id=rooferslabs-production-ecs-task:s3-application-buckets]
+module.platform.module.frontend.aws_s3_bucket_public_access_block.site: Refreshing state... [id=rooferslabs-production-web-462292557780]
+module.platform.module.frontend.aws_s3_bucket_server_side_encryption_configuration.site: Refreshing state... [id=rooferslabs-production-web-462292557780]
+module.platform.module.frontend.aws_s3_bucket_versioning.site: Refreshing state... [id=rooferslabs-production-web-462292557780]
+module.platform.module.frontend.aws_s3_bucket_lifecycle_configuration.logs: Refreshing state... [id=rooferslabs-production-web-462292557780-logs]
+module.platform.module.frontend.aws_s3_bucket_ownership_controls.logs: Refreshing state... [id=rooferslabs-production-web-462292557780-logs]
+module.platform.module.frontend.aws_s3_bucket_public_access_block.logs: Refreshing state... [id=rooferslabs-production-web-462292557780-logs]
+module.platform.module.api_service.aws_ecs_service.this: Refreshing state... [id=arn:aws:ecs:us-east-1:462292557780:service/rooferslabs-production/rooferslabs-production-api]
+module.platform.module.frontend.aws_cloudfront_distribution.this: Refreshing state... [id=EPON980X5WJA6]
+module.platform.module.frontend.data.aws_iam_policy_document.site: Reading...
+module.platform.module.github_oidc.data.aws_iam_policy_document.deploy: Reading...
+module.platform.module.frontend.data.aws_iam_policy_document.site: Read complete after 0s [id=1771067732]
+module.platform.module.frontend.aws_s3_bucket_policy.site: Refreshing state... [id=rooferslabs-production-web-462292557780]
+module.platform.module.github_oidc.data.aws_iam_policy_document.deploy: Read complete after 0s [id=4031954525]
+module.platform.module.github_oidc.aws_iam_role_policy.deploy: Refreshing state... [id=rooferslabs-production-github-deploy:deploy-web-and-api]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+  ~ update in-place
+-/+ destroy and then create replacement
+
+Terraform will perform the following actions:
+
+  # aws_ecs_cluster.this has moved to module.platform.aws_ecs_cluster.this
+    resource "aws_ecs_cluster" "this" {
+        id       = "arn:aws:ecs:us-east-1:462292557780:cluster/rooferslabs-production"
+        name     = "rooferslabs-production"
+        tags     = {}
+        # (3 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # aws_security_group.api_service has moved to module.platform.aws_security_group.api_service
+    resource "aws_security_group" "api_service" {
+        id                     = "sg-0dcd82fffcb8922f9"
+        name                   = "rooferslabs-production-api-svc"
+        tags                   = {
+            "Name" = "rooferslabs-production-api-svc"
+        }
+        # (10 unchanged attributes hidden)
+    }
+
+  # module.platform.terraform_data.clerk_instance_check will be created
+  + resource "terraform_data" "clerk_instance_check" {
+      + id     = (known after apply)
+      + input  = "production-pk_test_"
+      + output = (known after apply)
+    }
+
+  # module.platform.terraform_data.paddle_environment_check will be created
+  + resource "terraform_data" "paddle_environment_check" {
+      + id     = (known after apply)
+      + input  = "production-sandbox"
+      + output = (known after apply)
+    }
+
+  # terraform_data.payments_config_check has moved to module.platform.terraform_data.payments_config_check
+    resource "terraform_data" "payments_config_check" {
+        id     = "1fe493c6-7734-f03a-0adb-8770fb600665"
+        # (2 unchanged attributes hidden)
+    }
+
+  # module.alb.aws_acm_certificate.this has moved to module.platform.module.alb.aws_acm_certificate.this
+    resource "aws_acm_certificate" "this" {
+        id                        = "arn:aws:acm:us-east-1:462292557780:certificate/1a9d1c77-d871-484b-a88b-c4d389322642"
+        tags                      = {}
+        # (19 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.alb.aws_lb.this has moved to module.platform.module.alb.aws_lb.this
+    resource "aws_lb" "this" {
+        id                                                           = "arn:aws:elasticloadbalancing:us-east-1:462292557780:loadbalancer/app/rooferslabs-production/b138083d07c5b315"
+        name                                                         = "rooferslabs-production"
+        tags                                                         = {}
+        # (29 unchanged attributes hidden)
+
+        # (5 unchanged blocks hidden)
+    }
+
+  # module.alb.aws_lb_listener.http has moved to module.platform.module.alb.aws_lb_listener.http
+    resource "aws_lb_listener" "http" {
+        id                                                                  = "arn:aws:elasticloadbalancing:us-east-1:462292557780:listener/app/rooferslabs-production/b138083d07c5b315/ff10a74634244b33"
+        tags                                                                = {}
+        # (18 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.alb.aws_lb_listener.https[0] has moved to module.platform.module.alb.aws_lb_listener.https[0]
+    resource "aws_lb_listener" "https" {
+        id                                                                    = "arn:aws:elasticloadbalancing:us-east-1:462292557780:listener/app/rooferslabs-production/b138083d07c5b315/d31b695474add4af"
+        tags                                                                  = {}
+        # (27 unchanged attributes hidden)
+
+        # (2 unchanged blocks hidden)
+    }
+
+  # module.alb.aws_lb_target_group.api has moved to module.platform.module.alb.aws_lb_target_group.api
+    resource "aws_lb_target_group" "api" {
+        id                                 = "arn:aws:elasticloadbalancing:us-east-1:462292557780:targetgroup/rooferslabs-production-api/bf9bb10f0e35bfb6"
+        name                               = "rooferslabs-production-api"
+        tags                               = {}
+        # (20 unchanged attributes hidden)
+
+        # (5 unchanged blocks hidden)
+    }
+
+  # module.alb.aws_security_group.alb has moved to module.platform.module.alb.aws_security_group.alb
+    resource "aws_security_group" "alb" {
+        id                     = "sg-048d38ebda0c25e71"
+        name                   = "rooferslabs-production-alb"
+        tags                   = {
+            "Name" = "rooferslabs-production-alb"
+        }
+        # (10 unchanged attributes hidden)
+    }
+
+  # module.platform.module.api_service.aws_ecs_service.this will be updated in-place
+  # (moved from module.api_service.aws_ecs_service.this)
+  ~ resource "aws_ecs_service" "this" {
+        id                                 = "arn:aws:ecs:us-east-1:462292557780:service/rooferslabs-production/rooferslabs-production-api"
+        name                               = "rooferslabs-production-api"
+        tags                               = {}
+      ~ task_definition                    = "arn:aws:ecs:us-east-1:462292557780:task-definition/rooferslabs-production-api:6" -> (known after apply)
+        # (18 unchanged attributes hidden)
+
+        # (5 unchanged blocks hidden)
+    }
+
+  # module.platform.module.api_service.aws_ecs_task_definition.this must be replaced
+  # (moved from module.api_service.aws_ecs_task_definition.this)
+-/+ resource "aws_ecs_task_definition" "this" {
+      ~ arn                      = "arn:aws:ecs:us-east-1:462292557780:task-definition/rooferslabs-production-api:6" -> (known after apply)
+      ~ arn_without_revision     = "arn:aws:ecs:us-east-1:462292557780:task-definition/rooferslabs-production-api" -> (known after apply)
+      ~ container_definitions    = (sensitive value) # forces replacement
+      ~ enable_fault_injection   = false -> (known after apply)
+      ~ id                       = "rooferslabs-production-api" -> (known after apply)
+      ~ revision                 = 6 -> (known after apply)
+      - tags                     = {} -> null
+        # (13 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.ecr.aws_ecr_lifecycle_policy.this["api"] has moved to module.platform.module.ecr.aws_ecr_lifecycle_policy.this["api"]
+    resource "aws_ecr_lifecycle_policy" "this" {
+        id          = "rooferslabs/api"
+        # (4 unchanged attributes hidden)
+    }
+
+  # module.ecr.aws_ecr_repository.this["api"] has moved to module.platform.module.ecr.aws_ecr_repository.this["api"]
+    resource "aws_ecr_repository" "this" {
+        id                   = "rooferslabs/api"
+        name                 = "rooferslabs/api"
+        tags                 = {}
+        # (7 unchanged attributes hidden)
+
+        # (2 unchanged blocks hidden)
+    }
+
+  # module.frontend.aws_acm_certificate.this has moved to module.platform.module.frontend.aws_acm_certificate.this
+    resource "aws_acm_certificate" "this" {
+        id                        = "arn:aws:acm:us-east-1:462292557780:certificate/ae930349-1cb4-4b32-9314-e052c0be859e"
+        tags                      = {}
+        # (19 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.frontend.aws_acm_certificate_validation.this[0] has moved to module.platform.module.frontend.aws_acm_certificate_validation.this[0]
+    resource "aws_acm_certificate_validation" "this" {
+        id              = "2026-07-27 16:06:06.568 +0000 UTC"
+        # (2 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.frontend.aws_cloudfront_cache_policy.this has moved to module.platform.module.frontend.aws_cloudfront_cache_policy.this
+    resource "aws_cloudfront_cache_policy" "this" {
+        id          = "b7a4b30f-5e06-48e7-87ea-79e42a660056"
+        name        = "rooferslabs-production-web-cache"
+        # (6 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.frontend.aws_cloudfront_distribution.this has moved to module.platform.module.frontend.aws_cloudfront_distribution.this
+    resource "aws_cloudfront_distribution" "this" {
+        id                              = "EPON980X5WJA6"
+        tags                            = {}
+        # (25 unchanged attributes hidden)
+
+        # (7 unchanged blocks hidden)
+    }
+
+  # module.frontend.aws_cloudfront_function.admin_root_redirect[0] has moved to module.platform.module.frontend.aws_cloudfront_function.admin_root_redirect[0]
+    resource "aws_cloudfront_function" "admin_root_redirect" {
+        id                           = "rooferslabs-production-admin-root-redirect"
+        name                         = "rooferslabs-production-admin-root-redirect"
+        tags                         = {}
+        # (10 unchanged attributes hidden)
+    }
+
+  # module.frontend.aws_cloudfront_origin_access_control.this has moved to module.platform.module.frontend.aws_cloudfront_origin_access_control.this
+    resource "aws_cloudfront_origin_access_control" "this" {
+        id                                = "E2UFXT2B515V64"
+        name                              = "rooferslabs-production-web-oac"
+        # (6 unchanged attributes hidden)
+    }
+
+  # module.frontend.aws_cloudfront_response_headers_policy.this has moved to module.platform.module.frontend.aws_cloudfront_response_headers_policy.this
+    resource "aws_cloudfront_response_headers_policy" "this" {
+        id      = "8e26703f-f65c-416b-b542-e4607677cc4e"
+        name    = "rooferslabs-production-web-headers"
+        # (3 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.frontend.aws_s3_bucket.logs has moved to module.platform.module.frontend.aws_s3_bucket.logs
+    resource "aws_s3_bucket" "logs" {
+        id                          = "rooferslabs-production-web-462292557780-logs"
+        tags                        = {}
+        # (15 unchanged attributes hidden)
+
+        # (5 unchanged blocks hidden)
+    }
+
+  # module.frontend.aws_s3_bucket.site has moved to module.platform.module.frontend.aws_s3_bucket.site
+    resource "aws_s3_bucket" "site" {
+        id                          = "rooferslabs-production-web-462292557780"
+        tags                        = {}
+        # (15 unchanged attributes hidden)
+
+        # (3 unchanged blocks hidden)
+    }
+
+  # module.frontend.aws_s3_bucket_lifecycle_configuration.logs has moved to module.platform.module.frontend.aws_s3_bucket_lifecycle_configuration.logs
+    resource "aws_s3_bucket_lifecycle_configuration" "logs" {
+        id                                     = "rooferslabs-production-web-462292557780-logs"
+        # (4 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.frontend.aws_s3_bucket_ownership_controls.logs has moved to module.platform.module.frontend.aws_s3_bucket_ownership_controls.logs
+    resource "aws_s3_bucket_ownership_controls" "logs" {
+        id     = "rooferslabs-production-web-462292557780-logs"
+        # (2 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.frontend.aws_s3_bucket_policy.site has moved to module.platform.module.frontend.aws_s3_bucket_policy.site
+    resource "aws_s3_bucket_policy" "site" {
+        id     = "rooferslabs-production-web-462292557780"
+        # (3 unchanged attributes hidden)
+    }
+
+  # module.frontend.aws_s3_bucket_public_access_block.logs has moved to module.platform.module.frontend.aws_s3_bucket_public_access_block.logs
+    resource "aws_s3_bucket_public_access_block" "logs" {
+        id                      = "rooferslabs-production-web-462292557780-logs"
+        # (6 unchanged attributes hidden)
+    }
+
+  # module.frontend.aws_s3_bucket_public_access_block.site has moved to module.platform.module.frontend.aws_s3_bucket_public_access_block.site
+    resource "aws_s3_bucket_public_access_block" "site" {
+        id                      = "rooferslabs-production-web-462292557780"
+        # (6 unchanged attributes hidden)
+    }
+
+  # module.frontend.aws_s3_bucket_server_side_encryption_configuration.site has moved to module.platform.module.frontend.aws_s3_bucket_server_side_encryption_configuration.site
+    resource "aws_s3_bucket_server_side_encryption_configuration" "site" {
+        id                    = "rooferslabs-production-web-462292557780"
+        # (3 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.frontend.aws_s3_bucket_versioning.site has moved to module.platform.module.frontend.aws_s3_bucket_versioning.site
+    resource "aws_s3_bucket_versioning" "site" {
+        id                    = "rooferslabs-production-web-462292557780"
+        # (3 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.github_oidc.aws_iam_openid_connect_provider.github[0] has moved to module.platform.module.github_oidc.aws_iam_openid_connect_provider.github[0]
+    resource "aws_iam_openid_connect_provider" "github" {
+        id              = "arn:aws:iam::462292557780:oidc-provider/token.actions.githubusercontent.com"
+        tags            = {}
+        # (5 unchanged attributes hidden)
+    }
+
+  # module.platform.module.github_oidc.aws_iam_role.deploy will be updated in-place
+  # (moved from module.github_oidc.aws_iam_role.deploy)
+  ~ resource "aws_iam_role" "deploy" {
+      ~ assume_role_policy    = jsonencode(
+          ~ {
+              ~ Statement = [
+                  ~ {
+                      ~ Condition = {
+                          ~ StringLike   = {
+                              ~ "token.actions.githubusercontent.com:sub" = [
+                                    "repo:RoofersLabs/rooferslabs:ref:refs/heads/main",
+                                  - "repo:RoofersLabs/rooferslabs:ref:refs/heads/develop",
+                                    "repo:RoofersLabs@305356388/rooferslabs@1301242105:ref:refs/heads/main",
+                                  - "repo:RoofersLabs@305356388/rooferslabs@1301242105:ref:refs/heads/develop",
+                                ]
+                            }
+                            # (1 unchanged attribute hidden)
+                        }
+                        # (4 unchanged attributes hidden)
+                    },
+                ]
+                # (1 unchanged attribute hidden)
+            }
+        )
+        id                    = "rooferslabs-production-github-deploy"
+        name                  = "rooferslabs-production-github-deploy"
+        tags                  = {}
+        # (11 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.github_oidc.aws_iam_role_policy.deploy has moved to module.platform.module.github_oidc.aws_iam_role_policy.deploy
+    resource "aws_iam_role_policy" "deploy" {
+        id          = "rooferslabs-production-github-deploy:deploy-web-and-api"
+        name        = "deploy-web-and-api"
+        # (3 unchanged attributes hidden)
+    }
+
+  # module.iam.aws_iam_role.execution has moved to module.platform.module.iam.aws_iam_role.execution
+    resource "aws_iam_role" "execution" {
+        id                    = "rooferslabs-production-ecs-execution"
+        name                  = "rooferslabs-production-ecs-execution"
+        tags                  = {}
+        # (12 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.iam.aws_iam_role.task has moved to module.platform.module.iam.aws_iam_role.task
+    resource "aws_iam_role" "task" {
+        id                    = "rooferslabs-production-ecs-task"
+        name                  = "rooferslabs-production-ecs-task"
+        tags                  = {}
+        # (12 unchanged attributes hidden)
+
+        # (3 unchanged blocks hidden)
+    }
+
+  # module.iam.aws_iam_role_policy.execution_secrets has moved to module.platform.module.iam.aws_iam_role_policy.execution_secrets
+    resource "aws_iam_role_policy" "execution_secrets" {
+        id          = "rooferslabs-production-ecs-execution:read-app-secrets"
+        name        = "read-app-secrets"
+        # (3 unchanged attributes hidden)
+    }
+
+  # module.iam.aws_iam_role_policy.task_exec has moved to module.platform.module.iam.aws_iam_role_policy.task_exec
+    resource "aws_iam_role_policy" "task_exec" {
+        id          = "rooferslabs-production-ecs-task:ecs-exec"
+        name        = "ecs-exec"
+        # (3 unchanged attributes hidden)
+    }
+
+  # module.iam.aws_iam_role_policy.task_s3[0] has moved to module.platform.module.iam.aws_iam_role_policy.task_s3[0]
+    resource "aws_iam_role_policy" "task_s3" {
+        id          = "rooferslabs-production-ecs-task:s3-application-buckets"
+        name        = "s3-application-buckets"
+        # (3 unchanged attributes hidden)
+    }
+
+  # module.iam.aws_iam_role_policy.task_sqs[0] has moved to module.platform.module.iam.aws_iam_role_policy.task_sqs[0]
+    resource "aws_iam_role_policy" "task_sqs" {
+        id          = "rooferslabs-production-ecs-task:sqs-background-jobs"
+        name        = "sqs-background-jobs"
+        # (3 unchanged attributes hidden)
+    }
+
+  # module.iam.aws_iam_role_policy_attachment.execution_managed has moved to module.platform.module.iam.aws_iam_role_policy_attachment.execution_managed
+    resource "aws_iam_role_policy_attachment" "execution_managed" {
+        id         = "rooferslabs-production-ecs-execution/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+        # (2 unchanged attributes hidden)
+    }
+
+  # module.observability.aws_cloudwatch_log_group.this["api"] has moved to module.platform.module.observability.aws_cloudwatch_log_group.this["api"]
+    resource "aws_cloudwatch_log_group" "this" {
+        id                          = "/rooferslabs-production/api"
+        name                        = "/rooferslabs-production/api"
+        tags                        = {}
+        # (9 unchanged attributes hidden)
+    }
+
+  # module.observability.aws_cloudwatch_metric_alarm.alb_5xx has moved to module.platform.module.observability.aws_cloudwatch_metric_alarm.alb_5xx
+    resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
+        id                                    = "rooferslabs-production-alb-5xx"
+        tags                                  = {}
+        # (24 unchanged attributes hidden)
+    }
+
+  # module.observability.aws_cloudwatch_metric_alarm.api_cpu has moved to module.platform.module.observability.aws_cloudwatch_metric_alarm.api_cpu
+    resource "aws_cloudwatch_metric_alarm" "api_cpu" {
+        id                                    = "rooferslabs-production-api-cpu-high"
+        tags                                  = {}
+        # (24 unchanged attributes hidden)
+    }
+
+  # module.rds.aws_db_instance.this has moved to module.platform.module.rds.aws_db_instance.this
+    resource "aws_db_instance" "this" {
+        id                                    = "db-VPYL7PYBKO73X55SL6KAOZNC6M"
+        tags                                  = {}
+        # (75 unchanged attributes hidden)
+    }
+
+  # module.rds.aws_db_subnet_group.this has moved to module.platform.module.rds.aws_db_subnet_group.this
+    resource "aws_db_subnet_group" "this" {
+        id                      = "rooferslabs-production"
+        name                    = "rooferslabs-production"
+        tags                    = {
+            "Name" = "rooferslabs-production"
+        }
+        # (8 unchanged attributes hidden)
+    }
+
+  # module.rds.aws_security_group.this has moved to module.platform.module.rds.aws_security_group.this
+    resource "aws_security_group" "this" {
+        id                     = "sg-0d2df025d383bff0a"
+        name                   = "rooferslabs-production-rds"
+        tags                   = {
+            "Name" = "rooferslabs-production-rds"
+        }
+        # (10 unchanged attributes hidden)
+    }
+
+  # module.rds.random_password.master has moved to module.platform.module.rds.random_password.master
+    resource "random_password" "master" {
+        id          = "none"
+        # (12 unchanged attributes hidden)
+    }
+
+  # module.redis.aws_elasticache_replication_group.this has moved to module.platform.module.redis.aws_elasticache_replication_group.this
+    resource "aws_elasticache_replication_group" "this" {
+        id                         = "rooferslabs-production"
+        tags                       = {}
+        # (39 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.redis.aws_elasticache_subnet_group.this has moved to module.platform.module.redis.aws_elasticache_subnet_group.this
+    resource "aws_elasticache_subnet_group" "this" {
+        id          = "rooferslabs-production"
+        name        = "rooferslabs-production"
+        tags        = {}
+        # (6 unchanged attributes hidden)
+    }
+
+  # module.redis.aws_security_group.this has moved to module.platform.module.redis.aws_security_group.this
+    resource "aws_security_group" "this" {
+        id                     = "sg-09369d8a37f2df938"
+        name                   = "rooferslabs-production-redis"
+        tags                   = {
+            "Name" = "rooferslabs-production-redis"
+        }
+        # (10 unchanged attributes hidden)
+    }
+
+  # module.s3.aws_s3_bucket.this["recordings"] has moved to module.platform.module.s3.aws_s3_bucket.this["recordings"]
+    resource "aws_s3_bucket" "this" {
+        id                          = "rooferslabs-production-462292557780-recordings"
+        tags                        = {}
+        # (15 unchanged attributes hidden)
+
+        # (3 unchanged blocks hidden)
+    }
+
+  # module.s3.aws_s3_bucket.this["uploads"] has moved to module.platform.module.s3.aws_s3_bucket.this["uploads"]
+    resource "aws_s3_bucket" "this" {
+        id                          = "rooferslabs-production-462292557780-uploads"
+        tags                        = {}
+        # (15 unchanged attributes hidden)
+
+        # (3 unchanged blocks hidden)
+    }
+
+  # module.s3.aws_s3_bucket_public_access_block.this["recordings"] has moved to module.platform.module.s3.aws_s3_bucket_public_access_block.this["recordings"]
+    resource "aws_s3_bucket_public_access_block" "this" {
+        id                      = "rooferslabs-production-462292557780-recordings"
+        # (6 unchanged attributes hidden)
+    }
+
+  # module.s3.aws_s3_bucket_public_access_block.this["uploads"] has moved to module.platform.module.s3.aws_s3_bucket_public_access_block.this["uploads"]
+    resource "aws_s3_bucket_public_access_block" "this" {
+        id                      = "rooferslabs-production-462292557780-uploads"
+        # (6 unchanged attributes hidden)
+    }
+
+  # module.s3.aws_s3_bucket_server_side_encryption_configuration.this["recordings"] has moved to module.platform.module.s3.aws_s3_bucket_server_side_encryption_configuration.this["recordings"]
+    resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
+        id                    = "rooferslabs-production-462292557780-recordings"
+        # (3 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.s3.aws_s3_bucket_server_side_encryption_configuration.this["uploads"] has moved to module.platform.module.s3.aws_s3_bucket_server_side_encryption_configuration.this["uploads"]
+    resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
+        id                    = "rooferslabs-production-462292557780-uploads"
+        # (3 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.s3.aws_s3_bucket_versioning.this["recordings"] has moved to module.platform.module.s3.aws_s3_bucket_versioning.this["recordings"]
+    resource "aws_s3_bucket_versioning" "this" {
+        id                    = "rooferslabs-production-462292557780-recordings"
+        # (3 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.s3.aws_s3_bucket_versioning.this["uploads"] has moved to module.platform.module.s3.aws_s3_bucket_versioning.this["uploads"]
+    resource "aws_s3_bucket_versioning" "this" {
+        id                    = "rooferslabs-production-462292557780-uploads"
+        # (3 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.secrets.aws_secretsmanager_secret.app has moved to module.platform.module.secrets.aws_secretsmanager_secret.app
+    resource "aws_secretsmanager_secret" "app" {
+        id                             = "arn:aws:secretsmanager:us-east-1:462292557780:secret:rooferslabs-production/app-g6oGLt"
+        name                           = "rooferslabs-production/app"
+        tags                           = {}
+        # (9 unchanged attributes hidden)
+    }
+
+  # module.secrets.aws_secretsmanager_secret.database has moved to module.platform.module.secrets.aws_secretsmanager_secret.database
+    resource "aws_secretsmanager_secret" "database" {
+        id                             = "arn:aws:secretsmanager:us-east-1:462292557780:secret:rooferslabs-production/database-13nams"
+        name                           = "rooferslabs-production/database"
+        tags                           = {}
+        # (9 unchanged attributes hidden)
+    }
+
+  # module.secrets.aws_secretsmanager_secret_version.app has moved to module.platform.module.secrets.aws_secretsmanager_secret_version.app
+    resource "aws_secretsmanager_secret_version" "app" {
+        id               = "arn:aws:secretsmanager:us-east-1:462292557780:secret:rooferslabs-production/app-g6oGLt|terraform-ZpzxYXnmyvnWeULZ862QvF3y39"
+        # (9 unchanged attributes hidden)
+    }
+
+  # module.secrets.aws_secretsmanager_secret_version.database has moved to module.platform.module.secrets.aws_secretsmanager_secret_version.database
+    resource "aws_secretsmanager_secret_version" "database" {
+        id               = "arn:aws:secretsmanager:us-east-1:462292557780:secret:rooferslabs-production/database-13nams|terraform-Nl4eo9YAndjWjTXJI7P1ZuR771"
+        # (9 unchanged attributes hidden)
+    }
+
+  # module.sqs.aws_sqs_queue.dead_letter has moved to module.platform.module.sqs.aws_sqs_queue.dead_letter
+    resource "aws_sqs_queue" "dead_letter" {
+        id                                = "https://sqs.us-east-1.amazonaws.com/462292557780/rooferslabs-production-jobs-dlq"
+        name                              = "rooferslabs-production-jobs-dlq"
+        tags                              = {}
+        # (20 unchanged attributes hidden)
+    }
+
+  # module.sqs.aws_sqs_queue.jobs has moved to module.platform.module.sqs.aws_sqs_queue.jobs
+    resource "aws_sqs_queue" "jobs" {
+        id                                = "https://sqs.us-east-1.amazonaws.com/462292557780/rooferslabs-production-jobs"
+        name                              = "rooferslabs-production-jobs"
+        tags                              = {}
+        # (20 unchanged attributes hidden)
+    }
+
+  # module.sqs.aws_sqs_queue_redrive_allow_policy.dead_letter has moved to module.platform.module.sqs.aws_sqs_queue_redrive_allow_policy.dead_letter
+    resource "aws_sqs_queue_redrive_allow_policy" "dead_letter" {
+        id                   = "https://sqs.us-east-1.amazonaws.com/462292557780/rooferslabs-production-jobs-dlq"
+        # (3 unchanged attributes hidden)
+    }
+
+Plan: 3 to add, 2 to change, 1 to destroy.
+
+Changes to Outputs:
+  + app_secret_arn                     = "arn:aws:secretsmanager:us-east-1:462292557780:secret:rooferslabs-production/app-g6oGLt"
+  + database_secret_arn                = "arn:aws:secretsmanager:us-east-1:462292557780:secret:rooferslabs-production/database-13nams"
+  + environment                        = "production"
+  + paddle_webhook_url                 = "https://api.rooferslabs.com/v1/billing/webhook/paddle"
+  + vpc_id                             = "vpc-0c33a0671b884ac25"
+
+─────────────────────────────────────────────────────────────────────────────
+
+Note: You didn't use the -out option to save this plan, so Terraform can't
+guarantee to take exactly these actions if you run "terraform apply" now.

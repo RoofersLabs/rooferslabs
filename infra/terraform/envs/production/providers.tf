@@ -12,11 +12,28 @@ terraform {
     }
   }
 
-  # Remote state (recommended once you have more than one operator).
-  # Create the bucket once, then uncomment and `terraform init -migrate-state`:
+  # ---- Remote state ---------------------------------------------------------
+  # Still local, and that is now the single largest risk to this environment:
+  # terraform.tfstate exists only on one laptop, is gitignored, and contains
+  # every credential in plaintext. Losing it means production can no longer be
+  # planned or modified by Terraform at all — only rebuilt by importing dozens
+  # of live resources by hand. It also makes CI-driven Terraform impossible,
+  # which is what a two-environment split needs.
+  #
+  # Migrate deliberately, and only AFTER `terraform plan` has confirmed the
+  # modules/platform refactor is a no-op against the local state:
+  #
+  #   1. terraform plan                    # expect 0 to add/change/destroy
+  #   2. cd ../../bootstrap && terraform init && terraform apply
+  #   3. uncomment the block below
+  #   4. terraform init -migrate-state
+  #
+  # The key is per-environment: development writes to development/terraform.
+  # tfstate under the same bucket, so neither environment's state is readable
+  # or writable by the other's IAM role.
   #
   # backend "s3" {
-  #   bucket       = "rooferslabs-terraform-state"   # must be globally unique
+  #   bucket       = "rooferslabs-terraform-state-462292557780"
   #   key          = "production/terraform.tfstate"
   #   region       = "us-east-1"
   #   use_lockfile = true

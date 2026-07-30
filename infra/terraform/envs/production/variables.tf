@@ -280,6 +280,39 @@ variable "billing_grandfather_before" {
   default     = ""
 }
 
+# ---- Guardrail acknowledgements ----------------------------------------------
+# modules/platform refuses to plan production against a Clerk development
+# instance or Paddle's sandbox. Both are true of production *today*, so these
+# exist to keep the environment applyable while the migrations are in flight.
+# Each one is a documented deviation with an owner, not a permanent setting —
+# see docs/environments.md.
+
+variable "allow_clerk_instance_mismatch" {
+  description = <<-EOT
+    Permit production to run Clerk development keys (pk_test_/sk_test_).
+
+    Currently required: rooferslabs.com authenticates against the Clerk
+    development instance. Clear this — and supply pk_live_/sk_live_ — as part of
+    the Clerk production cutover. Leaving it true ships live customers to a
+    development identity provider.
+  EOT
+  type        = bool
+  default     = false
+}
+
+variable "allow_paddle_environment_mismatch" {
+  description = <<-EOT
+    Permit production to bill against Paddle's sandbox.
+
+    Currently required: payments_enabled = true with paddle_environment =
+    "sandbox", so the live payment wall is enforced by Paddle's TEST system and
+    settles no money. Clear this — and supply live keys and price IDs — before
+    a launch meant to collect revenue.
+  EOT
+  type        = bool
+  default     = false
+}
+
 variable "vapid_public_key" {
   description = "Web Push VAPID public key (npx web-push generate-vapid-keys)."
   type        = string
@@ -369,11 +402,12 @@ variable "github_repository" {
   default     = "RoofersLabs/rooferslabs"
 }
 
-variable "github_deploy_branches" {
-  description = "Branches allowed to deploy. A run on any other ref cannot assume the role."
-  type        = list(string)
-  default     = ["main", "develop"]
-}
+# NOTE: there is deliberately no `github_deploy_branches` variable any more.
+# Production trusts `main` and nothing else, and main.tf passes that literal.
+# It was previously ["main", "develop"], which let a push to develop assume the
+# production deploy role — the branch strategy existed on paper only. Making it
+# a literal means widening it again requires editing the environment root, in a
+# diff that says so.
 
 variable "github_org_id" {
   description = "Numeric GitHub org id, used by the OIDC trust policy (this org emits immutable unique-ID subject claims)."

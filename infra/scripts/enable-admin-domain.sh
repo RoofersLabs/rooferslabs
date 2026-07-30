@@ -26,6 +26,14 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 TF_DIR="$REPO_ROOT/infra/terraform/envs/production"
+
+# This script runs `terraform apply` against PRODUCTION state three times. It is
+# the only script here that mutates infrastructure rather than deploying code,
+# which makes running it from the wrong branch worse, not better: it would apply
+# whatever that branch's .tf files happen to say.
+# shellcheck source=lib/require-main-branch.sh
+source "$(dirname "$0")/lib/require-main-branch.sh"
+require_main_branch "apply Terraform against production"
 LOG="${TMPDIR:-/tmp}/rooferslabs-admin-domain.$$.log"
 
 command -v jq >/dev/null || { echo "error: jq is required." >&2; exit 1; }

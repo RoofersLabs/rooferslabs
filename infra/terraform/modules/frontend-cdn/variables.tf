@@ -52,6 +52,30 @@ variable "api_domain" {
   type        = string
 }
 
+variable "cert_primary_domain" {
+  description = <<-EOT
+    Hostname ACM issues the certificate under, with certificate_domains carried
+    as SANs. Empty (the default) uses root_domain, which is what production
+    wants. A subordinate environment must set this to its own hostname —
+    otherwise it would request a certificate for the production apex and race
+    production over the renewal.
+  EOT
+  type        = string
+  default     = ""
+}
+
+variable "clerk_frontend_host" {
+  description = <<-EOT
+    Clerk Frontend API hostname to allow in the CSP. Empty uses
+    clerk.<root_domain>, correct for a Clerk *production* instance served over
+    the customer domain. A Clerk *development* instance lives on
+    <slug>.clerk.accounts.dev and is already covered by the wildcard, so a
+    development environment can leave this empty too.
+  EOT
+  type        = string
+  default     = ""
+}
+
 variable "enable_custom_domain" {
   description = <<-EOT
     Two-phase HTTPS, mirroring the ALB module. Apply with false first: the

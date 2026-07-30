@@ -71,7 +71,12 @@ resource "aws_subnet" "private" {
 }
 
 locals {
-  nat_count = var.single_nat_gateway ? 1 : var.az_count
+  # A NAT gateway exists to give private subnets outbound internet. An
+  # environment with no in-VPC compute — only a publicly-addressable database —
+  # has nothing that needs egress, and a NAT gateway is ~$32/month of nothing.
+  # Skipping it is what makes an isolated development VPC free rather than the
+  # most expensive part of the environment.
+  nat_count = var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : var.az_count) : 0
 }
 
 resource "aws_eip" "nat" {
@@ -104,8 +109,12 @@ resource "aws_route_table" "private" {
   tags = { Name = "${var.name}-private-${count.index}" }
 }
 
+# Without a NAT gateway there is no private route table to associate. The
+# subnets still exist and still work: they fall back to the VPC's main route
+# table, which carries the local route, so in-VPC traffic is unaffected — they
+# simply have no path out.
 resource "aws_route_table_association" "private" {
-  count = var.az_count
+  count = local.nat_count > 0 ? var.az_count : 0
 
   subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private[var.single_nat_gateway ? 0 : count.index].id
