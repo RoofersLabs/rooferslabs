@@ -75,3 +75,9 @@ apps/web/.ds-sync-styles.css
 
 # Generated deploy state (ECR image digests emitted by the deploy scripts)
 infra/terraform/envs/*/images.json
+
+# Bun writes its own lockfile, but package-lock.json is the single source of
+# truth for this repo — CI installs with `npm ci`. Committing both lets the two
+# resolve different trees, so a bug reproduces for one developer and not the
+# other. Bun reads package-lock.json perfectly well.
+bun.lock

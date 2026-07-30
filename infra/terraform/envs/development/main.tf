@@ -85,9 +85,9 @@ module "rds" {
 # Namespaced rooferslabs-development/*, entirely separate entries from
 # rooferslabs-production/*. Nothing reads both.
 #
-# These are the values infra/scripts/dev-env.sh pulls down to generate the local
-# .env files, which is what makes local configuration resolve automatically
-# rather than by hand-editing a file.
+# Not used by local development, which runs Postgres and Redis in Docker and
+# reads no AWS secret at all (docs/local-development.md). These exist for a
+# future shared development database; nothing consumes them today.
 
 module "secrets" {
   source = "../../modules/secrets"
@@ -160,7 +160,7 @@ resource "terraform_data" "paddle_isolation_check" {
 
 # ---- IAM ------------------------------------------------------------------------
 # One managed policy granting read on THIS environment's secrets and nothing
-# else. Attach it to the operator identity that runs infra/scripts/dev-env.sh.
+# else. Attach it to whichever identity needs to read this environment.
 #
 # Written as its own policy rather than relying on broad administrator access so
 # that the development path has a least-privilege option available the day a

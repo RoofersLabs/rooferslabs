@@ -1,5 +1,5 @@
 # =============================================================================
-# Outputs — consumed by infra/scripts/dev-env.sh to generate local .env files
+# Outputs — for operators of this optional environment
 # =============================================================================
 # Note what is absent: no distribution id, no bucket, no cluster, no service.
 # There is nothing to deploy in this environment, and no output here can be
@@ -34,7 +34,7 @@ output "app_secret_arn" {
 }
 
 output "read_secrets_policy_arn" {
-  description = "Attach to the identity that runs infra/scripts/dev-env.sh. Grants read on development secrets only."
+  description = "Grants read on this environment's secrets only. Attach to whichever identity needs them."
   value       = aws_iam_policy.read_dev_secrets.arn
 }
 
@@ -49,18 +49,15 @@ output "vpc_id" {
 
 # A reminder rendered by `terraform output`, so the operating model is visible
 # from the environment itself and not only from documentation.
-output "local_development_notes" {
+output "operator_notes" {
   value = <<-EOT
-    Development runs on localhost. Nothing here is deployed.
+    This environment is OPTIONAL and is not used by local development.
 
-      Redis         docker compose -f docker/docker-compose.yml up -d redis
-      Config        infra/scripts/dev-env.sh      (writes the local .env files)
-      API           npm run dev:api               (http://localhost:4000)
-      Web           npm run dev:web               (http://localhost:5173)
+    Local development runs Postgres and Redis in Docker and reads no AWS
+    secret — see docs/local-development.md and `bun run setup`.
 
-    The database is reachable only from the addresses in developer_cidr_blocks.
-    If connections start timing out, your public address most likely changed:
-
-      curl -s https://checkip.amazonaws.com
+    What this root exists for: a shared development database, if one is ever
+    wanted. Nothing consumes it today, so it can be left unapplied (it costs
+    nothing unapplied) or destroyed without affecting any workflow.
   EOT
 }

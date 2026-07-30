@@ -134,9 +134,7 @@ terraform init && terraform apply
 Then:
 
 ```bash
-infra/scripts/dev-env.sh
-docker compose -f docker/docker-compose.yml up -d redis
-npm run prisma:migrate          # seeds the development schema
+bun run setup     # local development needs nothing from this environment
 ```
 
 *Rollback:* `terraform destroy` in `envs/development`. Nothing in production
@@ -187,7 +185,6 @@ Phases 0–4 touch no customer data. Phase 5 is the only one that does.
 - [ ] API with `APP_ENV=production` and a development `DATABASE_URL` → refuses to boot
 - [ ] API with `APP_ENV=development` and a production `DATABASE_URL` → boots with a loud warning
 - [ ] `deploy-web.sh` with a `pk_test_` key and no `ALLOW_CLERK_DEV_KEY` → exits non-zero
-- [ ] `dev-env.sh` pointed at production secret ARNs → refuses to write
 
 Covered by `apps/api/src/config/environment-guard.spec.ts` (18 tests, passing).
 
@@ -206,7 +203,7 @@ Covered by `apps/api/src/config/environment-guard.spec.ts` (18 tests, passing).
 - [ ] Production boot logs show `[env] APP_ENV=production` with no cross-environment warning
 - [ ] Generated `sw.js` contains `rooferslabs-production-v<version>` and **no** `NavigationRoute`
 - [ ] Local `sw.js` (if built) contains `rooferslabs-development-v<version>`
-- [ ] `infra/scripts/dev-env.sh --check` passes
+- [ ] `bun run check` passes on a clean clone
 - [ ] Local end-to-end: sign in via Clerk development, create a company, verify the row lands in the development database and **not** production
 
 ### Service worker

@@ -2,11 +2,13 @@
 # =============================================================================
 # RoofersLabs — run Prisma against the production database
 # =============================================================================
-# There is no local database in this project, and there cannot be a direct
-# connection to the real one: RDS is not publicly accessible and lives in the
-# private subnets. Anything that needs the database therefore runs *inside* the
-# VPC, as a one-off ECS task using the same image, the same secrets and the same
-# security group as the API itself.
+# For LOCAL development use ordinary Prisma commands against the Docker
+# Postgres — see docs/local-development.md. This script is for PRODUCTION only.
+#
+# Production RDS is not publicly accessible and lives in the private subnets, so
+# there is no direct connection to it. Anything that needs it therefore runs
+# *inside* the VPC, as a one-off ECS task using the same image, the same secrets
+# and the same security group as the API itself.
 #
 #   infra/scripts/db.sh status              # which migrations are applied (default)
 #   infra/scripts/db.sh deploy              # apply pending migrations by hand
@@ -90,7 +92,7 @@ echo "    task definition: ${TASK_DEF##*/}"
 
 # This script targets PRODUCTION and only production — TF_DIR is pinned to
 # envs/production above. Local development has its own database, reachable
-# directly with ordinary Prisma commands (see infra/scripts/dev-env.sh), so
+# directly with ordinary Prisma commands (see docs/local-development.md), so
 # there is no longer any reason to reach for this during normal development.
 #
 # `deploy` and the grant/revoke actions write to the live database. Require the

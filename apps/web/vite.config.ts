@@ -8,8 +8,9 @@ import { createRequire } from 'node:module';
 // keeps one source of truth rather than a second string to forget to bump.
 const { version } = createRequire(import.meta.url)('./package.json') as { version: string };
 
-// Deployment tier, mirroring the API's APP_ENV. Set by infra/scripts/dev-env.sh
-// locally and by deploy-web.sh for a production build. Anything unrecognised —
+// Deployment tier, mirroring the API's APP_ENV. Set in apps/web/.env.local for
+// local development and by deploy-web.sh for a production build. Anything
+// unrecognised —
 // including it being absent — resolves to development, so a build only gets
 // production behaviour by asking for it, never by accident.
 //

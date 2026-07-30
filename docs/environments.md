@@ -10,17 +10,22 @@ secret, no credential, and no Terraform state.
 | Web | `rooferslabs.com`, `www.rooferslabs.com` | `http://localhost:5173` |
 | API | `api.rooferslabs.com` | `http://localhost:4000` |
 | Deployed from | `main` only | never deployed |
-| Database | RDS `rooferslabs-production` (private) | RDS `rooferslabs-development` (IP-locked) |
+| Database | RDS `rooferslabs-production` (private) | Postgres in Docker |
 | Cache | ElastiCache `rooferslabs-production` | Redis in Docker |
 | Clerk | production instance (`pk_live_`) | development instance (`pk_test_`) |
 | Paddle | live | sandbox |
 | Terraform | `envs/production` | `envs/development` |
 | State key | `production/terraform.tfstate` | `development/terraform.tfstate` |
 
-There is deliberately **no deployed development site**. Development is a laptop
-talking to its own database. That is the cheapest thing that satisfies the
-actual requirement — a safe place to work that cannot touch customers — and it
-removes an entire hosting stack from the things that can break or cost money.
+There is deliberately **no deployed development site**, and local development
+touches **no AWS resource at all** — Postgres and Redis run in Docker. A clean
+clone reaches a running app with `bun install && bun run setup && bun run dev`,
+needing no AWS account, no Terraform, and no credentials beyond a Clerk
+development key.
+
+That is the cheapest thing that satisfies the actual requirement — a safe place
+to work that cannot touch customers — and it removes an entire hosting stack
+from the things that can break or cost money.
 
 ## Architecture
 
@@ -53,32 +58,24 @@ removes an entire hosting stack from the things that can break or cost money.
   (localhost:6379)       │        │                                                    │
                          └────────┼────────────────────────────────────────────────────┘
                                   │
-                          infra/scripts/dev-env.sh  ──►  .env + apps/web/.env.local
+                          (not used by local development — see below)
 ```
 
 The two VPCs are not peered. There is no route between them.
 
-### Why development Redis is Docker, not ElastiCache
+### Why development data stores are Docker
 
-ElastiCache has **no public endpoint option** — it is VPC-only by design, with
-no setting to change that. Reaching it from a laptop requires an SSM bastion or
-a VPN. Redis here holds cache, sessions, and queue state: nothing durable and
-nothing worth a bastion to run and patch. Docker gives a genuinely separate
-instance with separate credentials at zero cost, which is what the isolation
-requirement is actually asking for.
+Both run locally, which makes a clean clone self-sufficient: nothing to apply,
+no credentials to obtain, and no shared state for one developer to break for
+everyone else.
 
-RDS *does* have a public endpoint option, so the development database is real
-AWS infrastructure — persistent, backed up, and shared across machines.
+ElastiCache could not have been used regardless — it has **no public endpoint
+option**, being VPC-only by design, so reaching it from a laptop needs an SSM
+bastion or a VPN. Postgres could have been a public-endpoint RDS instance, and
+`envs/development` still provisions one, but requiring it made a clean clone
+depend on an applied Terraform stack. It is now optional and unapplied.
 
-### Why the development VPC is free
-
-No NAT gateway (`enable_nat_gateway = false`). A NAT exists to give private
-subnets outbound internet; the development environment has no compute and its
-database is publicly addressable, so nothing needs egress. Full network
-isolation therefore costs nothing, which is why it is a separate VPC rather than
-a corner of production's.
-
-**Running cost of development: one `db.t4g.micro` + storage (~$15/month).**
+**Running cost of development: $0.**
 
 ## Terraform layout
 
@@ -91,7 +88,7 @@ infra/terraform/
 │   ├── alb/  ecs-service/  ecr/  frontend-cdn/  observability/  github-oidc/
 └── envs/
     ├── production/         VPC + modules/platform          → production/terraform.tfstate
-    └── development/        VPC + RDS + secrets + IAM only  → development/terraform.tfstate
+    └── development/        OPTIONAL shared dev DB — unapplied, unused by local dev
 ```
 
 `envs/production` is a thin root: it creates the VPC and calls
@@ -178,50 +175,27 @@ and enforced-once-cleared rather than silently tolerated.
 
 ## Local development
 
-One-time setup:
+Local development runs **entirely on your machine** and touches no AWS
+resource — Postgres and Redis in Docker, no Terraform, no credentials.
 
 ```bash
-cd infra/terraform/envs/development
-cp terraform.tfvars.example terraform.tfvars   # fill in dev credentials
-terraform init && terraform apply
+bun install && bun run setup && bun run dev
 ```
 
-Every day:
+See **[docs/local-development.md](local-development.md)** for the full guide.
 
-```bash
-infra/scripts/dev-env.sh                                  # regenerate .env files
-docker compose -f docker/docker-compose.yml up -d redis
-npm run prisma:generate
-npm run dev:api    # http://localhost:4000
-npm run dev:web    # http://localhost:5173
-```
-
-`dev-env.sh` reads the **development** Secrets Manager entries and writes `.env`
-and `apps/web/.env.local`. Both files are generated — never hand-edit them; re-run
-the script. It refuses to write a `pk_live_`, `sk_live_`, `pdl_live_`, or
-production database URL to disk at all.
-
-`dev-env.sh --check` verifies the local files are generated and free of
-production credentials. `--print` shows what would be written, masked.
-
-If the database stops responding, your public address probably changed:
-
-```bash
-curl -s https://checkip.amazonaws.com     # then update developer_cidr_blocks and re-apply
-```
+`envs/development` provisions an optional shared development database in AWS.
+Nothing in the local workflow consumes it and it does not need to be applied.
 
 ### Migrations
 
-Development and production have independent migration history because they are
-separate databases.
+Development and production have independent migration history.
 
-- **Development**: `npm run prisma:migrate` — reads the generated `.env`, so it
-  targets the development database. This is where migrations are authored.
-- **Production**: applied automatically on API start
-  (`docker/api-entrypoint.sh` runs `prisma migrate deploy`). Shipping the API
-  applies the migrations.
-- **Production, by hand**: `infra/scripts/db.sh deploy` — runs a one-off ECS
-  task inside the VPC. Now requires typing `production` to confirm.
+- **Local**: `bun run db:migrate` against the Docker Postgres.
+- **Production**: applied automatically when the API container starts
+  (`docker/api-entrypoint.sh` runs `prisma migrate deploy`).
+- **Production, by hand**: `infra/scripts/db.sh deploy` — a one-off ECS task
+  inside the VPC. Requires typing `production` to confirm.
 
 Write migrations by hand rather than with `migrate diff`, which turns column
 renames into data-destroying DROP + ADD.
