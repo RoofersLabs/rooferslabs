@@ -48,7 +48,14 @@ DISTRIBUTION_ID="${WEB_DISTRIBUTION_ID:-$(tf_out web_distribution_id)}"
 # Hardcoded rather than derived: this script only ever deploys production.
 VITE_APP_ENV="production"
 
-export VITE_API_BASE_URL VITE_CLERK_PUBLISHABLE_KEY VITE_APP_ENV
+# Build-time FALLBACK for the private-beta gate, used only when the SPA cannot
+# reach the API. The API is authoritative and is read at runtime, which is what
+# lets launch day be "flip APP_LAUNCH_MODE and restart" with no rebuild — but a
+# bundle that boots against a dead API should still fail in the safe direction.
+: "${VITE_APP_LAUNCH_MODE:=$(tf_out launch_mode)}"
+VITE_APP_LAUNCH_MODE="${VITE_APP_LAUNCH_MODE:-public}"
+
+export VITE_API_BASE_URL VITE_CLERK_PUBLISHABLE_KEY VITE_APP_ENV VITE_APP_LAUNCH_MODE
 
 if [ -z "${BUCKET:-}" ] || [ -z "${DISTRIBUTION_ID:-}" ]; then
   echo "error: could not resolve web_bucket / web_distribution_id from Terraform." >&2

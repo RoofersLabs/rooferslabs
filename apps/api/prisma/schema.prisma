@@ -378,27 +378,27 @@ model Subscription {
 /// provider's own document. It is a cache, never an accounting record — the
 /// provider remains the authority on what was charged.
 model Invoice {
-  id                    String          @id @default(cuid())
-  companyId             String
-  subscriptionId        String?
-  provider              PaymentProvider
-  providerInvoiceId     String
+  id                String          @id @default(cuid())
+  companyId         String
+  subscriptionId    String?
+  provider          PaymentProvider
+  providerInvoiceId String
   /// The provider's human-facing reference, shown to the tenant.
-  number                String?
-  status                InvoiceStatus
+  number            String?
+  status            InvoiceStatus
   /// ISO 4217, uppercase.
-  currency              String
+  currency          String
   /// Minor units (cents). Integers only — never store money as a float.
-  amountDue             Int
-  amountPaid            Int
-  issuedAt              DateTime?
-  paidAt                DateTime?
+  amountDue         Int
+  amountPaid        Int
+  issuedAt          DateTime?
+  paidAt            DateTime?
   /// Hosted invoice or receipt at the provider, when one exists.
-  invoiceUrl            String?
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
-  company               Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  subscription          Subscription?   @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  invoiceUrl        String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  company           Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  subscription      Subscription?   @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
 
   /// The idempotency key for invoice synchronization: a redelivered webhook
   /// updates the existing row instead of inserting a duplicate.
@@ -670,4 +670,41 @@ enum PhoneNumberStatus {
   ASSIGNED
   ACTIVE
   RELEASED
+}
+
+/// A pre-launch early-access request captured from the launch page.
+///
+/// Deliberately NOT a User and not attached to a Company: submitting this form
+/// creates no account, no tenant, and no authentication material of any kind.
+/// It is a sales lead, and keeping it in its own table means the private beta
+/// cannot accidentally provision access to anyone who fills in a form.
+///
+/// Survives launch — the record of who asked to be let in early is worth
+/// keeping once the gate is lifted.
+model EarlyAccessRequest {
+  id      String  @id @default(cuid())
+  name    String
+  company String
+  email   String
+  /// Optional: asked for, never required.
+  phone   String?
+
+  /// Coarse attribution for the launch page, captured server-side rather than
+  /// trusted from a form field. Nullable because neither header is guaranteed.
+  referrer  String?
+  userAgent String?
+
+  /// Set when the request has been followed up, so the list is workable
+  /// without a second system.
+  contactedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Not unique: the same person legitimately asks twice, and a unique
+  /// constraint would turn a duplicate submission into a 500 on a public,
+  /// unauthenticated form. Deduplicated at read time instead.
+  @@index([email])
+  @@index([createdAt])
+  @@map("early_access_requests")
 }

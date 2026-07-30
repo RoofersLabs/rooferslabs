@@ -115,3 +115,20 @@ variable "tags" {
   type    = map(string)
   default = {}
 }
+
+variable "discourage_indexing" {
+  description = <<-EOT
+    Emit `X-Robots-Tag: noindex, nofollow` on every response.
+
+    Used while the site is in private beta. Preferred over a robots.txt
+    Disallow for this purpose: a Disallow only asks a crawler not to FETCH a
+    URL, and a page already in an index stays there (and can still rank from
+    inbound links). X-Robots-Tag instructs removal, and being a header it
+    applies to every response — assets and non-HTML included — rather than only
+    to what robots.txt happens to enumerate.
+
+    Set from launch_mode, so lifting the beta clears it in the same apply.
+  EOT
+  type        = bool
+  default     = false
+}

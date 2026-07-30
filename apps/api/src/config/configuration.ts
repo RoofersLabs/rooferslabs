@@ -7,6 +7,7 @@
  */
 import { BillingInterval, PaymentProvider, SubscriptionPlan } from '@rooferslabs/shared';
 import { activePaymentProvider, isPaymentsEnabled } from './payments.flag';
+import { parseInternalUsers, resolveLaunchMode, type LaunchMode } from './launch.flag';
 
 /**
  * Price identifiers for every plan/interval a provider offers.
@@ -38,6 +39,20 @@ export interface AppConfig {
     secretKey: string;
     jwtKey: string | undefined;
     webhookSecret: string | undefined;
+  };
+  launch: {
+    /**
+     * `private` gates the entire application behind the internal allowlist and
+     * serves everyone else the launch page. `public` is normal operation.
+     *
+     * Only ever `private` in production — see resolveLaunchMode.
+     */
+    mode: LaunchMode;
+    /**
+     * Addresses permitted through the gate while the mode is `private`.
+     * Configuration, never source. Empty admits nobody.
+     */
+    internalUsers: string[];
   };
   payments: {
     /**
@@ -153,6 +168,10 @@ export default (): AppConfig => {
       secretKey: process.env.CLERK_SECRET_KEY ?? '',
       jwtKey: process.env.CLERK_JWT_KEY || undefined,
       webhookSecret: process.env.CLERK_WEBHOOK_SECRET || undefined,
+    },
+    launch: {
+      mode: resolveLaunchMode(),
+      internalUsers: parseInternalUsers(),
     },
     payments: {
       enabled: isPaymentsEnabled(),

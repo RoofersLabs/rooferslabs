@@ -17,11 +17,17 @@ const { version } = createRequire(import.meta.url)('./package.json') as { versio
 // name the service-worker cache buckets, which are baked into the generated SW.
 const appEnv = process.env.VITE_APP_ENV === 'production' ? 'production' : 'development';
 
+// Private-beta fallback, used only when the SPA cannot reach the API — the API
+// is authoritative and is read at runtime. Baked in as a define rather than
+// read from import.meta.env so the module compiles under ts-jest too.
+const launchMode = process.env.VITE_APP_LAUNCH_MODE === 'private' ? 'private' : 'public';
+
 // https://vitejs.dev/config/
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(version),
     __APP_ENV__: JSON.stringify(appEnv),
+    __APP_LAUNCH_MODE__: JSON.stringify(launchMode),
   },
   plugins: [
     react(),

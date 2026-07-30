@@ -79,6 +79,11 @@ module "platform" {
   twilio_account_sid    = var.twilio_account_sid
   twilio_auth_token     = var.twilio_auth_token
 
+  # Private beta. `private` serves the launch page to everyone except the
+  # addresses in internal_users. Launch day is flipping this to `public`.
+  launch_mode    = var.launch_mode
+  internal_users = var.internal_users
+
   # Billing
   payments_enabled                  = var.payments_enabled
   payment_provider                  = var.payment_provider

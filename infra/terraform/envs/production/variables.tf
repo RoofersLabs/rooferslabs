@@ -280,6 +280,32 @@ variable "billing_grandfather_before" {
   default     = ""
 }
 
+# ---- Private beta ---------------------------------------------------------------
+
+variable "launch_mode" {
+  description = <<-EOT
+    "private" keeps rooferslabs.com online but serves the launch page to
+    everyone except internal_users. "public" is normal operation.
+
+    LAUNCH DAY: set to "public" and apply. The API restarts with the new value
+    and the SPA picks it up at runtime — no frontend rebuild, no code change.
+  EOT
+  type        = string
+  default     = "private"
+}
+
+variable "internal_users" {
+  description = <<-EOT
+    Addresses allowed into the application during the private beta.
+
+    Never hardcoded in source. An empty list admits nobody and the plan refuses
+    it while launch_mode is "private", so the beta cannot lock its own operator
+    out silently.
+  EOT
+  type        = list(string)
+  default     = []
+}
+
 # ---- Guardrail acknowledgements ----------------------------------------------
 # modules/platform refuses to plan production against a Clerk development
 # instance or Paddle's sandbox. Both are true of production *today*, so these

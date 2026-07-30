@@ -83,6 +83,11 @@ output "github_deploy_role_arn" {
 
 # ---- Application configuration ------------------------------------------------
 
+output "launch_mode" {
+  description = "Private-beta state. Consumed by deploy-web.sh as the SPA build-time fallback."
+  value       = var.launch_mode
+}
+
 output "clerk_publishable_key" {
   description = "Consumed by deploy-web.sh as the SPA build argument."
   value       = var.clerk_publishable_key

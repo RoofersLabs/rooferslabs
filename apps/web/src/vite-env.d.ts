@@ -24,3 +24,9 @@ declare const __APP_VERSION__: string;
  * time rather than read from import.meta.env at runtime.
  */
 declare const __APP_ENV__: 'production' | 'development';
+
+/**
+ * Private-beta fallback baked in at build time. Consulted only when the API is
+ * unreachable; the API's answer wins whenever there is one.
+ */
+declare const __APP_LAUNCH_MODE__: 'private' | 'public';

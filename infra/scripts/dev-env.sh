@@ -187,6 +187,12 @@ render_web_env() {
 # affordances in the SPA. Never "production" outside a production build.
 VITE_APP_ENV=development
 
+# Localhost is never gated by the private beta. The API resolves any tier that
+# is not "production" to launch mode "public", and this build-time fallback
+# matches — so a developer never has to be on the internal allowlist to run the
+# app they are working on.
+VITE_APP_LAUNCH_MODE=public
+
 VITE_API_BASE_URL=http://localhost:4000
 VITE_CLERK_PUBLISHABLE_KEY=$CLERK_PUBLISHABLE_KEY
 EOF

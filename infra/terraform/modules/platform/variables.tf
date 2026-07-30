@@ -162,6 +162,47 @@ variable "twilio_auth_token" {
   sensitive = true
 }
 
+# ---- Private beta --------------------------------------------------------------
+
+variable "launch_mode" {
+  description = <<-EOT
+    "private" gates the whole application behind internal_users and serves
+    everyone else the launch page. "public" is normal operation.
+
+    Applies to production only — the API resolves every other tier to "public"
+    so local development is never gated.
+
+    Launch day is flipping this to "public" and restarting the service. No code
+    change, no frontend rebuild: the SPA reads the mode from the API at runtime.
+  EOT
+  type        = string
+  default     = "public"
+
+  validation {
+    condition     = contains(["private", "public"], var.launch_mode)
+    error_message = "launch_mode must be either \"private\" or \"public\"."
+  }
+}
+
+variable "internal_users" {
+  description = <<-EOT
+    Email addresses permitted through the private-beta gate.
+
+    Configuration, never source — no address is compiled into the application.
+    An empty list admits NOBODY, which is the safe direction: the alternative
+    would turn a dropped variable into a silent public launch.
+
+    Matched case-insensitively against the identity provider's address.
+  EOT
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for e in var.internal_users : can(regex("^[^@,[:space:]]+@[^@,[:space:]]+$", e))])
+    error_message = "Each internal_users entry must be a single email address, with no commas or spaces."
+  }
+}
+
 # ---- Billing -----------------------------------------------------------------
 
 variable "payments_enabled" {

@@ -1,0 +1,43 @@
+# rooferslabs — crawler policy
+#
+# This file is static: it ships in the bundle and cannot vary with
+# APP_LAUNCH_MODE. It is therefore written to be CORRECT IN BOTH MODES, so that
+# lifting the private beta needs no edit here and no redeploy of the frontend.
+#
+# The site-wide "do not index anything" rule for the beta is NOT here. It is the
+# X-Robots-Tag response header, set by CloudFront and controlled by the
+# launch_mode Terraform variable (infra/terraform/modules/frontend-cdn). A
+# header is the right instrument for it: it applies to every response including
+# assets and non-HTML, it cannot be cached stale in a crawler's copy of this
+# file, and — unlike a Disallow rule — it actually removes a page from an index
+# rather than merely asking a crawler not to fetch it.
+#
+# What remains here is the permanent policy: the application itself is private
+# and must never be indexed, in beta or after launch.
+
+User-agent: *
+
+# The authenticated product. Nothing behind these is publicly readable, and a
+# crawler that follows one only ever reaches a sign-in redirect.
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /onboarding
+Disallow: /payment
+Disallow: /billing
+Disallow: /checkout
+Disallow: /calls
+Disallow: /conversations
+Disallow: /customers
+Disallow: /appointments
+Disallow: /knowledge
+Disallow: /notifications
+
+# Authentication surfaces. Indexing these strands searchers on a sign-in form
+# and splits ranking signals away from the marketing pages that should hold them.
+Disallow: /sign-in
+Disallow: /sign-up
+
+# The internal admin portal.
+Disallow: /admin
+
+Sitemap: https://rooferslabs.com/sitemap.xml

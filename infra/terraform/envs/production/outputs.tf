@@ -83,6 +83,11 @@ output "github_deploy_role_arn" {
 
 # ---- Application configuration ------------------------------------------------
 
+output "launch_mode" {
+  description = "Private-beta state. \"private\" serves the launch page to everyone but internal_users."
+  value       = module.platform.launch_mode
+}
+
 output "clerk_publishable_key" {
   description = "Consumed by the deploy script as the web build arg."
   value       = module.platform.clerk_publishable_key

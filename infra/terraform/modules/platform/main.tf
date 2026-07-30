@@ -179,6 +179,11 @@ module "frontend" {
   enable_custom_domain    = var.enable_web_custom_domain
   price_class             = var.web_price_class
   content_security_policy = var.web_content_security_policy
+
+  # Keeps the unlaunched site out of search indexes at the edge. A header beats
+  # a robots.txt Disallow here: it applies to every response including assets,
+  # and it actually deindexes rather than merely asking a crawler not to fetch.
+  discourage_indexing = var.launch_mode == "private"
 }
 
 # ---- Secrets -----------------------------------------------------------------
@@ -269,6 +274,23 @@ resource "terraform_data" "clerk_instance_check" {
         "production requires the Clerk production instance (pk_live_… / sk_live_…);",
         "every other environment requires the development instance (pk_test_… / sk_test_…).",
         "Set allow_clerk_instance_mismatch = true to acknowledge a known, temporary deviation.",
+      ])
+    }
+  }
+}
+
+# A private beta with nobody on the allowlist is a site only the public page
+# can reach — including for the operator running it. Almost always a dropped
+# variable rather than an intention, and it is cheap to refuse at plan time.
+resource "terraform_data" "launch_allowlist_check" {
+  input = "${var.launch_mode}-${length(var.internal_users)}"
+
+  lifecycle {
+    precondition {
+      condition = var.launch_mode != "private" || length(var.internal_users) > 0
+      error_message = join(" ", [
+        "launch_mode = \"private\" with an empty internal_users list admits nobody —",
+        "not even you. Add at least one address, or set launch_mode = \"public\".",
       ])
     }
   }
@@ -415,6 +437,14 @@ module "api_service" {
     S3_BUCKET_UPLOADS       = module.s3.bucket_names["uploads"]
     SQS_QUEUE_URL           = module.sqs.queue_url
     BACKGROUND_JOBS_INLINE  = "true"
+
+    # Private-beta gate. Flipping APP_LAUNCH_MODE to "public" and restarting is
+    # the entirety of launch day; the SPA reads it back from the API at runtime,
+    # so no rebuild or redeploy of the frontend is involved.
+    APP_LAUNCH_MODE = var.launch_mode
+    # Comma-separated because the container contract is environment variables.
+    # Parsed, trimmed, lowercased and de-duplicated by config/launch.flag.ts.
+    INTERNAL_USERS = join(",", var.internal_users)
 
     PAYMENTS_ENABLED = tostring(var.payments_enabled)
     PAYMENT_PROVIDER = var.payment_provider

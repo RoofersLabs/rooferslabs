@@ -189,6 +189,21 @@ resource "aws_cloudfront_response_headers_policy" "this" {
       override                = true
     }
   }
+
+  # Keeps an unlaunched site out of search results. Absent entirely once
+  # indexing is allowed, rather than sent with a permissive value — a header
+  # that is not present is unambiguous, and `X-Robots-Tag: all` invites a
+  # future reader to wonder whether it is doing something.
+  dynamic "custom_headers_config" {
+    for_each = var.discourage_indexing ? [1] : []
+    content {
+      items {
+        header   = "X-Robots-Tag"
+        value    = "noindex, nofollow"
+        override = true
+      }
+    }
+  }
 }
 
 # ---- ACM certificate (us-east-1, required by CloudFront) ----------------------

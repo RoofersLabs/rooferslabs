@@ -25,6 +25,7 @@ import { RequestContextMiddleware } from './common/middleware/request-context.mi
 
 import { AuthModule } from './auth/auth.module';
 import { ClerkAuthGuard } from './auth/guards/clerk-auth.guard';
+import { LaunchGateGuard } from './auth/guards/launch-gate.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { SubscriptionGuard } from './auth/guards/subscription.guard';
 import { TenantGuard } from './auth/guards/tenant.guard';
@@ -43,6 +44,7 @@ import { AdminModule } from './admin/admin.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { SearchModule } from './search/search.module';
 import { HealthModule } from './health/health.module';
+import { LaunchModule } from './launch/launch.module';
 
 @Module({
   imports: [
@@ -101,11 +103,19 @@ import { HealthModule } from './health/health.module';
     DashboardModule,
     SearchModule,
     HealthModule,
+    LaunchModule,
   ],
   providers: [
-    // Order matters: authentication → throttling → tenant isolation →
-    // subscription (payment wall) → roles.
+    // Order matters: authentication → launch gate → throttling → tenant
+    // isolation → subscription (payment wall) → roles.
+    //
+    // The launch gate sits immediately after authentication because it needs a
+    // resolved `authUser` to check against the allowlist, and before everything
+    // else because during a private beta no further work should happen for a
+    // caller who is not getting in — including tenant resolution, which reads
+    // the database.
     { provide: APP_GUARD, useClass: ClerkAuthGuard },
+    { provide: APP_GUARD, useClass: LaunchGateGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: TenantGuard },
     { provide: APP_GUARD, useClass: SubscriptionGuard },
