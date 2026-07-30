@@ -58,10 +58,17 @@ export default defineConfig({
             // Icons are served from stable, unhashed names, so CacheFirst with
             // no age limit would pin a replaced icon in the SW cache forever.
             // 30 days bounds how long a stale icon can survive.
+            //
+            // The suffix is how a redesign reaches an existing install sooner
+            // than that: the artwork changed while every filename stayed the
+            // same, so the old entries are still valid cache hits under the old
+            // name. A new cache name starts empty and refetches. Bump it
+            // whenever the icon artwork changes — `-light` is the white-field
+            // mark that replaced the navy one.
             urlPattern: ({ url }) => url.pathname.startsWith('/icons/'),
             handler: 'CacheFirst',
             options: {
-              cacheName: 'icons',
+              cacheName: 'icons-light',
               expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 30 },
             },
           },
