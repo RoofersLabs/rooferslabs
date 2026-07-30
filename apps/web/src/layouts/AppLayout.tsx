@@ -7,6 +7,7 @@ import {
   CalendarClock,
   BookOpen,
   Bell,
+  Home,
   Settings,
   CreditCard,
 } from 'lucide-react';
@@ -17,7 +18,7 @@ import { useUnreadCount } from '@/hooks/queries';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { InstallPwaButton } from '@/components/InstallPwaButton';
 import { LogoMark } from '@/components/Brand';
-import { BottomNav } from '@/components/BottomNav';
+import { BottomNav, type BottomNavItem } from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
 import {
   Sidebar,
@@ -46,22 +47,24 @@ const NAVIGATION = [
 ];
 
 /**
- * The four destinations the handheld tab bar carries. Written as routes rather
- * than as a second list of items so the bar takes its icon and label straight
- * from `NAVIGATION` — the two navigations cannot disagree, and neither adds a
- * destination the other does not have.
+ * The four destinations the handheld tab bar carries, in the order they appear
+ * there: where the day starts (Home), the work itself (Calls), what is waiting
+ * (Notifications), and the one place an owner changes how the receptionist
+ * behaves (Settings).
  *
- * Notifications is deliberately not among them. It is already a bell in the
- * header on every width, and putting it here too put two bells and two unread
- * dots on one phone screen. Knowledge Base, Settings and Billing are left out
- * as the surfaces an owner configures rather than works in; all four omissions
- * stay one tap away in the sidebar, behind the header trigger.
+ * Everything omitted — Customers, Appointments, Knowledge Base, Billing — is
+ * still one tap away in the sidebar behind the header trigger. The bar is a
+ * shortcut to four things; it takes nothing away from the drawer.
+ *
+ * The dashboard is captioned "Home" here rather than "Dashboard": on a tab bar
+ * the first icon is the way back to the start, and that is the shape a handheld
+ * user already reads it as.
  */
-const BOTTOM_NAV: readonly string[] = [
-  ROUTES.dashboard,
-  ROUTES.calls,
-  ROUTES.customers,
-  ROUTES.appointments,
+const BOTTOM_NAV: BottomNavItem[] = [
+  { to: ROUTES.dashboard, label: 'Home', icon: Home },
+  { to: ROUTES.calls, label: 'Calls', icon: Phone },
+  { to: ROUTES.notifications, label: 'Notifications', icon: Bell },
+  { to: ROUTES.settings, label: 'Settings', icon: Settings },
 ];
 
 /** Main application shell: sidebar navigation + header (docs/05 §22–23). */
@@ -106,10 +109,6 @@ export function AppLayout() {
   const navigation = paymentsEnabled
     ? [...NAVIGATION, { to: ROUTES.billing, label: 'Billing', icon: CreditCard }]
     : NAVIGATION;
-
-  // Filtered rather than looked up, which is also what keeps the bar in the
-  // sidebar's order without a second ordering to maintain.
-  const bottomNav = NAVIGATION.filter((item) => BOTTOM_NAV.includes(item.to));
 
   return (
     <SidebarProvider className="bg-base">
@@ -207,7 +206,7 @@ export function AppLayout() {
           <Outlet />
         </main>
 
-        <BottomNav items={bottomNav} />
+        <BottomNav items={BOTTOM_NAV} />
       </SidebarInset>
     </SidebarProvider>
   );

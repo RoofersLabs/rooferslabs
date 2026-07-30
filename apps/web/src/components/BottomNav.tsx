@@ -72,12 +72,14 @@ export function BottomNav({ items, className }: { items: BottomNavItem[]; classN
                     // follows, and it should not be the first feedback. The
                     // answer is a fill, not a scale — nothing on this bar moves,
                     // so a mis-tap never reads as the layout shifting.
-                    'group-active:bg-surface-3',
+                    //
                     // The link takes focus, the pill shows it: a ring around the
                     // full-height cell would be clipped by the bar, and one
                     // around a 36px pill is not.
                     'group-focus-visible:ring-2 group-focus-visible:ring-focus group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-surface',
-                    isActive ? 'bg-accent-subtle text-accent' : 'text-ink-muted',
+                    isActive
+                      ? 'bg-accent-subtle text-accent'
+                      : 'text-ink-muted group-active:bg-surface-3 group-active:text-ink',
                   )}
                 >
                   <item.icon className="h-[22px] w-[22px]" aria-hidden />
