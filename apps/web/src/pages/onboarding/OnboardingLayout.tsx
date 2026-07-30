@@ -1,4 +1,4 @@
-import { Navigate, useParams } from 'react-router-dom';
+import { Navigate, useLocation, useParams } from 'react-router-dom';
 import { UserButton } from '@clerk/clerk-react';
 import { OnboardingStep } from '@rooferslabs/shared';
 import { cn } from '@/lib/utils';
@@ -14,7 +14,7 @@ import { AiStep } from './AiStep';
 import { BusinessStep } from './BusinessStep';
 import { CompanyStep } from './CompanyStep';
 import { ReviewStep } from './ReviewStep';
-import { STEP_LABELS, useOnboarding } from './useOnboarding';
+import { STEP_LABELS, useOnboarding, type OnboardingNavState } from './useOnboarding';
 
 const STEP_SCREENS: Record<WizardStep, () => JSX.Element> = {
   [OnboardingStep.COMPANY]: CompanyStep,
@@ -102,7 +102,9 @@ function Stepper({ current, furthestIndex }: { current: WizardStep; furthestInde
  */
 export function OnboardingLayout() {
   const { step: slug } = useParams();
+  const { state } = useLocation();
   const { furthest, canOpen } = useOnboarding();
+  const unlockedByNavigation = (state as OnboardingNavState | null)?.unlockedStep;
 
   // Bare /onboarding, or an unrecognised slug: resume where the server says we
   // are. This is what makes a reload, a new device, or a bookmarked deep link
@@ -110,8 +112,14 @@ export function OnboardingLayout() {
   const step = slug ? SLUG_TO_STEP[slug] : undefined;
   if (!step) return <Navigate to={stepPath(furthest)} replace />;
 
-  // A deep link to a step that has not been unlocked yet.
-  if (!canOpen(step)) return <Navigate to={stepPath(furthest)} replace />;
+  // A deep link to a step that has not been unlocked yet. A step the wizard
+  // itself just advanced to is exempt: it says so in the navigation state, and
+  // it says so because the server has already accepted it. Without that, the
+  // guard spends one render still reading the previous step and sends the user
+  // straight back — the double-click. See `OnboardingNavState`.
+  if (!canOpen(step) && unlockedByNavigation !== step) {
+    return <Navigate to={stepPath(furthest)} replace />;
+  }
 
   const StepScreen = STEP_SCREENS[step];
 

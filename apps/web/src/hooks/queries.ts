@@ -139,12 +139,66 @@ export function useUpdateAiConfig() {
   });
 }
 
+/**
+ * Mirror a company write into the cached session.
+ *
+ * The route guard derives the wizard's position from the *session*, not from the
+ * company query. Invalidating the session asks for a refetch that settles a
+ * round-trip later, but `advanceFrom` navigates immediately — so the guard was
+ * still reading the previous step, judged the step the user had just unlocked to
+ * be unreachable, and redirected them back to the one they came from. The click
+ * looked like it did nothing, and the second click worked only because the
+ * refetch had landed by then.
+ *
+ * Writing the server's own response into the session closes that window: the
+ * cache is correct in the same tick the mutation resolves, so `canOpen` agrees
+ * with the navigation. The invalidation still follows to reconcile the rest of
+ * the session (subscription, flags) against the server.
+ *
+ * The cancel matters as much as the write. Each earlier step submits more than
+ * one mutation — business details PATCHes the company and PUTs the hours before
+ * it advances — and each of those invalidates the session too. That leaves a
+ * `GET /auth/me` in flight which was issued *before* the step was persisted, so
+ * it answers with the previous step and overwrites the value written below.
+ * Cancelling first drops that reply on the floor; without it the fix holds on a
+ * step opened directly and fails on the same step reached by walking the wizard,
+ * which is exactly the intermittent double-click that was reported.
+ */
+async function syncSessionCompany(
+  qc: ReturnType<typeof useQueryClient>,
+  company: Pick<
+    Company,
+    'id' | 'name' | 'slug' | 'status' | 'onboardingStep' | 'logoUrl' | 'primaryColor'
+  >,
+) {
+  await qc.cancelQueries({ queryKey: queryKeys.session });
+  qc.setQueryData<Session>(queryKeys.session, (session) =>
+    session
+      ? {
+          ...session,
+          company: {
+            id: company.id,
+            name: company.name,
+            slug: company.slug,
+            status: company.status,
+            onboardingStep: company.onboardingStep,
+            logoUrl: company.logoUrl,
+            primaryColor: company.primaryColor,
+          },
+        }
+      : session,
+  );
+}
+
 export function useSetOnboardingStep() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (step: OnboardingStep) => api.patch<Company>('/companies/me/onboarding', { step }),
-    onSuccess: (company) => {
+    // Async so `mutateAsync` resolves only once the session cache reflects the
+    // new step — `advanceFrom` navigates on the next line.
+    onSuccess: async (company) => {
       qc.setQueryData(queryKeys.company, company);
+      await syncSessionCompany(qc, company);
       void qc.invalidateQueries({ queryKey: queryKeys.session });
     },
   });
@@ -154,8 +208,12 @@ export function useCompleteOnboarding() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => api.post<Company>('/companies/me/onboarding/complete'),
-    onSuccess: (company) => {
+    onSuccess: async (company) => {
       qc.setQueryData(queryKeys.company, company);
+      // Same reason as above, one stage further on: this is what flips the
+      // visitor from `onboarding` to `payment`, so without it the final click
+      // leaves them sitting on the review screen until a refetch happens to land.
+      await syncSessionCompany(qc, company);
       void qc.invalidateQueries({ queryKey: queryKeys.session });
     },
   });

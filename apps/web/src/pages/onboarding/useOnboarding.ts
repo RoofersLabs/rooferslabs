@@ -5,6 +5,28 @@ import { useAccess } from '@/auth/AccessProvider';
 import { nextStep, resumeStep, stepIndex, stepPath, type WizardStep } from '@/auth/stages';
 import { useCompleteOnboarding, useSetOnboardingStep } from '@/hooks/queries';
 
+/**
+ * What `advanceFrom` tells the next screen about how it was reached.
+ *
+ * The wizard's guard asks whether a step has been unlocked, and it learns that
+ * from the session query. `setQueryData` updates the cache synchronously but
+ * React Query notifies its subscribers on a later tick, so for one render after
+ * `navigate()` the guard is still looking at the previous step — it judged the
+ * step just persisted to be unreachable and redirected back to the one the user
+ * came from. That is the whole of the "click Next twice" bug: the first click
+ * did all its work and was then undone by a guard reading one-render-old state.
+ *
+ * Writing the cache earlier cannot fix it, because the ordering is React's, not
+ * the cache's. Carrying the fact on the navigation can: the location and its
+ * state arrive in the same update, so the guard sees them together. It is also
+ * the honest statement of the invariant — the server has already accepted this
+ * step, so this particular navigation needs no second opinion. A deep link
+ * carries no such state and is still checked.
+ */
+export interface OnboardingNavState {
+  unlockedStep?: WizardStep;
+}
+
 export interface OnboardingProgress {
   /** The furthest step the tenant has unlocked, read from the server. */
   furthest: WizardStep;
@@ -56,7 +78,10 @@ export function useOnboarding(): OnboardingProgress {
       if (stepIndex(next) > stepIndex(furthest)) {
         await setStep.mutateAsync(next);
       }
-      navigate(stepPath(next));
+      // The step is persisted, so this navigation is authorised by definition.
+      // Saying so in the router state is what makes it survive the guard: see
+      // `OnboardingNavState`.
+      navigate(stepPath(next), { state: { unlockedStep: next } satisfies OnboardingNavState });
     },
     [complete, furthest, navigate, setStep],
   );

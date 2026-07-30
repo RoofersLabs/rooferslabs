@@ -209,6 +209,12 @@ export function FieldGroup({
  * puts it under the thumb and keeps the destructive-to-progress direction out
  * of the way. From `sm` up the pair returns to the usual back-left,
  * continue-right row.
+ *
+ * The actions take the product's standard `md` button — 14px button type, 16px
+ * gutters — lifted to 44px so they stand exactly as tall as the fields above
+ * them and stay comfortable under a thumb. The previous `lg` was 48px on 18px
+ * type, which read as the largest thing on a page whose job is to be calm.
+ * Everything else about the button, states included, is the shared component's.
  */
 export function StepActions({
   onBack,
@@ -222,16 +228,16 @@ export function StepActions({
   return (
     <div className="flex flex-col-reverse gap-3 border-t border-line-subtle pt-6 sm:flex-row sm:items-center sm:justify-between">
       {onBack && (
-        <Button type="button" variant="ghost" size="lg" onClick={onBack} className="px-4">
+        <Button type="button" variant="ghost" size="md" onClick={onBack} className="h-11 px-3">
           <ChevronLeft className="h-4 w-4" aria-hidden />
           Back
         </Button>
       )}
       <Button
         type="submit"
-        size="lg"
+        size="md"
         loading={submitting}
-        className={cn('w-full sm:w-auto', !onBack && 'sm:ml-auto')}
+        className={cn('h-11 w-full sm:w-auto', !onBack && 'sm:ml-auto')}
       >
         {submitting ? 'Saving…' : submitLabel}
       </Button>
