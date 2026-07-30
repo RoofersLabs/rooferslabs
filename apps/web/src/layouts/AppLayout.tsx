@@ -198,12 +198,11 @@ export function AppLayout() {
             use between sections, so the shell never feels tighter than its
             contents.
 
-            Below `lg` the gutter also has to clear the tab bar, which floats
-            and is therefore out of flow: 2rem of gutter + the pill's 3.5rem +
-            the 0.75rem it floats by + whatever the device reserves for its home
-            indicator. Without it the last row of every page sits under the
-            bar. */}
-        <main className="mx-auto w-full max-w-dashboard px-4 py-8 pb-[calc(6.25rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:pb-8">
+            Below `lg` the gutter also has to clear the tab bar, which is fixed
+            and therefore out of flow: 2rem of gutter + the bar's 4rem row +
+            whatever the device reserves for its home indicator. Without it the
+            last row of every page sits under the bar. */}
+        <main className="mx-auto w-full max-w-dashboard px-4 py-8 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:pb-8">
           <Outlet />
         </main>
 

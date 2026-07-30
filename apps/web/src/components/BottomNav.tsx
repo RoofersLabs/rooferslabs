@@ -12,12 +12,13 @@ export type BottomNavItem = {
 /**
  * The installed app's tab bar: the handheld counterpart to the sidebar.
  *
- * A floating object rather than a strip welded to the bottom edge — a pill
- * inset from all three sides, lifted on `shadow-lg` and outlined with the same
- * hairline the sidebar and header use. Nothing about it is bespoke: the
- * surface, the border, the elevation, the easing and the durations are all
- * tokens, so it reads as the design system continuing onto a phone rather than
- * as a second design system arriving.
+ * Built into the bottom edge rather than hovering over it. The bar runs the
+ * full width and sits flush on the viewport floor, so its own bottom corners
+ * are square and the device's are the only ones the eye sees; the two top
+ * corners take `radius-2xl`, which is what makes it read as rising out of the
+ * hardware instead of resting on the page. A hairline top border is the whole
+ * of the separation — no shadow, because a shadow is how a thing announces it
+ * is floating, and this one is not.
  *
  * Icons only, by design. Labels at this width either wrap or truncate, and the
  * four destinations are the ones an owner visits every day — the label is
@@ -52,46 +53,36 @@ export function BottomNav({ items, className }: { items: BottomNavItem[]; classN
       aria-label="Primary"
       className={cn(
         'fixed inset-x-0 bottom-0 z-30 lg:hidden',
-        // The bar floats, so this wrapper is only a positioner: it spans the
-        // width but must not swallow taps aimed at the page showing through the
-        // margins beside and below the pill.
-        'pointer-events-none',
-        // Three margins, one of them hardware-aware. The iOS home indicator and
-        // the Android gesture pill live inside the viewport, so the gap below
-        // the pill is the device's own reserved strip *plus* 12px of daylight —
-        // which collapses to a plain 12px on the phones that reserve nothing.
-        'px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]',
+        'rounded-t-2xl border-t border-line-subtle bg-surface',
+        // The iOS home indicator and the Android gesture pill live inside the
+        // viewport. Padding the bar by the inset — rather than lifting it off
+        // the floor — is what keeps the white running to the physical edge, so
+        // there is no strip of page visible underneath and nothing to suggest
+        // the bar is a separate object. On hardware that reserves nothing the
+        // padding is zero and the row alone sets the height.
+        'pb-[env(safe-area-inset-bottom)]',
         className,
       )}
     >
       {/*
         `flex-1` on every cell, and nothing else: the row is divided into equal
-        columns, so each target is exactly one quarter of the pill and the icons
+        columns, so each target is exactly one quarter of the row and the icons
         land on those columns' centres at any width. `justify-around` would have
         given the outermost items half the gap of the inner ones and pulled them
         off centre — and would have broken the indicator, whose travel is one
         cell width per step precisely because the cells are equal.
 
-        Capped at 24rem and centred so the pill stays a held object on a tablet
-        instead of stretching into a rail; on a phone the 16px side margins bind
-        first and it sits just inside both edges.
+        The bar is full-width; the row inside it is capped at 28rem and centred.
+        On a phone the cap never binds and the two are the same element. It is
+        there for the top of the range — a 1023px tablet, where four icons
+        strung across the whole width read as scattered rather than as a set,
+        while the white field still spans the device.
 
-        Translucency is the header's own recipe, to the pixel — 88% surface over
-        an 8px blur — because the two are the same material doing the same job at
-        opposite ends of the same screen, and because at 88% the blur is a hint
-        of what is underneath rather than a glass panel. It applies only where
-        the browser can actually blur; everywhere else the `bg-surface` beneath
-        it stays fully opaque, so the icons never sit on a washed-out field
-        waiting for a filter that is not coming.
+        64px tall before the safe-area inset: a comfortable target on its short
+        side, and the extra weight over a 56px row is what makes the bar feel
+        like part of the chassis rather than a strip laid on top of it.
       */}
-      <ul
-        className={cn(
-          'pointer-events-auto relative mx-auto flex h-14 max-w-sm items-stretch',
-          'rounded-full border border-line-subtle bg-surface shadow-lg',
-          'supports-[backdrop-filter:blur(0px)]:bg-[color-mix(in_oklab,var(--surface-1)_88%,transparent)]',
-          'supports-[backdrop-filter:blur(0px)]:backdrop-blur',
-        )}
-      >
+      <ul className="relative mx-auto flex h-16 max-w-md items-stretch">
         {/*
           The active fill is a single element that slides, not four that switch.
           One `translate3d` per navigation — composited, no layout, no paint —
@@ -121,7 +112,11 @@ export function BottomNav({ items, className }: { items: BottomNavItem[]; classN
             transform: `translate3d(${Math.max(activeIndex, 0) * 100}%, 0, 0)`,
           }}
         >
-          <span className="h-10 w-10 rounded-full bg-accent-subtle" />
+          {/* 64×36: a capsule laid along the row, not a button pressed into it.
+              The width is the icon plus 21px of air on either side, which is
+              what lets the fill read as a lane the icon is sitting in rather
+              than as a circle drawn around it. */}
+          <span className="h-9 w-16 rounded-full bg-accent-subtle" />
         </span>
 
         {items.map((item, index) => {
@@ -138,10 +133,10 @@ export function BottomNav({ items, className }: { items: BottomNavItem[]; classN
               >
                 <span
                   className={cn(
-                    // The focus ring wraps the fill, not the cell: a ring on the
-                    // full-height cell would be clipped by the pill's radius,
-                    // and one on a 40px circle sits inside it cleanly.
-                    'flex h-10 w-10 items-center justify-center rounded-full',
+                    // The focus ring traces the capsule, matching the fill it
+                    // would sit on: a ring on the full-height cell would collide
+                    // with its neighbours and with the bar's top corners.
+                    'flex h-9 w-16 items-center justify-center rounded-full',
                     'group-focus-visible:ring-2 group-focus-visible:ring-focus group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-surface',
                   )}
                 >
