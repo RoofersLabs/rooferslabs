@@ -12,10 +12,7 @@ export const FOUNDING_PROGRAM = {
   name: 'Founding Customer Program',
   /** Used below `sm`, where the full name would crowd out the offer itself. */
   shortName: 'Founding Program',
-  spots: 15,
-  introPrice: 49,
-  introMonths: 2,
-  standardPrice: 99,
+  price: 49,
   cta: 'Claim Your Spot',
   /** Below `sm` the offer earns the width; the link keeps `cta` as its
       accessible name, so nothing is lost to a screen reader. */
@@ -25,18 +22,17 @@ export const FOUNDING_PROGRAM = {
   href: '#pricing',
 } as const;
 
-const { spots, introPrice, introMonths, standardPrice } = FOUNDING_PROGRAM;
+const { price } = FOUNDING_PROGRAM;
 
 /**
- * One sentence at three lengths. A phone cannot hold the full offer on one
- * line, and the alternative — letting it wrap to three ragged lines or stack
- * under the call to action — is worse than saying less. Only one is ever in the
- * accessibility tree: the others are `display: none`, not visually hidden.
+ * The offer at two lengths. The bar says one thing now — a price — so a phone
+ * only has to drop the product name to keep it on a single line. Only one is
+ * ever in the accessibility tree: the other is `display: none`, not visually
+ * hidden.
  */
 const OFFER = {
-  full: `First ${spots} roofing companies get their first ${introMonths} months at $${introPrice}/seat, then $${standardPrice}/seat/month.`,
-  medium: `${spots} spots at $${introPrice}/seat for ${introMonths} months, then $${standardPrice}/seat.`,
-  short: `$${introPrice}/seat for ${introMonths} months`,
+  full: `Get rooferslabs for just $${price}/month.`,
+  short: `Just $${price}/month`,
 } as const;
 
 /**
@@ -106,8 +102,7 @@ export function AnnouncementBar() {
 
             <span className="truncate text-white/85">
               <span className="sm:hidden">{OFFER.short}</span>
-              <span className="hidden sm:inline lg:hidden">{OFFER.medium}</span>
-              <span className="hidden lg:inline">{OFFER.full}</span>
+              <span className="hidden sm:inline">{OFFER.full}</span>
             </span>
           </p>
 
