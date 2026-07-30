@@ -166,25 +166,30 @@ export function Pricing() {
           <div className="mx-auto max-w-[720px] overflow-hidden rounded-2xl border border-mk-line bg-mk-card">
             <div className="grid grid-cols-1 items-center gap-8 p-8 sm:p-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-10">
               <div>
-                <h3 className="text-[20px] font-semibold tracking-[-0.02em] text-white">
-                  Everything, in one plan
+                {/* Pre-launch: the programme is the offer, so the badge carries
+                    what the price used to. A bordered pill rather than the
+                    site's uppercase eyebrow — this is a status, not a section
+                    label, and the card's surface is light enough to hold it. */}
+                <span className="inline-flex items-center rounded-full border border-mk-line-strong bg-white/[0.045] px-3 py-1 text-[11.5px] font-medium tracking-[0.01em] text-mk-accent-fg">
+                  Founding Customer Program
+                </span>
+
+                {/* Takes the visual weight the price carried, so the column
+                    still has one clear focal point and the card keeps its
+                    proportions. */}
+                <h3 className="mt-5 text-[32px] font-semibold leading-[1.05] tracking-[-0.03em] text-white sm:text-[36px]">
+                  Launching Soon
                 </h3>
-                <p className="mt-2 max-w-[34ch] text-[14.5px] leading-[1.6] text-mk-secondary">
-                  No feature tiers, no per-seat pricing, no setup fee. Cancel whenever you like.
+                <p className="mt-3 max-w-[34ch] text-[14.5px] leading-[1.6] text-mk-secondary">
+                  We’re currently working closely with a limited group of founding customers to
+                  perfect the product before public launch.
                 </p>
 
-                <div className="mt-7 flex items-baseline gap-2">
-                  <span className="font-num text-[44px] font-semibold leading-none tracking-[-0.03em] text-white">
-                    $299
-                  </span>
-                  <span className="text-[14.5px] text-mk-secondary">/ month</span>
-                </div>
-
                 <Button href="/sign-up" size="lg" className="mt-7 w-full">
-                  Get started
+                  Get Started
                 </Button>
                 <p className="mt-3 text-center text-[12px] text-mk-muted">
-                  Includes 250 calls a month. Higher volumes available at checkout.
+                  Public access is coming soon.
                 </p>
               </div>
 

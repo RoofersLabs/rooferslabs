@@ -94,12 +94,14 @@ export function PaymentPage() {
 
   return (
     <StandaloneLayout>
-      {/* The card is the whole page, so it sits in the middle of what is left
-          of the viewport below the 64px header — the layout's own 3rem gutters
-          become the minimum breathing room rather than the actual position.
-          `dvh` keeps it centred while mobile browser chrome comes and goes. */}
-      <div className="flex min-h-[calc(100dvh-10rem)] flex-col items-center justify-center">
-        <div className="w-full max-w-[480px]">
+      {/* The card is the whole page, so it is centred in everything below the
+          64px header rather than sitting in the document flow. `-my-12` gives
+          back the layout's own 3rem gutters — on a 720px-tall laptop those 96px
+          are the difference between a centred card and a scrollbar — and `py-6`
+          re-establishes a smaller minimum of its own. `dvh` keeps it centred
+          while mobile browser chrome comes and goes. */}
+      <div className="-my-12 flex min-h-[calc(100dvh-4rem)] flex-col items-center justify-center py-6">
+        <div className="w-full max-w-[420px]">
           {params.get('checkout') === 'cancelled' && (
             <Alert className="mb-6" tone="warning" title="Checkout was cancelled">
               No payment was taken — your place is still here when you are ready.
@@ -112,16 +114,16 @@ export function PaymentPage() {
             </Alert>
           )}
 
-          <Card className="rounded-2xl px-6 py-8 shadow-md sm:px-9 sm:py-10">
+          <Card className="rounded-2xl px-6 py-6 shadow-md sm:px-8">
             <Badge tone="brand">{OFFER.badge}</Badge>
 
-            <h1 className="mt-5 text-balance text-h3 text-ink">{OFFER.headline}</h1>
+            <h1 className="mt-4 text-balance text-h4 text-ink">{OFFER.headline}</h1>
 
             {/* The price is the one thing a reader should land on, so the old
                 price is deliberately small and quiet above it rather than
                 competing beside it. */}
-            <div className="mt-7">
-              <p className="text-body text-ink-faint">
+            <div className="mt-5">
+              <p className="text-small text-ink-faint">
                 <span className="sr-only">Regular price </span>
                 <s className="font-num decoration-ink-faint/60 decoration-1">
                   {OFFER.standardPrice}
@@ -129,25 +131,25 @@ export function PaymentPage() {
                 </s>
               </p>
 
-              <p className="mt-1 flex items-baseline gap-1.5">
+              <p className="mt-0.5 flex items-baseline gap-1.5">
                 <span className="sr-only">Founding price </span>
-                <span className="font-num text-[2.875rem] font-bold leading-none tracking-[-0.03em] text-ink">
+                <span className="font-num text-[2.25rem] font-bold leading-none tracking-[-0.03em] text-ink">
                   {OFFER.price}
                 </span>
-                <span className="text-body-lg text-ink-muted">{OFFER.cadence}</span>
+                <span className="text-body text-ink-muted">{OFFER.cadence}</span>
               </p>
 
-              <p className="mt-3.5 text-body leading-6 text-ink-muted">{OFFER.note}</p>
+              <p className="mt-2.5 text-small leading-5 text-ink-muted">{OFFER.note}</p>
             </div>
 
-            <ul className="mt-8 space-y-3.5 border-t border-line-subtle pt-8">
+            <ul className="mt-5 space-y-2 border-t border-line-subtle pt-5">
               {FEATURES.map((feature) => (
-                <li key={feature} className="flex items-center gap-3 text-body text-ink">
+                <li key={feature} className="flex items-center gap-2.5 text-small text-ink">
                   <span
                     aria-hidden="true"
-                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-subtle"
+                    className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-accent-subtle"
                   >
-                    <Check className="h-3 w-3 text-accent" strokeWidth={3} />
+                    <Check className="h-2.5 w-2.5 text-accent" strokeWidth={3} />
                   </span>
                   {feature}
                 </li>
@@ -155,18 +157,17 @@ export function PaymentPage() {
             </ul>
 
             <Button
-              className="mt-8 w-full hover:-translate-y-px hover:shadow-md motion-reduce:hover:translate-y-0"
-              size="lg"
+              className="mt-6 w-full hover:-translate-y-px hover:shadow-md motion-reduce:hover:translate-y-0"
               loading={checkout.isPending}
               onClick={() => void start()}
             >
               {checkout.isPending ? 'Opening…' : OFFER.cta}
             </Button>
 
-            <p className="mt-4 text-center text-small text-ink-muted">{OFFER.reassurance}</p>
+            <p className="mt-3 text-center text-caption text-ink-muted">{OFFER.reassurance}</p>
           </Card>
 
-          <p className="mt-8 text-center text-small text-ink-muted">
+          <p className="mt-4 text-center text-small text-ink-muted">
             Already subscribed?{' '}
             <Link
               to={ROUTES.billing}
