@@ -62,11 +62,24 @@ const POLYGONS = [
 /**
  * How much of the icon's width the mark spans.
  *
- * `any` matches the icons this replaces. `maskable` is smaller because Android
- * crops a maskable icon to whatever shape the launcher uses — the safe zone is
- * the middle 80%, and a mark at 50% stays clear of a circle mask's corners.
+ * The mark is 933×343 — wide and short — so width alone understates how big it
+ * reads: at the previous 0.64 the artwork covered under a quarter of the icon's
+ * height and looked lost inside its own padding on a home screen. These figures
+ * are the largest that keep a comfortable, even margin under each platform's
+ * mask, and both preserve the 933:343 aspect ratio — `draw()` derives height
+ * from width, so the mark can never stretch.
+ *
+ * `any` at 0.80 leaves a 10% side margin. The mark's extreme points are the two
+ * lower corners of its box, which land at 0.647 of the icon's height — clear of
+ * the corner radius iOS's superellipse and Android's squircle cut away.
+ *
+ * `maskable` stays smaller because Android crops to whatever shape the launcher
+ * uses: the guaranteed safe zone is the middle 80%, i.e. a circle of radius
+ * 0.4. Those same corners sit at radius (w/2)·√(1+(343/933)²) = 0.533·w from
+ * the centre, so the mark fits any mask up to w = 0.751; 0.68 takes most of
+ * that headroom and keeps ~10% of margin in hand.
  */
-const MARK_WIDTH = { any: 0.64, maskable: 0.5 };
+const MARK_WIDTH = { any: 0.8, maskable: 0.68 };
 
 function inside(polygon, x, y) {
   for (let i = 0; i < polygon.length; i++) {

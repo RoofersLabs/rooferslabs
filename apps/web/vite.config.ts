@@ -64,11 +64,12 @@ export default defineConfig({
             // same, so the old entries are still valid cache hits under the old
             // name. A new cache name starts empty and refetches. Bump it
             // whenever the icon artwork changes — `-light` is the white-field
-            // mark that replaced the navy one.
+            // mark that replaced the navy one, and `-2` is that mark enlarged
+            // to 0.80 of the icon's width.
             urlPattern: ({ url }) => url.pathname.startsWith('/icons/'),
             handler: 'CacheFirst',
             options: {
-              cacheName: 'icons-light',
+              cacheName: 'icons-light-2',
               expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 30 },
             },
           },

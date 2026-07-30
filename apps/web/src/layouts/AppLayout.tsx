@@ -17,6 +17,7 @@ import { useUnreadCount } from '@/hooks/queries';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { InstallPwaButton } from '@/components/InstallPwaButton';
 import { LogoMark } from '@/components/Brand';
+import { BottomNav } from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
 import {
   Sidebar,
@@ -42,6 +43,25 @@ const NAVIGATION = [
   { to: ROUTES.knowledge, label: 'Knowledge Base', icon: BookOpen },
   { to: ROUTES.notifications, label: 'Notifications', icon: Bell },
   { to: ROUTES.settings, label: 'Settings', icon: Settings },
+];
+
+/**
+ * The four destinations the handheld tab bar carries. Written as routes rather
+ * than as a second list of items so the bar takes its icon and label straight
+ * from `NAVIGATION` — the two navigations cannot disagree, and neither adds a
+ * destination the other does not have.
+ *
+ * Notifications is deliberately not among them. It is already a bell in the
+ * header on every width, and putting it here too put two bells and two unread
+ * dots on one phone screen. Knowledge Base, Settings and Billing are left out
+ * as the surfaces an owner configures rather than works in; all four omissions
+ * stay one tap away in the sidebar, behind the header trigger.
+ */
+const BOTTOM_NAV: readonly string[] = [
+  ROUTES.dashboard,
+  ROUTES.calls,
+  ROUTES.customers,
+  ROUTES.appointments,
 ];
 
 /** Main application shell: sidebar navigation + header (docs/05 §22–23). */
@@ -86,6 +106,10 @@ export function AppLayout() {
   const navigation = paymentsEnabled
     ? [...NAVIGATION, { to: ROUTES.billing, label: 'Billing', icon: CreditCard }]
     : NAVIGATION;
+
+  // Filtered rather than looked up, which is also what keeps the bar in the
+  // sidebar's order without a second ordering to maintain.
+  const bottomNav = NAVIGATION.filter((item) => BOTTOM_NAV.includes(item.to));
 
   return (
     <SidebarProvider className="bg-base">
@@ -173,10 +197,17 @@ export function AppLayout() {
 
         {/* 32px page gutter matches the vertical rhythm the pages themselves
             use between sections, so the shell never feels tighter than its
-            contents. */}
-        <main className="mx-auto w-full max-w-dashboard px-4 py-8 sm:px-6 lg:px-8">
+            contents.
+
+            Below `lg` the gutter also has to clear the tab bar, which is fixed
+            and therefore out of flow: 2rem of gutter + the bar's 3.5rem +
+            whatever the device reserves for its home indicator. Without it the
+            last row of every page sits under the bar. */}
+        <main className="mx-auto w-full max-w-dashboard px-4 py-8 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:pb-8">
           <Outlet />
         </main>
+
+        <BottomNav items={bottomNav} />
       </SidebarInset>
     </SidebarProvider>
   );
