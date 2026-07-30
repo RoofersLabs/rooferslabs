@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Building2, Clock, Bot, PhoneForwarded, CheckCircle2, Pencil } from 'lucide-react';
 import { AiVoice } from '@rooferslabs/shared';
 import {
@@ -26,8 +26,18 @@ const TABS = [
   { key: 'phone', label: 'Phone Setup', icon: PhoneForwarded },
 ] as const;
 
+/**
+ * Which section a bare `/settings` opens on.
+ *
+ * Phone setup is the one page here that can be *unfinished* rather than merely
+ * unedited — until forwarding is verified the receptionist answers nothing — so
+ * it is what someone arriving from the sidebar most likely came for. The other
+ * tabs keep their own URLs and are unaffected.
+ */
+const DEFAULT_TAB = 'phone';
+
 export function SettingsPage() {
-  const { tab = 'business' } = useParams<{ tab: string }>();
+  const { tab = DEFAULT_TAB } = useParams<{ tab: string }>();
 
   return (
     <div>
@@ -39,21 +49,31 @@ export function SettingsPage() {
           className="flex gap-1 overflow-x-auto lg:sticky lg:top-20 lg:flex-col lg:self-start lg:overflow-visible"
         >
           {TABS.map((item) => (
-            <NavLink
+            // A plain `Link`, highlighted from the resolved tab rather than
+            // from the router's own match.
+            //
+            // On a bare `/settings` no link's `to` equals the URL, so `NavLink`
+            // considers all four inactive: the section actually on screen would
+            // have no pill, and — because `NavLink` only emits `aria-current`
+            // for a link it deems active — no `aria-current` either. That is
+            // what the old `item.key === 'business'` special case was patching
+            // around, and it would have needed patching again here. Driving
+            // both the pill and `aria-current` off `tab` fixes both at once,
+            // and the highlight can no longer disagree with the content below.
+            <Link
               key={item.key}
               to={`/settings/${item.key}`}
-              className={({ isActive }) =>
-                cn(
-                  'focus-ring flex h-10 shrink-0 items-center gap-2.5 rounded-md px-3.5 text-body font-medium transition-colors duration-fast lg:w-full',
-                  isActive || (item.key === 'business' && tab === 'business')
-                    ? 'bg-accent-subtle text-accent'
-                    : 'text-ink-muted hover:bg-surface-2 hover:text-ink',
-                )
-              }
+              aria-current={tab === item.key ? 'page' : undefined}
+              className={cn(
+                'focus-ring flex h-10 shrink-0 items-center gap-2.5 rounded-md px-3.5 text-body font-medium transition-colors duration-fast lg:w-full',
+                tab === item.key
+                  ? 'bg-accent-subtle text-accent'
+                  : 'text-ink-muted hover:bg-surface-2 hover:text-ink',
+              )}
             >
               <item.icon className="h-4 w-4 shrink-0" aria-hidden />
               {item.label}
-            </NavLink>
+            </Link>
           ))}
         </nav>
 
