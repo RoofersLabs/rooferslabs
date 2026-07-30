@@ -8,7 +8,7 @@ const STEPS = [
     at: '0:00',
   },
   {
-    title: 'The AI answers',
+    title: 'r1 echo answers',
     detail: 'Picked up on the first ring, in your company’s name, with your greeting.',
     at: '0:00.4',
   },

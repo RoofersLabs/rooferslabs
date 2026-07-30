@@ -25,7 +25,7 @@ const COMPARISON = [
     ai: 'Booked before the caller hangs up',
   },
   {
-    capability: 'AI lead qualification',
+    capability: 'Structured lead qualification',
     human: 'Depends who picked up',
     ai: 'The same questions, every time',
   },
@@ -42,12 +42,12 @@ const COMPARISON = [
   {
     capability: 'Lower operating cost',
     human: '$38,000+ a year, one seat',
-    ai: '$299 a month, no seats to staff',
+    ai: 'One monthly subscription, no seats to staff',
   },
 ] as const;
 
 const INCLUDED = [
-  '24/7 AI answering in your company’s name',
+  'Round-the-clock call answering in your company’s name',
   'Lead qualification and scoring on every call',
   'Appointment booking straight onto your calendar',
   'Emergency detection and crew paging',
@@ -80,7 +80,7 @@ export function Pricing() {
       <Container>
         <Reveal>
           <h2 className="max-w-[20ch] text-balance text-[clamp(1.75rem,4.2vw,3.25rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-white">
-            What a receptionist can’t do at 2 AM.
+            What one person on the phone can’t cover at 2 AM.
           </h2>
           <p className="mt-5 max-w-[58ch] text-pretty text-[15px] leading-[1.65] text-mk-secondary sm:text-[16.5px]">
             Nothing here is a criticism of the person answering your phone. It is a description of
@@ -103,7 +103,7 @@ export function Pricing() {
               the same strings as the column headers, so nothing is duplicated
               into a second hidden copy of the table. */}
           <table
-            aria-label="Traditional receptionist compared with rooferslabs AI"
+            aria-label="Traditional receptionist compared with r1 echo"
             className="w-full border-collapse text-left max-md:block"
           >
             <thead className="max-md:hidden">
@@ -124,7 +124,7 @@ export function Pricing() {
                   scope="col"
                   className="border-x border-mk-line bg-white/[0.03] px-4 py-4 text-[12.5px] font-medium text-white sm:px-6 sm:text-[13.5px]"
                 >
-                  rooferslabs AI
+                  r1 echo
                 </th>
               </tr>
             </thead>
@@ -148,7 +148,7 @@ export function Pricing() {
                   </td>
                   <td className="border-x border-mk-line bg-white/[0.03] px-4 py-4 align-top sm:px-6 max-md:mt-3 max-md:block max-md:rounded-lg max-md:border-x-0 max-md:bg-white/[0.05] max-md:p-3">
                     <span className="mb-1 hidden text-[11px] uppercase tracking-[0.06em] text-mk-accent-fg max-md:block">
-                      rooferslabs AI
+                      r1 echo
                     </span>
                     <span className="flex gap-2 text-[12.5px] leading-[1.5] text-white sm:text-[14px]">
                       <Check />
@@ -181,8 +181,8 @@ export function Pricing() {
                   Launching Soon
                 </h3>
                 <p className="mt-3 max-w-[34ch] text-[14.5px] leading-[1.6] text-mk-secondary">
-                  We’re currently working closely with a limited group of founding customers to
-                  perfect the product before public launch.
+                  We’re working closely with a limited group of founding customers to refine r1 echo
+                  before public launch.
                 </p>
 
                 <Button href="/sign-up" size="lg" className="mt-7 w-full">

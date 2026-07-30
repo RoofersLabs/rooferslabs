@@ -6,7 +6,7 @@ const CAPABILITIES = [
     label: 'Answer',
     title: 'Every call is picked up instantly',
     detail:
-      'rooferslabs answers in your company’s name, follows your greeting, and stays available after hours.',
+      'r1 echo answers in your company’s name, follows your greeting, and stays available after hours.',
   },
   {
     label: 'Qualify',
@@ -29,7 +29,7 @@ const CAPABILITIES = [
 ] as const;
 
 const SIGNALS = [
-  ['First ring', 'AI answer'],
+  ['First ring', 'Answered'],
   ['Lead score', 'Qualified'],
   ['Calendar', 'Booked'],
   ['Crew alert', 'Sent'],

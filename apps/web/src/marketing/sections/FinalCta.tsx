@@ -102,8 +102,8 @@ export function FinalCta() {
                 Ready to never miss another call?
               </h2>
               <p className="mx-auto mt-5 max-w-[42ch] text-pretty text-[15px] leading-[1.65] text-mk-secondary md:mx-0 sm:text-[16px]">
-                Start answering every roofing call 24/7 with an AI receptionist that books
-                appointments, qualifies homeowners, and alerts your team when it matters.
+                Put an intelligent front desk on your phones around the clock — qualifying
+                homeowners, booking appointments, and alerting your team the moment it matters.
               </p>
               <div className="mt-8">
                 <Button href="/sign-up" size="lg">
@@ -129,7 +129,7 @@ export function FinalCta() {
             <SupportColumn
               icon={<DeployIcon />}
               heading="Deploy in minutes"
-              body="Connect your number, customize your receptionist, and start answering calls in minutes."
+              body="Connect your number, configure your front desk, and start answering every call in minutes."
               linkHref="#how-it-works"
               linkLabel="See how it works"
               className="md:border-l md:border-mk-line md:pl-8 lg:pl-12"

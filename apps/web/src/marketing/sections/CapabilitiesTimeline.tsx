@@ -165,8 +165,8 @@ export function CapabilitiesTimeline() {
               <span className="block text-white/70">Leads captured</span>
             </h2>
             <p className="mt-6 max-w-[58ch] text-[15px] leading-[1.65] text-mk-secondary sm:text-[16.5px]">
-              rooferslabs turns calls into booked work, emergency context, and clean follow-up
-              records without adding another person to the phones.
+              r1 echo turns every call into booked work, emergency context, and a clean follow-up
+              record — without adding another person to the phones.
             </p>
             <a
               href="#capability-list"
