@@ -1,5 +1,16 @@
 import { buildGreeting, buildReceptionistInstructions } from './prompt.builder';
+import type { CallerContext } from './caller-context';
 import type { CompanyWithRelations } from '../companies/companies.repository';
+
+function makeCaller(overrides: Partial<CallerContext> = {}): CallerContext {
+  return {
+    callerNumber: '+15125551234',
+    dialedNumber: '+15125550100',
+    twilioCallSid: 'CA123',
+    knownCustomer: null,
+    ...overrides,
+  };
+}
 
 function makeCompany(overrides: Partial<CompanyWithRelations> = {}): CompanyWithRelations {
   return {
@@ -170,6 +181,72 @@ describe('call handling edge cases', () => {
     company.aiConfiguration!.transferPhone = '+15125550100';
     const prompt = buildReceptionistInstructions(company);
     expect(prompt).toContain('when you have failed twice to understand something that matters');
+  });
+});
+
+describe('caller identity', () => {
+  it('states the caller number as a fact of the call and forbids asking for one', () => {
+    const prompt = buildReceptionistInstructions(makeCompany(), makeCaller());
+    expect(prompt).toContain('+15125551234');
+    expect(prompt).toContain('NEVER ask the caller for their phone number');
+    // Read back as digits, or the model says "plus one five one two five five…"
+    // in one run and the caller cannot follow it.
+    expect(prompt).toContain('5 1 2, 5 5 5, 1 2 3 4');
+  });
+
+  it('removes every instruction that would have it request a number', () => {
+    const prompt = buildReceptionistInstructions(makeCompany(), makeCaller());
+    expect(prompt).not.toContain('Always confirm the best callback number before ending the call.');
+    expect(prompt).not.toContain('Their name, the best callback number, and the property address.');
+    expect(prompt).not.toContain('let me grab your name and number');
+    expect(prompt).not.toContain('get the number and let them go');
+    expect(prompt).not.toContain('and to make sure you have their callback number');
+  });
+
+  it('still confirms the number it has, rather than dropping confirmation entirely', () => {
+    // Silently keeping caller ID would be worse than asking: people call from a
+    // work phone, a spouse's phone, or a number they never answer.
+    const prompt = buildReceptionistInstructions(makeCompany(), makeCaller());
+    expect(prompt).toContain('digit by digit');
+    expect(prompt).toContain('best number');
+    expect(prompt).toContain('give you a different number');
+  });
+
+  it('treats a CRM match as something to confirm, never as established fact', () => {
+    const prompt = buildReceptionistInstructions(
+      makeCompany(),
+      makeCaller({
+        knownCustomer: {
+          fullName: 'Dana Whitfield',
+          propertyAddress: '18 Balcones Dr, Austin TX 78731',
+          propertyType: null,
+        },
+      }),
+    );
+    expect(prompt).toContain('Dana Whitfield');
+    // The person on the phone may be a spouse, a tenant, or calling about a
+    // different property — greeting them by the account holder's name as though
+    // it were known is worse than not knowing.
+    expect(prompt).toContain('may be a spouse, a tenant, or calling about a different property');
+    expect(prompt).toContain('never recite the record back to them');
+  });
+
+  it('keeps the old asking behaviour when caller ID is withheld', () => {
+    const prompt = buildReceptionistInstructions(
+      makeCompany(),
+      makeCaller({ callerNumber: null, knownCustomer: null }),
+    );
+    expect(prompt).toContain('no caller ID');
+    expect(prompt).toContain('Always confirm the best callback number before ending the call.');
+    expect(prompt).not.toContain('NEVER ask the caller for their phone number');
+  });
+
+  it('is identical to the withheld-caller-ID prompt when no context is supplied', () => {
+    // A caller context is optional at the type level, so the no-argument path
+    // must degrade to asking rather than to silence.
+    const noContext = buildReceptionistInstructions(makeCompany());
+    expect(noContext).toContain('Always confirm the best callback number before ending the call.');
+    expect(noContext).not.toContain('NEVER ask the caller for their phone number');
   });
 });
 

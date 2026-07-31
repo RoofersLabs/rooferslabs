@@ -98,6 +98,29 @@ export class ConversationOrchestrator {
     return this.state;
   }
 
+  /**
+   * Record the caller's number from caller ID, before the call has started.
+   *
+   * This is what makes "never ask for the phone number" deterministic instead of
+   * a line in the prompt the model may or may not honour. Once PHONE is in
+   * `collected`, the question prioritizer skips it entirely, the stage engine
+   * stops routing through CONFIRMATION to chase it, the guidance lists it under
+   * "already known (never ask again)", and the quality validator raises
+   * ASKED_KNOWN_FIELD against any turn that asks anyway — none of which depend
+   * on the model reading anything.
+   *
+   * Not a general seeding hook on purpose: the caller ID is the one field the
+   * application knows independently of the conversation. A CRM match is NOT
+   * seeded here — the person on the phone may be a spouse or a tenant, so a name
+   * on file is a lead to confirm, not a collected value.
+   */
+  seedCallerNumber(phone: string): void {
+    const text = asText(phone);
+    if (!text) return;
+    this.state.collected[LeadField.PHONE] = text;
+    this.refreshStage();
+  }
+
   /** Fields the office still needs — the same answer the planner works from. */
   missingFields(): LeadField[] {
     return this.completeness.missing(this.state);

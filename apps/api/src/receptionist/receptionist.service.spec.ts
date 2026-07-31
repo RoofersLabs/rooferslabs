@@ -74,6 +74,97 @@ describe('buildSessionConfig — realtime voice', () => {
   });
 });
 
+describe('buildSessionConfig — caller identity', () => {
+  const caller = {
+    callerNumber: '+15125551234',
+    dialedNumber: '+15125550100',
+    twilioCallSid: 'CA123',
+    knownCustomer: null,
+  };
+
+  it('carries the caller number in the instructions sent before the first response', async () => {
+    const session = await makeSessionService('sage', 'marin').buildSessionConfig('c1', caller);
+    // The bridge sends these as session.update on socket open and gates the
+    // greeting until session.updated, so the receptionist cannot speak a word
+    // without already knowing the number.
+    expect(session.session.instructions).toContain('+15125551234');
+    expect(session.session.instructions).toContain('NEVER ask the caller for their phone number');
+  });
+
+  it('builds a session that asks for a number when there is no caller ID', async () => {
+    const session = await makeSessionService('sage', 'marin').buildSessionConfig('c1', {
+      ...caller,
+      callerNumber: null,
+    });
+    expect(session.session.instructions).toContain('no caller ID');
+  });
+});
+
+/**
+ * With the caller number pre-filled from caller ID, every tool result that used
+ * to send the model after a callback number is now sending it after one it
+ * already has. These cover both sides of that switch.
+ */
+describe('executeToolCall — coaching with the number already known', () => {
+  function signalsWithPhone() {
+    const signals = createEmptySignals();
+    signals.customer.phone = '+15125551234';
+    return signals;
+  }
+
+  it('stops listing the callback number as outstanding', async () => {
+    const result = await makeService().executeToolCall(
+      'c1',
+      signalsWithPhone(),
+      TOOL.CAPTURE_CUSTOMER_INFO,
+      { fullName: 'Dana Whitfield' },
+    );
+    expect(result.output).not.toContain('best callback number');
+  });
+
+  it('still lists it when the call arrived without caller ID', async () => {
+    const result = await makeService().executeToolCall(
+      'c1',
+      createEmptySignals(),
+      TOOL.CAPTURE_CUSTOMER_INFO,
+      { fullName: 'Dana Whitfield' },
+    );
+    expect(result.output).toContain('best callback number');
+  });
+
+  it('turns a knowledge miss into a callback promise rather than a number request', async () => {
+    const result = await makeService().executeToolCall(
+      'c1',
+      signalsWithPhone(),
+      TOOL.LOOKUP_KNOWLEDGE,
+      { query: 'financing' },
+    );
+    expect(result.output).toContain('someone will call them back');
+    expect(result.output).not.toContain('make sure you have their callback number');
+  });
+
+  it('sends an emergency after the address, not after a number it has', async () => {
+    const result = await makeService().executeToolCall(
+      'c1',
+      signalsWithPhone(),
+      TOOL.FLAG_EMERGENCY,
+      { reason: 'Water through the ceiling' },
+    );
+    expect(result.output).toContain('property address');
+    expect(result.output).not.toContain('confirm the callback number');
+  });
+
+  it('confirms rather than requests a number after a booking', async () => {
+    const result = await makeService().executeToolCall(
+      'c1',
+      signalsWithPhone(),
+      TOOL.REQUEST_APPOINTMENT,
+      { serviceRequested: 'Inspection' },
+    );
+    expect(result.output).toContain('do not ask them for a number');
+  });
+});
+
 describe('executeToolCall — knowledge lookup', () => {
   it('turns a knowledge miss into a bridge instead of a dead end', async () => {
     // The old text ("No specific information is available") ended the thread at

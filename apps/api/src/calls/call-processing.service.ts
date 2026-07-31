@@ -6,12 +6,18 @@ import {
   NotificationPriority,
   NotificationType,
   type ConversationStructuredOutput,
+  type PropertyType,
   type TranscriptEntry,
   type UrgencyLevel,
 } from '@rooferslabs/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotFoundError } from '../common/exceptions/domain.exception';
 import { ReceptionistService } from '../receptionist/receptionist.service';
+import {
+  anonymousCallerContext,
+  normalizeCallerNumber,
+  type CallerContext,
+} from '../receptionist/caller-context';
 import type { LiveConversationSignals } from '../receptionist/session-state';
 import { CustomersService } from '../customers/customers.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -50,6 +56,49 @@ export class CallProcessingService {
     private readonly notifications: NotificationsService,
     private readonly twilio: TwilioService,
   ) {}
+
+  /**
+   * Everything the receptionist can know about a caller before it speaks.
+   *
+   * The caller ID arrived on the voice webhook and was persisted on the Call
+   * record, so it is read back from there rather than passed through the Twilio
+   * media stream: the stream's custom parameters are attacker-supplied (only the
+   * callId/companyId pair is covered by the stream token), and a forged number
+   * would end up spoken aloud to a real caller and written onto a real lead.
+   *
+   * Never throws. A call must be answered even if this lookup fails, and every
+   * failure degrades to exactly the old behaviour — the receptionist asks.
+   */
+  async getCallerContext(callId: string): Promise<CallerContext> {
+    try {
+      const call = await this.prisma.call.findUnique({
+        where: { id: callId },
+        select: { companyId: true, fromNumber: true, toNumber: true, twilioCallSid: true },
+      });
+      if (!call) return anonymousCallerContext();
+
+      const callerNumber = normalizeCallerNumber(call.fromNumber);
+      const customer = callerNumber
+        ? await this.customers.findByPhone(call.companyId, callerNumber).catch(() => null)
+        : null;
+
+      return {
+        callerNumber,
+        dialedNumber: call.toNumber,
+        twilioCallSid: call.twilioCallSid,
+        knownCustomer: customer
+          ? {
+              fullName: customer.fullName,
+              propertyAddress: customer.propertyAddress,
+              propertyType: customer.propertyType as PropertyType | null,
+            }
+          : null,
+      };
+    } catch (error) {
+      this.logger.warn(`Caller context lookup failed for ${callId}: ${(error as Error).message}`);
+      return anonymousCallerContext();
+    }
+  }
 
   /** Create the Call record when an inbound call connects. */
   createInboundCall(input: CreateInboundCallInput): Promise<Call> {

@@ -15,7 +15,17 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      // The notification assets are precached alongside the favicons: a push can
+      // arrive while the device is offline or on a bad connection, and an icon
+      // the renderer cannot fetch is exactly the blank placeholder these exist
+      // to prevent. Only manifest icons are precached automatically, and these
+      // are deliberately not manifest icons — see push-sw.js.
+      includeAssets: [
+        'favicon.svg',
+        'apple-touch-icon.png',
+        'icons/notification-192.png',
+        'icons/notification-badge-96.png',
+      ],
       manifest: {
         name: 'rooferslabs',
         short_name: 'rooferslabs',

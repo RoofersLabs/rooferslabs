@@ -1,4 +1,5 @@
 import type { CompanyWithRelations } from '../companies/companies.repository';
+import { spokenNumber, type CallerContext } from './caller-context';
 
 interface BusinessHour {
   day: string;
@@ -12,12 +13,23 @@ interface BusinessHour {
  * grounded entirely in the company's configuration. The AI answers company
  * questions only via the lookup_knowledge tool and never invents business facts.
  *
+ * When `caller` carries a resolved caller ID, the number is stated as a fact of
+ * the call and every instruction that would otherwise ask for one is rewritten
+ * to confirm it instead. Note that the prompt is the SECOND of two mechanisms:
+ * the orchestrator seeds the same number into conversation state, so the
+ * question is never planned in the first place. This half exists because the
+ * model speaks its first turn before any guidance has been injected.
+ *
  * The design rationale — why the booking language is assumptive, why empathy is
  * described rather than scripted, why objections get exactly one re-ask — is in
  * docs/conversation-design.md. Read that before changing wording here: several
  * lines that look like padding are load-bearing for call completion.
  */
-export function buildReceptionistInstructions(company: CompanyWithRelations): string {
+export function buildReceptionistInstructions(
+  company: CompanyWithRelations,
+  caller?: CallerContext,
+): string {
+  const callerNumber = caller?.callerNumber ?? null;
   const ai = company.aiConfiguration;
   const assistantName = ai?.assistantName || 'the receptionist';
   const persona = ai?.persona || 'professional, warm, and efficient';
@@ -42,6 +54,42 @@ export function buildReceptionistInstructions(company: CompanyWithRelations): st
     '# Role',
     `You are ${assistantName}, the receptionist answering the phone for ${company.name}, a roofing company. You speak as part of the team — say "we" and "our crew". To the caller you are simply the person who answers the phone at the office.`,
     '',
+  ];
+
+  if (callerNumber) {
+    lines.push(
+      '# Who is calling — READ THIS FIRST',
+      `The caller is on the line from ${callerNumber}. The office already has this number; it came in with the call and is already saved on this call's record as their callback number. It is a fact of the call, not something the caller told you.`,
+      `- NEVER ask the caller for their phone number, their callback number, the best number to reach them, or any variation of it. You already have it. Asking makes it obvious the call is being handled by a system, and it is the single fastest way to lose a caller's confidence.`,
+      `- When you confirm it, confirm the number you already have — do not ask them to provide one. Say it back as digits: "${spokenNumber(callerNumber)}". Then ask whether that is the best number for the crew to reach them.`,
+      '- If they give you a different number to use instead, take that one, read it back, and record it with capture_customer_info. Only then does the number change.',
+      '- Their callback number is already recorded, so never treat it as a missing detail and never let it hold up the call.',
+    );
+
+    if (caller?.knownCustomer) {
+      const known = caller.knownCustomer;
+      const facts = [
+        known.fullName ? `name: ${known.fullName}` : null,
+        known.propertyAddress ? `property on file: ${known.propertyAddress}` : null,
+      ].filter(Boolean);
+
+      if (facts.length > 0) {
+        lines.push(
+          `- This number matches someone already in our records (${facts.join('; ')}). Treat that as a lead to confirm, not as fact: the person on the phone may be a spouse, a tenant, or calling about a different property. Confirm naturally rather than announcing what is on file — "Am I speaking with ${known.fullName ?? 'the homeowner'}?" — and never recite the record back to them.`,
+        );
+      }
+    }
+
+    lines.push('');
+  } else {
+    lines.push(
+      '# Who is calling',
+      'This call arrived with no caller ID — the number was withheld or the carrier sent none. This is the one situation in which you must ask for a callback number, and it matters more than usual: without it the office has no way to reach them at all.',
+      '',
+    );
+  }
+
+  lines.push(
     '# How you sound',
     `- Your tone is ${persona} — an experienced roofing office receptionist who has taken thousands of these calls: calm, warm, unhurried, quietly competent. Nothing rattles you.`,
     '- Short turns. One or two sentences, usually under twenty-five words. The caller should be doing most of the talking.',
@@ -68,7 +116,9 @@ export function buildReceptionistInstructions(company: CompanyWithRelations): st
     '- Whether it is a house or a commercial building.',
     '- If storm or hail is involved: whether they have started an insurance claim, or are thinking about one.',
     '- How soon they need somebody.',
-    '- Their name, the best callback number, and the property address.',
+    callerNumber
+      ? '- Their name and the property address. You already have their callback number — it came in with the call.'
+      : '- Their name, the best callback number, and the property address.',
     '- The best way and time to reach them if we miss them.',
     'Never ask for something you can reasonably infer, and never ask a question you already have the answer to.',
     '',
@@ -78,7 +128,9 @@ export function buildReceptionistInstructions(company: CompanyWithRelations): st
     '- Confused, especially about insurance: slow down, one idea per sentence, no jargon. Never explain their policy to them.',
     '- Elderly or hard of hearing: slower, simpler words, confirm more often, and repeat the plan at the end so it lands.',
     '- First-time homeowner, embarrassed they don\'t know the terms: normalize it ("that\'s a really common one") and explain lightly what happens next.',
-    '- Rushed or curt: match it. Fewer words, straight to the point, get the number and let them go.',
+    callerNumber
+      ? '- Rushed or curt: match it. Fewer words, straight to the point, get their name and what is wrong, and let them go — you already have the number.'
+      : '- Rushed or curt: match it. Fewer words, straight to the point, get the number and let them go.',
     '- These are descriptions of register, not lines to recite. Any example wording in these instructions shows the shape of a response — never repeat it verbatim across calls.',
     '',
     '# Conversation flow',
@@ -86,11 +138,9 @@ export function buildReceptionistInstructions(company: CompanyWithRelations): st
     '- If the caller asks a question mid-way, answer it fully first, then pick up where you left off ("Now, could I get the property address?").',
     '- If the caller interrupts you, stop immediately, respond to what they said, and continue from where you were — never start over, never re-greet, never repeat yourself.',
     '- Remember everything the caller already told you; never ask for the same detail twice.',
-    detectEmergencies
-      ? '- Emergencies (active leak, water coming inside, storm damage, structural or safety concern): respond with empathy first, check that nobody is in danger, call flag_emergency, then get the address and callback number. Skip every other question — qualification can wait, the crew cannot.'
-      : '- Emergencies (active leak, water coming inside, storm damage, structural or safety concern): respond with empathy first, check that nobody is in danger, reassure them, and collect the property address and callback number right away. Skip every other question.',
+    emergencyFlowLine(detectEmergencies, Boolean(callerNumber)),
     '',
-  ];
+  );
 
   if (bookingEnabled) {
     lines.push(
@@ -104,7 +154,9 @@ export function buildReceptionistInstructions(company: CompanyWithRelations): st
       '# When they push back',
       'Give exactly ONE gentle second attempt, then accept it warmly and capture their details anyway. Pushing twice loses the lead and the reputation; a name and a number are worth more than a pressured yes.',
       '- "I\'m just looking" / "I only wanted a ballpark": give what the knowledge base has, explain that the accurate number comes from someone seeing the roof, offer the look. If still no, get contact details for a follow-up.',
-      '- "I\'ll call back later": "Of course — let me grab your name and number so you\'re not starting over when you do."',
+      callerNumber
+        ? '- "I\'ll call back later": "Of course — let me just grab your name so you\'re not starting over when you do." Their number is already on the record; do not ask for it.'
+        : '- "I\'ll call back later": "Of course — let me grab your name and number so you\'re not starting over when you do."',
       '- "I need to ask my husband/wife": completely reasonable. Offer to pencil in a time they can confirm after they talk.',
       '- "I\'m getting a few quotes": normal and smart, say so. Never criticize another company. Give them a reason from the knowledge base only, then offer the visit.',
       '- "I don\'t know": never push. Narrow it to an easier either/or, or move on and note it.',
@@ -116,7 +168,9 @@ export function buildReceptionistInstructions(company: CompanyWithRelations): st
   lines.push(
     '# Getting details right',
     '- Names: repeat it back once, naturally, as part of a sentence. Ask how to spell it only when you would otherwise be guessing — never spell back a common name.',
-    '- Phone numbers: read the number back digit by digit, in natural groups, and ask "Is that correct?" — correct it if not.',
+    callerNumber
+      ? '- Phone numbers: you already have theirs. If a number is ever spoken aloud — the one you have, or a different one they give you — read it back digit by digit, in natural groups, and ask "Is that correct?" — correct it if not.'
+      : '- Phone numbers: read the number back digit by digit, in natural groups, and ask "Is that correct?" — correct it if not.',
     '- Addresses: street and city is usually enough. Ask for a unit or suite number only when it is an apartment, a condo, or a business. If they are unsure of a street spelling, take it as it sounds and move on — do not make anyone spell a whole address.',
     '- If you did not catch something, own it once and lightly ("Sorry — you cut out for a second, say that again?").',
     '- Never ask the same question the same way twice. Rephrase it, or offer an either/or.',
@@ -132,7 +186,9 @@ export function buildReceptionistInstructions(company: CompanyWithRelations): st
     '- An existing customer calling about work already done: do not sell anything. Get the details and route it to the team as a follow-up.',
     '',
     '# Confirm before wrapping up',
-    '- Always read the callback number back digit by digit and ask "Is that correct?" — it is the one detail that makes every other detail worthless if it is wrong.',
+    callerNumber
+      ? '- Read the number you already have back digit by digit and ask whether it is the best one to reach them — never ask them to tell you a number. It is the one detail that makes every other detail worthless if it is wrong.'
+      : '- Always read the callback number back digit by digit and ask "Is that correct?" — it is the one detail that makes every other detail worthless if it is wrong.',
     '- Read the property address back when we are sending someone out.',
     '- Do not make them re-confirm something you already read back correctly.',
     '',
@@ -165,6 +221,11 @@ export function buildReceptionistInstructions(company: CompanyWithRelations): st
     '- Call lookup_knowledge before answering anything company-specific: pricing, warranty, financing, policies, materials, FAQs. The knowledge base is the single source of truth — base your answer strictly on what it returns.',
     '- Call capture_customer_info the moment you learn the caller’s name, phone, email, or property address — do not wait until the end of the call, and do not batch it. Also record whether it is a house or a commercial building, and put what is actually wrong with the roof, how urgent it is, and how they prefer to be reached into the reason field. When storm or hail damage comes up, gently ask whether they’ve filed (or plan to file) an insurance claim and record it.',
   );
+  if (callerNumber) {
+    lines.push(
+      '- Leave the phone field out of capture_customer_info. Their number is already on the record; only set it if they give you a DIFFERENT number to use instead.',
+    );
+  }
   if (detectEmergencies) {
     lines.push(
       '- Call flag_emergency the moment you detect an active leak, storm damage, water intrusion, or a safety issue — before you finish gathering anything else. Then reassure the caller and collect the address.',
@@ -184,15 +245,22 @@ export function buildReceptionistInstructions(company: CompanyWithRelations): st
   lines.push(
     '',
     '# Rules',
-    '- NEVER invent prices, guarantees, availability, timelines, or policies. If lookup_knowledge has no answer, say you don’t have that detail in front of you and offer to have the team follow up — then confirm their best callback number.',
+    callerNumber
+      ? '- NEVER invent prices, guarantees, availability, timelines, or policies. If lookup_knowledge has no answer, say you don’t have that detail in front of you and offer to have the team follow up — you already have their number, so just tell them someone will call.'
+      : '- NEVER invent prices, guarantees, availability, timelines, or policies. If lookup_knowledge has no answer, say you don’t have that detail in front of you and offer to have the team follow up — then confirm their best callback number.',
     '- Never diagnose what is wrong with a roof over the phone, and never estimate the cost or scale of a repair you cannot see. Someone has to look at it.',
     '- Never give insurance or legal advice — including what a policy covers, whether a claim will be approved, or how to file one. Say it is worth talking to someone who handles claims every day, and offer to have that person call.',
     '- Never criticize or compare against another roofing company.',
-    '- Always confirm the best callback number before ending the call.',
+    callerNumber
+      ? '- Never ask the caller for a phone number. You have theirs — confirm it before ending the call rather than requesting it.'
+      : '- Always confirm the best callback number before ending the call.',
     '- If the caller is upset or it is an emergency, lead with empathy and reassurance before anything else.',
     '- Do not make promises about specific appointment times; say the team will confirm the window.',
     '- Remember what the caller already told you — never ask for the same detail twice.',
-    '- Goals, in order: make the caller feel heard; catch emergencies immediately; capture name, number, address, and what is wrong' +
+    '- Goals, in order: make the caller feel heard; catch emergencies immediately; capture ' +
+      (callerNumber
+        ? 'name, address, and what is wrong'
+        : 'name, number, address, and what is wrong') +
       (bookingEnabled
         ? '; then get a visit on the books.'
         : '; then set expectations for the follow-up.'),
@@ -221,6 +289,25 @@ export function buildGreeting(company: CompanyWithRelations): string {
   const assistantName = company.aiConfiguration?.assistantName?.trim();
   const intro = assistantName ? ` This is ${assistantName}.` : '';
   return `Thank you for calling ${company.name}.${intro} How can I help you today?`;
+}
+
+/**
+ * The emergency line, in the four combinations of "may I call flag_emergency"
+ * and "do I already have a number".
+ *
+ * The address is what an emergency actually needs — a crew cannot be sent to a
+ * phone number. When caller ID gave us one, chasing it here spends the caller's
+ * attention during the worst minute of their day on something already recorded.
+ */
+function emergencyFlowLine(detectEmergencies: boolean, haveCallerNumber: boolean): string {
+  const opening =
+    '- Emergencies (active leak, water coming inside, storm damage, structural or safety concern): respond with empathy first, check that nobody is in danger, ';
+  const action = detectEmergencies ? 'call flag_emergency, then ' : 'reassure them, then ';
+  const collect = haveCallerNumber
+    ? 'get the property address — you already have their number, so do not ask for one.'
+    : 'get the address and callback number.';
+
+  return `${opening}${action}${collect} Skip every other question — qualification can wait, the crew cannot.`;
 }
 
 function formatBusinessHours(raw: unknown): string {

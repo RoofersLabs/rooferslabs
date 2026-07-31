@@ -15,6 +15,7 @@ import { OpenAiService } from '../ai/openai.service';
 import { RagService } from '../ai/rag.service';
 import { buildGreeting, buildReceptionistInstructions } from './prompt.builder';
 import { buildRealtimeTools, CONVERSATION_OUTPUT_SCHEMA, TOOL } from './tools';
+import { type CallerContext } from './caller-context';
 import { type LiveConversationSignals, type ToolExecutionResult } from './session-state';
 
 /**
@@ -76,8 +77,18 @@ export class ReceptionistService {
     private readonly rag: RagService,
   ) {}
 
-  /** Build the OpenAI Realtime GA session configuration for a company. */
-  async buildSessionConfig(companyId: string): Promise<RealtimeSessionConfig> {
+  /**
+   * Build the OpenAI Realtime GA session configuration for a company.
+   *
+   * `caller` carries what Twilio already told us about this call — above all the
+   * caller ID. It is folded into the session instructions, which are sent in the
+   * `session.update` that precedes the greeting, so the receptionist knows the
+   * caller's number before it produces a single word.
+   */
+  async buildSessionConfig(
+    companyId: string,
+    caller?: CallerContext,
+  ): Promise<RealtimeSessionConfig> {
     const company = await this.companies.getById(companyId);
     return {
       model: this.config.openai.realtimeModel,
@@ -85,7 +96,7 @@ export class ReceptionistService {
       session: {
         type: 'realtime',
         output_modalities: ['audio'],
-        instructions: buildReceptionistInstructions(company),
+        instructions: buildReceptionistInstructions(company, caller),
         audio: {
           input: {
             format: { type: 'audio/pcmu' },
@@ -135,7 +146,10 @@ export class ReceptionistService {
               'Nothing in the knowledge base covers that. Do NOT guess or give a range. ' +
               'Say plainly that you do not have that detail in front of you, offer to have someone ' +
               'confirm it, and keep the conversation moving — this is a good moment to get eyes on ' +
-              'the roof and to make sure you have their callback number.',
+              'the roof' +
+              (signals.customer.phone
+                ? '. You already have their number, so simply say someone will call them back.'
+                : ' and to make sure you have their callback number.'),
           };
         }
         const text = results
@@ -172,8 +186,11 @@ export class ReceptionistService {
         return {
           output:
             'Appointment request recorded. Tell them the office will confirm the exact window — ' +
-            'never state an arrival time yourself. Then make sure the callback number is confirmed ' +
-            'digit by digit before you wrap up.',
+            'never state an arrival time yourself. Then ' +
+            (signals.customer.phone
+              ? 'read the number you already have back digit by digit and check it is the best one ' +
+                'for the crew — do not ask them for a number.'
+              : 'make sure the callback number is confirmed digit by digit before you wrap up.'),
         };
       }
 
@@ -186,8 +203,11 @@ export class ReceptionistService {
         return {
           output:
             'Emergency flagged and the team is alerted. Reassure the caller in your own words, ' +
-            'then get the property address and confirm the callback number. Skip any other ' +
-            'qualifying questions — they can wait, this cannot.',
+            'then get the property address' +
+            (signals.customer.phone
+              ? ' — a crew cannot be sent to a phone number, and you already have theirs.'
+              : ' and confirm the callback number.') +
+            ' Skip any other qualifying questions — they can wait, this cannot.',
         };
       }
 

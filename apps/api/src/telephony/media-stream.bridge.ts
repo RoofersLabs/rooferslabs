@@ -10,6 +10,7 @@ import {
 import { CallProcessingService } from '../calls/call-processing.service';
 import { TwilioService } from './twilio.service';
 import { createEmptySignals, type LiveConversationSignals } from '../receptionist/session-state';
+import { anonymousCallerContext, type CallerContext } from '../receptionist/caller-context';
 import { ConversationOrchestrator } from '../receptionist/orchestrator';
 import { TOOL } from '../receptionist/tools';
 
@@ -82,6 +83,7 @@ class CallBridgeSession {
   private companyId: string | null = null;
   private twilioCallSid: string | null = null;
   private sessionConfig: RealtimeSessionConfig | null = null;
+  private callerContext: CallerContext | null = null;
   private readonly signals: LiveConversationSignals = createEmptySignals();
   private readonly transcript: TranscriptEntry[] = [];
 
@@ -220,8 +222,22 @@ class CallBridgeSession {
       return;
     }
 
+    // Resolved once per call, not once per connection: a mid-call reconnect must
+    // not re-query, and must not lose the caller's number if that query fails.
+    // Nothing here may abort the connect — a caller with a live line must be
+    // answered even if we end up knowing nothing about them.
+    if (!this.callerContext && this.callId) {
+      this.callerContext = await this.callProcessing
+        .getCallerContext(this.callId)
+        .catch(() => anonymousCallerContext());
+      this.applyCallerContext(this.callerContext);
+    }
+
     try {
-      this.sessionConfig ??= await this.receptionist.buildSessionConfig(companyId);
+      this.sessionConfig ??= await this.receptionist.buildSessionConfig(
+        companyId,
+        this.callerContext ?? undefined,
+      );
     } catch (error) {
       this.log(
         'error',
@@ -235,9 +251,13 @@ class CallBridgeSession {
     // One orchestrator per call, not per connection: a mid-call reconnect must
     // not forget the caller's name. Only created if this is the first connect.
     const tools = Array.isArray(session.session.tools) ? session.session.tools : [];
-    this.orchestrator ??= new ConversationOrchestrator(
-      tools.some((tool) => tool.name === TOOL.TRANSFER_TO_HUMAN),
-    );
+    if (!this.orchestrator) {
+      this.orchestrator = new ConversationOrchestrator(
+        tools.some((tool) => tool.name === TOOL.TRANSFER_TO_HUMAN),
+      );
+      const callerNumber = this.callerContext?.callerNumber;
+      if (callerNumber) this.orchestrator.seedCallerNumber(callerNumber);
+    }
 
     // Reset per-connection state (a reconnect reuses the same session config).
     this.sessionActivated = false;
@@ -272,6 +292,29 @@ class CallBridgeSession {
     ws.on('message', (raw) => void this.onOpenAiMessage(raw));
     ws.on('close', () => void this.onOpenAiClosed());
     ws.on('error', (err) => this.log('error', `OpenAI realtime socket error: ${err.message}`));
+  }
+
+  /**
+   * Put the caller ID into the live signal store.
+   *
+   * The receptionist no longer asks for a callback number, so this is also the
+   * only thing that keeps one on the lead: the signals are what the call
+   * pipeline persists, and what `describeOutstanding` reads back to the model
+   * after every capture_customer_info — with the phone present, it stops listing
+   * the number as outstanding, which is what used to send the model looking for
+   * it. The model can still overwrite this by capturing a different number.
+   */
+  private applyCallerContext(context: CallerContext): void {
+    if (!context.callerNumber) {
+      this.log('log', 'inbound call has no usable caller ID; the receptionist will ask for one.');
+      return;
+    }
+    this.signals.customer.phone = context.callerNumber;
+    this.log(
+      'log',
+      `caller ID resolved${context.knownCustomer ? ' (known customer)' : ''}; ` +
+        'the callback number is pre-filled and will not be asked for.',
+    );
   }
 
   /**

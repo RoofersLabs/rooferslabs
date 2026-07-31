@@ -75,6 +75,78 @@ describe('mandatory name collection', () => {
   });
 });
 
+describe('caller ID seeding', () => {
+  // The receptionist used to open every call knowing nothing about who was on
+  // the line, so "what's the best number to reach you?" was the only way it
+  // could get a callback number — and it asked for one Twilio had already given
+  // us. Seeding it into state is what makes not asking deterministic: none of
+  // these assertions depend on the model reading an instruction.
+
+  it('never plans a turn to collect a number it already has', () => {
+    const o = new ConversationOrchestrator();
+    o.seedCallerNumber('+15125551234');
+    o.observeCallerTurn('My roof is leaking after that storm.');
+    o.observeToolCall(TOOL.CAPTURE_CUSTOMER_INFO, { reason: 'Leak after storm' });
+    withName(o);
+    o.observeToolCall(TOOL.CAPTURE_CUSTOMER_INFO, { propertyAddress: '4 Oak St, Austin TX' });
+
+    // Exhaust the call: at no point does PHONE become the thing to ask for.
+    for (let turn = 0; turn < 8; turn++) {
+      expect(o.nextTurn().plan.targetField).not.toBe(LeadField.PHONE);
+      o.observeCallerTurn('Sure, that works.');
+    }
+    expect(o.missingFields()).not.toContain(LeadField.PHONE);
+  });
+
+  it('tells the model the number is known, so it cannot ask conversationally', () => {
+    const o = new ConversationOrchestrator();
+    o.seedCallerNumber('+15125551234');
+
+    const { plan, guidance } = o.nextTurn();
+    expect(plan.alreadyKnown).toContain(LeadField.PHONE);
+    expect(guidance).toContain('Already known (never ask again)');
+    expect(guidance).toContain('+15125551234');
+  });
+
+  it('flags a turn that asks for the number anyway', () => {
+    const o = new ConversationOrchestrator();
+    o.seedCallerNumber('+15125551234');
+    o.nextTurn();
+
+    const findings = o.observeAssistantTurn('And what is the best number to reach you on?');
+    expect(findings.map((f) => f.code)).toContain('ASKED_KNOWN_FIELD');
+  });
+
+  it('lets the caller override it with a different callback number', () => {
+    const o = new ConversationOrchestrator();
+    o.seedCallerNumber('+15125551234');
+    o.observeToolCall(TOOL.CAPTURE_CUSTOMER_INFO, { phone: '+15125559999' });
+
+    expect(o.snapshot().collected[LeadField.PHONE]).toBe('+15125559999');
+  });
+
+  it('ignores an empty seed rather than recording a blank number', () => {
+    const o = new ConversationOrchestrator();
+    o.seedCallerNumber('   ');
+
+    expect(o.missingFields()).toContain(LeadField.PHONE);
+  });
+
+  it('counts a seeded number toward completeness, so the call can close', () => {
+    // Without this the lead would look permanently incomplete and the call could
+    // never reach CLOSING, which is the failure that would have replaced the
+    // question with a call that never ends.
+    const o = new ConversationOrchestrator();
+    o.seedCallerNumber('+15125551234');
+    o.observeCallerTurn('I need a quote for a full replacement.');
+    o.observeToolCall(TOOL.CAPTURE_CUSTOMER_INFO, { reason: 'Full replacement quote' });
+    withName(o);
+
+    expect(o.snapshot().collected[LeadField.PHONE]).toBe('+15125551234');
+    expect(o.completenessScore()).toBeGreaterThan(0);
+  });
+});
+
 describe('emergency prioritization', () => {
   it('asks for the address before anything else, including the name', () => {
     const o = new ConversationOrchestrator();

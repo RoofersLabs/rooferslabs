@@ -41,11 +41,20 @@ type BridgeDeps = ConstructorParameters<typeof MediaStreamBridge>;
 type BridgeSocket = Parameters<MediaStreamBridge['handleConnection']>[0];
 
 const flush = async (): Promise<void> => {
-  await Promise.resolve();
-  await Promise.resolve();
+  // Enough ticks to drain the connect path, which awaits the caller-context
+  // lookup before it awaits the session config.
+  for (let i = 0; i < 6; i++) await Promise.resolve();
 };
 
-function buildBridge() {
+/** A resolved caller ID, as the call pipeline hands one to the bridge. */
+const CALLER_CONTEXT = {
+  callerNumber: '+15125551234',
+  dialedNumber: '+15125550100',
+  twilioCallSid: 'CA123',
+  knownCustomer: null,
+};
+
+function buildBridge(callerContext: unknown = CALLER_CONTEXT) {
   const config = {
     openai: {
       apiKey: 'sk-test',
@@ -65,6 +74,7 @@ function buildBridge() {
   const callProcessing = {
     finalizeCall: jest.fn().mockResolvedValue(undefined),
     markCallEnded: jest.fn().mockResolvedValue(undefined),
+    getCallerContext: jest.fn().mockResolvedValue(callerContext),
   };
   const twilio = {
     verifyStreamToken: jest.fn().mockReturnValue(true),
@@ -77,13 +87,13 @@ function buildBridge() {
     callProcessing as unknown as BridgeDeps[2],
     twilio as unknown as BridgeDeps[3],
   );
-  return { bridge, receptionist };
+  return { bridge, receptionist, callProcessing };
 }
 
 /** Start a session and return the Twilio + OpenAI mock sockets, OpenAI socket opened. */
-async function startSession() {
+async function startSession(callerContext: unknown = CALLER_CONTEXT) {
   MockWebSocket.instances = [];
-  const { bridge } = buildBridge();
+  const { bridge, receptionist, callProcessing } = buildBridge(callerContext);
   const twilioWs = new MockWebSocket();
   bridge.handleConnection(twilioWs as unknown as BridgeSocket);
 
@@ -100,7 +110,7 @@ async function startSession() {
   const openaiWs = MockWebSocket.instances[1];
   if (!openaiWs) throw new Error('OpenAI socket was not created');
   openaiWs.emit('open');
-  return { twilioWs, openaiWs };
+  return { twilioWs, openaiWs, receptionist, callProcessing };
 }
 
 /** The guidance texts the bridge injected as system items on a socket. */
@@ -246,6 +256,57 @@ describe('MediaStreamBridge orchestration wiring', () => {
     // A new socket, but the same call: forgetting the name here would make the
     // AI ask a caller who already answered.
     expect(guidanceTexts(reconnected).at(-1) ?? '').toContain('Dana Whitfield');
+  });
+
+  it('knows the caller number before the model speaks, and never asks for it', async () => {
+    const { openaiWs, receptionist } = await startSession();
+
+    // The number has to be in the session instructions, not just in guidance:
+    // the greeting is spoken before any guidance has been injected.
+    expect(receptionist.buildSessionConfig).toHaveBeenCalledWith(
+      'co-1',
+      expect.objectContaining({ callerNumber: '+15125551234' }),
+    );
+
+    openaiWs.deliver({ type: 'session.updated' });
+    openaiWs.deliver({ type: 'response.done' });
+
+    const guidance = guidanceTexts(openaiWs).at(-1) ?? '';
+    expect(guidance).toContain('Already known (never ask again)');
+    expect(guidance).toContain('+15125551234');
+    // The objective is the actual proof: the planner picked something else to
+    // pursue, so no turn is ever spent asking for a number we already have.
+    expect(guidance).not.toContain('Get the best callback number.');
+  });
+
+  it('falls back to asking when the call arrived with no caller ID', async () => {
+    const withheld = { ...CALLER_CONTEXT, callerNumber: null };
+    const { openaiWs } = await startSession(withheld);
+    openaiWs.deliver({ type: 'session.updated' });
+
+    // Everything else is collected, so the number is all that is left to want.
+    await deliverToolCall(openaiWs, 'capture_customer_info', {
+      fullName: 'Dana Whitfield',
+      reason: 'Missing shingles after the last storm',
+      propertyAddress: '18 Balcones Dr, Austin TX 78731',
+    });
+    openaiWs.deliver({ type: 'response.done' });
+
+    const guidance = guidanceTexts(openaiWs).at(-1) ?? '';
+    expect(guidance).toContain('Get the best callback number.');
+  });
+
+  it('resolves the caller context once, not again on every reconnect', async () => {
+    const { openaiWs, callProcessing } = await startSession();
+    openaiWs.deliver({ type: 'session.updated' });
+
+    openaiWs.close();
+    await flush();
+    const reconnected = MockWebSocket.instances[2];
+    if (!reconnected) throw new Error('bridge did not reconnect');
+    reconnected.emit('open');
+
+    expect(callProcessing.getCallerContext).toHaveBeenCalledTimes(1);
   });
 
   it('stops injecting guidance once the call is over', async () => {

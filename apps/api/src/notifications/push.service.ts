@@ -9,6 +9,13 @@ export interface PushPayload {
   /** In-app path to open when the notification is clicked (e.g. /conversations/x). */
   url?: string;
   priority?: string;
+  /**
+   * Absolute URL of a hero image for the expanded Android notification. Opt-in:
+   * the icon and badge are branded by the service worker on every push, but an
+   * image takes over the whole shade, so it is only sent when a notification
+   * genuinely has something to show. Ignored by desktop Chrome.
+   */
+  image?: string;
 }
 
 export interface SaveSubscriptionInput {

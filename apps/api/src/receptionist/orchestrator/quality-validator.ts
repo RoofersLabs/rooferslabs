@@ -85,8 +85,11 @@ export class QualityValidator {
     for (const [field, probe] of Object.entries(FIELD_PROBES) as [LeadField, RegExp][]) {
       if (this.completeness.has(state, field) && probe.test(trimmed)) {
         findings.push({
+          // Deliberately "already known" rather than "the caller already gave":
+          // the phone number is seeded from caller ID, so telling the model the
+          // caller stated it would be a plain untruth it might repeat aloud.
           code: 'ASKED_KNOWN_FIELD',
-          detail: `Asked for ${field.toLowerCase()}, which the caller already gave.`,
+          detail: `Asked for ${field.toLowerCase()}, which is already known.`,
         });
       }
     }
@@ -122,7 +125,7 @@ export class QualityValidator {
         case 'REPETITIVE':
           return 'You just repeated yourself. Say it a different way this time.';
         case 'ASKED_KNOWN_FIELD':
-          return `You asked for something the caller already told you. ${finding.detail} Do not ask again.`;
+          return `You asked for something that is already on the record. ${finding.detail} Do not ask again.`;
         case 'MULTIPLE_QUESTIONS':
           return 'You asked more than one question at once. One at a time.';
         case 'AI_DISCLOSURE':

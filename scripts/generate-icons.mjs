@@ -1,23 +1,37 @@
 /**
- * Generates the installed-app (PWA) icon PNGs, without external dependencies:
- * rasterises the rooferslabs mark into a pixel buffer and encodes a PNG with
- * zlib.
+ * Generates the installed-app (PWA) and Web Push notification icon PNGs, without
+ * external dependencies: rasterises the rooferslabs mark into a pixel buffer and
+ * encodes a PNG with zlib.
  *
  *   node scripts/generate-icons.mjs
  *
  * The mark is the same two polygons the brand SVGs draw
- * (apps/web/public/brand/logo.svg), read from one place here so the home-screen
- * icon can never drift from the logo everywhere else.
+ * (apps/web/public/brand/logo.svg), read from one place here so every icon can
+ * never drift from the logo everywhere else.
  *
- * Home-screen icons are a light surface: a white field with the navy mark on
- * it. That is the inverse of the tab favicon, which is a navy mark on
- * transparency, and the two are deliberately separate assets —
- * apps/web/public/icons/icon-16/32/48.png are favicons, are not listed in the
- * manifest, and are NOT generated here.
+ * There are three surfaces here, and they are separate assets because the
+ * platforms treat them differently — one file cannot serve all three:
  *
- * Output is opaque RGB with no alpha channel, on purpose: iOS composites a
- * transparent app icon onto black, so an icon with alpha would show a black
- * background on the very home screen this is for.
+ *   home screen   A white field with the navy mark, opaque RGB with no alpha
+ *                 channel. iOS composites a transparent app icon onto black, so
+ *                 alpha would show a black background on the very home screen
+ *                 this is for.
+ *
+ *   notification  The navy field with the white mark — the inverse. A
+ *                 notification is drawn on the platform's own surface, which is
+ *                 near-white in light mode, so the home-screen icon's white
+ *                 field dissolves into it and leaves what looks like an empty
+ *                 box. A navy tile reads as the brand on light AND dark shades.
+ *
+ *   badge         Alpha only: an opaque white mark on full transparency.
+ *                 Android draws the badge as a monochrome silhouette cut from
+ *                 the ALPHA channel and ignores the colours entirely, so a fully
+ *                 opaque image — which every home-screen icon here is — becomes
+ *                 a solid filled square in the status bar. That is the "plain
+ *                 white box" this asset exists to fix.
+ *
+ * The tab favicons (apps/web/public/icons/icon-16/32/48.png) are a navy mark on
+ * transparency, are not listed in the manifest, and are NOT generated here.
  */
 import { deflateSync } from 'node:zlib';
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -30,8 +44,19 @@ const outDir = join(webPublic, 'icons');
 mkdirSync(outDir, { recursive: true });
 
 /** rooferslabs navy — --brand-950, the identity colour. */
-const MARK = [0x08, 0x1c, 0x3a];
-const FIELD = [0xff, 0xff, 0xff];
+const NAVY = [0x08, 0x1c, 0x3a];
+const WHITE = [0xff, 0xff, 0xff];
+
+/**
+ * The three palettes, one per surface. `field: null` means "no field at all" —
+ * the mark is written into the alpha channel over transparency, which is the
+ * only form Android's notification badge can read.
+ */
+const PALETTE = {
+  light: { mark: NAVY, field: WHITE },
+  navy: { mark: WHITE, field: NAVY },
+  alpha: { mark: WHITE, field: null },
+};
 
 /**
  * The mark, in its own 933×343 coordinate space — the viewBox of
@@ -78,8 +103,17 @@ const POLYGONS = [
  * 0.4. Those same corners sit at radius (w/2)·√(1+(343/933)²) = 0.533·w from
  * the centre, so the mark fits any mask up to w = 0.751; 0.68 takes most of
  * that headroom and keeps ~10% of margin in hand.
+ *
+ * `notification` borrows the maskable figure rather than the `any` one: Android
+ * crops the large notification icon to a circle, so it faces the same problem a
+ * maskable icon does and wants the same margin.
+ *
+ * `badge` is the largest of the three, because the badge is drawn at 24dp in the
+ * status bar — roughly a fifth of a home-screen icon — and anything smaller
+ * stops being legible as a shape. 0.72 puts the extreme corners at 0.384 of the
+ * width, still inside the 0.4 safe circle.
  */
-const MARK_WIDTH = { any: 0.8, maskable: 0.68 };
+const MARK_WIDTH = { any: 0.8, maskable: 0.68, notification: 0.68, badge: 0.72 };
 
 function inside(polygon, x, y) {
   for (let i = 0; i < polygon.length; i++) {
@@ -93,14 +127,18 @@ function inside(polygon, x, y) {
 }
 
 /**
- * Draw one icon as an RGB buffer.
+ * Draw one icon as a pixel buffer — RGB when the palette has a field, RGBA when
+ * it does not.
  *
  * Coverage is sampled on a 4×4 grid per pixel and used to blend the mark into
  * the field, which is what keeps the long diagonal clean at 64px instead of
- * stair-stepping.
+ * stair-stepping. With no field, that same coverage becomes the alpha value, so
+ * the transparent variants are anti-aliased identically.
  */
-function draw(size, purpose) {
-  const px = Buffer.alloc(size * size * 3);
+function draw(size, purpose, palette) {
+  const { mark, field } = palette;
+  const channels = field ? 3 : 4;
+  const px = Buffer.alloc(size * size * channels);
   const markWidth = size * MARK_WIDTH[purpose];
   const markHeight = (markWidth * ART_H) / ART_W;
   const originX = (size - markWidth) / 2;
@@ -123,17 +161,28 @@ function draw(size, purpose) {
         }
       }
       const coverage = hits / (SAMPLES * SAMPLES);
-      const i = (y * size + x) * 3;
-      for (let c = 0; c < 3; c++) {
-        px[i + c] = Math.round(FIELD[c] + (MARK[c] - FIELD[c]) * coverage);
+      const i = (y * size + x) * channels;
+      if (field) {
+        for (let c = 0; c < 3; c++) {
+          px[i + c] = Math.round(field[c] + (mark[c] - field[c]) * coverage);
+        }
+      } else {
+        // Flat mark colour throughout; coverage lands in alpha instead. Blending
+        // it into the colour as well would leave a fringe that a monochrome
+        // badge mask reads as part of the shape.
+        for (let c = 0; c < 3; c++) px[i + c] = mark[c];
+        px[i + 3] = Math.round(255 * coverage);
       }
     }
   }
-  return px;
+  return { pixels: px, channels };
 }
 
-/** Encode an RGB buffer as an opaque PNG (colour type 2, 8-bit). */
-function encodePng(pixels, size) {
+/**
+ * Encode a pixel buffer as a PNG — colour type 2 (RGB) for 3 channels, type 6
+ * (RGBA) for 4.
+ */
+function encodePng(pixels, size, channels) {
   const chunk = (type, data) => {
     const length = Buffer.alloc(4);
     length.writeUInt32BE(data.length);
@@ -147,10 +196,10 @@ function encodePng(pixels, size) {
   ihdr.writeUInt32BE(size, 0);
   ihdr.writeUInt32BE(size, 4);
   ihdr[8] = 8; // bit depth
-  ihdr[9] = 2; // colour type: RGB, no alpha
+  ihdr[9] = channels === 4 ? 6 : 2; // colour type: RGBA or RGB
   // compression, filter, interlace = 0
 
-  const stride = size * 3;
+  const stride = size * channels;
   const raw = Buffer.alloc(size * (stride + 1));
   for (let y = 0; y < size; y++) {
     raw[y * (stride + 1)] = 0; // filter: none
@@ -178,25 +227,39 @@ function crc32(buffer) {
 }
 
 /**
- * Every home-screen icon. 16/32/48 are absent deliberately — see the note at
- * the top of this file.
+ * Every generated icon. The favicons (16/32/48) are absent deliberately — see
+ * the note at the top of this file.
  */
 const targets = [
-  { file: 'icons/icon-64.png', size: 64, purpose: 'any' },
-  { file: 'icons/icon-128.png', size: 128, purpose: 'any' },
-  { file: 'icons/icon-180.png', size: 180, purpose: 'any' },
-  { file: 'icons/icon-192.png', size: 192, purpose: 'any' },
-  { file: 'icons/icon-256.png', size: 256, purpose: 'any' },
-  { file: 'icons/icon-512.png', size: 512, purpose: 'any' },
-  { file: 'icons/icon-1024.png', size: 1024, purpose: 'any' },
-  { file: 'icons/icon-512-maskable.png', size: 512, purpose: 'maskable' },
+  { file: 'icons/icon-64.png', size: 64, purpose: 'any', palette: 'light' },
+  { file: 'icons/icon-128.png', size: 128, purpose: 'any', palette: 'light' },
+  { file: 'icons/icon-180.png', size: 180, purpose: 'any', palette: 'light' },
+  { file: 'icons/icon-192.png', size: 192, purpose: 'any', palette: 'light' },
+  { file: 'icons/icon-256.png', size: 256, purpose: 'any', palette: 'light' },
+  { file: 'icons/icon-512.png', size: 512, purpose: 'any', palette: 'light' },
+  { file: 'icons/icon-1024.png', size: 1024, purpose: 'any', palette: 'light' },
+  { file: 'icons/icon-512-maskable.png', size: 512, purpose: 'maskable', palette: 'light' },
   // iOS reads this one for the home screen. Same art as icon-180, written to
   // the path <link rel="apple-touch-icon"> points at.
-  { file: 'apple-touch-icon.png', size: 180, purpose: 'any' },
+  { file: 'apple-touch-icon.png', size: 180, purpose: 'any', palette: 'light' },
+
+  // Web Push. 192 is what Chrome asks for on desktop and Android; 96 is the
+  // Android badge size. Both are referenced from apps/web/public/push-sw.js.
+  {
+    file: 'icons/notification-192.png',
+    size: 192,
+    purpose: 'notification',
+    palette: 'navy',
+  },
+  { file: 'icons/notification-badge-96.png', size: 96, purpose: 'badge', palette: 'alpha' },
 ];
 
 for (const target of targets) {
-  const png = encodePng(draw(target.size, target.purpose), target.size);
+  const { pixels, channels } = draw(target.size, target.purpose, PALETTE[target.palette]);
+  const png = encodePng(pixels, target.size, channels);
   writeFileSync(join(webPublic, target.file), png);
-  console.log(`✓ ${target.file} (${target.size}px, ${target.purpose}, ${png.length} bytes)`);
+  console.log(
+    `✓ ${target.file} (${target.size}px, ${target.purpose}, ${target.palette}, ` +
+      `${channels === 4 ? 'RGBA' : 'RGB'}, ${png.length} bytes)`,
+  );
 }

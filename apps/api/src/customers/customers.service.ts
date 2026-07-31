@@ -42,6 +42,17 @@ export class CustomersService {
     });
   }
 
+  /**
+   * The customer this number belongs to, if any. Used by the call pipeline to
+   * recognise a returning caller from caller ID before the call is answered.
+   * Returns null rather than throwing — an unrecognised number is the norm, not
+   * an error, and must never delay answering the phone.
+   */
+  findByPhone(companyId: string, phone: string): Promise<Customer | null> {
+    const trimmed = phone.trim();
+    return trimmed ? this.repo.findByPhone(companyId, trimmed) : Promise.resolve(null);
+  }
+
   async getById(companyId: string, id: string): Promise<Customer> {
     const customer = await this.repo.findById(companyId, id);
     if (!customer) {
