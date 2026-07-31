@@ -125,8 +125,15 @@ export class ReceptionistService {
         const query = String(args.query ?? '').trim();
         const results = await this.rag.retrieve(companyId, query, 4);
         if (results.length === 0) {
+          // A knowledge miss used to be a dead end, which wasted the one moment
+          // in the call where a visit is easiest to offer. Say what is true,
+          // then keep moving.
           return {
-            output: 'No specific information is available. Offer to have the team follow up.',
+            output:
+              'Nothing in the knowledge base covers that. Do NOT guess or give a range. ' +
+              'Say plainly that you do not have that detail in front of you, offer to have someone ' +
+              'confirm it, and keep the conversation moving — this is a good moment to get eyes on ' +
+              'the roof and to make sure you have their callback number.',
           };
         }
         const text = results
@@ -146,7 +153,9 @@ export class ReceptionistService {
           c.propertyType = normalizeEnum(args.propertyType, PropertyType, PropertyType.UNKNOWN);
         if (typeof args.reason === 'string') c.reason = args.reason;
         if (typeof args.insuranceClaim === 'string') c.insuranceClaim = args.insuranceClaim;
-        return { output: 'Customer details recorded.' };
+        // Naming what is still outstanding keeps the model from either dropping
+        // a required detail or re-asking for one it already has.
+        return { output: `Saved. ${describeOutstanding(signals)}` };
       }
 
       case TOOL.REQUEST_APPOINTMENT: {
@@ -159,7 +168,10 @@ export class ReceptionistService {
           notes: asString(args.notes),
         };
         return {
-          output: 'Appointment request recorded. Confirm the team will follow up to schedule.',
+          output:
+            'Appointment request recorded. Tell them the office will confirm the exact window — ' +
+            'never state an arrival time yourself. Then make sure the callback number is confirmed ' +
+            'digit by digit before you wrap up.',
         };
       }
 
@@ -170,7 +182,10 @@ export class ReceptionistService {
           reason: asString(args.reason),
         };
         return {
-          output: 'Emergency flagged. Reassure the caller and collect the property address.',
+          output:
+            'Emergency flagged and the team is alerted. Reassure the caller in your own words, ' +
+            'then get the property address and confirm the callback number. Skip any other ' +
+            'qualifying questions — they can wait, this cannot.',
         };
       }
 
@@ -208,10 +223,22 @@ export class ReceptionistService {
       .map((entry) => `${entry.role === 'assistant' ? 'AI' : 'Caller'}: ${entry.text}`)
       .join('\n');
 
-    const instructions =
-      `You analyze a phone call transcript for ${company.name}, a roofing company, and extract a structured business record. ` +
-      `Base every field strictly on the transcript. Use null for unknown values. Write a concise, factual summary (2-3 sentences) from the roofing company's perspective. ` +
-      `When insurance claims are discussed, include the claim status in the summary and keyPoints.`;
+    // leadQuality is the field the office sorts its callback list by, so it gets
+    // an explicit rubric rather than being left to interpretation — without one
+    // the same call was graded differently from one day to the next.
+    const instructions = [
+      `You analyze a phone call transcript for ${company.name}, a roofing company, and extract a structured business record.`,
+      `Base every field strictly on the transcript. Use null for unknown values. Never infer a detail the caller did not give.`,
+      `Write a concise, factual summary (2-3 sentences) from the roofing company's perspective — what they want, how urgent it is, and what was promised.`,
+      `When insurance claims are discussed, include the claim status in the summary and keyPoints.`,
+      `leadQuality rubric:`,
+      `- HOT: an emergency, or a visit was agreed, or they have a real problem now and gave contact details.`,
+      `- WARM: a genuine roofing need and reachable contact details, but no visit agreed yet.`,
+      `- COLD: early-stage interest only — price curiosity, a general question, no timeline, or incomplete contact details.`,
+      `- UNQUALIFIED: no roofing need, out of the service area, a wrong number, a sales call, or nothing usable was captured.`,
+      `Mark the outcome SPAM for solicitations, robocalls, and sales calls, and do not grade them as leads.`,
+      `keyPoints are for the person who calls this customer back: what is wrong, what was committed to, and anything about access, timing, or the decision maker.`,
+    ].join(' ');
 
     try {
       return await this.openai.createStructuredResponse<ConversationStructuredOutput>({
@@ -291,6 +318,29 @@ export class ReceptionistService {
       followUpReason: appointmentRequested ? 'Schedule the requested visit.' : null,
     };
   }
+}
+
+/**
+ * What the office still needs, phrased for the model rather than for a person.
+ *
+ * Fed back after every capture_customer_info call for two reasons: it stops a
+ * required detail being forgotten on a call that wandered, and — because it
+ * lists only what is missing — it stops the receptionist asking again for
+ * something the caller already gave it, which is the fastest way to sound like
+ * a machine.
+ */
+function describeOutstanding(signals: LiveConversationSignals): string {
+  const c = signals.customer;
+  const missing: string[] = [];
+  if (!c.fullName) missing.push('name');
+  if (!c.phone) missing.push('best callback number');
+  if (!c.propertyAddress) missing.push('property address');
+  if (!c.reason) missing.push('what is wrong with the roof');
+
+  if (missing.length === 0) {
+    return 'You have everything the office needs — do not ask for any of it again.';
+  }
+  return `Still outstanding: ${missing.join(', ')}. Everything else is captured — do not ask for it again.`;
 }
 
 function asString(value: unknown): string | undefined {

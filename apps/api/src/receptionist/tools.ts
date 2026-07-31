@@ -46,7 +46,7 @@ export function buildRealtimeTools(config: AiConfiguration | null): RealtimeTool
       type: 'function',
       name: TOOL.CAPTURE_CUSTOMER_INFO,
       description:
-        'Record customer details as you learn them during the call. Call this whenever a new detail is provided; omit fields you do not yet know.',
+        'Record customer details as you learn them during the call. Call this the moment a new detail is provided — do not batch them up or wait until the end, because a call that drops early still has to leave the office something usable. Omit fields you do not yet know.',
       parameters: {
         type: 'object',
         properties: {
@@ -54,8 +54,17 @@ export function buildRealtimeTools(config: AiConfiguration | null): RealtimeTool
           phone: { type: 'string' },
           email: { type: 'string' },
           propertyAddress: { type: 'string' },
-          propertyType: { type: 'string', enum: Object.values(PropertyType) },
-          reason: { type: 'string', description: 'Why the customer is calling.' },
+          propertyType: {
+            type: 'string',
+            enum: Object.values(PropertyType),
+            description:
+              'RESIDENTIAL for a house or condo, COMMERCIAL for a business, warehouse, HOA, or managed property. Set it as soon as it is clear from what the caller describes — you rarely need to ask outright.',
+          },
+          reason: {
+            type: 'string',
+            description:
+              "What is actually wrong and how urgent it is, in the office's words: the problem (leak, hail, missing shingles, age, inspection, replacement, second opinion), whether it is active right now, how soon they need someone, and the best time to reach them. This is what the team reads first.",
+          },
           insuranceClaim: {
             type: 'string',
             enum: ['yes', 'no', 'unsure'],
@@ -73,15 +82,23 @@ export function buildRealtimeTools(config: AiConfiguration | null): RealtimeTool
       type: 'function',
       name: TOOL.REQUEST_APPOINTMENT,
       description:
-        'Record a request for a visit, estimate, or inspection, including the preferred day and time window.',
+        'Record a request for a visit, estimate, or inspection. Call this as soon as the caller agrees to a visit — do not wait for a firm date. A vague "sometime next week" booked is worth far more to the office than a precise one that was never captured.',
       parameters: {
         type: 'object',
         properties: {
           serviceRequested: { type: 'string' },
           preferredDate: { type: 'string', description: 'ISO date (YYYY-MM-DD) if given.' },
-          preferredTimeWindow: { type: 'string', description: 'e.g. "morning", "2-4pm".' },
+          preferredTimeWindow: {
+            type: 'string',
+            description:
+              'Whatever they gave you, however loose — "morning", "2-4pm", "after work", "early next week". Never leave this empty just because it is imprecise.',
+          },
           priority: { type: 'string', enum: Object.values(AppointmentPriority) },
-          notes: { type: 'string' },
+          notes: {
+            type: 'string',
+            description:
+              'Anything the crew or scheduler needs that does not fit elsewhere: access notes, dogs, gate codes, steep or multi-story roof, the caller works nights, a decision maker who is not on the call, a closing date or other deadline.',
+          },
         },
         additionalProperties: false,
       },
@@ -93,11 +110,15 @@ export function buildRealtimeTools(config: AiConfiguration | null): RealtimeTool
       type: 'function',
       name: TOOL.FLAG_EMERGENCY,
       description:
-        'Flag the call as an emergency (active leak, storm damage, water intrusion, or safety issue) so the team is alerted immediately.',
+        'Flag the call as an emergency (active leak, storm damage, water intrusion, or safety issue) so the team is alerted immediately. Call this as soon as you recognize it, before finishing any other questions — the alert is more useful thirty seconds earlier than it is complete.',
       parameters: {
         type: 'object',
         properties: {
-          reason: { type: 'string' },
+          reason: {
+            type: 'string',
+            description:
+              'What is happening right now, concretely — "water coming through the kitchen ceiling during a storm", "tree limb through the roof over a bedroom". Include anything about safety or people in the affected room.',
+          },
           urgency: { type: 'string', enum: Object.values(UrgencyLevel) },
         },
         required: ['reason'],
@@ -110,7 +131,8 @@ export function buildRealtimeTools(config: AiConfiguration | null): RealtimeTool
     tools.push({
       type: 'function',
       name: TOOL.TRANSFER_TO_HUMAN,
-      description: 'Transfer the caller to a human team member when they explicitly request it.',
+      description:
+        'Transfer the caller to a human team member. Use it when they ask for a person, when they are angry enough that a person will do better than you will, or when you have failed twice to understand something that matters — an offered transfer keeps a caller who would otherwise hang up.',
       parameters: { type: 'object', properties: {}, additionalProperties: false },
     });
   }

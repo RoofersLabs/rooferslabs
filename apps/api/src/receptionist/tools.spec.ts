@@ -42,6 +42,47 @@ describe('buildRealtimeTools', () => {
   });
 });
 
+describe('tool descriptions steer capture timing', () => {
+  function describe_(name: string): string {
+    const tool = buildRealtimeTools(makeConfig()).find((t) => t.name === name);
+    return tool!.description;
+  }
+
+  it('tells the model to capture details immediately, not in a batch', () => {
+    // A call that drops halfway still has to leave the office something usable,
+    // so details are recorded as they arrive rather than summarised at the end.
+    expect(describe_(TOOL.CAPTURE_CUSTOMER_INFO)).toContain('do not batch them up');
+  });
+
+  it('books on agreement rather than waiting for a firm date', () => {
+    expect(describe_(TOOL.REQUEST_APPOINTMENT)).toContain('do not wait for a firm date');
+  });
+
+  it('flags emergencies before finishing qualification', () => {
+    expect(describe_(TOOL.FLAG_EMERGENCY)).toContain('before finishing any other questions');
+  });
+
+  it('keeps the parameter shape unchanged so stored signals stay compatible', () => {
+    const capture = buildRealtimeTools(makeConfig()).find(
+      (t) => t.name === TOOL.CAPTURE_CUSTOMER_INFO,
+    )!;
+    const properties = Object.keys(
+      (capture.parameters as { properties: Record<string, unknown> }).properties,
+    );
+    expect(properties.sort()).toEqual(
+      [
+        'email',
+        'fullName',
+        'insuranceClaim',
+        'phone',
+        'propertyAddress',
+        'propertyType',
+        'reason',
+      ].sort(),
+    );
+  });
+});
+
 describe('CONVERSATION_OUTPUT_SCHEMA', () => {
   /** OpenAI strict mode requires every property to be listed in `required`
    *  and `additionalProperties: false` at every level. */
