@@ -13,6 +13,28 @@ variable "allowed_branches" {
   default     = ["main", "develop"]
 }
 
+variable "allowed_environments" {
+  description = <<-EOT
+    GitHub Environments whose deployments may assume this role.
+
+    Null (the default) derives them from `allowed_branches` using this project's
+    branch-to-environment convention — main → production, develop → development
+    — so a root that declares its branch gets the matching environment without
+    having to repeat itself. Set explicitly to authorize an environment whose
+    name does not follow from a branch. An empty list trusts the branch subjects
+    alone, which means any workflow using `environment:` will be refused.
+
+    SECURITY: an environment subject carries no branch. `repo:o/r:environment:x`
+    says a job targeting environment x ran — not which ref it ran from. The
+    branch constraint for those runs therefore lives in the GitHub Environment's
+    deployment branch policy (Settings → Environments → Deployment branches),
+    not here. Configure it, or the branch is enforced only by the workflow's own
+    trigger list. The branch subjects below remain exact either way.
+  EOT
+  type        = list(string)
+  default     = null
+}
+
 variable "create_oidc_provider" {
   description = "Create the account-wide GitHub OIDC provider. Set false if one already exists (it is a singleton per account). Must be a plan-time literal."
   type        = bool

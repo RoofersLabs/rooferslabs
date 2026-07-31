@@ -5,9 +5,25 @@
 # AWS credentials, so no long-lived access key ever lives in GitHub secrets.
 #
 # The trust policy is scoped two ways, and BOTH must hold:
-#   aud = sts.amazonaws.com          (the audience configure-aws-credentials requests)
-#   sub = repo:<owner/repo>:ref:refs/heads/<branch>   for the allowed branches only
+#   aud = sts.amazonaws.com   (the audience configure-aws-credentials requests)
+#   sub = one of an exact list of subjects, for this repository only
 # Without the `sub` condition ANY repository on GitHub could assume this role.
+#
+# There are two subject shapes, and the difference is the thing that breaks
+# deployments. A job that declares `environment:` presents
+#
+#   repo:<owner/repo>:environment:<environment>
+#
+# while one that does not presents
+#
+#   repo:<owner/repo>:ref:refs/heads/<branch>
+#
+# GitHub REPLACES the ref component with the environment one — it does not add
+# it. Trusting only the branch form therefore fails every deployment the moment
+# a workflow starts using GitHub Environments, with an "Not authorized to
+# perform sts:AssumeRoleWithWebIdentity" that names no role, because the denial
+# happens during federation before STS resolves one. Both shapes are trusted
+# here so either style of workflow works.
 
 data "aws_iam_openid_connect_provider" "existing" {
   count = var.create_oidc_provider ? 0 : 1
@@ -50,11 +66,38 @@ locals {
   repo_owner = split("/", var.github_repository)[0]
   repo_name  = split("/", var.github_repository)[1]
 
+  # One environment per branch, the same mapping infra/scripts/env.sh applies:
+  # this project's rule is that a branch and an environment are two names for
+  # the same thing. Encoding it here is what lets each root keep declaring only
+  # its branch — the environment it implies cannot then drift out of step with it.
+  environment_for_branch = {
+    main    = "production"
+    develop = "development"
+  }
+
+  derived_environments = compact([
+    for branch in var.allowed_branches :
+    lookup(local.environment_for_branch, branch, "")
+  ])
+
+  allowed_environments = (var.allowed_environments != null
+    ? var.allowed_environments
+  : local.derived_environments)
+
+  # Ordering is deliberate — branch subjects first, then environment subjects,
+  # each in plain-then-id-qualified order. IAM does not care, but keeping the
+  # generated document byte-stable against what is already deployed is the
+  # difference between a no-op plan and a diff nobody can quickly read.
   allowed_subjects = concat(
     [for branch in var.allowed_branches : "repo:${var.github_repository}:ref:refs/heads/${branch}"],
     local.id_qualified_repository == "" ? [] : [
       for branch in var.allowed_branches :
       "repo:${local.id_qualified_repository}:ref:refs/heads/${branch}"
+    ],
+    [for env in local.allowed_environments : "repo:${var.github_repository}:environment:${env}"],
+    local.id_qualified_repository == "" ? [] : [
+      for env in local.allowed_environments :
+      "repo:${local.id_qualified_repository}:environment:${env}"
     ],
   )
 }
