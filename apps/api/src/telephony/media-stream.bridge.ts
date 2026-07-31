@@ -10,6 +10,8 @@ import {
 import { CallProcessingService } from '../calls/call-processing.service';
 import { TwilioService } from './twilio.service';
 import { createEmptySignals, type LiveConversationSignals } from '../receptionist/session-state';
+import { ConversationOrchestrator } from '../receptionist/orchestrator';
+import { TOOL } from '../receptionist/tools';
 
 /** Hard safety cap on a single call so a stuck socket can never burn an
  *  unbounded OpenAI Realtime session. Well above any legitimate call length. */
@@ -82,6 +84,13 @@ class CallBridgeSession {
   private sessionConfig: RealtimeSessionConfig | null = null;
   private readonly signals: LiveConversationSignals = createEmptySignals();
   private readonly transcript: TranscriptEntry[] = [];
+
+  /**
+   * Owns conversation state, stage, priorities, and quality for this call. The
+   * bridge stays a transport: it reports what happened and injects whatever
+   * guidance comes back, but decides nothing about the conversation itself.
+   */
+  private orchestrator: ConversationOrchestrator | null = null;
   private readonly startedAt = Date.now();
   private finalized = false;
   private reconnects = 0;
@@ -223,6 +232,13 @@ class CallBridgeSession {
     }
     const session = this.sessionConfig;
 
+    // One orchestrator per call, not per connection: a mid-call reconnect must
+    // not forget the caller's name. Only created if this is the first connect.
+    const tools = Array.isArray(session.session.tools) ? session.session.tools : [];
+    this.orchestrator ??= new ConversationOrchestrator(
+      tools.some((tool) => tool.name === TOOL.TRANSFER_TO_HUMAN),
+    );
+
     // Reset per-connection state (a reconnect reuses the same session config).
     this.sessionActivated = false;
     this.responseActive = false;
@@ -352,6 +368,7 @@ class CallBridgeSession {
         // drop Twilio's queued audio and truncate the assistant item at the
         // position the caller actually heard.
         this.log('debug', 'caller speech started.');
+        if (this.responseActive) this.orchestrator?.observeInterruption();
         if (this.streamSid) this.sendToTwilio({ event: 'clear', streamSid: this.streamSid });
         if (this.activeAssistantItemId && this.responseStartTimestamp !== null) {
           this.sendToOpenAi({
@@ -402,6 +419,7 @@ class CallBridgeSession {
         if (event.transcript) {
           this.log('debug', `caller transcript: ${truncate(event.transcript)}`);
           this.pushTranscript('customer', event.transcript);
+          this.orchestrator?.observeCallerTurn(event.transcript);
         }
         break;
 
@@ -409,6 +427,10 @@ class CallBridgeSession {
         if (event.transcript) {
           this.log('debug', `assistant transcript: ${truncate(event.transcript)}`);
           this.pushTranscript('assistant', event.transcript);
+          const findings = this.orchestrator?.observeAssistantTurn(event.transcript) ?? [];
+          for (const finding of findings) {
+            this.log('debug', `quality: ${finding.code} — ${finding.detail}`);
+          }
         }
         break;
 
@@ -422,6 +444,10 @@ class CallBridgeSession {
         this.activeAssistantItemId = null;
         this.responseStartTimestamp = null;
         this.log('debug', 'response.done.');
+        // The turn boundary is the one race-free moment to steer the next turn:
+        // no response is in flight, and the caller's transcript for the turn
+        // just finished has already been applied to state.
+        this.injectGuidance();
         break;
 
       case 'error':
@@ -491,6 +517,10 @@ class CallBridgeSession {
       /* tolerate malformed args */
     }
 
+    // Tool calls are the authoritative path into conversation state: structured,
+    // synchronous, and immune to the misreadings a transcript is prone to.
+    this.orchestrator?.observeToolCall(event.name, args);
+
     const result = await this.receptionist.executeToolCall(
       this.companyId,
       this.signals,
@@ -521,6 +551,38 @@ class CallBridgeSession {
       item: { type: 'function_call_output', call_id: event.call_id, output: result.output },
     });
     this.sendToOpenAi({ type: 'response.create' });
+  }
+
+  /**
+   * Hand the orchestrator's plan for the next turn to the model.
+   *
+   * Sent as a system-role conversation item rather than a `session.update`, so
+   * it applies to the next turn only and does not accumulate: replacing the
+   * session instructions on every turn would grow the context without bound and
+   * make the model's behaviour drift as the call went on.
+   *
+   * No `response.create` follows — this only stages context. The caller's next
+   * turn triggers the response, exactly as before, so nothing about turn-taking
+   * or latency changes.
+   */
+  private injectGuidance(): void {
+    if (!this.orchestrator || this.finalized) return;
+    if (this.openaiWs?.readyState !== WebSocket.OPEN) return;
+
+    const { plan, guidance } = this.orchestrator.nextTurn();
+    this.sendToOpenAi({
+      type: 'conversation.item.create',
+      item: {
+        type: 'message',
+        role: 'system',
+        content: [{ type: 'input_text', text: guidance }],
+      },
+    });
+    this.log(
+      'debug',
+      `guidance: stage=${plan.stage} target=${plan.targetField ?? 'none'} ` +
+        `empathy=${plan.empathy} complete=${this.orchestrator.completenessScore()}%`,
+    );
   }
 
   private pushTranscript(role: 'assistant' | 'customer', text: string): void {
