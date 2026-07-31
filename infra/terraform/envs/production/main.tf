@@ -362,6 +362,7 @@ module "api_service" {
     REDIS_URL               = module.redis.redis_url
     LOG_LEVEL               = "info"
     OPENAI_REALTIME_MODEL   = var.openai_realtime_model
+    OPENAI_REALTIME_VOICE   = var.openai_realtime_voice
     OPENAI_RESPONSES_MODEL  = var.openai_responses_model
     OPENAI_EMBEDDING_MODEL  = var.openai_embedding_model
     TWILIO_MEDIA_STREAM_URL = "wss://${local.api_domain}/v1/telephony/media-stream"

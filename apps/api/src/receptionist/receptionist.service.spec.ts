@@ -21,6 +21,59 @@ function makeService(ragResults: Array<{ title: string; content: string }> = [])
   );
 }
 
+/**
+ * A service wired far enough to build a session: a company whose stored voice we
+ * control, and the fleet default from OPENAI_REALTIME_VOICE.
+ */
+function makeSessionService(storedVoice: string | undefined, fleetVoice: string) {
+  const companies = {
+    getById: jest.fn().mockResolvedValue({
+      name: 'Summit Roofing',
+      roofingServices: ['Roof Repair'],
+      serviceAreas: ['Austin, TX'],
+      businessHours: [],
+      emergencyServiceEnabled: true,
+      emergencyInstructions: null,
+      aiConfiguration:
+        storedVoice === undefined
+          ? null
+          : { assistantName: 'Riley', greeting: 'Thanks for calling!', voice: storedVoice },
+    }),
+  } as unknown as CompaniesService;
+  const config = {
+    openai: { realtimeModel: 'gpt-realtime', realtimeVoice: fleetVoice },
+  } as unknown as AppConfigService;
+  return new ReceptionistService(config, companies, {} as OpenAiService, {} as RagService);
+}
+
+describe('buildSessionConfig — realtime voice', () => {
+  it('uses the fleet default when the company has never chosen a voice', async () => {
+    const session = await makeSessionService(undefined, 'marin').buildSessionConfig('c1');
+    expect(session.session.audio.output.voice).toBe('marin');
+  });
+
+  it("keeps the company's own voice — the setting is theirs, not the fleet's", async () => {
+    const session = await makeSessionService('sage', 'marin').buildSessionConfig('c1');
+    expect(session.session.audio.output.voice).toBe('sage');
+  });
+
+  it('falls back to the fleet default when the stored voice is blank', async () => {
+    const session = await makeSessionService('', 'marin').buildSessionConfig('c1');
+    expect(session.session.audio.output.voice).toBe('marin');
+  });
+
+  it('carries the voice on the same payload as the audio format, so it is set before any audio', async () => {
+    const session = await makeSessionService(undefined, 'marin').buildSessionConfig('c1');
+    // The bridge sends this whole object as session.update on socket open and
+    // gates the greeting until session.updated — so the voice can never arrive
+    // after the first sample.
+    expect(session.session.audio.output).toEqual({
+      format: { type: 'audio/pcmu' },
+      voice: 'marin',
+    });
+  });
+});
+
 describe('executeToolCall — knowledge lookup', () => {
   it('turns a knowledge miss into a bridge instead of a dead end', async () => {
     // The old text ("No specific information is available") ended the thread at

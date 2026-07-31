@@ -101,7 +101,9 @@ export class ReceptionistService {
           },
           output: {
             format: { type: 'audio/pcmu' },
-            voice: company.aiConfiguration?.voice || 'alloy',
+            // A company's chosen voice wins; OPENAI_REALTIME_VOICE is only the
+            // fleet default for a company that has never picked one.
+            voice: company.aiConfiguration?.voice || this.config.openai.realtimeVoice,
           },
         },
         tools: buildRealtimeTools(company.aiConfiguration),

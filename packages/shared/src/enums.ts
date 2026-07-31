@@ -209,6 +209,8 @@ export enum AiVoice {
   BALLAD = 'ballad',
   CORAL = 'coral',
   ECHO = 'echo',
+  /** Newer gpt-realtime voice; the fleet default (OPENAI_REALTIME_VOICE). */
+  MARIN = 'marin',
   SAGE = 'sage',
   SHIMMER = 'shimmer',
   VERSE = 'verse',

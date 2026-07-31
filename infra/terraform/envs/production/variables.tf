@@ -382,6 +382,12 @@ variable "openai_realtime_model" {
   default = "gpt-realtime"
 }
 
+# Fleet default only — a company's own voice (Settings → AI) always wins.
+variable "openai_realtime_voice" {
+  type    = string
+  default = "marin"
+}
+
 variable "openai_responses_model" {
   type    = string
   default = "gpt-4.1"
