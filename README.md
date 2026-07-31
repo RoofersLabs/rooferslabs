@@ -270,22 +270,40 @@ docker build -f docker/web.Dockerfile \
 
 ## Deployment (AWS + Cloudflare)
 
+**Two environments, one per branch.** `main` deploys production, `develop`
+deploys development. They share a VPC and a load balancer and nothing else — the
+databases, caches, secrets, services, buckets, distributions and CI roles are one
+per environment. Full detail, including the isolation guarantees and the
+Cloudflare records: [`docs/environments.md`](./docs/environments.md).
+
+|              | Production                               | Development               |
+| ------------ | ---------------------------------------- | ------------------------- |
+| Frontend     | `rooferslabs.com`, `app.rooferslabs.com` | `dev.rooferslabs.com`     |
+| API          | `api.rooferslabs.com`                    | `api.dev.rooferslabs.com` |
+| Deploys from | `main`                                   | `develop`                 |
+
 **Frontend → AWS S3 + CloudFront** (Terraform module `frontend-cdn`): the static
-Vite SPA is uploaded and cached at the edge, served on the apex `rooferslabs.com`.
-Deploy with [`infra/scripts/deploy-web.sh`](./infra/scripts/deploy-web.sh) (build
-→ S3 sync → CloudFront `/*` invalidation → verify). The script is self-contained;
-the `deploy-web.yml` GitHub Actions pipeline just runs it, so deploying never
-depends on CI being green or even enabled. No Vercel.
+Vite SPA is uploaded and cached at the edge. Deploy with
+[`infra/scripts/deploy-web.sh`](./infra/scripts/deploy-web.sh) (build → S3 sync →
+CloudFront `/*` invalidation → verify). The script is self-contained; the
+`deploy-web.yml` GitHub Actions pipeline just runs it, so deploying never depends
+on CI being green or even enabled. No Vercel.
 
 **Backend → AWS, all Terraform** — VPC, ALB/ACM, ECR, ECS Fargate, RDS,
 ElastiCache, S3, SQS, Secrets Manager, IAM, CloudWatch:
 
 ```bash
-cd infra/terraform/envs/production
+cd infra/terraform/envs/production          # or envs/development
 cp terraform.tfvars.example terraform.tfvars   # domain + Clerk/OpenAI/Twilio/VAPID keys
 terraform init && terraform apply
-../../scripts/deploy.sh                        # build + push + roll the API service
+../../scripts/deploy.sh production          # build + push + roll the API service
+../../scripts/deploy-web.sh production      # build + upload + invalidate the SPA
 ```
+
+Every script takes the environment as its first argument and never guesses one.
+Vite inlines the API origin at build time, so `deploy-web.sh` — which reads it
+from that environment's Terraform outputs — is the only correct way to build the
+SPA; a bare `npm run build` bakes in whatever is in `apps/web/.env`.
 
 From-scratch walkthrough: [`infra/terraform/README.md`](./infra/terraform/README.md).
 The operational runbook — releases, rollback, and all Cloudflare settings

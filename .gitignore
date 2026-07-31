@@ -17,10 +17,13 @@ npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 
-# Environment variables
+# Environment variables. The .example templates are tracked; nothing that could
+# hold a real value ever is — including the per-tier .env.development /
+# .env.production files, which are generated from those templates by hand.
 .env
 .env.*
 !.env.example
+!.env.*.example
 
 # OS files
 .DS_Store
