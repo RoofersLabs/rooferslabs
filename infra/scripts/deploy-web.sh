@@ -3,18 +3,30 @@
 # RoofersLabs — build and deploy the frontend SPA to S3 + CloudFront
 # =============================================================================
 # Usage:
-#   infra/scripts/deploy-web.sh              # clean install, build, deploy
-#   SKIP_INSTALL=1 infra/scripts/deploy-web.sh
-#   SKIP_BUILD=1   infra/scripts/deploy-web.sh   # deploy the existing dist/
+#   infra/scripts/deploy-web.sh development   # deploy the development SPA
+#   infra/scripts/deploy-web.sh production    # deploy the production SPA
+#   infra/scripts/deploy-web.sh               # infer from the current branch
+#   SKIP_INSTALL=1 infra/scripts/deploy-web.sh dev
+#   SKIP_BUILD=1   infra/scripts/deploy-web.sh dev   # deploy the existing dist/
+#
+# Which environment this deploys to is resolved by infra/scripts/env.sh — from
+# the argument, $ENVIRONMENT, or the branch, in that order, and never guessed.
 #
 # This script is SELF-CONTAINED: it is the only thing needed to ship the
 # frontend. GitHub Actions is a convenience wrapper around this same script
 # (.github/workflows/deploy-web.yml) and may fail or be disabled entirely
 # without affecting a local deploy.
 #
-# Configuration resolves from Terraform outputs; every value can be overridden
-# with an environment variable, so the script also runs where no Terraform state
-# is present (e.g. CI):
+# It is also the ONLY correct way to build the SPA. Vite inlines its
+# configuration at build time, so `npm run build` on its own bakes in whatever
+# happens to be in apps/web/.env — the wrong API origin, and possibly the wrong
+# Clerk instance. Here both come from the target environment's Terraform
+# outputs, which is what makes "the development site cannot talk to the
+# production API" a property of the build rather than a habit.
+#
+# Configuration resolves from that environment's Terraform outputs; every value
+# can be overridden with an environment variable, so the script also runs where
+# no Terraform state is present (e.g. CI):
 #   WEB_BUCKET, WEB_DISTRIBUTION_ID, VITE_API_BASE_URL,
 #   VITE_CLERK_PUBLISHABLE_KEY, WEB_VERIFY_URL
 #
@@ -25,12 +37,13 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-TF_DIR="$REPO_ROOT/infra/terraform/envs/production"
-DIST="$REPO_ROOT/apps/web/dist"
+# shellcheck source=infra/scripts/env.sh
+. "$REPO_ROOT/infra/scripts/env.sh"
 
-# Terraform is optional — never let a missing binary or state abort the script
-# before the environment-variable overrides have had their say.
-tf_out() { terraform -chdir="$TF_DIR" output -raw "$1" 2>/dev/null || true; }
+rl_resolve_environment "${1:-}"
+rl_guard_branch
+
+DIST="$REPO_ROOT/apps/web/dist"
 
 BUCKET="${WEB_BUCKET:-$(tf_out web_bucket)}"
 DISTRIBUTION_ID="${WEB_DISTRIBUTION_ID:-$(tf_out web_distribution_id)}"
@@ -38,15 +51,39 @@ DISTRIBUTION_ID="${WEB_DISTRIBUTION_ID:-$(tf_out web_distribution_id)}"
 : "${VITE_CLERK_PUBLISHABLE_KEY:=$(tf_out clerk_publishable_key)}"
 export VITE_API_BASE_URL VITE_CLERK_PUBLISHABLE_KEY
 
-if [ -z "${BUCKET:-}" ] || [ -z "${DISTRIBUTION_ID:-}" ]; then
-  echo "error: could not resolve web_bucket / web_distribution_id from Terraform." >&2
-  echo "       Run 'terraform apply' first, or set WEB_BUCKET / WEB_DISTRIBUTION_ID." >&2
-  exit 1
-fi
-if [ -z "${VITE_API_BASE_URL:-}" ] || [ -z "${VITE_CLERK_PUBLISHABLE_KEY:-}" ]; then
-  echo "error: VITE_API_BASE_URL and VITE_CLERK_PUBLISHABLE_KEY are required for the build." >&2
-  exit 1
-fi
+rl_require BUCKET DISTRIBUTION_ID VITE_API_BASE_URL VITE_CLERK_PUBLISHABLE_KEY
+
+# The cross-environment check that matters most, because it is the one a person
+# cannot see by looking at the built site: a bundle carrying the other
+# environment's API origin would work perfectly until it started reading and
+# writing the wrong database.
+case "$ENVIRONMENT" in
+  production)
+    case "$VITE_API_BASE_URL" in
+      *//api.dev.* | *//dev.* | *localhost*)
+        echo "error: production build points at a development API ($VITE_API_BASE_URL)." >&2
+        exit 1
+        ;;
+    esac
+    ;;
+  development)
+    case "$VITE_API_BASE_URL" in
+      *//api.dev.* | *localhost*) ;;
+      *)
+        echo "error: development build points at '$VITE_API_BASE_URL', which is not a development API origin." >&2
+        echo "       Refusing to publish a development site wired to production." >&2
+        exit 1
+        ;;
+    esac
+    ;;
+esac
+
+rl_banner "Deploying the SPA"
+echo "  bucket:       $BUCKET"
+echo "  distribution: $DISTRIBUTION_ID"
+echo "  API origin:   $VITE_API_BASE_URL"
+echo "  Clerk key:    ${VITE_CLERK_PUBLISHABLE_KEY:0:12}…"
+echo
 
 # ---- Build ------------------------------------------------------------------
 if [ "${SKIP_BUILD:-0}" != "1" ]; then
@@ -54,13 +91,22 @@ if [ "${SKIP_BUILD:-0}" != "1" ]; then
   [ "${SKIP_INSTALL:-0}" = "1" ] || npm ci --prefix "$REPO_ROOT" >/dev/null
   # Start from an empty dist/. Vite empties it too, but a stale or duplicated
   # file left behind by an editor/sync tool would otherwise be synced to S3 and
-  # served from the production origin.
+  # served from the live origin.
   rm -rf "$DIST"
   npm run build --workspace @rooferslabs/shared --prefix "$REPO_ROOT"
   npm run build --workspace @rooferslabs/web --prefix "$REPO_ROOT"
 fi
 
 test -f "$DIST/index.html" || { echo "error: build produced no dist/index.html" >&2; exit 1; }
+
+# The built bundle must contain the origin we asked for. Catches an env var that
+# was set but not exported, and a cached dist/ from the other environment being
+# republished under SKIP_BUILD=1.
+if ! grep -rqF "$VITE_API_BASE_URL" "$DIST/assets" 2>/dev/null; then
+  echo "error: the built bundle does not contain $VITE_API_BASE_URL." >&2
+  echo "       dist/ may be stale — re-run without SKIP_BUILD." >&2
+  exit 1
+fi
 
 # ---- Upload -----------------------------------------------------------------
 # Three cache classes, by how the file is named:
@@ -131,21 +177,35 @@ aws cloudfront wait invalidation-completed \
 echo "    invalidation $INVALIDATION_ID completed."
 
 # ---- Verify -----------------------------------------------------------------
-VERIFY_URL="${WEB_VERIFY_URL:-https://$(tf_out web_cloudfront_domain)}"
-echo "==> Verifying $VERIFY_URL/ …"
-STATUS=$(curl -s -o /dev/null -w '%{http_code}' "$VERIFY_URL/")
-if [ "$STATUS" != "200" ]; then
-  echo "error: verification GET returned HTTP $STATUS (expected 200)." >&2
-  exit 1
+# Defaults to the CloudFront domain rather than the public hostname: it is the
+# origin this script actually just wrote to, and it is reachable before the
+# Cloudflare record for a new environment exists.
+VERIFY_URL="${WEB_VERIFY_URL:-}"
+if [ -z "$VERIFY_URL" ]; then
+  CF_DOMAIN=$(tf_out web_cloudfront_domain)
+  [ -n "$CF_DOMAIN" ] && VERIFY_URL="https://$CF_DOMAIN"
 fi
 
-# ---- Admin hostname (only once it exists) ------------------------------------
+STATUS="not verified"
+if [ -n "$VERIFY_URL" ]; then
+  echo "==> Verifying $VERIFY_URL/ …"
+  STATUS=$(curl -s -o /dev/null -w '%{http_code}' "$VERIFY_URL/")
+  if [ "$STATUS" != "200" ]; then
+    echo "error: verification GET returned HTTP $STATUS (expected 200)." >&2
+    exit 1
+  fi
+else
+  # The upload and invalidation already succeeded; failing the deploy because
+  # nobody told the script what to GET would be a worse outcome than saying so.
+  echo "warning: no WEB_VERIFY_URL and no Terraform output — skipping verification." >&2
+fi
+
+# ---- Admin hostname (production only, and only once it exists) ---------------
 # The same bucket and distribution serve the admin portal, so there is nothing
 # extra to upload — but if the hostname is live, a deploy that broke its edge
 # redirect should fail here rather than be discovered by a person.
 #
-# Skipped silently while the hostname is unresolvable, so this stays quiet until
-# `enable-admin-domain.sh` has been run.
+# Development has no admin_url output, so this is skipped there entirely.
 ADMIN_URL="${WEB_ADMIN_VERIFY_URL:-$(tf_out admin_url)}"
 if [ -n "${ADMIN_URL:-}" ] && curl -s -o /dev/null --max-time 5 "$ADMIN_URL/" 2>/dev/null; then
   echo "==> Verifying $ADMIN_URL/ redirects to the portal…"
@@ -171,8 +231,6 @@ if [ -n "${ADMIN_URL:-}" ] && curl -s -o /dev/null --max-time 5 "$ADMIN_URL/" 2>
   ADMIN_APP=$(curl -s -o /dev/null -w '%{http_code}' "$ADMIN_URL/admin")
   [ "$ADMIN_APP" = "200" ] || { echo "error: $ADMIN_URL/admin returned HTTP $ADMIN_APP." >&2; exit 1; }
   echo "    $ADMIN_URL/admin → $ADMIN_APP"
-else
-  echo "==> Admin hostname not reachable yet — skipping (run infra/scripts/enable-admin-domain.sh)."
 fi
 
-echo "✅ Deployed frontend to s3://$BUCKET via CloudFront $DISTRIBUTION_ID (HTTP $STATUS)."
+echo "✅ Deployed the $ENVIRONMENT frontend to s3://$BUCKET via CloudFront $DISTRIBUTION_ID ($STATUS)."

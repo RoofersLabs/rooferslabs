@@ -1,14 +1,25 @@
 name: Deploy Web (S3 + CloudFront)
 
-# Production frontend deploy. This workflow is a CONVENIENCE WRAPPER around
-# infra/scripts/deploy-web.sh — the script is the single source of truth for how
-# the SPA is built, uploaded, and invalidated, and can be run locally on its own.
-# Disabling or breaking this workflow never blocks a deploy.
+# Frontend deploy, one environment per branch:
 #
-# Requires (repo Settings → Secrets and variables):
-#   Variables: AWS_REGION, AWS_DEPLOY_ROLE_ARN (GitHub OIDC role),
-#              WEB_BUCKET, WEB_DISTRIBUTION_ID, VITE_API_BASE_URL
-#   Secrets:   VITE_CLERK_PUBLISHABLE_KEY (pk_live_…)
+#   main    → production   (rooferslabs.com, app.rooferslabs.com)
+#   develop → development  (dev.rooferslabs.com)
+#
+# The branch decides which GitHub Environment supplies the configuration, and
+# with it the API origin and Clerk instance compiled into the bundle. Vite
+# inlines both at build time, so this is where "the development site can only
+# talk to the development API" is actually decided.
+#
+# This workflow is a CONVENIENCE WRAPPER around infra/scripts/deploy-web.sh —
+# the script is the single source of truth for how the SPA is built, uploaded,
+# and invalidated, and can be run locally on its own. Disabling or breaking this
+# workflow never blocks a deploy.
+#
+# Requires, per GitHub Environment (Settings → Environments → production /
+# development):
+#   Variables: AWS_REGION, AWS_DEPLOY_ROLE_ARN, WEB_BUCKET,
+#              WEB_DISTRIBUTION_ID, VITE_API_BASE_URL, WEB_VERIFY_URL
+#   Secrets:   VITE_CLERK_PUBLISHABLE_KEY
 # The job fails immediately if any step fails.
 
 on:
@@ -18,11 +29,12 @@ on:
       - 'apps/web/**'
       - 'packages/shared/**'
       - 'infra/scripts/deploy-web.sh'
+      - 'infra/scripts/env.sh'
       - '.github/workflows/deploy-web.yml'
   workflow_dispatch:
 
 concurrency:
-  group: deploy-web
+  group: deploy-web-${{ github.ref_name }}
   cancel-in-progress: false
 
 permissions:
@@ -33,6 +45,12 @@ jobs:
   deploy:
     name: Build, verify, and deploy the SPA
     runs-on: ubuntu-latest
+
+    environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+
+    env:
+      ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -69,17 +87,31 @@ jobs:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
         run: |
+          echo "Deploying the '$ENVIRONMENT' environment from '${{ github.ref_name }}'."
           missing=()
           for v in AWS_REGION AWS_DEPLOY_ROLE_ARN WEB_BUCKET WEB_DISTRIBUTION_ID \
                    VITE_API_BASE_URL VITE_CLERK_PUBLISHABLE_KEY; do
             [ -n "${!v}" ] || missing+=("$v")
           done
           if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Missing deploy configuration: ${missing[*]}"
-            echo "Set these under Settings → Secrets and variables → Actions." >&2
-            echo "AWS_DEPLOY_ROLE_ARN comes from 'terraform output github_deploy_role_arn'." >&2
+            echo "::error::Missing deploy configuration for $ENVIRONMENT: ${missing[*]}"
+            echo "Set these under Settings → Environments → $ENVIRONMENT." >&2
+            echo "AWS_DEPLOY_ROLE_ARN comes from 'terraform output github_deploy_role_arn'" >&2
+            echo "in infra/terraform/envs/$ENVIRONMENT." >&2
             exit 1
           fi
+
+          # The bucket name carries the environment. A variable set copied to
+          # the wrong GitHub Environment is caught here rather than by whoever
+          # notices the development site answering on rooferslabs.com.
+          case "$WEB_BUCKET" in
+            *"$ENVIRONMENT"*) ;;
+            *)
+              echo "::error::WEB_BUCKET='$WEB_BUCKET' does not name the '$ENVIRONMENT' environment."
+              echo "This GitHub Environment's variables look like they belong to the other one." >&2
+              exit 1
+              ;;
+          esac
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v5
@@ -89,7 +121,8 @@ jobs:
 
       # Build + upload + invalidate + verify, all from the same script used
       # locally. Every value it would otherwise read from Terraform outputs is
-      # supplied here, so no Terraform state is needed in CI.
+      # supplied here, so no Terraform state is needed in CI. The script itself
+      # refuses to publish a bundle carrying the other environment's API origin.
       - name: Deploy (build, upload, invalidate, verify)
         env:
           SKIP_INSTALL: '1' # dependencies are already installed above
@@ -97,7 +130,8 @@ jobs:
           WEB_DISTRIBUTION_ID: ${{ vars.WEB_DISTRIBUTION_ID }}
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
-          # Defaults to the public site; set WEB_VERIFY_URL to the CloudFront
-          # domain to verify before the DNS cutover.
-          WEB_VERIFY_URL: ${{ vars.WEB_VERIFY_URL || 'https://rooferslabs.com' }}
-        run: ./infra/scripts/deploy-web.sh
+          # Verified against the public hostname when set; otherwise the script
+          # falls back to the distribution's own domain, which works before the
+          # Cloudflare record for a new environment exists.
+          WEB_VERIFY_URL: ${{ vars.WEB_VERIFY_URL }}
+        run: ./infra/scripts/deploy-web.sh "$ENVIRONMENT"

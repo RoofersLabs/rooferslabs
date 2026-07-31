@@ -1,14 +1,29 @@
 name: Deploy API (ECR + ECS)
 
-# Production backend deploy. This workflow is a CONVENIENCE WRAPPER around
-# infra/scripts/deploy.sh — the script is the single source of truth for how the
-# API image is built, pushed, and rolled out, and can be run locally on its own.
-# Disabling or breaking this workflow never blocks a deploy.
+# Backend deploy, one environment per branch:
 #
-# Requires (repo Settings → Secrets and variables → Actions):
-#   Variables: AWS_REGION, AWS_DEPLOY_ROLE_ARN (GitHub OIDC role),
-#              ECS_CLUSTER, API_SERVICE, API_REPO
-# The role comes from infra/terraform/modules/github-oidc.
+#   main    → production   (api.rooferslabs.com)
+#   develop → development  (api.dev.rooferslabs.com)
+#
+# The branch decides which GitHub Environment supplies the configuration, and
+# each environment's values point at that environment's cluster, registry and
+# service. Nothing is shared between the two.
+#
+# This workflow is a CONVENIENCE WRAPPER around infra/scripts/deploy.sh — the
+# script is the single source of truth for how the API image is built, pushed,
+# and rolled out, and can be run locally on its own. Disabling or breaking this
+# workflow never blocks a deploy.
+#
+# Requires, per GitHub Environment (Settings → Environments → production /
+# development → Environment variables):
+#   AWS_REGION, AWS_DEPLOY_ROLE_ARN, ECS_CLUSTER, API_SERVICE, API_REPO,
+#   API_HEALTH_URL
+#
+# AWS_DEPLOY_ROLE_ARN comes from that environment's
+# `terraform output github_deploy_role_arn`. The two roles have different trust
+# policies — production's trusts main alone, development's develop alone — so
+# even a workflow edited to deploy the wrong environment fails at AssumeRole
+# rather than reaching it.
 
 on:
   push:
@@ -18,13 +33,15 @@ on:
       - 'packages/shared/**'
       - 'docker/api.Dockerfile'
       - 'infra/scripts/deploy.sh'
+      - 'infra/scripts/env.sh'
       - '.github/workflows/deploy-api.yml'
   workflow_dispatch:
 
-# Never roll the service from two runs at once, and never cancel a rollout
-# midway — an interrupted `ecs wait` leaves the deploy in an unknown state.
+# Never roll one environment's service from two runs at once, and never cancel a
+# rollout midway — an interrupted `ecs wait` leaves the deploy in an unknown
+# state. Keyed by ref so a development deploy never queues behind production.
 concurrency:
-  group: deploy-api
+  group: deploy-api-${{ github.ref_name }}
   cancel-in-progress: false
 
 permissions:
@@ -35,6 +52,15 @@ jobs:
   deploy:
     name: Build, push, and roll out the API
     runs-on: ubuntu-latest
+
+    # Selects the variable and secret set. Also where a required reviewer on
+    # production would be configured (Settings → Environments → protection
+    # rules), with no workflow change needed.
+    environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+
+    env:
+      ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -72,17 +98,32 @@ jobs:
           ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
           API_SERVICE: ${{ vars.API_SERVICE }}
           API_REPO: ${{ vars.API_REPO }}
+          API_HEALTH_URL: ${{ vars.API_HEALTH_URL }}
         run: |
+          echo "Deploying the '$ENVIRONMENT' environment from '${{ github.ref_name }}'."
           missing=()
-          for v in AWS_REGION AWS_DEPLOY_ROLE_ARN ECS_CLUSTER API_SERVICE API_REPO; do
+          for v in AWS_REGION AWS_DEPLOY_ROLE_ARN ECS_CLUSTER API_SERVICE API_REPO API_HEALTH_URL; do
             [ -n "${!v}" ] || missing+=("$v")
           done
           if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Missing deploy configuration: ${missing[*]}"
-            echo "Set these under Settings → Secrets and variables → Actions." >&2
-            echo "AWS_DEPLOY_ROLE_ARN comes from 'terraform output github_deploy_role_arn'." >&2
+            echo "::error::Missing deploy configuration for $ENVIRONMENT: ${missing[*]}"
+            echo "Set these under Settings → Environments → $ENVIRONMENT." >&2
+            echo "AWS_DEPLOY_ROLE_ARN comes from 'terraform output github_deploy_role_arn'" >&2
+            echo "in infra/terraform/envs/$ENVIRONMENT." >&2
             exit 1
           fi
+
+          # Every resource name carries the environment, so a variable set
+          # copied to the wrong GitHub Environment is caught here — before
+          # anything is built, pushed, or rolled out.
+          case "$ECS_CLUSTER" in
+            *"$ENVIRONMENT"*) ;;
+            *)
+              echo "::error::ECS_CLUSTER='$ECS_CLUSTER' does not name the '$ENVIRONMENT' environment."
+              echo "This GitHub Environment's variables look like they belong to the other one." >&2
+              exit 1
+              ;;
+          esac
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v5
@@ -99,5 +140,5 @@ jobs:
           ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
           API_SERVICE: ${{ vars.API_SERVICE }}
           API_REPO: ${{ vars.API_REPO }}
-          API_HEALTH_URL: ${{ vars.API_HEALTH_URL || 'https://api.rooferslabs.com/v1/health' }}
-        run: ./infra/scripts/deploy.sh
+          API_HEALTH_URL: ${{ vars.API_HEALTH_URL }}
+        run: ./infra/scripts/deploy.sh "$ENVIRONMENT"

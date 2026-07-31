@@ -71,10 +71,16 @@ jobs:
       - name: Format check
         run: terraform -chdir=infra/terraform fmt -recursive -check
 
+      # Both roots, always. A change to a shared module can validate against one
+      # environment and break the other, and the environment it breaks is
+      # whichever one nobody checked.
       - name: Validate
         run: |
-          terraform -chdir=infra/terraform/envs/production init -backend=false -input=false
-          terraform -chdir=infra/terraform/envs/production validate
+          for env in production development; do
+            echo "── $env ─────────────────────────────────────────────"
+            terraform -chdir="infra/terraform/envs/$env" init -backend=false -input=false
+            terraform -chdir="infra/terraform/envs/$env" validate
+          done
 
   docker:
     name: Docker image build

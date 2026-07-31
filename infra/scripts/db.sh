@@ -1,29 +1,47 @@
 #!/usr/bin/env bash
 # =============================================================================
-# RoofersLabs — run Prisma against the production database
+# RoofersLabs — run Prisma against a deployed database
 # =============================================================================
-# There is no local database in this project, and there cannot be a direct
-# connection to the real one: RDS is not publicly accessible and lives in the
-# private subnets. Anything that needs the database therefore runs *inside* the
-# VPC, as a one-off ECS task using the same image, the same secrets and the same
-# security group as the API itself.
+# Neither database is reachable from a laptop: both RDS instances live in
+# private subnets with no public endpoint. Anything that needs one therefore
+# runs *inside* the VPC, as a one-off ECS task using that environment's own
+# image, secrets and security group.
 #
-#   infra/scripts/db.sh status              # which migrations are applied (default)
-#   infra/scripts/db.sh deploy              # apply pending migrations by hand
-#   infra/scripts/db.sh platform-users      # who can reach the admin portal
-#   infra/scripts/db.sh grant-owner <email> # give an account platform access
-#   infra/scripts/db.sh revoke-owner <email>
+#   infra/scripts/db.sh development status         # which migrations are applied
+#   infra/scripts/db.sh production  status
+#   infra/scripts/db.sh development deploy         # apply pending migrations
+#   infra/scripts/db.sh production  platform-users # who can reach the admin portal
+#   infra/scripts/db.sh production  grant-owner <email>
+#   infra/scripts/db.sh production  revoke-owner <email>
+#
+# The environment is the first argument. It can be omitted on the main/develop
+# branches, where it is inferred — but naming it is the better habit for a
+# command that writes to a database.
 #
 # `deploy` is rarely needed: the API container runs `prisma migrate deploy` on
 # every start (docker/api-entrypoint.sh), so shipping the API applies the
 # migrations. Use it to apply a migration without a deploy, or to inspect a
 # failure.
 #
-# Nothing here needs DATABASE_URL on your machine. `prisma generate`, `validate`
-# and `format` do not touch a database and keep working locally as normal.
+# Nothing here needs DATABASE_URL on your machine, and there is no way for it to
+# reach the wrong environment's database: the task inherits the connection
+# string from that environment's own Secrets Manager entry.
 #
 # Requires: aws CLI (authenticated), jq.
 set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# shellcheck source=infra/scripts/env.sh
+. "$REPO_ROOT/infra/scripts/env.sh"
+
+# The environment is optional-but-first. Drop it from the argument list only
+# when it is actually there, so `db.sh status` keeps working on a known branch.
+if [ -n "$(rl_normalize_environment "${1:-}")" ]; then
+  rl_resolve_environment "$1"
+  shift
+else
+  rl_resolve_environment ""
+fi
 
 ACTION="${1:-status}"
 EMAIL="${2:-}"
@@ -34,41 +52,35 @@ EMAIL="${2:-}"
 # having decided. `node -e` rather than raw SQL so the update goes through the
 # same Prisma client and enum the application uses — a typo in a role name fails
 # here instead of writing a value nothing can read.
-node_script() {
-  printf 'node -e %s' "$(printf '%s' "$1" | sed 's/"/\\"/g; s/^/"/; s/$/"/')"
-}
 
 case "$ACTION" in
   status) PRISMA_CMD="migrate status" ;;
   deploy) PRISMA_CMD="migrate deploy" ;;
   platform-users | grant-owner | revoke-owner) PRISMA_CMD="" ;;
   *)
-    echo "usage: $0 [status|deploy|platform-users|grant-owner <email>|revoke-owner <email>]" >&2
+    echo "usage: $0 [production|development] [status|deploy|platform-users|grant-owner <email>|revoke-owner <email>]" >&2
     exit 2
     ;;
 esac
 
 case "$ACTION" in
   grant-owner | revoke-owner)
-    [ -n "$EMAIL" ] || { echo "usage: $0 $ACTION <email>" >&2; exit 2; }
+    [ -n "$EMAIL" ] || { echo "usage: $0 [environment] $ACTION <email>" >&2; exit 2; }
     ;;
 esac
 
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-TF_DIR="$REPO_ROOT/infra/terraform/envs/production"
 command -v jq >/dev/null || { echo "error: jq is required." >&2; exit 1; }
-
-tf_out() { terraform -chdir="$TF_DIR" output -raw "$1" 2>/dev/null || true; }
 
 CLUSTER="${ECS_CLUSTER:-$(tf_out ecs_cluster_name)}"
 SERVICE="${API_SERVICE:-$(tf_out api_service_name)}"
+LOG_GROUP="${API_LOG_GROUP:-$(tf_out api_log_group_name)}"
 : "${AWS_REGION:=$(tf_out aws_region)}"
 export AWS_REGION
-[ -n "$CLUSTER" ] && [ -n "$SERVICE" ] || { echo "error: could not resolve the ECS cluster/service." >&2; exit 1; }
+rl_require CLUSTER SERVICE
 
 # Reuse the running service's task definition and networking so the one-off task
-# is identical to production in every way that matters — same image, same
-# database secret, same security group.
+# is identical to the environment it targets in every way that matters — same
+# image, same database secret, same security group.
 SERVICE_JSON=$(aws ecs describe-services --cluster "$CLUSTER" --services "$SERVICE" \
   --query 'services[0]' --output json)
 
@@ -77,7 +89,7 @@ TASK_DEF=$(echo "$SERVICE_JSON" | jq -r '.taskDefinition')
 # parser mangles nested lists and reports a nonsense security-group id.
 NETWORK=$(echo "$SERVICE_JSON" | jq -c '{awsvpcConfiguration: .networkConfiguration.awsvpcConfiguration}')
 
-echo "==> $ACTION  (one-off task in the API's VPC)"
+echo "==> $ACTION on $ENVIRONMENT  (one-off task in the API's VPC)"
 echo "    task definition: ${TASK_DEF##*/}"
 
 case "$ACTION" in
@@ -125,7 +137,7 @@ echo "──────────────── output ──────
 # `--output text` joins events with tabs, which flattens multi-line Prisma
 # output onto one line; JSON keeps one message per line.
 aws logs get-log-events \
-  --log-group-name "/rooferslabs-production/api" \
+  --log-group-name "${LOG_GROUP:-/rooferslabs-$ENVIRONMENT/api}" \
   --log-stream-name "api/api/$TASK_ID" \
   --limit 200 --query 'events[].message' --output json 2>/dev/null |
   jq -r '.[]' | grep -v '^npm notice' | sed 's/^/  /' ||
@@ -136,4 +148,4 @@ if [ "$EXIT_CODE" != "0" ]; then
   echo "error: the task exited $EXIT_CODE." >&2
   exit 1
 fi
-echo "✅ $ACTION completed against production."
+echo "✅ $ACTION completed against $ENVIRONMENT."
