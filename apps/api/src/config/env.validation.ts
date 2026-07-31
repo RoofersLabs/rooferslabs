@@ -10,13 +10,20 @@
  * mandatory in production while PAYMENTS_ENABLED is on, and not required at all
  * when it is off. A dormant provider's variables are never required — which is
  * what lets the platform run with no Stripe account whatsoever.
+ *
+ * "Production" here means any DEPLOYED environment, not NODE_ENV=production.
+ * The development environment runs with NODE_ENV=development so it keeps
+ * readable diagnostics, and it is still a real deployment serving a real
+ * database — so it is held to the same configuration standard. See
+ * environment-guard.ts.
  */
 import { PaymentProvider } from '@rooferslabs/shared';
 import { PROVIDER_REQUIRED_ENV, activePaymentProvider, isPaymentsEnabled } from './payments.flag';
+import { assertEnvironmentIsolation, resolveEnvironment } from './environment-guard';
 
 const REQUIRED_ALWAYS = ['DATABASE_URL'] as const;
 
-const REQUIRED_IN_PRODUCTION = [
+const REQUIRED_WHEN_DEPLOYED = [
   'CLERK_SECRET_KEY',
   'CLERK_PUBLISHABLE_KEY',
   'REDIS_URL',
@@ -44,8 +51,13 @@ const DEV_HINTS: Record<PaymentProvider, Record<string, string>> = {
 };
 
 export function validateEnv(config: Record<string, unknown>): Record<string, unknown> {
-  const isProduction = (config.NODE_ENV ?? 'development') === 'production';
   const env = config as NodeJS.ProcessEnv;
+  // Throws on an APP_ENV that names no tier — before anything else reads it.
+  const { tier, isDeployed } = resolveEnvironment(env);
+  // A process wired to the other environment's database must never reach the
+  // point of serving a request, so this is the first thing checked.
+  assertEnvironmentIsolation(tier, env);
+
   const paymentsEnabled = isPaymentsEnabled(env);
   // Throws on an unrecognized value, which is deliberate: booting against a
   // processor nobody chose is worse than failing the deployment.
@@ -56,11 +68,11 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
     if (!config[key]) missing.push(key);
   }
 
-  if (isProduction) {
-    for (const key of REQUIRED_IN_PRODUCTION) {
+  if (isDeployed) {
+    for (const key of REQUIRED_WHEN_DEPLOYED) {
       if (!config[key]) missing.push(key);
     }
-    // Billing gates every tenant's access to the product, so a production boot
+    // Billing gates every tenant's access to the product, so a deployed boot
     // with payments ON but no working provider would lock every customer out —
     // fail fast. Only the active provider's variables are checked; the dormant
     // one's are never needed, so the platform boots without that account at all.
@@ -79,6 +91,10 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
   }
 
   // The structured logger is not constructed yet at env-validation time.
+  // Which environment a container thinks it is is the first thing anyone reads
+  // when a deploy behaves unexpectedly, so it leads the boot output.
+  console.warn(`[env] Deployment tier: ${tier}${isDeployed ? '' : ' (local)'}.`);
+
   if (!paymentsEnabled) {
     // Operationally load-bearing: with the wall down every tenant reaches the
     // product for free, so it must be obvious in the boot logs why.
@@ -92,7 +108,7 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
   }
 
   const hints = paymentsEnabled ? DEV_HINTS[provider] : {};
-  const warnings = isProduction ? FEATURE_CREDENTIALS : { ...FEATURE_CREDENTIALS, ...hints };
+  const warnings = isDeployed ? FEATURE_CREDENTIALS : { ...FEATURE_CREDENTIALS, ...hints };
   for (const [key, consequence] of Object.entries(warnings)) {
     if (!config[key]) {
       console.warn(`[env] ${key} is not set — ${consequence}.`);

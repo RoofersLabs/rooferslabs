@@ -8,14 +8,28 @@ import { AppConfigService } from './app-config.service';
  * Global configuration module. Loads and validates environment variables once
  * and exposes the typed {@link AppConfigService} everywhere.
  */
+/**
+ * Env files, most specific first — Nest keeps the first definition of a key.
+ *
+ * `.env.<tier>` lets one machine hold configuration for more than one
+ * environment without editing a file between runs; `.env` remains the single
+ * file most local work needs. Deployed environments have no env file at all:
+ * ECS injects plain values from the task definition and secrets from Secrets
+ * Manager, so this list simply finds nothing there.
+ */
+const envFilePath = (): string[] => {
+  const tier = process.env.APP_ENV?.trim().toLowerCase();
+  const tierFiles = tier ? [`.env.${tier}`, `../../.env.${tier}`] : [];
+  return [...tierFiles, '.env', '../../.env'];
+};
+
 @Global()
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
-      // Root .env is the single source of truth for local development.
-      envFilePath: ['.env', '../../.env'],
+      envFilePath: envFilePath(),
       load: [() => ({ config: configuration() })],
       validate: validateEnv,
     }),

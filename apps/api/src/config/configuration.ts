@@ -7,6 +7,7 @@
  */
 import { BillingInterval, PaymentProvider, SubscriptionPlan } from '@rooferslabs/shared';
 import { activePaymentProvider, isPaymentsEnabled } from './payments.flag';
+import { type DeploymentTier, resolveEnvironment } from './environment-guard';
 
 /**
  * Price identifiers for every plan/interval a provider offers.
@@ -19,7 +20,17 @@ import { activePaymentProvider, isPaymentsEnabled } from './payments.flag';
 export type PriceTable = Record<SubscriptionPlan, Record<BillingInterval, string>>;
 
 export interface AppConfig {
+  /** The Node runtime mode (NODE_ENV): how libraries and diagnostics behave. */
   env: 'development' | 'test' | 'production';
+  /**
+   * Which deployed environment this is (APP_ENV): whose data it may touch.
+   *
+   * Distinct from `env` because the development environment runs with
+   * NODE_ENV=development while being a real deployment. See environment-guard.ts.
+   */
+  tier: DeploymentTier;
+  /** True in any deployed environment; false on a developer's machine. */
+  isDeployed: boolean;
   isProduction: boolean;
   api: {
     port: number;
@@ -132,9 +143,15 @@ const toList = (value: string | undefined): string[] =>
 
 export default (): AppConfig => {
   const env = (process.env.NODE_ENV ?? 'development') as AppConfig['env'];
+  const { tier, isDeployed } = resolveEnvironment();
 
   return {
     env,
+    tier,
+    isDeployed,
+    // Stays keyed on NODE_ENV, not on the tier: this drives runtime behaviour
+    // (Swagger's CSP, log formatting), which is what NODE_ENV is for. Anything
+    // asking "which environment's data is this?" wants `tier`.
     isProduction: env === 'production',
     api: {
       port: Number(process.env.API_PORT ?? 4000),

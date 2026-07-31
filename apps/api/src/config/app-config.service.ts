@@ -19,6 +19,15 @@ export class AppConfigService {
     return this.root.env;
   }
 
+  /** Which deployed environment this is (APP_ENV), not the Node mode. */
+  get tier(): AppConfig['tier'] {
+    return this.root.tier;
+  }
+
+  get isDeployed(): boolean {
+    return this.root.isDeployed;
+  }
+
   get isProduction(): boolean {
     return this.root.isProduction;
   }

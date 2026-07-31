@@ -115,7 +115,8 @@ async function bootstrap(): Promise<void> {
 
   await app.listen(config.api.port, '0.0.0.0');
   logger.log(
-    `rooferslabs API listening on ${config.api.publicUrl} (env: ${config.env}) — docs at /docs`,
+    `rooferslabs API listening on ${config.api.publicUrl} ` +
+      `(tier: ${config.tier}, node: ${config.env}) — docs at /docs`,
     'Bootstrap',
   );
 }

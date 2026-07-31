@@ -107,3 +107,50 @@ describe('validateEnv — billing requirements', () => {
     expect(() => validateEnv({ DATABASE_URL: 'postgresql://localhost:5432/db' })).not.toThrow();
   });
 });
+
+describe('validateEnv — deployment tier', () => {
+  /** The development environment: a real deployment, running NODE_ENV=development. */
+  const deployedDevelopment = {
+    APP_ENV: 'development',
+    NODE_ENV: 'development',
+    DATABASE_URL: 'postgresql://u:p@rooferslabs-development.x.rds.amazonaws.com:5432/db',
+    CLERK_SECRET_KEY: 'sk_test',
+    CLERK_PUBLISHABLE_KEY: 'pk_test',
+    REDIS_URL: 'redis://localhost:6379',
+    API_PUBLIC_URL: 'https://api.dev.example.com',
+    WEB_PUBLIC_URL: 'https://dev.example.com',
+    PAYMENTS_ENABLED: 'false',
+  };
+
+  it('holds a deployed development environment to the full configuration check', () => {
+    // The point of separating APP_ENV from NODE_ENV. Before it, running the
+    // development environment with NODE_ENV=development meant a missing Clerk
+    // key booted fine and failed on the first sign-in instead.
+    expect(() => validateEnv({ ...deployedDevelopment, CLERK_SECRET_KEY: '' })).toThrow(
+      /CLERK_SECRET_KEY/,
+    );
+
+    expect(() => validateEnv({ ...deployedDevelopment })).not.toThrow();
+  });
+
+  it('still exempts a developer machine, which sets neither variable', () => {
+    expect(() => validateEnv({ DATABASE_URL: 'postgresql://localhost:5432/db' })).not.toThrow();
+  });
+
+  it('refuses to boot when the database belongs to the other environment', () => {
+    // The failure this whole environment split exists to make impossible.
+    expect(() =>
+      validateEnv({
+        ...deployedDevelopment,
+        DATABASE_URL: 'postgresql://u:p@rooferslabs-production.x.rds.amazonaws.com:5432/db',
+      }),
+    ).toThrow(/Environment isolation violated/);
+  });
+
+  it('reports the tier on boot', () => {
+    validateEnv({ ...deployedDevelopment });
+    expect(console.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Deployment tier: development'),
+    );
+  });
+});
