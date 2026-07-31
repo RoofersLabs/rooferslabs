@@ -74,14 +74,7 @@ export function useCardCarousel(
       const target = track?.children[to];
       if (!track || !target) return;
 
-      // Scroll by the distance to the target's snap position rather than
-      // setting an absolute offset: the track's own scroll-padding is the
-      // alignment reference, and reading it keeps this correct if the gutter
-      // changes at a breakpoint. Mandatory snapping settles any rounding.
-      const padding = parseFloat(getComputedStyle(track).scrollPaddingLeft) || 0;
-      const left =
-        target.getBoundingClientRect().left - track.getBoundingClientRect().left - padding;
-
+      const left = centerDelta(track.getBoundingClientRect(), target.getBoundingClientRect());
       track.scrollBy({ left, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
     },
     [ref],
@@ -130,6 +123,31 @@ export function useCardCarousel(
     previous,
     handlers: { onScroll: sync, onKeyDown },
   };
+}
+
+/** The horizontal span of a box, in the two fields this module reads from a rect. */
+interface Span {
+  left: number;
+  width: number;
+}
+
+/**
+ * How far to scroll to put `target` in the middle of `view`.
+ *
+ * Centre-to-centre is the same measurement the browser makes for
+ * `scroll-snap-align: center`, so a button press lands exactly on the snap
+ * position rather than near it — near it would arrive, stop, and then be
+ * visibly tugged the rest of the way by mandatory snapping.
+ *
+ * Taking two rects rather than the elements keeps it free of layout and free of
+ * assumptions: the old version read `scroll-padding` off the track and added it
+ * to a left edge, which was only correct while the slides were start-aligned and
+ * silently wrong the moment they were not. This holds across the `sm:` gutter
+ * change, a rotation, and any later change to the track's padding, because it
+ * asks the geometry instead of predicting it.
+ */
+export function centerDelta(view: Span, target: Span): number {
+  return target.left + target.width / 2 - (view.left + view.width / 2);
 }
 
 /**

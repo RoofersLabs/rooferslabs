@@ -61,14 +61,22 @@ export function PriorityLeads({ leads, isLoading }: { leads: PriorityLead[]; isL
 /**
  * The scroll track: one row of cards the browser scrolls and snaps itself.
  *
- * Reading it outwards —
+ * The geometry is what makes every card come to rest dead centre, so it is
+ * worth stating exactly. Writing V for the viewport width:
  *
- *   `-mx-4 px-4` bleeds the track through the page gutter to the screen edge
- *   and puts the gutter back as padding, so a snapped card lines up with every
- *   section above and below it while the card behind it runs off the display
- *   rather than stopping at an invisible margin. `scroll-px-4` makes that same
- *   gutter the snap reference, so "aligned" means aligned to the page, not to
- *   the track's border. Both step at `sm:` because the shell's gutter does.
+ *   `-mx-4` cancels the shell's 16px page gutter, so the track's border box is
+ *   exactly V and a card behind the active one runs off the display rather than
+ *   stopping at an invisible margin.
+ *
+ *   `px-8` then puts 32px back as padding, which leaves a content box of V-64.
+ *   A slide is `w-full` of that, so the leftover is 32px — and it is split
+ *   evenly either side only because the padding is what created it. That is the
+ *   whole trick: the first card is centred at scroll offset 0 and the last at
+ *   maximum scroll, with no scripted correction and nothing to settle on load.
+ *
+ *   Both step at `sm:` because the shell's gutter does, keeping the same
+ *   proportions on the larger phones and small tablets this section still
+ *   covers (it is hidden from `lg` up).
  *
  *   `-my-2 py-2` is headroom, not spacing: `overflow-y-hidden` clips at the
  *   padding box, and without 8px of it the cards' `shadow-card` would be shaved
@@ -81,16 +89,26 @@ export function PriorityLeads({ leads, isLoading }: { leads: PriorityLead[]; isL
  *   is set: the browser locks the gesture to an axis on its own, and taking that
  *   over would trap a downward flick that happened to start on a card.
  *
+ *   No scroll-padding: the snapport is the full scrollport, so "centred in the
+ *   snapport" and "centred on screen" are the same statement. The gutter-sized
+ *   scroll-padding this track used to carry existed to align a start-snapped
+ *   card to the page gutter, and would now only be a second, redundant
+ *   definition of the centre. (Spelling the old utility out here would also be
+ *   enough for Tailwind's scanner to keep emitting a rule nothing uses — it
+ *   reads comments too.)
+ *
  *   `overscroll-x-contain` keeps a swipe past the last card from reaching the
- *   browser's back-navigation gesture.
+ *   browser's back-navigation gesture, while leaving the rubber-band at the ends
+ *   intact — that bounce is the platform telling the reader they have run out of
+ *   leads, and removing it reads as a stuck scroller rather than a polished one.
  *
  * The scrollbar is hidden four ways because no single property covers Firefox,
  * legacy Edge and WebKit. `-webkit-overflow-scrolling` buys momentum on older
  * iOS; current Safari does it by default.
  */
 const TRACK = [
-  '-mx-4 -my-2 flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-px-4 px-4 py-2',
-  'sm:-mx-6 sm:scroll-px-6 sm:px-6',
+  '-mx-4 -my-2 flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain px-8 py-2',
+  'sm:-mx-6 sm:px-10',
   '[-ms-overflow-style:none] [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
   // The track is focusable, so it must show a ring — drawn inside its own box
   // because the box now reaches the screen edge, where an outset ring would be
@@ -101,17 +119,22 @@ const TRACK = [
 /**
  * One slide.
  *
- * `calc(100% - 2.5rem)` is the card at nearly the full width it had as a static
- * block, minus just enough for the next card's edge to show past the gutter —
- * the only cue that a swipe is available, and cheaper than a row of dots.
+ * `w-full` is the track's content box, which the padding above has already
+ * sized to leave 32px of viewport either side of a centred card — wide enough
+ * to be the page's subject, inset enough not to run to the edges. With a 12px
+ * gap that leaves 20px of the neighbouring card showing, which is the only cue
+ * needed that a swipe is available and cheaper than a row of dots.
+ *
+ * `snap-center` rather than `snap-start`: there is one card to read at a time,
+ * so its resting place is the middle of the screen. Every slide takes the same
+ * alignment — the first and last included, because the track's padding gives
+ * them the scroll room to reach it, which is what a `last:snap-end` exception
+ * used to be compensating for.
  *
  * `snap-always` forbids skipping a snap point, so a hard flick advances exactly
- * one card instead of throwing three past the eye. `last:snap-end` gives the
- * final card a snap position it can actually reach: aligned to the start it
- * would need 2.5rem of scroll room that does not exist, so it would come to
- * rest fractionally off — the one place this layout could show a partial card.
+ * one card instead of throwing three past the eye.
  */
-const SLIDE = 'w-[calc(100%-2.5rem)] shrink-0 snap-start snap-always last:snap-end';
+const SLIDE = 'w-full shrink-0 snap-center snap-always';
 
 /**
  * The leads as a horizontal carousel: one card at a time, swiped through.
@@ -199,9 +222,15 @@ function LeadCarousel({ leads }: { leads: PriorityLead[] }) {
  * who called, how to reach them, where the property is, how urgent it is, why
  * they called, and the one action that matters.
  *
- * Gaps widen on the way down — 4px inside the identity block, 16px to the
- * priority, 20px to the summary, 24px to the button — so the eye is handed
+ * Gaps widen on the way down — 8px inside the identity block, 20px to the
+ * priority, 24px to the summary, 32px to the button — so the eye is handed
  * from section to section instead of meeting one even column of text.
+ *
+ * Those figures, and the 28/32px gutters below, are what make the card tall.
+ * The height is a consequence of the content being given room to separate,
+ * never of a minimum: a card padded out to a fixed height would print its
+ * slack as a blank band above the button on every lead with a short summary,
+ * which is the compressed-then-empty look this spacing exists to avoid.
  */
 function LeadCard({
   lead,
@@ -214,15 +243,18 @@ function LeadCard({
 }) {
   return (
     // Border, surface and shadow are the Card's untouched defaults; only the
-    // radius steps to 14px and the padding to 24px. The portrait proportion
-    // comes from the stacked content, not from a width constraint — the slide
-    // sets the width, and the card fills it.
+    // radius steps to 14px and the gutters to 28px across and 32px down. The
+    // extra height goes on the vertical axis because that is the axis the card
+    // was short on — 28px across keeps the text measure comfortable on a 360px
+    // phone, where 32px would start to narrow the summary. The portrait
+    // proportion comes from the stacked content, not from a width constraint:
+    // the slide sets the width, and the card fills it.
     //
     // `h-full` is the one addition the carousel asks for: slides are flex items
     // and stretch to the tallest, so without it a lead with no summary would
     // leave a short card floating in a tall row. Filling instead means the
     // section's height is fixed and swiping never resizes the page underneath.
-    <Card as="article" className="h-full rounded-lg p-6">
+    <Card as="article" className="h-full rounded-lg px-7 py-8">
       <div className="flex items-start justify-between gap-3">
         <h3 className="min-w-0 flex-1 truncate text-h4 text-ink">{lead.name}</h3>
         {/* Position, not progress dots: "4 of 18" says how much work is left,
@@ -233,27 +265,28 @@ function LeadCard({
       </div>
 
       {/* Identity block: the number and the address belong to the name above
-          them, so they sit tight to it and the next section opens the gap. */}
+          them, so they sit tighter to it than any section gap on the card —
+          close enough to read as one unit, far enough not to crowd the name. */}
       {lead.phone && (
-        <p className="font-num mt-1 text-small text-ink-muted">{formatPhone(lead.phone)}</p>
+        <p className="font-num mt-2 text-small text-ink-muted">{formatPhone(lead.phone)}</p>
       )}
 
       {lead.address && (
-        <p className="mt-1 line-clamp-2 text-small text-ink-muted">{lead.address}</p>
+        <p className="mt-1.5 line-clamp-2 text-small text-ink-muted">{lead.address}</p>
       )}
 
       {/* `block` because a bare `<span>` is inline, and vertical margin does
           nothing on an inline box — the gap above would silently collapse. */}
-      <StatusLabel tone={TONES[lead.priority]} className="mt-4 block">
+      <StatusLabel tone={TONES[lead.priority]} className="mt-5 block">
         {lead.priority}
       </StatusLabel>
 
       {lead.summary && (
-        <div className="mt-5">
+        <div className="mt-6">
           <h4 className="text-caption font-semibold uppercase tracking-wide text-ink-faint">
             Call summary
           </h4>
-          <p className="mt-1.5 line-clamp-3 text-small text-ink-muted">{lead.summary}</p>
+          <p className="mt-2 line-clamp-3 text-small text-ink-muted">{lead.summary}</p>
         </div>
       )}
 
@@ -261,12 +294,12 @@ function LeadCard({
           conclusion rather than another line of content. Nothing here restyles
           the button: weight, radius and the white label all come from the
           primary variant, which is the only place they should come from.
-          `mt-auto pt-6` rather than `mt-6`: 24px is still the minimum gap, but
+          `mt-auto pt-8` rather than `mt-8`: 32px is still the minimum gap, but
           on a slide taller than its content — a lead with no summary beside one
           with three lines of it — the slack collects above the button instead
           of below it, so the action stays the card's last line and the call
           buttons line up as you swipe. */}
-      <div className="mt-auto flex justify-center pt-6">
+      <div className="mt-auto flex justify-center pt-8">
         {lead.phone ? (
           <a href={`tel:${lead.phone}`} className={buttonClass('primary', 'lg', 'w-4/5')}>
             Call Homeowner
@@ -301,15 +334,18 @@ function LeadSkeleton() {
 
 function LeadSkeletonCard() {
   return (
-    <Card className="rounded-lg p-6">
+    // Every metric here is `LeadCard`'s, down to the gutters: this is the shape
+    // the section holds while the request is in flight, so any figure that
+    // drifts from the real card is a jump at the moment the leads arrive.
+    <Card className="rounded-lg px-7 py-8">
       <Skeleton className="h-7 w-44" />
       <Skeleton className="mt-2 h-4 w-32" />
-      <Skeleton className="mt-2 h-4 w-52" />
-      <Skeleton className="mt-4 h-3 w-20" />
-      <Skeleton className="mt-5 h-3 w-24" />
-      <Skeleton className="mt-2.5 h-4 w-full" />
+      <Skeleton className="mt-1.5 h-4 w-52" />
+      <Skeleton className="mt-5 h-3 w-20" />
+      <Skeleton className="mt-6 h-3 w-24" />
+      <Skeleton className="mt-2 h-4 w-full" />
       <Skeleton className="mt-1.5 h-4 w-3/4" />
-      <div className="mt-auto flex justify-center pt-6">
+      <div className="mt-auto flex justify-center pt-8">
         <Skeleton className="h-12 w-4/5" />
       </div>
     </Card>
