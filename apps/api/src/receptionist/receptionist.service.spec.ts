@@ -5,7 +5,6 @@ import type { AppConfigService } from '../config/app-config.service';
 import type { CompaniesService } from '../companies/companies.service';
 import type { OpenAiService } from '../ai/openai.service';
 import type { RagService } from '../ai/rag.service';
-import { describe, it } from 'node:test';
 
 /**
  * These cover the strings the tools hand back to the model. They are not
@@ -265,4 +264,3 @@ describe('executeToolCall — appointment and emergency coaching', () => {
     expect((await service.executeToolCall('c1', signals, TOOL.END_CALL, {})).endCall).toBe(true);
   });
 });
-
