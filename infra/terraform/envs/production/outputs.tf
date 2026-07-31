@@ -1,6 +1,17 @@
 # =============================================================================
 # Outputs — everything the deploy script and Cloudflare setup need
 # =============================================================================
+# Kept name-for-name in step with envs/development/outputs.tf: the deploy
+# scripts resolve their configuration from `terraform output` and differ only by
+# which directory they point at.
+
+output "environment" {
+  value = var.environment
+}
+
+output "root_domain" {
+  value = var.root_domain
+}
 
 output "alb_dns_name" {
   description = "Create the Cloudflare CNAME: api.<domain> → this hostname. (The apex/www point at CloudFront — see web_cloudfront_domain — not the ALB.)"
@@ -24,6 +35,11 @@ output "api_service_name" {
   value = module.api_service.service_name
 }
 
+output "api_log_group_name" {
+  description = "CloudWatch log group the API writes to (db.sh reads one-off task output from it)."
+  value       = module.observability.log_group_names["api"]
+}
+
 output "api_url" {
   value = "https://${var.api_subdomain}.${var.root_domain}"
 }
@@ -31,6 +47,11 @@ output "api_url" {
 output "web_url" {
   description = "Canonical public site (apex), served from CloudFront. Point the Cloudflare CNAME(s) at web_cloudfront_domain."
   value       = "https://${var.root_domain}"
+}
+
+output "app_url" {
+  description = "Application hostname, an alias on the same distribution as the apex. Live only once enable_app_alias has been applied and the Cloudflare CNAME exists."
+  value       = "https://${var.app_subdomain}.${var.root_domain}"
 }
 
 output "admin_url" {
@@ -99,4 +120,49 @@ output "github_deploy_role_arn" {
 
 output "web_bucket_arn" {
   value = module.frontend.bucket_arn
+}
+
+# ---- Cloudflare --------------------------------------------------------------
+
+output "cloudflare_dns_records" {
+  description = "The records this environment needs in Cloudflare. Terraform manages no DNS; these are created by hand."
+  value = concat(
+    [
+      {
+        type    = "CNAME"
+        name    = "@"
+        content = module.frontend.distribution_domain_name
+        proxy   = "Proxied (orange cloud)"
+        serves  = "https://${var.root_domain}"
+      },
+      {
+        type    = "CNAME"
+        name    = "www"
+        content = module.frontend.distribution_domain_name
+        proxy   = "Proxied (orange cloud)"
+        serves  = "https://www.${var.root_domain}"
+      },
+      {
+        type    = "CNAME"
+        name    = var.api_subdomain
+        content = module.alb.alb_dns_name
+        proxy   = "Proxied (orange cloud)"
+        serves  = "https://${var.api_subdomain}.${var.root_domain}"
+      },
+    ],
+    var.enable_app_alias ? [{
+      type    = "CNAME"
+      name    = var.app_subdomain
+      content = module.frontend.distribution_domain_name
+      proxy   = "Proxied (orange cloud)"
+      serves  = "https://${var.app_subdomain}.${var.root_domain}"
+    }] : [],
+    var.enable_admin_alias ? [{
+      type    = "CNAME"
+      name    = var.admin_subdomain
+      content = module.frontend.distribution_domain_name
+      proxy   = "Proxied (orange cloud)"
+      serves  = "https://${var.admin_subdomain}.${var.root_domain}"
+    }] : [],
+  )
 }

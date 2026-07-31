@@ -16,19 +16,23 @@ data "aws_caller_identity" "current" {}
 locals {
   name = "rooferslabs-${var.environment}"
 
-  # The three hostnames the platform is built around:
+  # The hostnames the platform is built around:
   #   <root>        the customer application (this SPA)
+  #   app.<root>    the same SPA under an application-shaped name
   #   admin.<root>  the internal admin portal — not built yet, see below
-  #   api.<root>    the shared backend both of them call
+  #   api.<root>    the backend all of them call
   api_domain   = "${var.api_subdomain}.${var.root_domain}"
+  app_domain   = "${var.app_subdomain}.${var.root_domain}"
   admin_domain = "${var.admin_subdomain}.${var.root_domain}"
   api_url      = "https://${local.api_domain}"
+  app_url      = "https://${local.app_domain}"
   admin_url    = "https://${local.admin_domain}"
   root_url     = "https://${var.root_domain}"
 
-  # WEB_PUBLIC_URL is the canonical public origin of the customer app, now the
-  # apex. The legacy app.<domain> origin has been dropped: it resolves to
-  # nothing, so it could not have been an origin for any live request.
+  # WEB_PUBLIC_URL is the canonical public origin of the customer app: the apex,
+  # which is what sign-in redirects and emailed links resolve to. `app.<domain>`
+  # is an additional alias on the same distribution serving the same build, so
+  # it is a CORS origin but never the canonical one.
   #
   # `admin.<domain>` is allowed ahead of the portal existing so the API needs no
   # infrastructure change on the day it ships. Allowing an origin that nobody
@@ -39,6 +43,7 @@ locals {
   cors_origins = join(",", [
     local.root_url,
     "https://www.${var.root_domain}",
+    local.app_url,
     local.admin_url,
   ])
 }
@@ -143,11 +148,13 @@ module "frontend" {
   name        = local.name
   bucket_name = "${local.name}-web-${data.aws_caller_identity.current.account_id}"
 
-  # The SPA is served from the apex + www, and — once enabled — the admin host.
-  # One distribution, one bucket, one build: the admin portal is a route inside
-  # this SPA, so a second distribution would serve identical bytes.
+  # The SPA is served from the apex + www, and — once enabled — the app and
+  # admin hosts. One distribution, one bucket, one build: every one of these is
+  # a route inside this SPA, so a second distribution would serve identical
+  # bytes at twice the cost and half the certainty they match.
   domain_aliases = concat(
     [var.root_domain, "www.${var.root_domain}"],
+    var.enable_app_alias ? [local.app_domain] : [],
     var.enable_admin_alias ? [local.admin_domain] : [],
   )
 
@@ -155,6 +162,7 @@ module "frontend" {
   # validate while the live site keeps serving on the one it already has.
   certificate_domains = concat(
     [var.root_domain, "www.${var.root_domain}"],
+    var.request_app_certificate ? [local.app_domain] : [],
     var.request_admin_certificate ? [local.admin_domain] : [],
   )
 
@@ -341,7 +349,12 @@ module "api_service" {
   log_group_name     = module.observability.log_group_names["api"]
 
   environment = {
+    # NODE_ENV is the Node runtime mode; APP_ENV is the deployment tier. They
+    # coincide here and diverge in development (NODE_ENV=development,
+    # APP_ENV=development), which is why the API reads the tier from APP_ENV and
+    # not from NODE_ENV. See apps/api/src/config/environment-guard.ts.
     NODE_ENV                = "production"
+    APP_ENV                 = "production"
     API_PORT                = "4000"
     API_PUBLIC_URL          = local.api_url
     WEB_PUBLIC_URL          = local.web_public_url

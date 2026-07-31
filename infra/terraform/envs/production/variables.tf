@@ -28,6 +28,12 @@ variable "api_subdomain" {
   default = "api"
 }
 
+variable "app_subdomain" {
+  description = "Application hostname served from the same distribution as the apex (app.<root_domain>)."
+  type        = string
+  default     = "app"
+}
+
 variable "admin_subdomain" {
   description = "Internal admin portal subdomain. Allowed in CORS ahead of the portal being built; nothing is provisioned for it yet."
   type        = string
@@ -41,6 +47,31 @@ variable "enable_https" {
 }
 
 # ---- Frontend (S3 + CloudFront) ----------------------------------------------
+
+variable "request_app_certificate" {
+  description = <<-EOT
+    Stage 1 of exposing app.<root_domain>: add it to the ACM certificate.
+
+    Replaces the certificate, so the new one is PENDING_VALIDATION until its
+    CNAMEs are added in Cloudflare. The distribution keeps serving the apex on
+    the certificate it already has throughout. Run
+    infra/scripts/enable-app-domain.sh rather than flipping this by hand — it
+    applies the stages in the right order and prints the records to add.
+  EOT
+  type        = bool
+  default     = false
+}
+
+variable "enable_app_alias" {
+  description = <<-EOT
+    Stage 2: attach app.<root_domain> to the distribution. Only set this once
+    the certificate from stage 1 reports ISSUED, or CloudFront rejects the
+    alias and the apply fails with the site still serving (no outage, but a
+    wasted 20 minutes).
+  EOT
+  type        = bool
+  default     = false
+}
 
 variable "request_admin_certificate" {
   description = <<-EOT
@@ -370,9 +401,22 @@ variable "github_repository" {
 }
 
 variable "github_deploy_branches" {
-  description = "Branches allowed to deploy. A run on any other ref cannot assume the role."
+  description = <<-EOT
+    Branches allowed to deploy PRODUCTION. A run on any other ref cannot assume
+    the role, so it could not deploy here even if its configuration told it to.
+
+    This is `main` alone, and the reason is not stylistic: while it also listed
+    `develop`, a push to develop deployed straight to rooferslabs.com. The
+    development environment has its own role in envs/development, trusting
+    `develop` alone.
+  EOT
   type        = list(string)
-  default     = ["main", "develop"]
+  default     = ["main"]
+
+  validation {
+    condition     = !contains(var.github_deploy_branches, "develop")
+    error_message = "develop deploys development. Trusting it here is how a work-in-progress branch reaches customers."
+  }
 }
 
 variable "github_org_id" {
