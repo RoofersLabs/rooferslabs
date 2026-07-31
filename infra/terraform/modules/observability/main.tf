@@ -40,9 +40,13 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
   comparison_operator = "GreaterThanThreshold"
   treat_missing_data  = "notBreaching"
 
-  dimensions = {
-    LoadBalancer = var.alb_arn_suffix
-  }
+  # Adding the TargetGroup dimension selects a different CloudWatch time series:
+  # the 5xx responses from *these* tasks rather than from everything the load
+  # balancer fronts.
+  dimensions = merge(
+    { LoadBalancer = var.alb_arn_suffix },
+    var.target_group_arn_suffix != "" ? { TargetGroup = var.target_group_arn_suffix } : {},
+  )
 
   alarm_actions = local.alarm_actions
   ok_actions    = local.alarm_actions

@@ -1,0 +1,66 @@
+# =============================================================================
+# RoofersLabs development — copy to terraform.tfvars and fill in.
+# NEVER commit terraform.tfvars (it is gitignored).
+# =============================================================================
+# Every credential below must be a DEVELOPMENT credential. The plan refuses a
+# live Clerk key and a production Paddle environment outright; the rest (OpenAI,
+# Twilio) it cannot tell apart, so use separate keys and a Twilio subaccount.
+
+aws_region = "us-east-1"
+
+# The apex is production's. Development hangs off dev.<root_domain>.
+root_domain           = "rooferslabs.com"
+environment_subdomain = "dev"
+
+# The stack whose VPC and load balancer this environment borrows.
+shared_stack_name = "rooferslabs-production"
+
+# ---- Two-phase hostname enablement -------------------------------------------
+# Leave both false for the first apply. The ACM certificates are requested and
+# their validation CNAMEs appear in the outputs; add those in Cloudflare, wait
+# for ISSUED, then set both true and apply again. Nothing is attached to the
+# shared load balancer until enable_https = true, so production is unaffected
+# throughout.
+enable_https             = false
+enable_web_custom_domain = false
+
+# ---- External credentials ----------------------------------------------------
+
+# Clerk → the DEVELOPMENT instance → API Keys (pk_test_… / sk_test_…)
+clerk_secret_key      = "sk_test_xxxxxxxxxxxxxxxxxxxxxxxx"
+clerk_publishable_key = "pk_test_xxxxxxxxxxxxxxxxxxxxxxxx"
+# clerk_webhook_secret = "whsec_xxxxxxxxxxxxxxxxxxxxxxxx"
+
+# OpenAI → a key scoped to development, so spend is attributable.
+openai_api_key = "sk-xxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Twilio → a SUBACCOUNT, not the production account. Numbers pointed at this
+# environment's webhook must not be numbers customers call.
+twilio_account_sid = "ACxxxxxxxxxxxxxxxxxxxxxxxx"
+twilio_auth_token  = "xxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Web Push — generate a SEPARATE pair from production:
+#   npx web-push generate-vapid-keys
+vapid_public_key  = ""
+vapid_private_key = ""
+
+# ---- Billing (Paddle sandbox) ------------------------------------------------
+# paddle_environment is forced to "sandbox" by a precondition in main.tf.
+#
+# Set payments_enabled = false to run development with the payment wall down
+# (every tenant reaches the product without a subscription) — often what you
+# want while working on something that is not billing.
+payments_enabled = false
+
+# paddle_api_key                    = "pdl_sdbx_apikey_xxxxxxxx"
+# paddle_client_token               = "test_xxxxxxxx"
+# paddle_webhook_secret             = "pdl_ntfset_xxxxxxxx"
+# paddle_price_starter_monthly      = "pri_xxxxxxxx"
+# paddle_price_professional_monthly = "pri_xxxxxxxx"
+
+# ---- Optional tuning ---------------------------------------------------------
+
+# api_desired_count      = 1
+# db_deletion_protection = false
+# log_retention_days     = 7
+# alarm_email            = "you@example.com"
