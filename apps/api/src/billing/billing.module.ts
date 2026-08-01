@@ -1,44 +1,18 @@
-import { Module, type Type } from '@nestjs/common';
-import { PaymentProvider } from '@rooferslabs/shared';
+import { Module, type Provider, type Type } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { CompaniesModule } from '../companies/companies.module';
 import { activePaymentProvider, isPaymentsEnabled } from '../config/payments.flag';
 import { BillingController } from './billing.controller';
+import { PROVIDER_ADAPTERS } from './provider-adapters';
 import { PaymentsEnabledGuard } from './guards/payments-enabled.guard';
-import { BILLING_PROVIDER, type BillingProvider } from './interfaces/billing-provider.interface';
-import { PaddleProvider } from './providers/paddle/paddle.provider';
-import { StripeProvider } from './providers/stripe/stripe.provider';
+import { BILLING_PROVIDER } from './interfaces/billing-provider.interface';
+import { BillingProvisioningModule } from './provisioning/billing-provisioning.module';
 import { BillingRepository } from './repositories/billing.repository';
 import { InvoiceRepository } from './repositories/invoice.repository';
 import { WebhookEventRepository } from './repositories/webhook-event.repository';
 import { BillingService } from './services/billing.service';
+import { SubscriptionSweepService } from './services/subscription-sweep.service';
 import { WebhookProcessorService } from './services/webhook-processor.service';
-import { PaddleWebhookController } from './webhooks/paddle-webhook.controller';
-import { StripeWebhookController } from './webhooks/stripe-webhook.controller';
-
-/**
- * The adapter and webhook route for each processor.
- *
- * This table is the entire cost of supporting a payment provider. Adding one
- * means writing an adapter against {@link BillingProvider} and adding a row
- * here — no service, controller, repository, or page changes.
- *
- * Typing it as a total `Record<PaymentProvider, …>` means the compiler refuses
- * a new member of the enum until it has an implementation, so the two can never
- * drift apart.
- */
-const PROVIDER_ADAPTERS: Record<
-  PaymentProvider,
-  { adapter: Type<BillingProvider>; webhookController: Type<unknown> }
-> = {
-  [PaymentProvider.PADDLE]: {
-    adapter: PaddleProvider,
-    webhookController: PaddleWebhookController,
-  },
-  [PaymentProvider.STRIPE]: {
-    adapter: StripeProvider,
-    webhookController: StripeWebhookController,
-  },
-};
 
 /**
  * The provider this process bills through, resolved once at module construction.
@@ -62,13 +36,27 @@ const active = PROVIDER_ADAPTERS[activePaymentProvider()];
 const webhookControllers: Type<unknown>[] = isPaymentsEnabled() ? [active.webhookController] : [];
 
 /**
+ * The sweep that finalizes cancel-at-period-end, registered only when billing
+ * is on.
+ *
+ * With payments disabled there is no subscription to cancel and no provider
+ * client to cancel it with, so an hourly job would be pure noise — and would
+ * construct the very adapter the disabled flag promises is never constructed.
+ */
+const scheduledServices: Provider[] = isPaymentsEnabled() ? [SubscriptionSweepService] : [];
+
+/**
  * Billing.
  *
- * Exactly one adapter is registered — the dormant one is imported for its type
- * and its place in the table above, but is never listed as a provider, so Nest
- * never constructs it and nothing in the running process holds a reference to
- * it. That is what makes "Stripe is disabled" a structural fact rather than a
+ * Exactly one adapter is registered — the dormant one has a row in
+ * `provider-adapters.ts` and is compiled, but is never listed as a provider, so
+ * Nest never constructs it and nothing in the running process holds a reference
+ * to it. That is what makes "Stripe is disabled" a structural fact rather than a
  * convention.
+ *
+ * BillingProvisioningModule supplies the PayPal transport and the catalogue
+ * repository. Importing it rather than redeclaring those providers is what makes
+ * the running API and `billing:paypal:setup` resolve the same classes.
  *
  * CompaniesModule is imported for phone-number provisioning on subscription
  * activation; it has no imports of its own, so no cycle.
@@ -77,9 +65,10 @@ const webhookControllers: Type<unknown>[] = isPaymentsEnabled() ? [active.webhoo
  * via PaymentsEnabledGuard, so a client gets a clear reason rather than a 404.
  */
 @Module({
-  imports: [CompaniesModule],
+  imports: [CompaniesModule, BillingProvisioningModule, ScheduleModule.forRoot()],
   controllers: [BillingController, ...webhookControllers],
   providers: [
+    ...(active.collaborators ?? []),
     active.adapter,
     { provide: BILLING_PROVIDER, useExisting: active.adapter },
     BillingService,
@@ -88,10 +77,8 @@ const webhookControllers: Type<unknown>[] = isPaymentsEnabled() ? [active.webhoo
     InvoiceRepository,
     WebhookEventRepository,
     PaymentsEnabledGuard,
+    ...scheduledServices,
   ],
   exports: [BillingService],
 })
 export class BillingModule {}
-
-/** Exported for the test that asserts every provider has an implementation. */
-export { PROVIDER_ADAPTERS };

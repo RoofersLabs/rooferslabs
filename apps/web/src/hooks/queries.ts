@@ -25,6 +25,7 @@ import type {
   KnowledgeArticle,
   Notification,
   PhoneNumberSummary,
+  PlanChangeResult,
   ReceptionistStatus,
   Session,
   SubscriptionSummary,
@@ -228,11 +229,11 @@ export function useCompleteOnboarding() {
 // changes nothing here.
 
 /**
- * What the browser needs to open a checkout.
+ * What the browser is told about billing.
  *
- * Long-lived: the token and environment only change when someone rotates
- * credentials, so this is fetched once and reused rather than re-requested on
- * every mount of the payment page.
+ * Long-lived: which provider is active and which estate it points at only
+ * change on a redeploy, so this is fetched once and reused rather than
+ * re-requested on every mount of the payment page.
  */
 export function useBillingConfig() {
   return useQuery({
@@ -265,13 +266,39 @@ export function useInvoices() {
 }
 
 /**
- * Start a checkout. Returns a handle the caller passes to `openCheckout`,
- * which decides between an in-page overlay and a redirect.
+ * Start a checkout. Returns the URL to send the browser to.
+ *
+ * Nothing is charged by this call — it creates the subscription in a pending
+ * state, and the payer approves it at the provider. Activation arrives later by
+ * webhook, so a successful return here is never treated as proof of payment.
  */
 export function useCreateCheckoutSession() {
   return useMutation({
     mutationFn: (selection: { plan: SubscriptionPlan; interval?: BillingInterval }) =>
       api.post<CheckoutHandle>('/billing/checkout-session', selection),
+  });
+}
+
+/**
+ * Confirm the subscription the provider redirected back with.
+ *
+ * Closes the window between the payer approving at PayPal and the activation
+ * webhook arriving. Without it the billing page can only poll and hope; with it
+ * the tenant's real state is known on the first render after the redirect.
+ *
+ * Grants nothing — the server re-reads the subscription from the provider and
+ * stores what it says, exactly as the webhook would.
+ */
+export function useConfirmCheckout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (subscriptionId: string) =>
+      api.post<SubscriptionSummary>('/billing/checkout/confirm', { subscriptionId }),
+    onSuccess: (subscription) => {
+      qc.setQueryData(queryKeys.subscription, subscription);
+      void qc.invalidateQueries({ queryKey: queryKeys.session });
+      void qc.invalidateQueries({ queryKey: queryKeys.invoices });
+    },
   });
 }
 
@@ -282,14 +309,25 @@ export function useCreatePortalSession() {
   });
 }
 
-/** Move to a different plan. Upgrades apply now, downgrades at renewal. */
+/**
+ * Move to a different plan. Upgrades apply now, downgrades at renewal.
+ *
+ * May come back with an `approvalUrl`, which means the change has NOT happened
+ * yet: the provider needs the payer to consent first. The caller is responsible
+ * for sending the browser there — see BillingPage.
+ */
 export function useChangePlan() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (selection: { plan: SubscriptionPlan; interval?: BillingInterval }) =>
-      api.post<SubscriptionSummary>('/billing/subscription/plan', selection),
-    onSuccess: (subscription) => {
-      qc.setQueryData(queryKeys.subscription, subscription);
+      api.post<PlanChangeResult>('/billing/subscription/plan', selection),
+    onSuccess: ({ approvalUrl, ...subscription }) => {
+      // Only cache the subscription when it is the final answer. Writing a
+      // pending change into the cache would show the tenant a plan they have not
+      // agreed to pay for yet.
+      if (!approvalUrl) {
+        qc.setQueryData(queryKeys.subscription, subscription);
+      }
       void qc.invalidateQueries({ queryKey: queryKeys.invoices });
       void qc.invalidateQueries({ queryKey: queryKeys.session });
     },

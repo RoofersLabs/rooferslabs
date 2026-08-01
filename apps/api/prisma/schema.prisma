@@ -345,7 +345,7 @@ model Subscription {
   id                     String             @id @default(cuid())
   companyId              String             @unique
   /// Which processor issued the identifiers below.
-  provider               PaymentProvider    @default(PADDLE)
+  provider               PaymentProvider    @default(PAYPAL)
   providerCustomerId     String
   providerSubscriptionId String?
   providerPriceId        String?
@@ -416,6 +416,46 @@ model Invoice {
 /// turns "have I already handled this?" into a database-enforced question
 /// rather than an application-level guess.
 ///
+/// What the provisioner created at the payment provider, so the application can
+/// find it again.
+///
+/// The provider is still the source of truth — this table records *which* of its
+/// objects are ours. Without it the identifiers would have to be pasted into
+/// environment variables by hand, which is the manual step this exists to
+/// remove: `npm run billing:paypal:setup` writes these rows, and the API reads
+/// them.
+///
+/// Scoped by `environment` as well as `provider`, because a sandbox plan id and
+/// a live one are different objects that must never be confused. Charging a live
+/// customer against a sandbox plan fails; charging a sandbox test against a live
+/// plan takes real money.
+model BillingCatalog {
+  id          String          @id @default(cuid())
+  provider    PaymentProvider
+  /// `sandbox` or `live`. Not an enum: it is the provider's own word for its
+  /// estate, and providers do not agree on the vocabulary.
+  environment String
+  /// The logical name this deployment knows the object by — `product`,
+  /// `plan:STARTER:MONTH`, `webhook`. Stable across re-provisioning.
+  key         String
+  /// The identifier the provider issued: `P-…` for a plan, a webhook id, etc.
+  externalId  String
+  /// A hash of what we asked the provider to create.
+  ///
+  /// Lets the provisioner notice that the desired catalogue has changed — a new
+  /// price, a renamed plan — and say so, rather than silently continuing to bill
+  /// the old object because a row already existed.
+  fingerprint String
+  /// Anything worth reading back without another API call (amount, currency,
+  /// interval). Never a credential.
+  metadata    Json?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([provider, environment, key])
+  @@map("billing_catalog")
+}
+
 /// It doubles as the audit trail: a failed event keeps its error and attempt
 /// count, so a delivery that never succeeded is visible rather than lost.
 model WebhookEvent {
@@ -637,7 +677,7 @@ enum SubscriptionPlan {
 /// The payment processor that issued a record's identifiers. Exactly one is
 /// active at a time (the API's PAYMENT_PROVIDER); the others stay readable.
 enum PaymentProvider {
-  PADDLE
+  PAYPAL
   STRIPE
 }
 

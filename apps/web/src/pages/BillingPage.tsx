@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, CreditCard } from 'lucide-react';
@@ -16,6 +16,7 @@ import { LoadingBlock } from '@/components/ui/spinner';
 import {
   queryKeys,
   useCancelSubscription,
+  useConfirmCheckout,
   useCreatePortalSession,
   useInvoices,
   useResumeSubscription,
@@ -51,7 +52,7 @@ const STATUS_HELP: Partial<Record<SubscriptionStatus, string>> = {
   [SubscriptionStatus.PAST_DUE]:
     'The last payment failed. Update your payment method to restore access.',
   [SubscriptionStatus.UNPAID]:
-    'An invoice remains unpaid. Settle it in the billing portal to restore access.',
+    'A payment remains outstanding. Settle it with your payment provider to restore access.',
   [SubscriptionStatus.CANCELED]: 'This subscription has ended. Your data is safe and untouched.',
   [SubscriptionStatus.PAUSED]: 'This subscription is paused.',
 };
@@ -59,6 +60,12 @@ const STATUS_HELP: Partial<Record<SubscriptionStatus, string>> = {
 export function BillingPage() {
   const [params] = useSearchParams();
   const returningFromCheckout = params.get('checkout') === 'success';
+  /**
+   * PayPal appends the subscription it just created to the return URL. It is a
+   * hint, not proof — the server re-reads the subscription from PayPal and
+   * checks it belongs to this tenant before believing a word of it.
+   */
+  const returnedSubscriptionId = params.get('subscription_id');
   const queryClient = useQueryClient();
 
   // Activation happens on the webhook, which can land after the browser is
@@ -68,8 +75,29 @@ export function BillingPage() {
   const portal = useCreatePortalSession();
   const cancel = useCancelSubscription();
   const resume = useResumeSubscription();
+  const confirm = useConfirmCheckout();
 
   const isActive = subscription.data?.isActive ?? false;
+
+  /**
+   * Ask the server to verify the subscription the moment we land.
+   *
+   * Without this the page can only poll and hope the webhook arrives, which
+   * leaves a paying customer watching a spinner over a completed payment. One
+   * confirmed read collapses that into a deterministic answer, and the polling
+   * stays as the fallback for the case where PayPal returned no id at all.
+   *
+   * Guarded by a ref rather than the mutation's own state because React 18
+   * mounts effects twice in development, and confirming twice — while harmless,
+   * since the call is idempotent — would fire a needless second request.
+   */
+  const confirmAttempted = useRef(false);
+  const confirmMutate = confirm.mutate;
+  useEffect(() => {
+    if (!returnedSubscriptionId || confirmAttempted.current) return;
+    confirmAttempted.current = true;
+    confirmMutate(returnedSubscriptionId);
+  }, [returnedSubscriptionId, confirmMutate]);
 
   useEffect(() => {
     // Route guards read the session, so refresh it once billing turns active.
@@ -88,9 +116,21 @@ export function BillingPage() {
     <StandaloneLayout>
       <PageHeader title="Billing" description="Your subscription, payment method, and invoices." />
 
-      {returningFromCheckout && !isActive && (
+      {/* Three distinct states on the return trip, so the tenant is never left
+          guessing which one they are in. */}
+      {returningFromCheckout && !isActive && !confirm.isError && (
         <Alert className="mb-6" tone="info" title="Payment received">
-          Activating your subscription — this usually takes a few seconds.
+          {confirm.isPending
+            ? 'Confirming your subscription with PayPal…'
+            : 'Activating your subscription — this usually takes a few seconds.'}
+        </Alert>
+      )}
+
+      {confirm.isError && !isActive && (
+        <Alert className="mb-6" tone="warning" title="Still confirming">
+          We could not confirm the subscription just now, so we are watching for PayPal to tell us
+          directly. If nothing changes in a minute or two, email support — your payment is safe
+          either way and you will not be charged twice.
         </Alert>
       )}
 
@@ -140,14 +180,20 @@ export function BillingPage() {
           {mutationError && <Alert tone="danger">{mutationError.message}</Alert>}
 
           <div className="flex flex-wrap gap-3">
-            {data.hasBillingAccount && (
+            {/* Opens the provider's own account area, which is where a payment
+                method lives — we never see a card number, so changing one has to
+                happen there. Everything a tenant can do to the *subscription*
+                itself stays on this page. Hidden until there is a real
+                subscription behind it: a tenant who started a checkout and never
+                approved it has nothing to manage. */}
+            {data.hasBillingAccount && data.status !== SubscriptionStatus.NONE && (
               <Button
                 variant="secondary"
                 loading={portal.isPending}
                 onClick={() => void openPortal()}
               >
                 <CreditCard className="h-4 w-4" aria-hidden />
-                {portal.isPending ? 'Opening…' : 'Manage payment & invoices'}
+                {portal.isPending ? 'Opening…' : 'Manage payment method'}
               </Button>
             )}
 

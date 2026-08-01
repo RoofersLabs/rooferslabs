@@ -11,7 +11,7 @@ import { CurrentCompanyId } from '../common/decorators/current-company.decorator
 import { Roles } from '../common/decorators/roles.decorator';
 import { respond } from '../common/response';
 import { BillingService } from './services/billing.service';
-import { ChangePlanDto, CreateCheckoutSessionDto } from './dto/billing.dto';
+import { ChangePlanDto, ConfirmCheckoutDto, CreateCheckoutSessionDto } from './dto/billing.dto';
 import { PaymentsEnabledGuard } from './guards/payments-enabled.guard';
 
 /**
@@ -70,6 +70,26 @@ export class BillingController {
       interval: dto.interval ?? BillingInterval.MONTH,
     });
     return respond(session, 'Checkout session created.');
+  }
+
+  /**
+   * Confirm the subscription the provider redirected back with.
+   *
+   * Called by the billing page the moment the browser returns from PayPal, so
+   * the tenant sees their real state immediately instead of waiting on a webhook
+   * that may be seconds or minutes behind. It reads the subscription from the
+   * provider and stores what it says — it grants nothing the webhook would not
+   * have granted, and converges on the same row.
+   *
+   * ADMIN as well as OWNER, matching who can start a checkout: whoever paid must
+   * be able to complete the return trip.
+   */
+  @Post('checkout/confirm')
+  @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Verify the subscription returned by the provider redirect' })
+  async confirmCheckout(@CurrentCompanyId() companyId: string, @Body() dto: ConfirmCheckoutDto) {
+    const subscription = await this.billing.confirmCheckout(companyId, dto.subscriptionId);
+    return respond(subscription, 'Subscription confirmed.');
   }
 
   @Post('portal-session')

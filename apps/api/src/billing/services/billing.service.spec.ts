@@ -26,7 +26,7 @@ function makeRow(overrides: Partial<Subscription> = {}): Subscription {
   return {
     id: 'row_1',
     companyId: COMPANY,
-    provider: PaymentProvider.PADDLE,
+    provider: PaymentProvider.PAYPAL,
     providerCustomerId: CUSTOMER,
     providerSubscriptionId: SUB,
     providerPriceId: PRICE_STARTER,
@@ -47,7 +47,7 @@ function makeProviderSubscription(
   overrides: Partial<ProviderSubscription> = {},
 ): ProviderSubscription {
   return {
-    provider: PaymentProvider.PADDLE,
+    provider: PaymentProvider.PAYPAL,
     providerCustomerId: CUSTOMER,
     providerSubscriptionId: SUB,
     providerPriceId: PRICE_STARTER,
@@ -76,6 +76,7 @@ function makeService(
     provider?: PaymentProvider;
     grandfatherBefore?: Date | null;
     invoices?: Invoice[];
+    lapsed?: Subscription[];
   } = {},
 ) {
   const repo = {
@@ -85,6 +86,7 @@ function makeService(
     create: jest.fn().mockResolvedValue(makeRow()),
     update: jest.fn().mockResolvedValue(makeRow()),
     upsert: jest.fn().mockResolvedValue(options.upserted ?? makeRow()),
+    findLapsedPendingCancellations: jest.fn().mockResolvedValue(options.lapsed ?? []),
   } as unknown as jest.Mocked<BillingRepository>;
 
   const invoiceRepo = {
@@ -93,26 +95,27 @@ function makeService(
   } as unknown as jest.Mocked<InvoiceRepository>;
 
   const provider = {
-    provider: options.provider ?? PaymentProvider.PADDLE,
+    provider: options.provider ?? PaymentProvider.PAYPAL,
     isConfigured: true,
     createCustomer: jest.fn().mockResolvedValue(CUSTOMER),
     customerExists: jest.fn().mockResolvedValue(true),
     createCheckout: jest.fn().mockResolvedValue({
-      provider: PaymentProvider.PADDLE,
-      url: 'https://pay.example.com/checkout?_ptxn=txn_1',
-      transactionId: 'txn_1',
+      provider: PaymentProvider.PAYPAL,
+      url: 'https://www.sandbox.paypal.com/webapps/billing/subscriptions?ba_token=BA-1',
       successUrl: 'https://app.example.com/billing?checkout=success',
     }),
     createPortalSession: jest.fn().mockResolvedValue({ url: 'https://portal.example.com' }),
     getSubscription: jest.fn().mockResolvedValue(makeProviderSubscription()),
-    changePlan: jest.fn().mockResolvedValue(makeProviderSubscription()),
+    changePlan: jest
+      .fn()
+      .mockResolvedValue({ subscription: makeProviderSubscription(), approvalUrl: null }),
     cancelAtPeriodEnd: jest
       .fn()
       .mockResolvedValue(makeProviderSubscription({ cancelAtPeriodEnd: true })),
     resumeSubscription: jest
       .fn()
       .mockResolvedValue(makeProviderSubscription({ cancelAtPeriodEnd: false })),
-    listInvoices: jest.fn().mockResolvedValue([]),
+    cancelImmediately: jest.fn().mockResolvedValue(undefined),
     priceIdFor: jest.fn().mockReturnValue(PRICE_STARTER),
     planForPriceId: jest
       .fn()
@@ -123,11 +126,11 @@ function makeService(
   const config = {
     payments: {
       enabled: options.paymentsEnabled ?? true,
-      provider: options.provider ?? PaymentProvider.PADDLE,
+      provider: options.provider ?? PaymentProvider.PAYPAL,
       trialPeriodDays: 0,
       grandfatherBefore: options.grandfatherBefore ?? null,
     },
-    paddle: { clientToken: 'test_token', environment: 'sandbox' },
+    paypal: { environment: 'sandbox' },
     api: { webPublicUrl: 'https://app.example.com' },
   } as unknown as AppConfigService;
 
@@ -244,7 +247,7 @@ describe('BillingService — checkout', () => {
 
   it('creates a fresh customer when the stored one belongs to another provider', async () => {
     // A row left over from Stripe names a customer that does not exist in
-    // Paddle; reusing the id would fail at the provider.
+    // the previous provider; reusing the id would fail at the current one.
     const { service, provider } = makeService({
       existing: makeRow({ provider: PaymentProvider.STRIPE, status: SubscriptionStatus.CANCELED }),
     });
@@ -269,7 +272,7 @@ describe('BillingService — checkout', () => {
   });
 
   it('falls back to the owner email when the company has none', async () => {
-    // Paddle requires an email; our schema does not. A receipt still has to go
+    // Every provider requires an email; our schema does not. A receipt still has to go
     // somewhere, and the first user is the person who signed the company up.
     const { service, provider } = makeService({
       existing: null,
@@ -433,7 +436,7 @@ describe('BillingService — synchronization', () => {
     expect(repo.upsert).toHaveBeenCalledWith(
       COMPANY,
       expect.objectContaining({
-        provider: PaymentProvider.PADDLE,
+        provider: PaymentProvider.PAYPAL,
         providerCustomerId: CUSTOMER,
         providerSubscriptionId: SUB,
       }),
@@ -443,7 +446,7 @@ describe('BillingService — synchronization', () => {
   it('drops an invoice it cannot attribute rather than guessing an owner', async () => {
     const { service, invoiceRepo } = makeService({ byCustomer: null, bySubscription: null });
     await service.applyInvoice({
-      provider: PaymentProvider.PADDLE,
+      provider: PaymentProvider.PAYPAL,
       providerInvoiceId: 'txn_orphan',
       providerCustomerId: 'ctm_unknown',
       providerSubscriptionId: null,
@@ -461,20 +464,24 @@ describe('BillingService — synchronization', () => {
 });
 
 describe('BillingService — public config', () => {
-  it('exposes the client token but never a secret', () => {
+  it('carries no credential of any kind', () => {
     const { service } = makeService();
     const config = service.getPublicConfig();
     expect(config).toEqual({
-      provider: PaymentProvider.PADDLE,
-      clientToken: 'test_token',
+      provider: PaymentProvider.PAYPAL,
       environment: 'sandbox',
     });
-    expect(JSON.stringify(config)).not.toMatch(/api[_-]?key|secret/i);
+    expect(JSON.stringify(config)).not.toMatch(/api[_-]?key|secret|token|client[_-]?id/i);
   });
 
-  it('reports no client token when the active provider has no browser SDK', () => {
+  /**
+   * Both supported processors are redirect-based, so nothing the browser is
+   * handed can start a payment on its own. A field reappearing here would mean
+   * a credential had been pushed into the client — the regression this guards.
+   */
+  it('exposes exactly two fields, whichever provider is active', () => {
     const { service } = makeService({ provider: PaymentProvider.STRIPE });
-    expect(service.getPublicConfig().clientToken).toBe('');
+    expect(Object.keys(service.getPublicConfig()).sort()).toEqual(['environment', 'provider']);
   });
 });
 
@@ -483,7 +490,7 @@ describe('BillingService — summary shape', () => {
     // The frontend must not be able to tell which provider is in use; that is
     // what makes swapping one invisible to the UI.
     const summary = BillingService.toSummary(makeRow());
-    expect(JSON.stringify(summary)).not.toMatch(/paddle|stripe/i);
+    expect(JSON.stringify(summary)).not.toMatch(/paypal|stripe/i);
     expect(summary.hasBillingAccount).toBe(true);
   });
 

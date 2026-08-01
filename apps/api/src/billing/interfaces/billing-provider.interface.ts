@@ -19,8 +19,8 @@ import type {
   CheckoutHandle,
   CreateCheckoutInput,
   CreateCustomerInput,
+  PlanChangeResult,
   PlanSelection,
-  ProviderInvoice,
   ProviderSubscription,
   ProviderWebhookEvent,
   WebhookRequest,
@@ -83,33 +83,54 @@ export interface BillingProvider {
    * Proration is the adapter's decision, but the domain contract is fixed: an
    * upgrade takes effect immediately and is charged pro-rata, a downgrade takes
    * effect at the next renewal so the tenant keeps what it has already paid for.
+   *
+   * An adapter that cannot complete the change without the payer's consent says
+   * so by returning an `approvalUrl` — see {@link PlanChangeResult}.
    */
   changePlan(input: {
     providerSubscriptionId: string;
     selection: PlanSelection;
     /** True when the target plan costs more than the current one. */
     isUpgrade: boolean;
-  }): Promise<ProviderSubscription>;
+    /** Where to return the browser if the provider needs an approval detour. */
+    returnUrl: string;
+    cancelUrl: string;
+  }): Promise<PlanChangeResult>;
 
-  /** Schedule cancellation at the end of the paid term. Never immediate. */
+  /**
+   * Stop the subscription billing again while leaving the paid term intact.
+   *
+   * The domain contract is "no further charge, access until the period ends,
+   * and reversible by {@link resumeSubscription} until it does". How an adapter
+   * achieves that is its own business: Stripe sets a cancellation flag on the
+   * period, PayPal — which has no scheduled cancellation and no way back from a
+   * real cancel — suspends instead.
+   */
   cancelAtPeriodEnd(providerSubscriptionId: string): Promise<ProviderSubscription>;
 
   /** Withdraw a scheduled cancellation while the subscription is still running. */
   resumeSubscription(providerSubscriptionId: string): Promise<ProviderSubscription>;
 
-  // ── Billing documents ────────────────────────────────────────────────────
-
-  /** Recent invoices for a customer, newest first. */
-  listInvoices(customerId: string, limit: number): Promise<ProviderInvoice[]>;
+  /**
+   * End a subscription outright, with no way back.
+   *
+   * Called by the sweep that finalizes a cancel-at-period-end once the paid term
+   * has actually lapsed — not by anything a tenant can reach directly.
+   */
+  cancelImmediately(providerSubscriptionId: string): Promise<void>;
 
   // ── Catalogue ────────────────────────────────────────────────────────────
 
   /**
-   * The configured price identifier for a plan/interval, or throws when that
-   * combination is not offered. This is how "annual is not launched yet"
-   * surfaces: the price is simply not configured.
+   * The price identifier for a plan/interval, or throws when that combination is
+   * not offered. This is how "annual is not launched yet" surfaces: the price
+   * simply does not exist.
+   *
+   * Asynchronous because an adapter may resolve it from provisioned state rather
+   * than from configuration — PayPal reads the catalogue its setup command
+   * wrote — and that read must be allowed to refresh.
    */
-  priceIdFor(selection: PlanSelection): string;
+  priceIdFor(selection: PlanSelection): Promise<string>;
 
   /** Reverse lookup, so an inbound webhook can label a subscription. */
   planForPriceId(priceId: string | null | undefined): {
