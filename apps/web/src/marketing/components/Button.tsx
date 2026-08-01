@@ -30,6 +30,26 @@ const sizes: Record<Size, string> = {
   lg: 'h-11 px-5 text-[15px]',
 };
 
+/**
+ * The button's appearance, for the one case this component cannot render.
+ *
+ * Every call to action on the marketing site is a link, which is why `Button`
+ * takes an `href` and has no element to submit anything. The contact form needs
+ * a real `<button type="submit">` — a link cannot submit a form, and faking it
+ * with an onClick would break keyboard submit and the Enter key in a field.
+ *
+ * Exported as a class string rather than adding a rendering branch above:
+ * nothing about the existing component changes, so no existing call site can
+ * behave differently, and the styling still lives in exactly one place.
+ */
+export function marketingButtonClass(
+  variant: Variant = 'primary',
+  size: Size = 'md',
+  className?: string,
+): string {
+  return cn(base, variants[variant], sizes[size], className);
+}
+
 type ButtonProps = {
   children: ReactNode;
   /** Router path (`/sign-up`) or in-page anchor (`#pricing`). */

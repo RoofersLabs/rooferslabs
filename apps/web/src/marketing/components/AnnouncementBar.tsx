@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useMotionValueEvent, useScroll } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Container } from './Container';
+import { sectionHref } from '../routes';
 
 /**
  * Everything the offer is made of. These are the only values that change when
@@ -55,6 +57,9 @@ export function AnnouncementBar() {
   const { scrollY } = useScroll();
   const [scrolled, setScrolled] = useState(false);
   const [focusWithin, setFocusWithin] = useState(false);
+  // The bar rides the fixed header onto the legal pages, where `#pricing` has
+  // nothing to scroll to. See sectionHref.
+  const { pathname } = useLocation();
 
   useMotionValueEvent(scrollY, 'change', (y) => setScrolled(y > COLLAPSE_AT));
 
@@ -107,7 +112,7 @@ export function AnnouncementBar() {
           </p>
 
           <a
-            href={FOUNDING_PROGRAM.href}
+            href={sectionHref(FOUNDING_PROGRAM.href, pathname)}
             aria-label={FOUNDING_PROGRAM.cta}
             className={cn(
               'group inline-flex shrink-0 items-center gap-1.5 rounded-sm py-1 text-white',

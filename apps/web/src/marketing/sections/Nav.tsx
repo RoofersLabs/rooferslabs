@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion, useMotionValueEvent, useReducedMotion, useScroll } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/Brand';
 import { Button } from '../components/Button';
 import { Container } from '../components/Container';
 import { transition } from '../motion';
+import { sectionHref } from '../routes';
 
 const LINKS = [
   { href: '#how-it-works', label: 'How it works' },
@@ -58,6 +59,11 @@ export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const active = useActiveSection();
   const reduced = useReducedMotion();
+  // The section links point at fragments that only exist on the home page. On a
+  // legal page they resolve to nothing, so they are rewritten to `/#…` there —
+  // see sectionHref. On `/` the bare fragment is kept, which is what preserves
+  // the in-page scroll rather than routing to the page already mounted.
+  const { pathname } = useLocation();
 
   useMotionValueEvent(scrollY, 'change', (y) => setScrolled(y > 12));
 
@@ -91,7 +97,7 @@ export function Nav() {
               return (
                 <a
                   key={link.href}
-                  href={link.href}
+                  href={sectionHref(link.href, pathname)}
                   aria-current={isActive ? 'true' : undefined}
                   className={cn(
                     'relative rounded-md px-3 py-2 text-[13.5px] transition-colors duration-200 ease-smooth',

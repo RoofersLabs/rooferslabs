@@ -3,6 +3,7 @@ import { Outlet, Route, Routes } from 'react-router-dom';
 import { AccessProvider } from '@/auth/AccessProvider';
 import { RouteGuard } from '@/auth/RouteGuard';
 import { ROUTES } from '@/auth/stages';
+import { MARKETING_ROUTES } from '@/marketing/routes';
 import { currentSurface } from '@/lib/host';
 import { ADMIN_ROUTES } from '@/features/admin/routes';
 import { AuthenticatedProviders } from '@/providers/AppProviders';
@@ -29,6 +30,22 @@ import { SettingsPage } from '@/features/settings/SettingsPage';
 // each audience off the other's critical path.
 const MarketingPage = lazy(() =>
   import('@/marketing/MarketingPage').then((m) => ({ default: m.MarketingPage })),
+);
+
+// The legal and trust pages. Split from the marketing page rather than bundled
+// with it: they share its chrome but almost nobody who lands on `/` reads them,
+// and a visitor deciding whether to buy should not download the Terms first.
+const TermsPage = lazy(() =>
+  import('@/marketing/legal/TermsPage').then((m) => ({ default: m.TermsPage })),
+);
+const PrivacyPage = lazy(() =>
+  import('@/marketing/legal/PrivacyPage').then((m) => ({ default: m.PrivacyPage })),
+);
+const RefundPage = lazy(() =>
+  import('@/marketing/legal/RefundPage').then((m) => ({ default: m.RefundPage })),
+);
+const ContactPage = lazy(() =>
+  import('@/marketing/legal/ContactPage').then((m) => ({ default: m.ContactPage })),
 );
 
 // The internal admin portal. Lazy so a customer never downloads a byte of it —
@@ -112,6 +129,25 @@ function CustomerApp() {
           </Suspense>
         }
       />
+
+      {/* Public in the same way `/` is: no session, no stage, no guard. They sit
+          beside the marketing route rather than inside AuthenticatedShell so a
+          reader following a footer link — or a Paddle reviewer opening one
+          cold — never waits on an auth SDK to paint a document. */}
+      {[
+        { path: MARKETING_ROUTES.terms, element: <TermsPage /> },
+        { path: MARKETING_ROUTES.privacy, element: <PrivacyPage /> },
+        { path: MARKETING_ROUTES.refunds, element: <RefundPage /> },
+        { path: MARKETING_ROUTES.contact, element: <ContactPage /> },
+      ].map((page) => (
+        <Route
+          key={page.path}
+          path={page.path}
+          element={
+            <Suspense fallback={<div className="min-h-screen bg-black" />}>{page.element}</Suspense>
+          }
+        />
+      ))}
 
       <Route element={<AuthenticatedShell />}>
         {/* Signed out only — a signed-in visitor is moved to their stage. */}
