@@ -24,14 +24,14 @@ export function isPaymentsEnabled(env: NodeJS.ProcessEnv = process.env): boolean
 /**
  * Which processor handles money today.
  *
- * Defaults to Paddle, the provider the platform currently bills through. An
+ * Defaults to PayPal, the provider the platform currently bills through. An
  * unrecognized value is a configuration error rather than something to guess
  * at: silently falling back would mean booting against a processor the operator
  * did not choose, so it throws and the deployment fails visibly.
  */
 export function activePaymentProvider(env: NodeJS.ProcessEnv = process.env): PaymentProvider {
   const raw = env.PAYMENT_PROVIDER?.trim().toUpperCase();
-  if (raw === undefined || raw === '') return PaymentProvider.PADDLE;
+  if (raw === undefined || raw === '') return PaymentProvider.PAYPAL;
   if (raw in PaymentProvider) return raw as PaymentProvider;
 
   throw new Error(
@@ -45,17 +45,16 @@ export function activePaymentProvider(env: NodeJS.ProcessEnv = process.env): Pay
  *
  * Only the active provider's list is enforced (see env.validation.ts), which is
  * what lets the platform boot with no Stripe account at all while Stripe is the
- * dormant provider — and, symmetrically, what would let it boot without Paddle
- * if the two were ever swapped back.
+ * dormant provider — and, symmetrically, what would let it boot without PayPal
+ * if the two were ever swapped.
  */
 export const PROVIDER_REQUIRED_ENV: Record<PaymentProvider, readonly string[]> = {
-  [PaymentProvider.PADDLE]: [
-    'PADDLE_API_KEY',
-    'PADDLE_WEBHOOK_SECRET',
-    'PADDLE_CLIENT_TOKEN',
-    'PADDLE_PRICE_STARTER_MONTHLY',
-    'PADDLE_PRICE_PROFESSIONAL_MONTHLY',
-  ],
+  // PayPal needs only credentials. The product, the plans and the webhook are
+  // provisioned by `billing:paypal:setup` and persisted in `billing_catalog`,
+  // so no identifier is ever an environment variable — which is why this list
+  // is two entries long and not seven. Whether the provisioning actually ran is
+  // a separate question, answered at boot by BillingReadinessService.
+  [PaymentProvider.PAYPAL]: ['PAYPAL_CLIENT_ID', 'PAYPAL_CLIENT_SECRET'],
   [PaymentProvider.STRIPE]: [
     'STRIPE_SECRET_KEY',
     'STRIPE_WEBHOOK_SECRET',

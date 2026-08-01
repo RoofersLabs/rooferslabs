@@ -1,7 +1,7 @@
 /**
  * Stripe → domain translation.
  *
- * Preserved verbatim in behaviour from the pre-Paddle integration, so that
+ * Preserved verbatim in behaviour from before the provider port existed, so that
  * re-enabling Stripe is a configuration change rather than an archaeology
  * exercise. Pure functions over plain data, and — importantly — `import type`
  * only, so this file contributes nothing to the runtime graph.

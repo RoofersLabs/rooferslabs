@@ -4,7 +4,7 @@
  * Every type here is expressed in *our* terms, not a processor's. A provider
  * adapter's job is to translate its own API into these shapes and back; nothing
  * above the adapter boundary (BillingService, the repositories, the controllers,
- * the frontend) has ever heard of a Paddle transaction or a Stripe price.
+ * the frontend) has ever heard of a PayPal plan or a Stripe price.
  *
  * That is what makes swapping providers a configuration change: the domain sees
  * the same objects either way.
@@ -29,8 +29,8 @@ export interface CreateCustomerInput {
   companyName: string;
   /**
    * Required. Providers differ on whether they will accept a customer without
-   * one (Paddle will not), so the domain resolves an address before it asks —
-   * see BillingService.resolveBillingEmail.
+   * one, so the domain resolves an address before it asks — see
+   * BillingService.resolveBillingEmail.
    */
   email: string;
 }
@@ -38,6 +38,16 @@ export interface CreateCustomerInput {
 export interface CreateCheckoutInput {
   companyId: string;
   customerId: string;
+  /**
+   * The tenant's name and billing address, carried on the checkout itself.
+   *
+   * Present because not every provider has a customer object to have stored
+   * them against beforehand: PayPal identifies the subscriber inline at
+   * subscription creation, so the details have to travel with the checkout
+   * rather than having been registered by `createCustomer`.
+   */
+  companyName: string;
+  email: string;
   selection: PlanSelection;
   /** Where the provider should send the browser once payment succeeds. */
   successUrl: string;
@@ -47,33 +57,42 @@ export interface CreateCheckoutInput {
 }
 
 /**
- * A started checkout, in the two shapes providers actually offer.
+ * A started checkout: somewhere to send the browser.
  *
- * At least one of `url` and `transactionId` is always set:
- *
- *  - `url` — a page to navigate the browser to. Stripe's hosted Checkout works
- *    this way, and so does Paddle when a default payment link is configured.
- *  - `transactionId` — an opaque handle the provider's browser SDK opens an
- *    inline/overlay checkout for. This is Paddle's primary pattern.
- *
- * Returning both lets the client prefer the better experience (overlay, no
- * navigation away from the app) while keeping the redirect as a fallback that
- * works with JavaScript disabled or the SDK blocked.
+ * Both supported processors are redirect-based — PayPal returns an approval
+ * link the payer must visit to consent to the subscription, Stripe returns its
+ * hosted Checkout session — so the handle is deliberately just a destination.
+ * The client navigates; it never assembles a payment UI of its own, and no
+ * secret is ever needed in the browser to complete one.
  */
 export interface CheckoutHandle {
   provider: PaymentProvider;
-  url: string | null;
-  transactionId: string | null;
+  /** The page to navigate to. Never null: a checkout that produced no URL failed. */
+  url: string;
   /**
-   * Where to send the browser once payment succeeds.
+   * Where the provider will return the browser once payment succeeds.
    *
-   * Carried on the handle because providers disagree about who sets it: Stripe
-   * bakes it into the hosted session server-side, while Paddle takes it from
-   * the browser SDK at open time. Deciding it here keeps the destination under
-   * server control either way, rather than leaving it to a dashboard setting or
-   * to whatever the client feels like.
+   * Carried on the handle because the server decides it, not the client — it is
+   * baked into the provider-side session or subscription at creation. Returned
+   * so the frontend can recognize its own return trip.
    */
   successUrl: string;
+}
+
+/**
+ * The outcome of moving a subscription to a different plan.
+ *
+ * `approvalUrl` exists because PayPal cannot always complete a plan change
+ * server-side: raising what a payer is billed requires their consent, and PayPal
+ * answers a revision with a link the browser must visit. Until it is followed
+ * the subscription stays on its old plan.
+ *
+ * Null for a change that took effect immediately — every Stripe change, and a
+ * PayPal downgrade.
+ */
+export interface PlanChangeResult {
+  subscription: ProviderSubscription;
+  approvalUrl: string | null;
 }
 
 /**

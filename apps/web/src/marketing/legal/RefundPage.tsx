@@ -84,9 +84,9 @@ export function RefundPage() {
           being suspended while the bank investigates.
         </P>
         <P>
-          Payments are processed by <Strong>Paddle</Strong> as merchant of record, so Paddle appears
-          on your statement rather than rooferslabs. If a charge is unfamiliar, that is usually why.
-          You may also contact Paddle directly about any transaction.
+          Payments are processed by <Strong>PayPal</Strong>, so a charge may appear on your
+          statement as a PayPal payment. If one looks unfamiliar, that is usually why. You can see
+          every charge against your subscription in your own PayPal account.
         </P>
       </Section>
 
@@ -110,11 +110,12 @@ export function RefundPage() {
             <Strong>Our decision:</Strong> {CONTACT.responseTime} of receiving your request.
           </LI>
           <LI>
-            <Strong>Paddle issues the refund:</Strong> usually within 1–3 business days of approval.
+            <Strong>We issue the refund through PayPal:</Strong> usually within 1–3 business days of
+            approval.
           </LI>
           <LI>
-            <Strong>Your bank posts it:</Strong> typically 5–10 business days after that, depending
-            on the card issuer. This last step is outside our control and Paddle’s.
+            <Strong>Your bank or PayPal balance posts it:</Strong> typically 5–10 business days
+            after that, depending on the payment method. This last step is outside our control.
           </LI>
         </UL>
         <P>

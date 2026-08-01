@@ -3,9 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { BillingInterval, SubscriptionPlan } from '@rooferslabs/shared';
 import { ROUTES } from '@/auth/stages';
-import { useBillingConfig, useCreateCheckoutSession } from '@/hooks/queries';
+import { useCreateCheckoutSession } from '@/hooks/queries';
 import { ApiError } from '@/lib/api-client';
-import { openCheckout } from '@/lib/paddle';
 import { StandaloneLayout } from '@/layouts/StandaloneLayout';
 import { Alert } from '@/components/ui/Alert';
 import { Badge } from '@/components/ui/badge';
@@ -61,7 +60,6 @@ const FEATURES = [
 export function PaymentPage() {
   const [params] = useSearchParams();
   const checkout = useCreateCheckoutSession();
-  const config = useBillingConfig();
   const [openError, setOpenError] = useState<string | null>(null);
 
   const start = async () => {
@@ -71,26 +69,38 @@ export function PaymentPage() {
         plan: FOUNDING_PLAN,
         interval: BillingInterval.MONTH,
       });
-      // The checkout opens over this page rather than navigating away; payment
-      // completion arrives by webhook, so nothing here is treated as proof of
-      // payment. `config.data` is loaded by now in practice, and openCheckout
-      // falls back to the hosted URL when it is not.
-      await openCheckout(
-        handle,
-        config.data ?? { provider: handle.provider, clientToken: '', environment: 'sandbox' },
-      );
+
+      if (!handle.url) {
+        setOpenError('Could not start the checkout. Please try again.');
+        return;
+      }
+
+      // A full navigation, not a new tab: the payer has to sign in to PayPal to
+      // approve the subscription, and a popup is the thing browsers block and
+      // phones handle worst. They come back to `successUrl`, which the server
+      // chose — nothing here is treated as proof of payment either way, because
+      // activation arrives separately by webhook.
+      window.location.assign(handle.url);
     } catch (error) {
-      // The mutation renders its own error; this catches a failure to *open*
+      // The mutation renders its own error; this catches a failure to *start*
       // the checkout, which would otherwise leave a dead button.
       if (!(error instanceof ApiError)) {
         setOpenError(
-          error instanceof Error ? error.message : 'Could not open the checkout. Please try again.',
+          error instanceof Error
+            ? error.message
+            : 'Could not start the checkout. Please try again.',
         );
       }
     }
   };
 
   const error = openError ?? (checkout.isError ? (checkout.error as ApiError).message : null);
+
+  // The button stays in its loading state through the navigation: `mutateAsync`
+  // has resolved by then, but the page is about to be replaced, and letting the
+  // label snap back to "Start" invites a second click that would create a second
+  // subscription.
+  const leaving = checkout.isPending || checkout.isSuccess;
 
   return (
     <StandaloneLayout>
@@ -105,6 +115,13 @@ export function PaymentPage() {
           {params.get('checkout') === 'cancelled' && (
             <Alert className="mb-6" tone="warning" title="Checkout was cancelled">
               No payment was taken — your place is still here when you are ready.
+            </Alert>
+          )}
+
+          {params.get('checkout') === 'pending' && (
+            <Alert className="mb-6" tone="info" title="Waiting for PayPal to confirm">
+              You approved the subscription and PayPal is settling the first payment. This usually
+              takes a few seconds — you can stay on this page.
             </Alert>
           )}
 
@@ -158,10 +175,11 @@ export function PaymentPage() {
 
             <Button
               className="mt-6 w-full hover:-translate-y-px hover:shadow-md motion-reduce:hover:translate-y-0"
-              loading={checkout.isPending}
+              loading={leaving}
+              disabled={leaving}
               onClick={() => void start()}
             >
-              {checkout.isPending ? 'Opening…' : OFFER.cta}
+              {leaving ? 'Redirecting to PayPal…' : OFFER.cta}
             </Button>
 
             <p className="mt-3 text-center text-caption text-ink-muted">{OFFER.reassurance}</p>

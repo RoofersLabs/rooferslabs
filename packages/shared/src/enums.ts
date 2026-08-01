@@ -225,7 +225,7 @@ export enum AiVoice {
  * PAYMENT_PROVIDER), but historical rows from a previous one stay readable.
  */
 export enum PaymentProvider {
-  PADDLE = 'PADDLE',
+  PAYPAL = 'PAYPAL',
   STRIPE = 'STRIPE',
 }
 
@@ -248,7 +248,7 @@ export enum BillingInterval {
  * these, plus `NONE` for a tenant that has never started checkout. Only
  * `ACTIVE` and `TRIALING` grant access (see {@link ACTIVE_SUBSCRIPTION_STATUSES}).
  *
- * Some members are unreachable under some providers — Paddle has no notion of
+ * Some members are unreachable under some providers — PayPal has no notion of
  * `INCOMPLETE` or `UNPAID`, for instance. That is deliberate: the enum is the
  * union of what any provider can report, so switching providers never needs a
  * data migration.

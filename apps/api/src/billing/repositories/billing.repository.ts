@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { PaymentProvider } from '@rooferslabs/shared';
+import { type PaymentProvider, SubscriptionStatus } from '@rooferslabs/shared';
 import type { Prisma, Subscription } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -34,6 +34,28 @@ export class BillingRepository {
   ): Promise<Subscription | null> {
     return this.prisma.subscription.findUnique({
       where: { provider_providerSubscriptionId: { provider, providerSubscriptionId } },
+    });
+  }
+
+  /**
+   * Subscriptions the tenant cancelled whose paid term has now elapsed.
+   *
+   * The sweep's work list. Scoped to the active provider because finalizing a
+   * cancellation means calling that provider, and a row minted by a different
+   * one names a subscription it has never heard of.
+   *
+   * `CANCELED` rows are excluded by the status filter, which is what stops an
+   * already-finalized subscription being cancelled a second time on every run.
+   */
+  findLapsedPendingCancellations(provider: PaymentProvider, now: Date): Promise<Subscription[]> {
+    return this.prisma.subscription.findMany({
+      where: {
+        provider,
+        cancelAtPeriodEnd: true,
+        currentPeriodEnd: { not: null, lte: now },
+        status: { notIn: [SubscriptionStatus.CANCELED, SubscriptionStatus.NONE] },
+        providerSubscriptionId: { not: null },
+      },
     });
   }
 

@@ -124,10 +124,10 @@ describe('redirectFor', () => {
 });
 
 /** Every route that exists only because billing does. */
-const BILLING_ROUTES: GuardedRoute[] = [ROUTES.payment, ROUTES.billing, ROUTES.checkout];
+const BILLING_ROUTES: GuardedRoute[] = [ROUTES.payment, ROUTES.billing];
 
 describe('billing routes with payments disabled', () => {
-  it('turns everyone away from /payment, /billing and /checkout', () => {
+  it('turns everyone away from /payment and /billing', () => {
     for (const route of BILLING_ROUTES) {
       expect(withoutPayments[route]).toEqual([]);
       for (const stage of reachableStages(false)) {
@@ -145,11 +145,12 @@ describe('billing routes with payments disabled', () => {
     }
   });
 
-  it('lets a paying and a past-due tenant both reach /checkout', () => {
-    // The provider mails this link when a card needs replacing, which can
-    // happen while the tenant still has access ('app') or after dunning has
-    // already pushed it back to the wall ('payment'). Both must be able to pay.
-    expect(withPayments[ROUTES.checkout]).toEqual(['payment', 'app']);
+  it('lets a paying and a past-due tenant both reach /billing', () => {
+    // A tenant returning from the provider's approval page lands here before
+    // the activation webhook does (stage 'payment'), and one following a failed
+    // payment notice is usually still inside the product (stage 'app'). Both
+    // must be able to reach the page that lets them fix it.
+    expect(withPayments[ROUTES.billing]).toEqual(['payment', 'app']);
   });
 });
 

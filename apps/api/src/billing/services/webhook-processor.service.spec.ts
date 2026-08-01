@@ -19,12 +19,12 @@ const EVENT_ID = 'evt_01hq';
 
 function makeEvent(overrides: Partial<ProviderWebhookEvent> = {}): ProviderWebhookEvent {
   return {
-    provider: PaymentProvider.PADDLE,
+    provider: PaymentProvider.PAYPAL,
     id: EVENT_ID,
     type: 'subscription.activated',
     occurredAt: new Date('2026-07-29T10:00:00.000Z'),
     subscription: {
-      provider: PaymentProvider.PADDLE,
+      provider: PaymentProvider.PAYPAL,
       providerCustomerId: 'ctm_1',
       providerSubscriptionId: 'sub_1',
       providerPriceId: 'pri_1',
@@ -47,7 +47,7 @@ function makeProcessor(
   options: { event?: ProviderWebhookEvent; claim?: ClaimOutcome; verifyError?: Error } = {},
 ) {
   const provider = {
-    provider: PaymentProvider.PADDLE,
+    provider: PaymentProvider.PAYPAL,
     verifyAndParseWebhook: options.verifyError
       ? jest.fn().mockRejectedValue(options.verifyError)
       : jest.fn().mockResolvedValue(options.event ?? makeEvent()),
@@ -73,7 +73,10 @@ function makeProcessor(
   };
 }
 
-const request = { rawBody: Buffer.from('{"x":1}'), headers: { 'paddle-signature': 'ts=1;h1=abc' } };
+const request = {
+  rawBody: Buffer.from('{"x":1}'),
+  headers: { 'paypal-transmission-sig': 'signature-bytes' },
+};
 
 describe('WebhookProcessorService — authenticity', () => {
   it('never touches the domain when verification fails', async () => {
@@ -95,7 +98,7 @@ describe('WebhookProcessorService — idempotency', () => {
     expect(outcome).toEqual({ ok: true, duplicate: false, eventType: 'subscription.activated' });
     expect(billing.applySubscription).toHaveBeenCalledTimes(1);
     expect(ledger.markProcessed).toHaveBeenCalledWith(
-      PaymentProvider.PADDLE,
+      PaymentProvider.PAYPAL,
       EVENT_ID,
       WebhookEventStatus.PROCESSED,
     );
@@ -127,7 +130,7 @@ describe('WebhookProcessorService — idempotency', () => {
     const { processor, ledger } = makeProcessor();
     await processor.handle(request);
     expect(ledger.claim).toHaveBeenCalledWith({
-      provider: PaymentProvider.PADDLE,
+      provider: PaymentProvider.PAYPAL,
       providerEventId: EVENT_ID,
       eventType: 'subscription.activated',
       occurredAt: new Date('2026-07-29T10:00:00.000Z'),
@@ -142,7 +145,7 @@ describe('WebhookProcessorService — failure handling', () => {
 
     await expect(processor.handle(request)).rejects.toThrow('database is down');
     expect(ledger.markFailed).toHaveBeenCalledWith(
-      PaymentProvider.PADDLE,
+      PaymentProvider.PAYPAL,
       EVENT_ID,
       'database is down',
     );
@@ -160,7 +163,7 @@ describe('WebhookProcessorService — event routing', () => {
 
     expect(outcome.ok).toBe(true);
     expect(ledger.markProcessed).toHaveBeenCalledWith(
-      PaymentProvider.PADDLE,
+      PaymentProvider.PAYPAL,
       EVENT_ID,
       WebhookEventStatus.IGNORED,
     );
@@ -188,7 +191,7 @@ describe('WebhookProcessorService — event routing', () => {
         type: 'transaction.completed',
         subscription: null,
         invoice: {
-          provider: PaymentProvider.PADDLE,
+          provider: PaymentProvider.PAYPAL,
           providerInvoiceId: 'txn_1',
           providerCustomerId: 'ctm_1',
           providerSubscriptionId: 'sub_1',

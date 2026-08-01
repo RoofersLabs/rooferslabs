@@ -19,7 +19,7 @@ export interface SeoInput {
  * bundle executes. Anything that reads the raw HTML without running scripts —
  * some crawlers, some link unfurlers — sees the defaults baked into
  * `index.html` instead. That is a real limit, and the reason these pages are
- * worth having is unaffected by it: a Paddle reviewer, a customer following a
+ * worth having is unaffected by it: a payment reviewer, a customer following a
  * footer link, and Googlebot (which does execute JavaScript) all see the right
  * thing. Fixing it properly means prerendering, which is a build-pipeline
  * change rather than a page.

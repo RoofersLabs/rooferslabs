@@ -15,7 +15,7 @@ function makeProvider(active: boolean, secretKey = 'sk_test_123') {
   const config = {
     payments: {
       enabled: true,
-      provider: active ? PaymentProvider.STRIPE : PaymentProvider.PADDLE,
+      provider: active ? PaymentProvider.STRIPE : PaymentProvider.PAYPAL,
       trialPeriodDays: 0,
       grandfatherBefore: null,
     },
@@ -33,7 +33,7 @@ function makeProvider(active: boolean, secretKey = 'sk_test_123') {
 
 const selection = { plan: SubscriptionPlan.STARTER, interval: BillingInterval.MONTH };
 
-describe('StripeProvider — dormant while Paddle is active', () => {
+describe('StripeProvider — dormant while PayPal is active', () => {
   const dormant = () => makeProvider(false);
 
   it('reports itself as unconfigured even when a key is present', () => {
@@ -53,6 +53,8 @@ describe('StripeProvider — dormant while Paddle is active', () => {
         p.createCheckout({
           companyId: 'c',
           customerId: 'cus',
+          companyName: 'n',
+          email: 'e@x.test',
           selection,
           successUrl: 'https://x',
           cancelUrl: 'https://y',
@@ -68,11 +70,17 @@ describe('StripeProvider — dormant while Paddle is active', () => {
     [
       'changePlan',
       (p: StripeProvider) =>
-        p.changePlan({ providerSubscriptionId: 'sub_1', selection, isUpgrade: true }),
+        p.changePlan({
+          providerSubscriptionId: 'sub_1',
+          selection,
+          isUpgrade: true,
+          returnUrl: 'https://x',
+          cancelUrl: 'https://y',
+        }),
     ],
     ['cancelAtPeriodEnd', (p: StripeProvider) => p.cancelAtPeriodEnd('sub_1')],
     ['resumeSubscription', (p: StripeProvider) => p.resumeSubscription('sub_1')],
-    ['listInvoices', (p: StripeProvider) => p.listInvoices('cus', 10)],
+    ['cancelImmediately', (p: StripeProvider) => p.cancelImmediately('sub_1')],
   ])('refuses %s rather than reaching Stripe', async (_name, call) => {
     await expect(call(dormant())).rejects.toBeInstanceOf(BillingProviderDisabledError);
   });
@@ -92,9 +100,9 @@ describe('StripeProvider — dormant while Paddle is active', () => {
     return expect(dormant().customerExists('cus_1')).resolves.toBe(false);
   });
 
-  it('still resolves prices — the catalogue needs no network', () => {
+  it('still resolves prices — the catalogue needs no network', async () => {
     // Dormancy is about not transacting, not about being unreadable.
-    expect(dormant().priceIdFor(selection)).toBe('price_starter');
+    await expect(dormant().priceIdFor(selection)).resolves.toBe('price_starter');
     expect(dormant().planForPriceId('price_pro')).toEqual({
       plan: SubscriptionPlan.PROFESSIONAL,
       interval: BillingInterval.MONTH,

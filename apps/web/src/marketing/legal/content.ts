@@ -49,10 +49,10 @@ export const LAST_UPDATED = '1 August 2026';
 /** The processors named in the privacy policy, with what each one handles. */
 export const SUBPROCESSORS = [
   {
-    name: 'Paddle',
-    role: 'Payments and subscription billing, as merchant of record',
+    name: 'PayPal',
+    role: 'Payments and subscription billing',
     handles:
-      'Your billing name, email, country, tax identifiers, and payment method. Card details are entered on Paddle’s systems and never reach ours.',
+      'Your billing name, email, and payment method. Card and bank details are entered on PayPal’s systems and never reach ours.',
   },
   {
     name: 'Clerk',

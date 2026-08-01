@@ -80,15 +80,17 @@ export function PrivacyPage() {
 
       <Section id="payment" title="4. Payment information">
         <Callout>
-          Payments are processed by <Strong>Paddle</Strong>, which acts as the merchant of record.
-          Card numbers, expiry dates, and security codes are entered on Paddle’s systems and are{' '}
+          Payments are processed by <Strong>PayPal</Strong>. Card numbers, bank details, and PayPal
+          account credentials are entered on PayPal’s own systems and are{' '}
           <Strong>never transmitted to or stored by rooferslabs</Strong>. We hold only the
-          identifiers Paddle issues, your subscription status, and the invoice history needed to
+          identifiers PayPal issues, your subscription status, and the payment history needed to
           show you what you have paid.
         </Callout>
         <P>
-          Paddle is an independent controller of the payment data it collects, handles tax
-          compliance, and applies its own privacy policy to that processing.
+          To take a payment we send PayPal your billing email address and your business name, and
+          PayPal returns a payer identifier and a subscription identifier that we store against your
+          account. PayPal is an independent controller of the payment data it collects and applies
+          its own privacy policy to that processing.
         </P>
       </Section>
 
@@ -113,8 +115,8 @@ export function PrivacyPage() {
             collapsed.
           </LI>
           <LI>
-            <Strong>Payment cookies</Strong> are set by Paddle during checkout so a payment can be
-            completed securely.
+            <Strong>Payment cookies</Strong> are set by PayPal on its own pages when you approve or
+            manage a subscription, so a payment can be completed securely.
           </LI>
         </UL>
         <P>

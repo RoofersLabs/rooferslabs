@@ -18,8 +18,8 @@ import type {
   CheckoutHandle,
   CreateCheckoutInput,
   CreateCustomerInput,
+  PlanChangeResult,
   PlanSelection,
-  ProviderInvoice,
   ProviderSubscription,
   ProviderWebhookEvent,
   WebhookRequest,
@@ -38,7 +38,7 @@ import {
  * every one of them has to be undone deliberately:
  *
  *  1. **Never bound.** BillingModule binds BILLING_PROVIDER to exactly one
- *     adapter, chosen by PAYMENT_PROVIDER. While that says `paddle`, this class
+ *     adapter, chosen by PAYMENT_PROVIDER. While that says `paypal`, this class
  *     is never constructed and nothing holds a reference to it.
  *  2. **Never loaded.** The Stripe SDK is pulled in with a dynamic `import()`
  *     inside the client getter, and only `import type` at the top of the file.
@@ -114,14 +114,19 @@ export class StripeProvider implements BillingProvider {
 
   // ── Catalogue ────────────────────────────────────────────────────────────
 
-  priceIdFor(selection: PlanSelection): string {
+  /**
+   * Stripe reads its prices straight from configuration, so there is nothing to
+   * await — the signature is a promise only because the port allows an adapter
+   * to resolve prices from provisioned state, as PayPal does.
+   */
+  priceIdFor(selection: PlanSelection): Promise<string> {
     const priceId = this.prices[selection.plan]?.[selection.interval];
     if (!priceId) {
       throw new ExternalServiceError(
         `No Stripe price is configured for the ${selection.plan} plan billed ${selection.interval.toLowerCase()}ly.`,
       );
     }
-    return priceId;
+    return Promise.resolve(priceId);
   }
 
   planForPriceId(
@@ -168,7 +173,7 @@ export class StripeProvider implements BillingProvider {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: input.customerId,
-      line_items: [{ price: this.priceIdFor(input.selection), quantity: 1 }],
+      line_items: [{ price: await this.priceIdFor(input.selection), quantity: 1 }],
       success_url: input.successUrl,
       cancel_url: input.cancelUrl,
       allow_promotion_codes: true,
@@ -186,12 +191,11 @@ export class StripeProvider implements BillingProvider {
     if (!session.url) {
       throw new ExternalServiceError('Stripe did not return a checkout URL.');
     }
-    // Stripe's Checkout is a hosted page, so there is no client-side handle —
-    // and the success URL was already baked into the session above.
+    // Stripe's Checkout is a hosted page, and the success URL was already baked
+    // into the session above.
     return {
       provider: this.provider,
       url: session.url,
-      transactionId: null,
       successUrl: input.successUrl,
     };
   }
@@ -216,11 +220,18 @@ export class StripeProvider implements BillingProvider {
     return this.normalize(await stripe.subscriptions.retrieve(providerSubscriptionId));
   }
 
+  /**
+   * Stripe can always complete a plan change server-side, so the approval URL
+   * the port allows for is never needed here — it exists for PayPal, which
+   * cannot raise what a payer is billed without their consent.
+   */
   async changePlan(input: {
     providerSubscriptionId: string;
     selection: PlanSelection;
     isUpgrade: boolean;
-  }): Promise<ProviderSubscription> {
+    returnUrl: string;
+    cancelUrl: string;
+  }): Promise<PlanChangeResult> {
     const stripe = await this.stripe();
     const current = await stripe.subscriptions.retrieve(input.providerSubscriptionId);
     const item = current.items.data[0];
@@ -229,12 +240,12 @@ export class StripeProvider implements BillingProvider {
     }
 
     const updated = await stripe.subscriptions.update(input.providerSubscriptionId, {
-      items: [{ id: item.id, price: this.priceIdFor(input.selection) }],
-      // Matches the Paddle adapter's contract: upgrades bill now, downgrades
-      // take effect at renewal so nothing already paid for is clawed back.
+      items: [{ id: item.id, price: await this.priceIdFor(input.selection) }],
+      // The domain contract: upgrades bill now, downgrades take effect at
+      // renewal so nothing already paid for is clawed back.
       proration_behavior: input.isUpgrade ? 'always_invoice' : 'none',
     });
-    return this.normalize(updated);
+    return { subscription: this.normalize(updated), approvalUrl: null };
   }
 
   async cancelAtPeriodEnd(providerSubscriptionId: string): Promise<ProviderSubscription> {
@@ -251,12 +262,16 @@ export class StripeProvider implements BillingProvider {
     );
   }
 
-  // ── Billing documents ────────────────────────────────────────────────────
-
-  async listInvoices(customerId: string, limit: number): Promise<ProviderInvoice[]> {
+  /**
+   * End the subscription outright.
+   *
+   * Stripe ends a `cancel_at_period_end` subscription on its own when the period
+   * lapses, so the sweep never has anything to finalize here — this exists to
+   * satisfy the port, and is harmless if it ever does run.
+   */
+  async cancelImmediately(providerSubscriptionId: string): Promise<void> {
     const stripe = await this.stripe();
-    const invoices = await stripe.invoices.list({ customer: customerId, limit });
-    return invoices.data.map(toProviderInvoice);
+    await stripe.subscriptions.cancel(providerSubscriptionId);
   }
 
   // ── Webhooks ─────────────────────────────────────────────────────────────

@@ -182,28 +182,36 @@ export interface InvoiceSummary {
 }
 
 /**
- * What the browser needs to open a checkout.
+ * What the browser is told about billing.
  *
- * Fetched from the API rather than baked into the bundle, so rotating the
- * client token does not require rebuilding and redeploying the web app.
+ * Deliberately carries no credential. Checkout is a redirect to a URL the API
+ * mints, so nothing here can start a payment on its own — `environment` exists
+ * only so the UI can say out loud when it is pointed at a sandbox.
  */
 export interface BillingConfig {
   provider: PaymentProvider;
-  /** Publishable by design: it can only open checkouts, never read anything. */
-  clientToken: string;
+  /** `sandbox` or `live`. A checkout that takes no money must not look like one that does. */
   environment: string;
 }
 
-/**
- * A started checkout. Exactly which field is populated depends on the active
- * provider: a transaction id opens an in-page overlay, a URL is navigated to.
- */
+/** A started checkout: the page to send the browser to. */
 export interface CheckoutHandle {
   provider: PaymentProvider;
-  url: string | null;
-  transactionId: string | null;
-  /** Where the server wants the browser sent once payment succeeds. */
+  url: string;
+  /** Where the provider will return the browser once payment succeeds. */
   successUrl: string;
+}
+
+/**
+ * The result of a plan change.
+ *
+ * `approvalUrl` is set when the provider needs the payer to consent before the
+ * change takes effect — PayPal requires it whenever the new plan costs more.
+ * Until the browser follows it, the subscription in this payload is still the
+ * old plan.
+ */
+export interface PlanChangeResult extends SubscriptionSummary {
+  approvalUrl: string | null;
 }
 
 export interface Session {

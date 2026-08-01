@@ -13,7 +13,6 @@ import { SignInPage, SignUpPage } from '@/pages/AuthPages';
 import { OnboardingLayout } from '@/pages/onboarding/OnboardingLayout';
 import { PaymentPage } from '@/pages/PaymentPage';
 import { BillingPage } from '@/pages/BillingPage';
-import { CheckoutPage } from '@/pages/CheckoutPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { CallsPage } from '@/features/calls/CallsPage';
@@ -132,8 +131,8 @@ function CustomerApp() {
 
       {/* Public in the same way `/` is: no session, no stage, no guard. They sit
           beside the marketing route rather than inside AuthenticatedShell so a
-          reader following a footer link — or a Paddle reviewer opening one
-          cold — never waits on an auth SDK to paint a document. */}
+          reader following a footer link — or a payment provider's reviewer
+          opening one cold — never waits on an auth SDK to paint a document. */}
       {[
         { path: MARKETING_ROUTES.terms, element: <TermsPage /> },
         { path: MARKETING_ROUTES.privacy, element: <PrivacyPage /> },
@@ -174,13 +173,6 @@ function CustomerApp() {
             here after paying, before the activation webhook has landed. */}
         <Route element={<RouteGuard route={ROUTES.billing} />}>
           <Route path={ROUTES.billing} element={<BillingPage />} />
-        </Route>
-
-        {/* The payment provider's link target. Paddle sends customers here from
-            its own "update your payment method" and dunning emails, with the
-            transaction in `_ptxn`. Same access as /billing. */}
-        <Route element={<RouteGuard route={ROUTES.checkout} />}>
-          <Route path={ROUTES.checkout} element={<CheckoutPage />} />
         </Route>
 
         {/* The application proper — one guard, one shell, every feature page

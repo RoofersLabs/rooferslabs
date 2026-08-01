@@ -11,11 +11,11 @@ import { WebhookProcessorService } from '../services/webhook-processor.service';
  * Stripe webhook receiver — preserved, and not registered.
  *
  * BillingModule only adds this controller to the module when
- * PAYMENT_PROVIDER=stripe, so while Paddle is active the route does not exist:
+ * PAYMENT_PROVIDER=stripe, so while PayPal is active the route does not exist:
  * a delivery to it 404s rather than reaching code that would fail a signature
  * check. Kept whole so re-enabling Stripe needs no code, only configuration.
  */
-/** Exempt from the global rate limit, for the reasons on the Paddle receiver. */
+/** Exempt from the global rate limit, for the reasons on the PayPal receiver. */
 @SkipThrottle()
 @ApiTags('Billing')
 @Controller({ path: 'billing/webhook/stripe', version: '1' })

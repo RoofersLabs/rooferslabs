@@ -39,12 +39,6 @@ export const ROUTES = {
   onboarding: '/onboarding',
   payment: '/payment',
   billing: '/billing',
-  /**
-   * The payment provider's link target. Paddle appends `_ptxn` and sends
-   * customers here from its own emails, so it must be reachable by anyone who
-   * still has an account to pay for.
-   */
-  checkout: '/checkout',
   /** The canonical dashboard. `home('app')` resolves here. */
   dashboard: '/dashboard',
   calls: '/calls',
@@ -197,11 +191,10 @@ export function routeAccess(paymentsEnabled: boolean): RouteAccess {
     [ROUTES.signUp]: ['anonymous'],
     [ROUTES.onboarding]: ['onboarding'],
     [ROUTES.payment]: paymentsEnabled ? ['payment'] : [],
+    // Reachable while unpaid *and* while paying: a tenant returning from the
+    // provider's approval page lands here before the activation webhook has,
+    // and a tenant following a "your payment failed" email is usually past due.
     [ROUTES.billing]: paymentsEnabled ? ['payment', 'app'] : [],
-    // Same audience as /billing: a tenant following a "update your payment
-    // method" email is usually past due (stage 'app' or 'payment' depending on
-    // how far the dunning has gone), and either must be able to pay.
-    [ROUTES.checkout]: paymentsEnabled ? ['payment', 'app'] : [],
     // The application proper. Every one of these requires a finished tenant.
     [ROUTES.dashboard]: ['app'],
     [ROUTES.calls]: ['app'],
