@@ -37,7 +37,40 @@ export class PaddleProvider implements BillingProvider {
   private readonly logger = new Logger(PaddleProvider.name);
   private client: Paddle | null = null;
 
-  constructor(private readonly config: AppConfigService) {}
+  constructor(private readonly config: AppConfigService) {
+    this.announceValidationPrice();
+  }
+
+  /**
+   * Say out loud, once at boot, that this deployment charges something other
+   * than what it advertises.
+   *
+   * A price id is inert-looking; nothing about `pri_01abc…` reveals that it is
+   * a validation price rather than the real one, and the divergence is
+   * otherwise invisible until somebody reads a payout. Logging it at start-up
+   * means every deployment of a process in this state leaves a record, and the
+   * line names the variable to delete to undo it.
+   *
+   * `error` rather than `warn` when this is live money: a warning is something
+   * to read later, and charging real cards a validation amount is not.
+   */
+  private announceValidationPrice(): void {
+    const { validationPriceId, environment } = this.config.paddle;
+    if (!validationPriceId) return;
+
+    const message =
+      `BILLING VALIDATION PRICE ACTIVE — the Founding Customer monthly checkout is using ` +
+      `${validationPriceId} instead of PADDLE_PRICE_STARTER_MONTHLY. The product still ` +
+      `advertises its published price; subscriptions created now bill the validation amount ` +
+      `and will keep billing it on renewal. Unset PADDLE_PRICE_VALIDATION_MONTHLY to restore ` +
+      `normal pricing.`;
+
+    if (environment === 'production') {
+      this.logger.error(`${message} PADDLE_ENVIRONMENT=production: these are real charges.`);
+    } else {
+      this.logger.warn(`${message} PADDLE_ENVIRONMENT=sandbox: no money moves.`);
+    }
+  }
 
   get isConfigured(): boolean {
     return Boolean(this.config.paddle.apiKey);

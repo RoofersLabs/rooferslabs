@@ -86,6 +86,22 @@ export interface AppConfig {
     webhookSecret: string;
     environment: 'sandbox' | 'production';
     prices: PriceTable;
+    /**
+     * A live price that replaces the Founding Customer monthly price while the
+     * payment pipeline is being proven end to end — empty when not in use.
+     *
+     * The point of it is a real charge, small enough to be harmless, against
+     * the real merchant account: a sandbox transaction proves the code path but
+     * proves nothing about live keys, live webhook signatures, tax, or money
+     * actually arriving in the bank. This is how that gets proven without
+     * taking a full subscription fee from the first customers.
+     *
+     * It is exposed here, and not merely folded into {@link prices}, so the
+     * divergence between what the product advertises and what it charges is a
+     * declared fact the process can log rather than an ordinary-looking price
+     * id nobody would think to question.
+     */
+    validationPriceId: string;
   };
   stripe: {
     secretKey: string;
@@ -151,6 +167,17 @@ export default (): AppConfig => {
   const env = (process.env.NODE_ENV ?? 'development') as AppConfig['env'];
   const { tier, isDeployed } = resolveEnvironment();
 
+  /**
+   * Presence is the switch. There is no second flag to set, and no mode to
+   * leave half-enabled: a price id here means the validation price is charged,
+   * an absent one means the Founding Customer price is, and reverting is
+   * deleting one variable. The alternative — an id plus an `ENABLED` boolean —
+   * has a state where the id is live and the boolean says otherwise, and the
+   * cost of being wrong about which one won is charging real cards the wrong
+   * amount.
+   */
+  const validationPriceId = process.env.PADDLE_PRICE_VALIDATION_MONTHLY?.trim() ?? '';
+
   return {
     env,
     tier,
@@ -208,9 +235,23 @@ export default (): AppConfig => {
       // a typo bills nobody rather than charging real cards against a
       // half-configured account.
       environment: process.env.PADDLE_ENVIRONMENT === 'production' ? 'production' : 'sandbox',
+      validationPriceId: validationPriceId,
       prices: {
         [SubscriptionPlan.STARTER]: {
-          [BillingInterval.MONTH]: process.env.PADDLE_PRICE_STARTER_MONTHLY ?? '',
+          // The Founding Customer programme. The validation price stands in for
+          // it when one is set — substituted HERE, at the single table both
+          // directions of the mapping read, rather than at the point of
+          // checkout.
+          //
+          // That placement is the whole correctness argument. `priceIdFor` and
+          // `planForPriceId` are inverses of each other over this table: one
+          // opens the checkout, the other reads the price id back off an
+          // incoming webhook to decide which plan was bought. Substituting at
+          // checkout alone would charge the validation price and then fail to
+          // recognise it on the way back, and the subscription would sync with
+          // no plan at all. Substituting here keeps them inverses.
+          [BillingInterval.MONTH]:
+            validationPriceId || (process.env.PADDLE_PRICE_STARTER_MONTHLY ?? ''),
           [BillingInterval.YEAR]: process.env.PADDLE_PRICE_STARTER_ANNUAL ?? '',
         },
         [SubscriptionPlan.PROFESSIONAL]: {
