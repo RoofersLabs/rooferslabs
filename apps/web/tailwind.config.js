@@ -287,6 +287,18 @@ export default {
       },
       keyframes: {
         'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
+        'fade-out': { from: { opacity: '1' }, to: { opacity: '0' } },
+        // A bottom sheet arriving from and leaving toward the edge it is
+        // anchored to. `translate3d` keeps the panel on the compositor, so a
+        // full-width surface animates without laying out or painting a frame.
+        'sheet-in': {
+          from: { transform: 'translate3d(0, 100%, 0)' },
+          to: { transform: 'translate3d(0, 0, 0)' },
+        },
+        'sheet-out': {
+          from: { transform: 'translate3d(0, 0, 0)' },
+          to: { transform: 'translate3d(0, 100%, 0)' },
+        },
         'scale-in': {
           from: { opacity: '0', transform: 'translateY(4px) scale(0.98)' },
           to: { opacity: '1', transform: 'translateY(0) scale(1)' },
@@ -300,6 +312,12 @@ export default {
       },
       animation: {
         'fade-in': 'fade-in var(--duration-base) var(--ease-standard)',
+        'fade-out': 'fade-out var(--duration-base) var(--ease-standard)',
+        // Decelerate in, accelerate out — the panel settles as it arrives and
+        // gets out of the way as it leaves, which is what makes a dismissal
+        // read as quick without being abrupt.
+        'sheet-in': 'sheet-in var(--duration-base) var(--ease-decelerate)',
+        'sheet-out': 'sheet-out var(--duration-base) var(--ease-accelerate)',
         'scale-in': 'scale-in var(--duration-base) var(--ease-decelerate)',
         // `both` so a delayed element holds at opacity 0 rather than flashing in
         // at full opacity before its turn.

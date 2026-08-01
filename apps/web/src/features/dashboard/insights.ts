@@ -90,6 +90,21 @@ export interface PriorityLead {
   summary: string | null;
   /** E.164, straight from the record — `tel:` wants the raw digits, not a display format. */
   phone: string | null;
+  /**
+   * The conversation this lead was projected from, carried through for the
+   * detail sheet.
+   *
+   * A reference rather than a dozen more flattened fields: the sheet shows what
+   * the conversation page shows — outcome, intent, lead quality, urgency, key
+   * points, the appointment request, call time and duration — and copying each
+   * one into this view model would only create a second list to keep in step
+   * with the first. The dashboard has already fetched every conversation, so
+   * this costs nothing and adds no request.
+   *
+   * The fields above stay as they are: they are what the *card* renders, and a
+   * card should not be reaching into an API type to draw a name.
+   */
+  source: Conversation;
 }
 
 /** Outcomes that mean the AI captured something worth calling back. */
@@ -157,6 +172,7 @@ export function derivePriorityLeads(conversations: Conversation[], limit = 5): P
       priority: priorityOf(conversation),
       summary: conversation.summary?.trim() || null,
       phone: conversation.customer?.phone ?? conversation.call?.fromNumber ?? null,
+      source: conversation,
     }));
 }
 

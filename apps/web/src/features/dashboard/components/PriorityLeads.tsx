@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ROUTES } from '@/auth/stages';
@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Button, buttonClass } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { PriorityLead } from '../insights';
+import { LeadDetailSheet } from './LeadDetailSheet';
 import { StatusLabel } from './StatusLabel';
 import { useCardCarousel } from './useCardCarousel';
 
@@ -153,6 +154,22 @@ function LeadCarousel({ leads }: { leads: PriorityLead[] }) {
   const track = useRef<HTMLDivElement>(null);
   const carousel = useCardCarousel(track, leads.length);
 
+  // One sheet for the deck, not one per card: the panel is a single surface
+  // whichever lead opened it, and mounting five of them into the same portal
+  // would be four dialogs' worth of listeners and focus traps for nothing.
+  //
+  // `lead` deliberately survives `open` going false. Radix keeps the panel
+  // mounted while its exit animation runs, so clearing the lead on close would
+  // blank the content for the length of the dismissal — the sheet would slide
+  // away empty. The stale lead is invisible and replaced on the next open.
+  const [detailLead, setDetailLead] = useState<PriorityLead | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  const view = useCallback((next: PriorityLead) => {
+    setDetailLead(next);
+    setDetailOpen(true);
+  }, []);
+
   return (
     <div>
       {/* The APG carousel pattern: the track is a labelled group announced as a
@@ -177,7 +194,7 @@ function LeadCarousel({ leads }: { leads: PriorityLead[] }) {
             aria-label={`Lead ${i + 1} of ${leads.length}`}
             className={SLIDE}
           >
-            <LeadCard lead={lead} position={i + 1} total={leads.length} />
+            <LeadCard lead={lead} position={i + 1} total={leads.length} onView={() => view(lead)} />
           </div>
         ))}
       </div>
@@ -213,6 +230,11 @@ function LeadCarousel({ leads }: { leads: PriorityLead[] }) {
           </Button>
         </div>
       </div>
+
+      {/* Rendered once, outside the track. It portals to the body regardless, so
+          its position in the tree costs nothing — but keeping it out of the
+          scroll container keeps the overflow rules above about cards only. */}
+      <LeadDetailSheet lead={detailLead} open={detailOpen} onOpenChange={setDetailOpen} />
     </div>
   );
 }
@@ -236,10 +258,13 @@ function LeadCard({
   lead,
   position,
   total,
+  onView,
 }: {
   lead: PriorityLead;
   position: number;
   total: number;
+  /** Opens the detail sheet for this lead. */
+  onView: () => void;
 }) {
   return (
     // Border, surface and shadow are the Card's untouched defaults; only the
@@ -298,19 +323,48 @@ function LeadCard({
           on a slide taller than its content — a lead with no summary beside one
           with three lines of it — the slack collects above the button instead
           of below it, so the action stays the card's last line and the call
-          buttons line up as you swipe. */}
-      <div className="mt-auto flex justify-center pt-8">
+          buttons line up as you swipe.
+
+          The two actions share the row rather than stacking: stacking costs
+          another 60px of height on every card and pushes the call further from
+          the thumb. Both keep the `lg` height, so both stay 48px tall and well
+          past the 44px minimum target — the row is tight across, never down.
+
+          Across is where it has to be earned. The card's interior is the
+          viewport less 120px (64 of track padding, 56 of card gutter), so a
+          360px phone leaves 240px for two buttons and a gap, and `lg`'s default
+          20px side padding does not fit "Call Homeowner" and "View" inside it.
+          Hence `px-3` on the call and `px-5` on View: View is short enough to
+          keep its full padding and is fixed at its natural width, and the call
+          takes whatever remains. `min-w-0` with a truncating label is the floor
+          under that — below about 330px the label ellipsises instead of pushing
+          the row through the side of the card. */}
+      <div className="mt-auto flex items-center gap-3 pt-8">
         {lead.phone ? (
-          <a href={`tel:${lead.phone}`} className={buttonClass('primary', 'lg', 'w-4/5')}>
-            Call Homeowner
+          <a
+            href={`tel:${lead.phone}`}
+            className={buttonClass('primary', 'lg', 'min-w-0 flex-1 px-3')}
+          >
+            <span className="truncate">Call Homeowner</span>
           </a>
         ) : (
           // A lead with no number keeps the same footprint, so a scrolling
-          // column of cards never jumps.
-          <Button variant="primary" size="lg" className="w-4/5" disabled>
-            No number captured
+          // column of cards never jumps. The label is shorter than the sentence
+          // it used to be because it now shares the row — the sheet behind View
+          // gives the full explanation.
+          <Button variant="primary" size="lg" className="min-w-0 flex-1 px-3" disabled>
+            <span className="truncate">No number</span>
           </Button>
         )}
+
+        {/* Always enabled, including on the lead above with no number: a lead
+            nobody can ring is exactly the one worth reading before deciding
+            what to do with it. `secondary` is the design system's quieter
+            button — bordered, unfilled — so it reads as the lesser of the two
+            without a bespoke style. */}
+        <Button variant="secondary" size="lg" className="shrink-0 px-5" onClick={onView}>
+          View
+        </Button>
       </div>
     </Card>
   );
@@ -345,8 +399,11 @@ function LeadSkeletonCard() {
       <Skeleton className="mt-6 h-3 w-24" />
       <Skeleton className="mt-2 h-4 w-full" />
       <Skeleton className="mt-1.5 h-4 w-3/4" />
-      <div className="mt-auto flex justify-center pt-8">
-        <Skeleton className="h-12 w-4/5" />
+      {/* Two placeholders, matching the two actions the loaded card draws — a
+          single wide one would resolve into a narrower pair and shift the row. */}
+      <div className="mt-auto flex items-center gap-3 pt-8">
+        <Skeleton className="h-12 flex-1" />
+        <Skeleton className="h-12 w-[76px] shrink-0" />
       </div>
     </Card>
   );

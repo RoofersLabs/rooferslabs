@@ -29,7 +29,13 @@ function SheetOverlay({
     <SheetPrimitive.Overlay
       data-slot="sheet-overlay"
       className={cn(
-        'fixed inset-0 z-50 bg-black/50 supports-[backdrop-filter]:backdrop-blur-[2px] data-[state=open]:animate-fade-in',
+        // The scrim fades out as well as in. Radix keeps an element mounted for
+        // as long as it has a running exit animation, so without the second
+        // half the scrim vanished on the first frame of a dismissal while the
+        // panel was still travelling — the panel appeared to slide away over
+        // nothing. Every sheet in the app closes this way, which is the point:
+        // the mobile navigation drawer had the same seam.
+        'fixed inset-0 z-50 bg-black/50 supports-[backdrop-filter]:backdrop-blur-[2px] data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out',
         className,
       )}
       {...props}
@@ -55,6 +61,27 @@ function SheetContent({
         data-side={side}
         className={cn(
           'fixed z-50 flex flex-col gap-4 border-line-subtle bg-surface-overlay bg-clip-padding text-body text-ink shadow-dialog data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:border-t data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-3/4 data-[side=left]:border-r data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:h-full data-[side=right]:w-3/4 data-[side=right]:border-l data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:border-b data-[side=left]:sm:max-w-sm data-[side=right]:sm:max-w-sm data-[state=open]:animate-fade-in',
+          // The bottom side, as a bottom sheet.
+          //
+          // Only this side gets it, and only this side had no consumer before —
+          // the navigation drawer is `left`/`right` — so nothing existing moves.
+          //
+          // It arrives by travelling up from the edge it is anchored to rather
+          // than fading in place: on a phone the panel is a surface being drawn
+          // over the page, and the direction is what says which edge it came
+          // from and which way to flick it away. The stacked `data-` variants
+          // are two attribute selectors against the base rule's one, so these
+          // win on specificity without `!important`.
+          //
+          // `max-h-[85dvh]` leaves a strip of the dashboard visible, which is
+          // the whole reason for a sheet rather than a page: the reader keeps
+          // their place. `dvh` rather than `vh` because mobile browser chrome
+          // retracts on scroll, and `vh` measures the tall state — a sheet
+          // sized to it is cut off by the address bar on arrival. `min-h-0` on
+          // the body is what actually lets the content scroll inside a flex
+          // column instead of overflowing the panel.
+          'data-[side=bottom]:max-h-[85dvh] data-[side=bottom]:rounded-t-2xl',
+          'data-[side=bottom]:data-[state=open]:animate-sheet-in data-[side=bottom]:data-[state=closed]:animate-sheet-out',
           className,
         )}
         {...props}
