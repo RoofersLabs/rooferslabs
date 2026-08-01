@@ -74,34 +74,50 @@ export interface AppConfig {
      */
     grandfatherBefore: Date | null;
   };
-  paddle: {
-    apiKey: string;
+  paypal: {
+    clientId: string;
+    clientSecret: string;
     /**
-     * The browser-side token Paddle.js initializes with. Public by design — it
-     * identifies the seller account and can only open checkouts, never read or
-     * mutate anything. Served to the frontend from /v1/billing/config rather
-     * than baked into the bundle, so rotating it does not need a rebuild.
+     * Which PayPal estate this process talks to. Decides the REST host, and
+     * nothing else — the same code path serves both, so a sandbox run exercises
+     * exactly what production will.
      */
-    clientToken: string;
-    webhookSecret: string;
-    environment: 'sandbox' | 'production';
-    prices: PriceTable;
+    environment: 'sandbox' | 'live';
     /**
-     * A live price that replaces the Founding Customer monthly price while the
-     * payment pipeline is being proven end to end — empty when not in use.
+     * An explicitly configured webhook id, overriding the provisioned one.
      *
-     * The point of it is a real charge, small enough to be harmless, against
-     * the real merchant account: a sandbox transaction proves the code path but
-     * proves nothing about live keys, live webhook signatures, tax, or money
-     * actually arriving in the bank. This is how that gets proven without
-     * taking a full subscription fee from the first customers.
+     * Optional. `billing:paypal:setup` registers the webhook and persists its id
+     * in `billing_catalog`, so this is normally empty — it exists for a webhook
+     * registered by hand, or one shared across deployments, which the
+     * provisioner must then leave alone.
      *
-     * It is exposed here, and not merely folded into {@link prices}, so the
-     * divergence between what the product advertises and what it charges is a
-     * declared fact the process can log rather than an ordinary-looking price
-     * id nobody would think to question.
+     * Not a secret and not a signing key: PayPal verifies a delivery by having
+     * us POST the headers and body back to it along with this id, so possession
+     * of it proves nothing on its own.
      */
-    validationPriceId: string;
+    webhookId: string;
+    /**
+     * Charge the token test price instead of the published one.
+     *
+     * When true, a checkout for the Founding Customer monthly plan resolves to
+     * the separately provisioned `$1.00` PayPal plan rather than the `$49.00`
+     * one. Nothing else changes: the product still advertises $49 everywhere,
+     * the subscription lifecycle is identical, and webhooks, activation and
+     * entitlement are untouched. The customer sees the real amount for the first
+     * time on PayPal's own approval page.
+     *
+     * It exists because a sandbox subscription proves the code path and nothing
+     * else — not live credentials, not live webhook signature verification, and
+     * not money actually arriving in the bank. This proves those for a dollar.
+     *
+     * Two consequences worth knowing before enabling it on a live account:
+     *
+     *  - Subscriptions created while it is on **keep billing $1 on renewal**.
+     *    Turning it off changes what new checkouts charge, not what existing
+     *    subscriptions bill — moving those is a plan revision per subscription.
+     *  - The API logs an error-level line at boot for as long as it is on.
+     */
+    testPricing: boolean;
   };
   stripe: {
     secretKey: string;
@@ -168,15 +184,14 @@ export default (): AppConfig => {
   const { tier, isDeployed } = resolveEnvironment();
 
   /**
-   * Presence is the switch. There is no second flag to set, and no mode to
-   * leave half-enabled: a price id here means the validation price is charged,
-   * an absent one means the Founding Customer price is, and reverting is
-   * deleting one variable. The alternative — an id plus an `ENABLED` boolean —
-   * has a state where the id is live and the boolean says otherwise, and the
-   * cost of being wrong about which one won is charging real cards the wrong
-   * amount.
+   * One variable, one switch, no half-enabled state.
+   *
+   * The alternative — a plan id plus an `ENABLED` boolean — has a state where
+   * the id is set and the boolean says otherwise, and the cost of being wrong
+   * about which one won is charging real cards the wrong amount. A single
+   * boolean against a provisioned plan cannot get into that state.
    */
-  const validationPriceId = process.env.PADDLE_PRICE_VALIDATION_MONTHLY?.trim() ?? '';
+  const testPricing = toBool(process.env.PAYPAL_TEST_PRICING, false);
 
   return {
     env,
@@ -196,7 +211,12 @@ export default (): AppConfig => {
       url: process.env.DATABASE_URL ?? '',
     },
     redis: {
-      url: process.env.REDIS_URL ?? 'redis://localhost:6379',
+      // No localhost default. A missing REDIS_URL used to resolve to a machine
+      // that is not running Redis, so the failure surfaced as a connection
+      // refusal from the cache layer rather than as the configuration mistake
+      // it is. Empty fails the same way DATABASE_URL does: loudly, naming the
+      // variable.
+      url: process.env.REDIS_URL ?? '',
     },
     clerk: {
       publishableKey: process.env.CLERK_PUBLISHABLE_KEY ?? '',
@@ -227,38 +247,15 @@ export default (): AppConfig => {
         return Number.isNaN(parsed.getTime()) ? null : parsed;
       })(),
     },
-    paddle: {
-      apiKey: process.env.PADDLE_API_KEY ?? '',
-      clientToken: process.env.PADDLE_CLIENT_TOKEN ?? '',
-      webhookSecret: process.env.PADDLE_WEBHOOK_SECRET ?? '',
-      // Anything other than an explicit 'production' is treated as sandbox, so
-      // a typo bills nobody rather than charging real cards against a
-      // half-configured account.
-      environment: process.env.PADDLE_ENVIRONMENT === 'production' ? 'production' : 'sandbox',
-      validationPriceId: validationPriceId,
-      prices: {
-        [SubscriptionPlan.STARTER]: {
-          // The Founding Customer programme. The validation price stands in for
-          // it when one is set — substituted HERE, at the single table both
-          // directions of the mapping read, rather than at the point of
-          // checkout.
-          //
-          // That placement is the whole correctness argument. `priceIdFor` and
-          // `planForPriceId` are inverses of each other over this table: one
-          // opens the checkout, the other reads the price id back off an
-          // incoming webhook to decide which plan was bought. Substituting at
-          // checkout alone would charge the validation price and then fail to
-          // recognise it on the way back, and the subscription would sync with
-          // no plan at all. Substituting here keeps them inverses.
-          [BillingInterval.MONTH]:
-            validationPriceId || (process.env.PADDLE_PRICE_STARTER_MONTHLY ?? ''),
-          [BillingInterval.YEAR]: process.env.PADDLE_PRICE_STARTER_ANNUAL ?? '',
-        },
-        [SubscriptionPlan.PROFESSIONAL]: {
-          [BillingInterval.MONTH]: process.env.PADDLE_PRICE_PROFESSIONAL_MONTHLY ?? '',
-          [BillingInterval.YEAR]: process.env.PADDLE_PRICE_PROFESSIONAL_ANNUAL ?? '',
-        },
-      },
+    paypal: {
+      clientId: process.env.PAYPAL_CLIENT_ID ?? '',
+      clientSecret: process.env.PAYPAL_CLIENT_SECRET ?? '',
+      // Anything other than an explicit 'live' is treated as sandbox, so a typo
+      // bills nobody rather than charging real cards against a half-configured
+      // account.
+      environment: process.env.PAYPAL_ENVIRONMENT === 'live' ? 'live' : 'sandbox',
+      webhookId: process.env.PAYPAL_WEBHOOK_ID ?? '',
+      testPricing,
     },
     stripe: {
       secretKey: process.env.STRIPE_SECRET_KEY ?? '',
