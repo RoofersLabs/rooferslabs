@@ -174,15 +174,12 @@ export function CustomerDetailPage() {
             {/* One action carries the weight — calling back is what this page
                 exists for — and the rest step down to icons with labels. */}
             {data.phone ? (
-              <a
-                href={`tel:${data.phone}`}
-                className={buttonClass('primary', 'lg', 'w-full rounded-full')}
-              >
+              <a href={`tel:${data.phone}`} className={buttonClass('primary', 'lg', 'w-full')}>
                 <Phone className="h-4 w-4" aria-hidden />
                 Call customer
               </a>
             ) : (
-              <Button size="lg" className="w-full rounded-full" disabled>
+              <Button size="lg" className="w-full" disabled>
                 <Phone className="h-4 w-4" aria-hidden />
                 Call customer
               </Button>

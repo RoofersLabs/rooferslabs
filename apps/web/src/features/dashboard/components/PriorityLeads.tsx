@@ -330,20 +330,25 @@ function LeadCard({
           the thumb. Both keep the `lg` height, so both stay 48px tall and well
           past the 44px minimum target — the row is tight across, never down.
 
-          Across is where it has to be earned. The card's interior is the
-          viewport less 120px (64 of track padding, 56 of card gutter), so a
-          360px phone leaves 240px for two buttons and a gap, and `lg`'s default
-          20px side padding does not fit "Call Homeowner" and "View" inside it.
-          Hence `px-3` on the call and `px-5` on View: View is short enough to
-          keep its full padding and is fixed at its natural width, and the call
-          takes whatever remains. `min-w-0` with a truncating label is the floor
-          under that — below about 330px the label ellipsises instead of pushing
-          the row through the side of the card. */}
+          Across is where it has to be earned, and this is the tightest row in
+          the product. The card's interior is the viewport less 120px (64 of
+          track padding, 56 of card gutter), so a 360px phone leaves 240px for
+          two buttons and a gap — and `lg`'s pill padding of 24px a side does
+          not fit "Call Homeowner" and "View" inside that.
+
+          Both therefore run at `px-4`. That is under the h/2 the pill shape
+          wants, so it is a deliberate exception rather than a second opinion
+          about the design system: the alternative is `md`, which fits easily
+          but drops both targets to 40px, and a 48px target on the dashboard's
+          primary action is worth more than 8px of optical padding on the one
+          card where the two compete. `min-w-0` with a truncating label is the
+          floor under it — on the narrowest phones the label ellipsises rather
+          than pushing the row through the side of the card. */}
       <div className="mt-auto flex items-center gap-3 pt-8">
         {lead.phone ? (
           <a
             href={`tel:${lead.phone}`}
-            className={buttonClass('primary', 'lg', 'min-w-0 flex-1 px-3')}
+            className={buttonClass('primary', 'lg', 'min-w-0 flex-1 px-4')}
           >
             <span className="truncate">Call Homeowner</span>
           </a>
@@ -352,7 +357,7 @@ function LeadCard({
           // column of cards never jumps. The label is shorter than the sentence
           // it used to be because it now shares the row — the sheet behind View
           // gives the full explanation.
-          <Button variant="primary" size="lg" className="min-w-0 flex-1 px-3" disabled>
+          <Button variant="primary" size="lg" className="min-w-0 flex-1 px-4" disabled>
             <span className="truncate">No number</span>
           </Button>
         )}
@@ -362,7 +367,7 @@ function LeadCard({
             what to do with it. `secondary` is the design system's quieter
             button — bordered, unfilled — so it reads as the lesser of the two
             without a bespoke style. */}
-        <Button variant="secondary" size="lg" className="shrink-0 px-5" onClick={onView}>
+        <Button variant="secondary" size="lg" className="shrink-0 px-4" onClick={onView}>
           View
         </Button>
       </div>
@@ -402,8 +407,8 @@ function LeadSkeletonCard() {
       {/* Two placeholders, matching the two actions the loaded card draws — a
           single wide one would resolve into a narrower pair and shift the row. */}
       <div className="mt-auto flex items-center gap-3 pt-8">
-        <Skeleton className="h-12 flex-1" />
-        <Skeleton className="h-12 w-[76px] shrink-0" />
+        <Skeleton className="h-12 flex-1 rounded-full" />
+        <Skeleton className="h-12 w-[68px] shrink-0 rounded-full" />
       </div>
     </Card>
   );

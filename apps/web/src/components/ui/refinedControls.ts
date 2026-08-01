@@ -21,9 +21,13 @@ export const REFINED_CARD = 'rounded-md';
 export const REFINED_FIELD = 'rounded-xl';
 
 /**
- * Page-level CTAs. The radius matches the fields they sit beside, and the
- * tighter tracking is the only typographic change — weight, size and colour are
- * left alone. Contrast is already 10.3:1 (white on --brand-700) in the light
- * theme, so nothing here touches colour.
+ * Page-level CTAs. Tighter tracking is now the only thing this changes —
+ * weight, size and colour are left alone, and contrast is untouched (already
+ * 10.3:1, white on --brand-700, in the light theme).
+ *
+ * It used to carry `rounded-xl` as well, to match the fields these CTAs sit
+ * beside. That is gone: `Button` is a pill everywhere now, so naming a radius
+ * here would only be this handful of pages quietly opting out of the product's
+ * button shape — which is the opposite of what this file is for.
  */
-export const REFINED_BUTTON = 'rounded-xl tracking-tight';
+export const REFINED_BUTTON = 'tracking-tight';

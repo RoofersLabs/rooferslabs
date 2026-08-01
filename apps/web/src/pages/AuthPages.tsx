@@ -39,6 +39,30 @@ function useAfterAuthUrl(): string {
 }
 
 /**
+ * The one part of the product whose buttons this codebase does not own.
+ *
+ * Clerk renders sign-in and sign-up itself, so `Button` never runs here and the
+ * pill would have stopped at the authentication screen — the first screen
+ * anyone sees. Clerk's `appearance.elements` takes Tailwind classes, which is
+ * the same mechanism `AdminLayout` already uses for the avatar, so the radius
+ * is stated here rather than the widget being rebuilt.
+ *
+ * Radius only. Clerk's own colour, height and spacing are left exactly as they
+ * are: matching the shape is what makes the screen read as ours, and going
+ * further would be maintaining a private fork of someone else's design system
+ * against class names they are free to change. If Clerk renames these, the
+ * override silently stops applying — the button keeps working and reverts to
+ * their radius, which is the right failure for a purely visual override.
+ */
+const CLERK_PILL_BUTTONS = {
+  elements: {
+    formButtonPrimary: 'rounded-full',
+    socialButtonsBlockButton: 'rounded-full',
+    formButtonReset: 'rounded-full',
+  },
+} as const;
+
+/**
  * `afterAuthUrl` overrides where Clerk lands the browser once authentication
  * succeeds. The admin hostname passes `/admin`, so the same widget serves both
  * surfaces rather than a second copy existing for the portal. Left unset, the
@@ -52,6 +76,7 @@ export function SignInPage({ afterAuthUrl }: { afterAuthUrl?: string } = {}) {
         path={ROUTES.signIn}
         signUpUrl={ROUTES.signUp}
         fallbackRedirectUrl={afterAuthUrl ?? derived}
+        appearance={CLERK_PILL_BUTTONS}
       />
     </AuthShell>
   );
@@ -61,7 +86,12 @@ export function SignUpPage() {
   const afterAuthUrl = useAfterAuthUrl();
   return (
     <AuthShell>
-      <SignUp path={ROUTES.signUp} signInUrl={ROUTES.signIn} fallbackRedirectUrl={afterAuthUrl} />
+      <SignUp
+        path={ROUTES.signUp}
+        signInUrl={ROUTES.signIn}
+        fallbackRedirectUrl={afterAuthUrl}
+        appearance={CLERK_PILL_BUTTONS}
+      />
     </AuthShell>
   );
 }
