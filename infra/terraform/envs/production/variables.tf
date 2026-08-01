@@ -167,100 +167,99 @@ variable "payments_enabled" {
 
 variable "payment_provider" {
   description = <<-EOT
-    Which processor handles money: "paddle" or "stripe". Exactly one is active;
+    Which processor handles money: "paypal" or "stripe". Exactly one is active;
     the other stays implemented in the codebase but is never constructed and
     refuses every call. Switching is a configuration change — set this and
     supply that provider's credentials below.
   EOT
   type        = string
-  default     = "paddle"
+  default     = "paypal"
 
   validation {
     # Guessing at an unrecognized value would bill through a processor nobody
     # chose, so fail the plan instead.
-    condition     = contains(["paddle", "stripe"], var.payment_provider)
-    error_message = "payment_provider must be either \"paddle\" or \"stripe\"."
+    condition     = contains(["paypal", "stripe"], var.payment_provider)
+    error_message = "payment_provider must be either \"paypal\" or \"stripe\"."
   }
 }
 
-# ---- Paddle (the active provider) ---------------------------------------------------
+# ---- PayPal (the active provider) ----------------------------------------------------
 #
-# These default to empty so the stack can be applied before the Paddle account
+# These default to empty so the stack can be applied before the PayPal account
 # is live. The precondition in main.tf makes that safe: they become mandatory
-# the moment payments_enabled is true and paddle is selected, so an apply can
+# the moment payments_enabled is true and paypal is selected, so an apply can
 # never turn the wall on without the credentials to enforce it.
 
-variable "paddle_api_key" {
-  description = "Paddle → Developer tools → Authentication → API key (pdl_live_…)."
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
-variable "paddle_client_token" {
+variable "paypal_client_id" {
   description = <<-EOT
-    Paddle → Developer tools → Authentication → client-side token (live_…).
-    Publishable by design: it only opens checkouts and is served to the browser
-    by the API. Marked sensitive anyway so it is not echoed in plan output.
+    PayPal Developer Dashboard -> Apps & Credentials -> your REST app -> Client ID
+    (live app).
+
+    Server-side only. Unlike a publishable key this never reaches the browser:
+    PayPal's checkout is a redirect to an approval URL the API mints, so the
+    client needs no credential at all.
   EOT
   type        = string
   sensitive   = true
   default     = ""
 }
 
-variable "paddle_webhook_secret" {
-  description = <<-EOT
-    Paddle → Developer tools → Notifications → destination secret key
-    (pdl_ntfset_…) for the /v1/billing/webhook/paddle endpoint.
-  EOT
+variable "paypal_client_secret" {
+  description = "PayPal Developer Dashboard -> Apps & Credentials -> your REST app -> Secret (live app)."
   type        = string
   sensitive   = true
   default     = ""
 }
 
-variable "paddle_environment" {
-  description = "Which Paddle system to bill against: \"sandbox\" or \"production\"."
+variable "paypal_test_pricing" {
+  description = <<-EOT
+    Charge the provisioned $1.00 test plan instead of the published $49.00 one.
+
+    For proving a LIVE payment pipeline end to end — real credentials, real
+    webhook signatures, real money arriving in the bank — without taking a full
+    subscription fee to do it. The $1.00 plan is a separate PayPal plan created
+    by `npm run billing:paypal:setup`; the published plan is never modified.
+
+    Nothing else changes: the site still advertises $49 everywhere, and the
+    customer sees $1.00 for the first time on PayPal's own approval page.
+
+    Set it back to false to restore the published price for NEW checkouts.
+    Subscriptions created while it was true keep renewing at $1.00.
+  EOT
+  type        = bool
+  default     = false
+}
+
+variable "paypal_webhook_id" {
+  description = <<-EOT
+    PayPal Developer Dashboard -> Webhooks -> the webhook registered against
+    /v1/billing/webhook/paypal, its ID (not its URL).
+
+    Not a secret and not a signing key: PayPal verifies a delivery by having the
+    API post the headers and body back to it along with this id, so possession
+    proves nothing. It is required because that call names the webhook whose
+    certificate should have signed the payload — without it every inbound
+    webhook is rejected.
+  EOT
   type        = string
-  default     = "production"
+  default     = ""
+}
+
+variable "paypal_environment" {
+  description = "Which PayPal estate to bill against: \"sandbox\" or \"live\"."
+  type        = string
+  default     = "live"
 
   validation {
-    condition     = contains(["sandbox", "production"], var.paddle_environment)
-    error_message = "paddle_environment must be either \"sandbox\" or \"production\"."
+    condition     = contains(["sandbox", "live"], var.paypal_environment)
+    error_message = "paypal_environment must be either \"sandbox\" or \"live\"."
   }
-}
-
-variable "paddle_price_starter_monthly" {
-  description = "Paddle recurring Price ID (pri_…) backing the monthly Starter plan."
-  type        = string
-  default     = ""
-}
-
-variable "paddle_price_professional_monthly" {
-  description = "Paddle recurring Price ID (pri_…) backing the monthly Professional plan."
-  type        = string
-  default     = ""
-}
-
-variable "paddle_price_starter_annual" {
-  description = <<-EOT
-    Paddle Price ID for annual Starter. Optional: empty means annual billing is
-    not offered, and the API refuses a checkout for it rather than inventing a
-    price. Launching annual plans is setting this and its Professional twin.
-  EOT
-  type        = string
-  default     = ""
-}
-
-variable "paddle_price_professional_annual" {
-  description = "Paddle Price ID for annual Professional. Optional; see the Starter twin."
-  type        = string
-  default     = ""
 }
 
 # ---- Stripe (dormant) ---------------------------------------------------------------
 #
 # Retained so moving back to Stripe is a configuration change rather than a
-# rewrite. Never required while payment_provider = "paddle"; the API boots with
+# rewrite. Never required while payment_provider = "paypal"; the API boots with
 # no Stripe account whatsoever.
 
 variable "stripe_secret_key" {
@@ -293,8 +292,8 @@ variable "billing_trial_period_days" {
   description = <<-EOT
     Free-trial length applied to new checkouts. 0 disables trials.
 
-    Honoured by Stripe only. Paddle attaches trials to the *price* rather than
-    to the checkout, so under Paddle this is configured in the Paddle dashboard
+    Honoured by Stripe only. PayPal attaches a trial to the *plan*, as a billing
+    cycle with tenure_type TRIAL, so under PayPal this is configured on the plan
     and the API logs a warning if this is set to anything but 0.
   EOT
   type        = number

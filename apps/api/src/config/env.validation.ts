@@ -9,7 +9,8 @@
  * Billing sits between the two: the *active* provider's credentials are
  * mandatory in production while PAYMENTS_ENABLED is on, and not required at all
  * when it is off. A dormant provider's variables are never required — which is
- * what lets the platform run with no Stripe account whatsoever.
+ * what lets the platform run with no Stripe account whatsoever while PayPal is
+ * the active processor.
  *
  * "Production" here means any DEPLOYED environment, not NODE_ENV=production.
  * The development environment runs with NODE_ENV=development so it keeps
@@ -22,6 +23,25 @@ import { PROVIDER_REQUIRED_ENV, activePaymentProvider, isPaymentsEnabled } from 
 import { assertEnvironmentIsolation, resolveEnvironment } from './environment-guard';
 
 const REQUIRED_ALWAYS = ['DATABASE_URL'] as const;
+
+/**
+ * Infrastructure endpoints that must never point at the machine running the
+ * process once it claims to be a deployed environment.
+ *
+ * There is no local database or cache in this project — every environment's
+ * Postgres and Redis live in AWS, in private subnets. A deployed process that
+ * resolved either to localhost would boot, pass every presence check, and then
+ * fail on the first query with a connection refusal that reads like an outage
+ * rather than the configuration mistake it is.
+ *
+ * This is the check that would have caught `billing:paypal:setup` reading a
+ * `DATABASE_URL` of `postgresql://…@localhost:5432/…` while `APP_ENV=development`
+ * said it was talking to AWS.
+ */
+const MUST_NOT_BE_LOCAL = ['DATABASE_URL', 'REDIS_URL'] as const;
+
+/** Hosts that mean "this machine" in a connection string. */
+const LOCAL_HOSTS = /(^|@|\/\/)(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)(:|\/|$)/i;
 
 const REQUIRED_WHEN_DEPLOYED = [
   'CLERK_SECRET_KEY',
@@ -41,9 +61,10 @@ const FEATURE_CREDENTIALS: Record<string, string> = {
 
 /** Development-only hints for the credentials production requires outright. */
 const DEV_HINTS: Record<PaymentProvider, Record<string, string>> = {
-  [PaymentProvider.PADDLE]: {
-    PADDLE_API_KEY: 'billing endpoints will return 503 until a sandbox key is set',
-    PADDLE_CLIENT_TOKEN: 'the checkout cannot open in the browser without it',
+  [PaymentProvider.PAYPAL]: {
+    PAYPAL_CLIENT_ID: 'billing endpoints will return 503 until sandbox credentials are set',
+    PAYPAL_CLIENT_SECRET:
+      'no access token can be minted, so every PayPal call — including `billing:paypal:setup` — fails',
   },
   [PaymentProvider.STRIPE]: {
     STRIPE_SECRET_KEY: 'billing endpoints will return 503 until a test key is set',
@@ -71,6 +92,21 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
   if (isDeployed) {
     for (const key of REQUIRED_WHEN_DEPLOYED) {
       if (!config[key]) missing.push(key);
+    }
+
+    // A deployed tier pointed at localhost is a misconfiguration, not a
+    // degraded mode — fail before serving a single request.
+    const local = MUST_NOT_BE_LOCAL.filter((key) => {
+      const value = config[key];
+      return typeof value === 'string' && LOCAL_HOSTS.test(value);
+    });
+    if (local.length > 0) {
+      throw new Error(
+        `${local.join(' and ')} point${local.length > 1 ? '' : 's'} at localhost while APP_ENV=${tier}. ` +
+          `There is no local database or cache in this project: every environment's Postgres and Redis ` +
+          `live in AWS. Supply this environment's own connection strings, or unset APP_ENV to run ` +
+          `outside a deployed tier.`,
+      );
     }
     // Billing gates every tenant's access to the product, so a deployed boot
     // with payments ON but no working provider would lock every customer out —

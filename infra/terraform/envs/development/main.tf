@@ -86,13 +86,10 @@ data "aws_subnets" "shared_private" {
 
 locals {
   billing_credentials_present = (
-    var.payment_provider == "paddle"
+    var.payment_provider == "paypal"
     ? (
-      var.paddle_api_key != "" &&
-      var.paddle_client_token != "" &&
-      var.paddle_webhook_secret != "" &&
-      var.paddle_price_starter_monthly != "" &&
-      var.paddle_price_professional_monthly != ""
+      var.paypal_client_id != "" &&
+      var.paypal_client_secret != ""
     )
     : (
       var.stripe_secret_key != "" &&
@@ -109,14 +106,14 @@ locals {
 }
 
 resource "terraform_data" "environment_guards" {
-  input = "${var.environment}-${var.paddle_environment}-${var.payments_enabled}"
+  input = "${var.environment}-${var.paypal_environment}-${var.payments_enabled}"
 
   lifecycle {
-    # Development must never bill through Paddle's production system. A checkout
+    # Development must never bill through PayPal's live estate. A checkout
     # opened here would take real money from whoever was testing.
     precondition {
-      condition     = var.paddle_environment == "sandbox"
-      error_message = "paddle_environment must be \"sandbox\" in development — a production Paddle key here charges real cards."
+      condition     = var.paypal_environment == "sandbox"
+      error_message = "paypal_environment must be \"sandbox\" in development — live PayPal credentials here charge real cards."
     }
 
     # A live Clerk key would put development sessions on production identities:
@@ -132,8 +129,8 @@ resource "terraform_data" "environment_guards" {
       condition = !var.payments_enabled || local.billing_credentials_present
       error_message = join(" ", [
         "payments_enabled = true requires the active provider's credentials:",
-        "paddle_api_key, paddle_client_token, paddle_webhook_secret,",
-        "paddle_price_starter_monthly and paddle_price_professional_monthly for Paddle;",
+        "paypal_client_id and paypal_client_secret for PayPal — the product, plans and",
+        "webhook are provisioned by `npm run billing:paypal:setup`, not configured here;",
         "stripe_secret_key, stripe_webhook_secret, stripe_price_starter and",
         "stripe_price_professional for Stripe. Set payments_enabled = false to run without billing.",
       ])
@@ -287,10 +284,18 @@ module "secrets" {
       TWILIO_ACCOUNT_SID = var.twilio_account_sid
       TWILIO_AUTH_TOKEN  = var.twilio_auth_token
     },
-    var.payments_enabled && var.payment_provider == "paddle" ? {
-      PADDLE_API_KEY        = var.paddle_api_key
-      PADDLE_WEBHOOK_SECRET = var.paddle_webhook_secret
-      PADDLE_CLIENT_TOKEN   = var.paddle_client_token
+    # Credentials are supplied whenever they EXIST, not only when the payment
+    # wall is up.
+    #
+    # Provisioning has to happen before billing can be enabled — `billing.sh`
+    # runs as a one-off task on this task definition and needs the credentials
+    # to reach PayPal — so gating them on payments_enabled created a deadlock:
+    # you could not provision until the wall was up, and the API refuses to boot
+    # with the wall up and nothing provisioned. Presence is the right condition;
+    # an unused credential in the task definition costs nothing.
+    var.payment_provider == "paypal" && var.paypal_client_id != "" ? {
+      PAYPAL_CLIENT_ID     = var.paypal_client_id
+      PAYPAL_CLIENT_SECRET = var.paypal_client_secret
     } : {},
     var.payments_enabled && var.payment_provider == "stripe" ? {
       STRIPE_SECRET_KEY     = var.stripe_secret_key
@@ -430,15 +435,17 @@ module "api_service" {
     PAYMENTS_ENABLED = tostring(var.payments_enabled)
     PAYMENT_PROVIDER = var.payment_provider
 
-    PADDLE_ENVIRONMENT                = var.paddle_environment
-    PADDLE_PRICE_STARTER_MONTHLY      = var.paddle_price_starter_monthly
-    PADDLE_PRICE_PROFESSIONAL_MONTHLY = var.paddle_price_professional_monthly
-    PADDLE_PRICE_STARTER_ANNUAL       = var.paddle_price_starter_annual
-    PADDLE_PRICE_PROFESSIONAL_ANNUAL  = var.paddle_price_professional_annual
-    STRIPE_PRICE_STARTER              = var.stripe_price_starter
-    STRIPE_PRICE_PROFESSIONAL         = var.stripe_price_professional
-    BILLING_TRIAL_PERIOD_DAYS         = tostring(var.billing_trial_period_days)
-    BILLING_GRANDFATHER_BEFORE        = var.billing_grandfather_before
+    PAYPAL_ENVIRONMENT = var.paypal_environment
+    # Optional override. Normally empty: `billing:paypal:setup` registers the
+    # webhook and persists its id, so nothing has to be pasted here.
+    PAYPAL_WEBHOOK_ID = var.paypal_webhook_id
+    # Temporary: charges the $1.00 test plan instead of the published $49.00
+    # one. See variables.tf. The API logs at error level while this is true.
+    PAYPAL_TEST_PRICING        = tostring(var.paypal_test_pricing)
+    STRIPE_PRICE_STARTER       = var.stripe_price_starter
+    STRIPE_PRICE_PROFESSIONAL  = var.stripe_price_professional
+    BILLING_TRIAL_PERIOD_DAYS  = tostring(var.billing_trial_period_days)
+    BILLING_GRANDFATHER_BEFORE = var.billing_grandfather_before
   }
 
   secrets = merge(
@@ -449,11 +456,13 @@ module "api_service" {
       TWILIO_ACCOUNT_SID = "${module.secrets.app_secret_arn}:TWILIO_ACCOUNT_SID::"
       TWILIO_AUTH_TOKEN  = "${module.secrets.app_secret_arn}:TWILIO_AUTH_TOKEN::"
     },
-    var.payments_enabled && var.payment_provider == "paddle"
+    # Kept in lockstep with app_secrets above: wired whenever the credentials
+    # exist, so a one-off provisioning task can authenticate before the wall is
+    # ever switched on.
+    var.payment_provider == "paypal" && var.paypal_client_id != ""
     ? {
-      PADDLE_API_KEY        = "${module.secrets.app_secret_arn}:PADDLE_API_KEY::"
-      PADDLE_WEBHOOK_SECRET = "${module.secrets.app_secret_arn}:PADDLE_WEBHOOK_SECRET::"
-      PADDLE_CLIENT_TOKEN   = "${module.secrets.app_secret_arn}:PADDLE_CLIENT_TOKEN::"
+      PAYPAL_CLIENT_ID     = "${module.secrets.app_secret_arn}:PAYPAL_CLIENT_ID::"
+      PAYPAL_CLIENT_SECRET = "${module.secrets.app_secret_arn}:PAYPAL_CLIENT_SECRET::"
     }
     : {},
     var.payments_enabled && var.payment_provider == "stripe"

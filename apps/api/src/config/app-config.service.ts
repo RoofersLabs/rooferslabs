@@ -52,8 +52,8 @@ export class AppConfigService {
     return this.root.payments;
   }
 
-  get paddle(): AppConfig['paddle'] {
-    return this.root.paddle;
+  get paypal(): AppConfig['paypal'] {
+    return this.root.paypal;
   }
 
   get stripe(): AppConfig['stripe'] {

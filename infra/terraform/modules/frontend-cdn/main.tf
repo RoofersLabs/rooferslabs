@@ -20,32 +20,25 @@ terraform {
 }
 
 locals {
-  # Clerk-, Google-Fonts-, Paddle-, and API-aware CSP. Clerk production runs on
+  # Clerk-, Google-Fonts- and API-aware CSP. Clerk production runs on
   # clerk.<root_domain> (CNAME) or *.clerk.accounts.dev; both are allowed.
   #
-  # Paddle needs three directives, and omitting any one of them fails in a
-  # different place:
-  #   script-src  cdn.paddle.com — @paddle/paddle-js injects a <script> for
-  #               https://cdn.paddle.com/paddle/v2/paddle.js. Without this the
-  #               SDK rejects with "Failed to load Paddle.js" and the Subscribe
-  #               button dies before a checkout can open.
-  #   frame-src   the overlay is an iframe on a *different* host per
-  #               environment (sandbox-buy vs buy), chosen inside the
-  #               CDN-hosted script rather than the npm package, so the host is
-  #               not knowable from this repo — hence the wildcard.
-  #   connect-src paddle.js calls its own services to price and complete the
-  #               transaction.
+  # Payments need no CSP allowance at all. PayPal's checkout is a full-page
+  # redirect to paypal.com, so nothing is injected into this document and
+  # nothing is framed by it: the browser simply leaves. That is why there is no
+  # payment host in script-src, frame-src or connect-src, and adding one would
+  # widen the policy for no working reason.
   default_csp = join(" ", [
     "default-src 'self';",
     "base-uri 'self';",
     "object-src 'none';",
     "frame-ancestors 'none';",
-    "script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://clerk.${var.root_domain} https://challenges.cloudflare.com https://cdn.paddle.com;",
+    "script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://clerk.${var.root_domain} https://challenges.cloudflare.com;",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
     "font-src 'self' https://fonts.gstatic.com;",
     "img-src 'self' data: blob: https:;",
-    "connect-src 'self' https://${var.api_domain} wss://${var.api_domain} https://*.clerk.accounts.dev https://clerk.${var.root_domain} https://*.paddle.com;",
-    "frame-src 'self' https://*.clerk.accounts.dev https://challenges.cloudflare.com https://*.paddle.com;",
+    "connect-src 'self' https://${var.api_domain} wss://${var.api_domain} https://*.clerk.accounts.dev https://clerk.${var.root_domain};",
+    "frame-src 'self' https://*.clerk.accounts.dev https://challenges.cloudflare.com;",
     "worker-src 'self' blob:;",
     "manifest-src 'self';",
     "upgrade-insecure-requests",

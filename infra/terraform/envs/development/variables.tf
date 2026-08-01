@@ -102,7 +102,7 @@ variable "web_price_class" {
 }
 
 variable "web_content_security_policy" {
-  description = "Override the generated Content-Security-Policy. Empty = the module's Clerk/fonts/Paddle/API-aware default."
+  description = "Override the generated Content-Security-Policy. Empty = the module's Clerk/fonts/API-aware default."
   type        = string
   default     = ""
 }
@@ -187,66 +187,64 @@ variable "payments_enabled" {
 }
 
 variable "payment_provider" {
-  description = "Which processor handles money: \"paddle\" or \"stripe\"."
+  description = "Which processor handles money: \"paypal\" or \"stripe\"."
   type        = string
-  default     = "paddle"
+  default     = "paypal"
 
   validation {
-    condition     = contains(["paddle", "stripe"], var.payment_provider)
-    error_message = "payment_provider must be either \"paddle\" or \"stripe\"."
+    condition     = contains(["paypal", "stripe"], var.payment_provider)
+    error_message = "payment_provider must be either \"paypal\" or \"stripe\"."
   }
 }
 
-variable "paddle_environment" {
-  description = "Which Paddle system development bills against. Must be sandbox — see the precondition in main.tf."
+variable "paypal_environment" {
+  description = "Which PayPal estate development bills against. Must be sandbox — see the precondition in main.tf."
   type        = string
   default     = "sandbox"
 
   validation {
-    condition     = contains(["sandbox", "production"], var.paddle_environment)
-    error_message = "paddle_environment must be either \"sandbox\" or \"production\"."
+    condition     = contains(["sandbox", "live"], var.paypal_environment)
+    error_message = "paypal_environment must be either \"sandbox\" or \"live\"."
   }
 }
 
-variable "paddle_api_key" {
-  description = "Paddle SANDBOX API key (pdl_sdbx_apikey_…)."
+variable "paypal_client_id" {
+  description = "PayPal SANDBOX REST app Client ID. Server-side only — PayPal's checkout is a redirect, so the browser never receives a credential."
   type        = string
   sensitive   = true
   default     = ""
 }
 
-variable "paddle_client_token" {
-  description = "Paddle sandbox client-side token (test_…). Served to the browser by the API."
+variable "paypal_client_secret" {
+  description = "PayPal SANDBOX REST app Secret."
   type        = string
   sensitive   = true
   default     = ""
 }
 
-variable "paddle_webhook_secret" {
-  description = "Secret of the Paddle sandbox notification destination pointed at this environment's /v1/billing/webhook/paddle."
+variable "paypal_test_pricing" {
+  description = <<-EOT
+    Charge the provisioned $1.00 test plan instead of the published $49.00 one.
+
+    For proving a LIVE payment pipeline end to end — real credentials, real
+    webhook signatures, real money arriving in the bank — without taking a full
+    subscription fee to do it. The $1.00 plan is a separate PayPal plan created
+    by `npm run billing:paypal:setup`; the published plan is never modified.
+
+    Nothing else changes: the site still advertises $49 everywhere, and the
+    customer sees $1.00 for the first time on PayPal's own approval page.
+
+    Set it back to false to restore the published price for NEW checkouts.
+    Subscriptions created while it was true keep renewing at $1.00.
+  EOT
+  type        = bool
+  default     = false
+}
+
+variable "paypal_webhook_id" {
+  description = "Id of the PayPal sandbox webhook pointed at this environment's /v1/billing/webhook/paypal. Not a secret: it names the webhook whose signature PayPal should check a delivery against."
   type        = string
-  sensitive   = true
   default     = ""
-}
-
-variable "paddle_price_starter_monthly" {
-  type    = string
-  default = ""
-}
-
-variable "paddle_price_professional_monthly" {
-  type    = string
-  default = ""
-}
-
-variable "paddle_price_starter_annual" {
-  type    = string
-  default = ""
-}
-
-variable "paddle_price_professional_annual" {
-  type    = string
-  default = ""
 }
 
 variable "stripe_secret_key" {

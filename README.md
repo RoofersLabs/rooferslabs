@@ -25,7 +25,7 @@ documented where it is implemented.
 | AI             | OpenAI Realtime API (voice) · OpenAI Responses API (structured outputs) · RAG knowledge base            |
 | Telephony      | Twilio Programmable Voice + Media Streams                                                               |
 | Infrastructure | AWS (ECS/Fargate, S3, Secrets Manager, CloudWatch), Docker, Cloudflare                                  |
-| Payments       | Paddle Billing (checkout, customer portal, webhooks) — subscription required to use the app             |
+| Payments       | PayPal Subscriptions (approval checkout, webhooks) — subscription required to use the app               |
 
 ---
 
@@ -56,7 +56,7 @@ rooferslabs/
 │           ├── components/ layouts/ hooks/ state/ providers/
 │           └── lib/ types/ styles/
 ├── packages/shared/            # contracts: enums, API envelope, AI types
-├── docker/                     # Dockerfiles, nginx, docker-compose
+├── docker/                     # Dockerfiles, nginx, entrypoint
 ├── scripts/                    # icon generation etc.
 └── .github/workflows/ci.yml    # typecheck + build + docker CI
 ```
@@ -72,7 +72,7 @@ rooferslabs/
 | **Twilio**     | Phone numbers, inbound calls, Media Streams            | https://twilio.com          |
 | **AWS**        | RDS, ECS/Fargate, S3, SQS, Secrets Manager, CloudWatch | https://aws.amazon.com      |
 | **Cloudflare** | DNS, TLS, WebSocket proxy, edge caching                | https://cloudflare.com      |
-| **Paddle**     | Subscription billing (merchant of record)              | https://paddle.com          |
+| **PayPal**     | Subscription billing and payments                      | https://paypal.com          |
 
 ## Every environment variable
 
@@ -98,16 +98,13 @@ Backend (root `.env`):
 | `OPENAI_RESPONSES_MODEL`                     | no       | default `gpt-4.1`                                           |
 | `OPENAI_EMBEDDING_MODEL`                     | no       | default `text-embedding-3-small`                            |
 | `PAYMENTS_ENABLED`                           | no       | default `true`; `false` disables billing entirely (below)   |
-| `PAYMENT_PROVIDER`                           | no       | default `paddle`; `paddle` \| `stripe`                      |
-| `PADDLE_API_KEY`                             | **yes†** | Paddle `pdl_…` (server only, never exposed)                 |
-| `PADDLE_CLIENT_TOKEN`                        | **yes†** | Browser token, served via `GET /v1/billing/config`          |
-| `PADDLE_WEBHOOK_SECRET`                      | **yes†** | Secret for `/v1/billing/webhook/paddle`                     |
-| `PADDLE_ENVIRONMENT`                         | no       | `sandbox` (default) \| `production`                         |
-| `PADDLE_PRICE_STARTER_MONTHLY`               | **yes†** | Paddle Price ID for the Starter plan                        |
-| `PADDLE_PRICE_PROFESSIONAL_MONTHLY`          | **yes†** | Paddle Price ID for the Professional plan                   |
-| `PADDLE_PRICE_*_ANNUAL`                      | no       | Empty = annual billing is not offered                       |
+| `PAYMENT_PROVIDER`                           | no       | default `paypal`; `paypal` \| `stripe`                      |
+| `PAYPAL_CLIENT_ID`                           | **yes†** | REST app client id (server only, never exposed)             |
+| `PAYPAL_CLIENT_SECRET`                       | **yes†** | REST app secret (server only, never exposed)                |
+| `PAYPAL_ENVIRONMENT`                         | no       | `sandbox` (default) \| `live`                               |
+| `PAYPAL_WEBHOOK_ID`                          | no       | Override only; setup registers a webhook and records its id |
 | `STRIPE_*`                                   | no       | Dormant provider; never required (see docs/billing.md)      |
-| `BILLING_TRIAL_PERIOD_DAYS`                  | no       | Stripe only — Paddle sets trials on the price               |
+| `BILLING_TRIAL_PERIOD_DAYS`                  | no       | Stripe only — PayPal sets trials on the plan                |
 | `BILLING_GRANDFATHER_BEFORE`                 | no       | RFC3339 instant; tenants created before it skip the paywall |
 | `TWILIO_ACCOUNT_SID`                         | **yes*** | Twilio account SID (*telephony)                             |
 | `TWILIO_AUTH_TOKEN`                          | **yes*** | Twilio auth token (webhook signatures)                      |
@@ -137,7 +134,7 @@ Frontend (`apps/web/.env` — see [`apps/web/.env.example`](./apps/web/.env.exam
 2. **Clerk secret key** (`sk_test_…`/`sk_live_…`) — same page → backend `.env` only.
 3. **OpenAI API key** (`sk-…`) — platform.openai.com → API keys → backend `.env`. Must have access to the Realtime and Responses APIs.
 4. **Twilio Account SID + Auth Token** — Twilio Console home → backend `.env`.
-5. **Paddle API key + client token + webhook secret + two Price IDs** — see [docs/billing.md](./docs/billing.md).
+5. **PayPal client id + secret** — then `npm run billing:paypal:setup`. See [docs/billing.md](./docs/billing.md).
 6. **AWS credentials** — not application config. Production authenticates with the ECS task
    role; locally the AWS CLI/SDK provider chain (`aws configure`, SSO, or `AWS_*` in your shell)
    is used, so no key pair is read from `.env`.
@@ -154,19 +151,18 @@ Frontend (`apps/web/.env` — see [`apps/web/.env.example`](./apps/web/.env.exam
 npm install
 
 # 2. Environment
-cp .env.example .env                 # fill in Clerk/OpenAI/Twilio/Paddle keys
+cp .env.example .env                 # fill in Clerk/OpenAI/Twilio/PayPal keys
 cp apps/web/.env.example apps/web/.env   # set VITE_CLERK_PUBLISHABLE_KEY
 
-# 3. Database
+# 3. Prisma client
 npm run build:shared
 npm run prisma:generate              # no database needed — generates the client
 
-# Optional: a throwaway local Postgres + Redis, only if you want to run the API
-# against something. Production data lives in RDS and is never reachable from a
-# laptop; skip this and the frontend still runs against the deployed API.
-npm run db:up
-npm run prisma:migrate               # local database only
-npm run prisma:seed                  # loads the "Summit Roofing Co." demo tenant
+# There is no local database. Every environment's Postgres and Redis live in
+# AWS, in private subnets with no public endpoint, so nothing on a laptop can
+# reach them. Anything that needs a database runs inside the VPC:
+#   infra/scripts/db.sh development status      # migrations
+#   infra/scripts/billing.sh development setup  # PayPal provisioning
 
 # 5. Run (two terminals)
 npm run dev:api                      # http://localhost:4000 — Swagger at /docs
@@ -178,21 +174,33 @@ To exercise a real phone call locally, expose the API with a tunnel
 `TWILIO_MEDIA_STREAM_URL=wss://<tunnel>/v1/telephony/media-stream`, and point a
 Twilio number's voice webhook at `https://<tunnel>/v1/telephony/incoming`.
 
-## Billing (Paddle)
+## Billing (PayPal)
 
 A subscription is **mandatory** while `PAYMENTS_ENABLED` is `true`: a tenant can
 sign up and complete the four-step onboarding wizard, but the dashboard and every
 gated API stay locked until checkout completes.
 
 Billing is provider-agnostic. `BillingService` is the single entry point and
-depends only on a `BillingProvider` port; Paddle and Stripe are adapters behind
+depends only on a `BillingProvider` port; PayPal and Stripe are adapters behind
 it, and exactly one is active (`PAYMENT_PROVIDER`). No page, route, service, or
 database column names a processor. **Stripe is preserved but dormant** — never
 constructed, never loaded, and it refuses every call.
 
-**→ [docs/billing.md](./docs/billing.md)** covers the architecture, Paddle
+Checkout is a redirect to a PayPal approval URL the API mints, so **no payment
+credential ever reaches the browser** and there is no payment SDK in the web
+bundle.
+
+**Setup is one command.** `npm run billing:paypal:setup` creates the PayPal
+product, the billing plans and the webhook, and records their ids in the
+database — so the only billing values ever configured by hand are
+`PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`. It is idempotent: re-running it
+changes nothing. The API refuses to start in a deployed environment if billing
+is enabled but the catalogue was never provisioned.
+
+**→ [docs/billing.md](./docs/billing.md)** covers the architecture, PayPal
 dashboard setup, every environment variable, webhook verification and
-idempotency, deployment, and the checklist for re-enabling Stripe.
+idempotency, why cancellation is implemented as a suspension, deployment, and the
+checklist for re-enabling Stripe.
 
 ### Running without billing
 
@@ -251,17 +259,14 @@ infra/scripts/db.sh deploy    # apply pending migrations without a deploy
 ```
 
 `prisma generate`, `validate` and `format` touch no database and work locally
-as normal. A `DATABASE_URL` pointing at localhost only ever describes the
-optional throwaway container above — never production.
+as normal. A deployed environment that resolved `DATABASE_URL` or `REDIS_URL` to
+localhost now **fails to boot** with a named diagnostic rather than connecting
+to nothing — see `env.validation.ts`.
 
 ## Docker commands
 
 ```bash
-npm run db:up                # postgres + redis only
-npm run docker:up            # full stack (db + redis + api + web)
-npm run docker:down
-
-# Individual production images (from repo root)
+# Production images (from repo root)
 docker build -f docker/api.Dockerfile -t rooferslabs-api .
 docker build -f docker/web.Dockerfile \
   --build-arg VITE_CLERK_PUBLISHABLE_KEY=pk_live_xxx \
@@ -360,7 +365,7 @@ which walks the customer through this):
 
 - [ ] `npm install && npm run build` succeeds from a clean clone
 - [ ] `npm run typecheck` passes in all three workspaces
-- [ ] `npm run db:up && npm run prisma:migrate && npm run prisma:seed` initializes the database
+- [ ] `infra/scripts/db.sh development status` reports migrations applied
 - [ ] `GET /v1/health` → `ok`; `GET /v1/health/ready` → database + cache `true`
 - [ ] Swagger renders at `http://localhost:4000/docs`
 

@@ -115,9 +115,9 @@ output "twilio_status_callback" {
   value = "https://${local.api_domain}/v1/telephony/status"
 }
 
-output "paddle_webhook_url" {
-  description = "Point a Paddle SANDBOX notification destination here. Never a live destination."
-  value       = "https://${local.api_domain}/v1/billing/webhook/paddle"
+output "paypal_webhook_url" {
+  description = "Register a PayPal SANDBOX webhook here. Never a live one."
+  value       = "https://${local.api_domain}/v1/billing/webhook/paypal"
 }
 
 output "github_deploy_role_arn" {
