@@ -7,41 +7,45 @@ export function TermsPage() {
   return (
     <LegalLayout
       title="Terms of Service"
-      subtitle="The agreement between you and rooferslabs when you use the AI receptionist and everything around it."
-      seoDescription="The terms governing use of rooferslabs, the AI receptionist for roofing contractors — accounts, subscriptions, billing, cancellation, and acceptable use."
+      subtitle="The agreement between you and rooferslabs when you use r1 echo and everything around it."
+      seoDescription="The terms governing use of r1 echo by rooferslabs, built for roofing contractors — accounts, subscriptions, billing, cancellation, and acceptable use."
       path={MARKETING_ROUTES.terms}
     >
       <Section id="acceptance" title="1. Acceptance of these terms">
         <P>
           These Terms of Service govern your access to and use of rooferslabs, including the
-          website, the AI receptionist, the customer dashboard, and any related services (together,
-          the <Strong>Service</Strong>). By creating an account, subscribing, or otherwise using the
+          website, r1 echo, the customer dashboard, and any related services (together, the{' '}
+          <Strong>Service</Strong>). By creating an account, subscribing, or otherwise using the
           Service, you agree to these terms. If you do not agree, do not use the Service.
         </P>
         <P>{ENTITY.description}</P>
-        <P>
-          If you are agreeing on behalf of a business, you confirm that you are authorised to bind
-          that business, and “you” means both you and that business.
-        </P>
       </Section>
 
       <Section id="service" title="2. What the Service does">
         <P>
-          rooferslabs answers inbound telephone calls to a number assigned to you, using an
-          automated AI receptionist. It speaks with the caller, captures details of their enquiry,
-          records and transcribes the call, flags urgent situations, and makes the resulting
-          information available in your dashboard. It may also send follow-up messages on your
-          behalf where you have configured it to.
+          <Strong>r1 echo</Strong> answers inbound telephone calls placed to the number assigned to
+          your account. It greets callers in your business’s name, holds a natural conversation,
+          captures the details of the enquiry, records and transcribes the call, identifies urgent
+          situations, and delivers the result to your dashboard moments after the call ends. Where
+          you have configured it to, it also sends follow-up messages on your behalf.
+        </P>
+        <P>
+          You control how r1 echo represents you. The greeting it uses, the service areas it quotes,
+          the questions it asks, and what it treats as urgent all follow the configuration you set,
+          and you can change that configuration at any time.
         </P>
         <Callout>
-          The AI receptionist is an automated system, not a person, and not a substitute for
-          emergency services. It can mishear, misunderstand, or fail to capture a detail. You are
-          responsible for reviewing captured leads and for any decision made on the basis of them.
+          r1 echo is an automated service, designed to work alongside your team rather than in place
+          of your own judgement. Treat the leads, summaries, and transcripts it produces as the
+          record of a conversation: review the details that matter — names, addresses, scope, and
+          urgency — before you quote, dispatch, or otherwise act on them. It is not an emergency
+          service, and callers reporting an emergency should be directed to the appropriate
+          emergency number.
         </Callout>
         <P>
-          We develop the Service continuously and may add, change, or remove features. Where a
-          change materially reduces core functionality you are paying for, we will give reasonable
-          notice.
+          We improve the Service continuously, and features may be added, refined, or replaced over
+          time. Where a change would materially reduce core functionality you are paying for, we
+          will give you reasonable notice before it takes effect.
         </P>
       </Section>
 
@@ -50,7 +54,7 @@ export function TermsPage() {
           <LI>You must be at least 18 years old and able to enter into a binding contract.</LI>
           <LI>
             Account information must be accurate and kept up to date, including the business name,
-            service areas, and contact details the receptionist relies on when speaking to callers.
+            service areas, and contact details r1 echo relies on when speaking to callers.
           </LI>
           <LI>
             You are responsible for activity under your account and for keeping your sign-in
@@ -64,55 +68,22 @@ export function TermsPage() {
         </UL>
       </Section>
 
-      <Section id="responsibilities" title="4. Your responsibilities">
+      <Section id="billing" title="4. Subscriptions and billing">
         <P>
-          The Service records and transcribes telephone calls on your behalf. Call recording is
-          regulated, and the rules differ by jurisdiction — some require that every party to a call
-          consents.
-        </P>
-        <UL>
-          <LI>
-            You are responsible for ensuring that recording and transcribing calls to your number is
-            lawful where you and your callers are located, and for any notice or consent this
-            requires.
-          </LI>
-          <LI>
-            You are responsible for the accuracy of the business information you configure, which
-            the receptionist will state to callers as fact.
-          </LI>
-          <LI>
-            You are responsible for how you use captured contact details, including compliance with
-            marketing and do-not-call rules that apply to you.
-          </LI>
-        </UL>
-      </Section>
-
-      <Section id="billing" title="5. Subscriptions and billing">
-        <P>
-          Paid plans are billed in advance on a recurring basis at the price and interval shown at
-          checkout. Your subscription renews automatically at the end of each billing period until
-          it is cancelled.
+          r1 echo is being introduced with a limited group of founding customers ahead of general
+          release. Subscription plans, pricing, and billing intervals will be published here before
+          the Service becomes commercially available.
         </P>
         <Callout>
-          Payments are processed by <Strong>Paddle</Strong>, which acts as the merchant of record
-          for every transaction. Paddle handles the payment, invoicing, and any sales tax or VAT,
-          and appears as the seller on your statement. We never receive or store your card details.
+          The full payment terms — prices, billing intervals, renewal, taxes, and invoicing — will
+          be set out in this section when billing opens. Until they are published and you have
+          accepted them, no subscription charge is made for the Service.
         </Callout>
-        <UL>
-          <LI>
-            Prices are shown before you pay. Taxes are calculated by Paddle based on your billing
-            location and may be added at checkout.
-          </LI>
-          <LI>
-            We may change subscription pricing. A change affecting an existing subscription takes
-            effect at the next renewal, and you will be given notice before it applies so you can
-            cancel if you do not accept it.
-          </LI>
-          <LI>
-            If a renewal payment fails, we may retry it and may suspend access until payment
-            succeeds.
-          </LI>
-        </UL>
+        <P>
+          When those terms take effect, we will give notice in advance so you can review them before
+          you subscribe, and any later change to the pricing of an active subscription will apply
+          from the next renewal, with notice beforehand.
+        </P>
         <P>
           Refunds are covered by our{' '}
           <InternalLink to={MARKETING_ROUTES.refunds}>Refund Policy</InternalLink>, which forms part
@@ -120,7 +91,7 @@ export function TermsPage() {
         </P>
       </Section>
 
-      <Section id="cancellation" title="6. Cancellation">
+      <Section id="cancellation" title="5. Cancellation">
         <P>
           You may cancel at any time from your billing settings, or by emailing{' '}
           <MailLink email={CONTACT.email} />. Cancellation stops the next renewal; your subscription
@@ -134,7 +105,7 @@ export function TermsPage() {
         </P>
       </Section>
 
-      <Section id="ip" title="7. Intellectual property">
+      <Section id="ip" title="6. Intellectual property">
         <Subheading>What belongs to us</Subheading>
         <P>
           The Service, including its software, interface, branding, and documentation, belongs to us
@@ -154,7 +125,7 @@ export function TermsPage() {
         </P>
       </Section>
 
-      <Section id="acceptable-use" title="8. Acceptable use">
+      <Section id="acceptable-use" title="7. Acceptable use">
         <P>You agree not to:</P>
         <UL>
           <LI>Use the Service for anything unlawful, fraudulent, or deceptive.</LI>
@@ -177,7 +148,7 @@ export function TermsPage() {
         </UL>
       </Section>
 
-      <Section id="availability" title="9. Service availability">
+      <Section id="availability" title="8. Service availability">
         <P>
           We work to keep the Service available continuously, but we do not guarantee uninterrupted
           operation. The Service depends on third parties — telephony carriers, AI providers, and
@@ -191,29 +162,7 @@ export function TermsPage() {
         </P>
       </Section>
 
-      <Section id="liability" title="10. Disclaimers and limitation of liability">
-        <P>
-          The Service is provided “as is” and “as available”. To the fullest extent permitted by
-          law, we disclaim all warranties not expressly stated in these terms, including implied
-          warranties of merchantability, fitness for a particular purpose, and non-infringement.
-        </P>
-        <P>
-          To the fullest extent permitted by law, we are not liable for indirect, incidental,
-          special, consequential, or punitive damages, or for lost profits, lost revenue, lost
-          business, or lost data — including business lost through a call the AI receptionist
-          mishandled, missed, or failed to answer.
-        </P>
-        <P>
-          Our total aggregate liability arising out of or relating to the Service is limited to the
-          amount you paid us in the twelve months before the event giving rise to the claim.
-        </P>
-        <P>
-          Nothing in these terms excludes liability that cannot lawfully be excluded, including
-          liability for fraud or for death or personal injury caused by negligence.
-        </P>
-      </Section>
-
-      <Section id="termination" title="11. Termination">
+      <Section id="termination" title="9. Termination">
         <P>
           You may stop using the Service at any time. We may suspend or terminate your access if you
           materially breach these terms, if your account is used unlawfully, or if required by law —
@@ -227,7 +176,7 @@ export function TermsPage() {
         </P>
       </Section>
 
-      <Section id="changes" title="12. Changes to these terms">
+      <Section id="changes" title="10. Changes to these terms">
         <P>
           We may update these terms as the Service and the business behind it develop — including
           when RoofersLabs is incorporated, at which point the operator named above will be replaced
@@ -237,19 +186,7 @@ export function TermsPage() {
         </P>
       </Section>
 
-      <Section id="governing-law" title="13. Governing law">
-        <P>
-          These terms are governed by the laws of {ENTITY.governingLaw}, without regard to conflict
-          of law rules. Any dispute arising out of or relating to these terms or the Service is
-          subject to the exclusive jurisdiction of the competent courts in {ENTITY.governingLaw}.
-        </P>
-        <P>
-          If any provision of these terms is found unenforceable, the rest remains in force. Our
-          failure to enforce a provision is not a waiver of it.
-        </P>
-      </Section>
-
-      <Section id="contact" title="14. Contact">
+      <Section id="contact" title="11. Contact">
         <P>
           Questions about these terms can be sent to <MailLink email={CONTACT.email} />. We reply{' '}
           {CONTACT.responseTime} during {CONTACT.hours}.
