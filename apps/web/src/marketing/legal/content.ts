@@ -45,34 +45,3 @@ export const CONTACT = {
  * had. Update it when the wording changes, not when the site does.
  */
 export const LAST_UPDATED = '1 August 2026';
-
-/** The processors named in the privacy policy, with what each one handles. */
-export const SUBPROCESSORS = [
-  {
-    name: 'PayPal',
-    role: 'Payments and subscription billing',
-    handles:
-      'Your billing name, email, and payment method. Card and bank details are entered on PayPal’s systems and never reach ours.',
-  },
-  {
-    name: 'Clerk',
-    role: 'Authentication and account management',
-    handles: 'Your name, email address, sign-in method, and session activity.',
-  },
-  {
-    name: 'Twilio',
-    role: 'Telephony — receiving and recording calls to your rooferslabs number',
-    handles: 'Caller phone numbers, call metadata, and call audio.',
-  },
-  {
-    name: 'OpenAI',
-    role: 'The AI receptionist’s speech and language processing',
-    handles:
-      'Call audio and transcripts, processed to conduct the conversation and produce the summary you read afterwards.',
-  },
-  {
-    name: 'Amazon Web Services',
-    role: 'Hosting, databases, and recording storage',
-    handles: 'All application data, held in AWS data centres.',
-  },
-] as const;

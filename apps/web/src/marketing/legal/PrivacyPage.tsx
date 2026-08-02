@@ -1,14 +1,14 @@
 import { MARKETING_ROUTES } from '../routes';
 import { LegalLayout } from './LegalLayout';
 import { Callout, LI, MailLink, P, Section, Strong, Subheading, UL } from './Prose';
-import { CONTACT, ENTITY, SUBPROCESSORS } from './content';
+import { CONTACT, ENTITY } from './content';
 
 export function PrivacyPage() {
   return (
     <LegalLayout
       title="Privacy Policy"
       subtitle="What rooferslabs collects, why, who processes it, and the control you have over it."
-      seoDescription="How rooferslabs handles personal data — what is collected, how call recordings and transcripts are used, the processors involved, retention periods, and your rights."
+      seoDescription="How rooferslabs handles personal data — what is collected, how call recordings and transcripts are used, retention periods, and your rights."
       path={MARKETING_ROUTES.privacy}
     >
       <Section id="who-we-are" title="1. Who we are">
@@ -125,27 +125,7 @@ export function PrivacyPage() {
         </P>
       </Section>
 
-      <Section id="processors" title="7. Third-party services">
-        <P>
-          We use a small number of processors to run the Service. Each handles only what its role
-          requires, under contract, and none is permitted to use your data for its own purposes.
-        </P>
-        <div className="space-y-4 pt-1">
-          {SUBPROCESSORS.map((processor) => (
-            <div key={processor.name} className="rounded-lg border border-mk-line bg-mk-card p-5">
-              <p className="text-[15px] font-medium text-white">{processor.name}</p>
-              <p className="mt-1 text-[13.5px] uppercase tracking-[0.06em] text-mk-muted">
-                {processor.role}
-              </p>
-              <p className="mt-3 text-[14.5px] leading-[1.7] text-mk-secondary">
-                {processor.handles}
-              </p>
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      <Section id="transfers" title="8. International transfers">
+      <Section id="transfers" title="7. International transfers">
         <P>
           The Service is operated from {ENTITY.governingLaw} and hosted on infrastructure located in
           the United States. Personal data — including call recordings and transcripts — is
@@ -155,12 +135,12 @@ export function PrivacyPage() {
         <P>
           Where such a transfer involves personal data protected by the laws of the European
           Economic Area or the United Kingdom, we rely on the European Commission’s Standard
-          Contractual Clauses, or an equivalent safeguard, in our agreements with the processors
-          listed above.
+          Contractual Clauses, or an equivalent safeguard, in our agreements with the providers who
+          process it on our behalf.
         </P>
       </Section>
 
-      <Section id="security" title="9. Data security">
+      <Section id="security" title="8. Data security">
         <UL>
           <LI>All traffic is encrypted in transit using TLS.</LI>
           <LI>
@@ -184,7 +164,7 @@ export function PrivacyPage() {
         </P>
       </Section>
 
-      <Section id="retention" title="10. Data retention">
+      <Section id="retention" title="9. Data retention">
         <UL>
           <LI>
             <Strong>Account data</Strong> is kept while your account is open, and for up to 90 days
@@ -210,7 +190,7 @@ export function PrivacyPage() {
         </P>
       </Section>
 
-      <Section id="rights" title="11. Your rights">
+      <Section id="rights" title="10. Your rights">
         <P>
           Depending on where you live, you may have the right to access the personal data we hold
           about you, to have it corrected, to have it deleted, to object to or restrict how we use
@@ -230,7 +210,7 @@ export function PrivacyPage() {
         </P>
       </Section>
 
-      <Section id="children" title="12. Children">
+      <Section id="children" title="11. Children">
         <P>
           The Service is a business tool and is not directed at children. We do not knowingly
           collect personal data from anyone under 18. If you believe a child’s data has reached us,
@@ -238,7 +218,7 @@ export function PrivacyPage() {
         </P>
       </Section>
 
-      <Section id="changes" title="13. Changes to this policy">
+      <Section id="changes" title="12. Changes to this policy">
         <P>
           We will update this policy as the Service changes, and will revise the “last updated” date
           above. Where a change materially affects how we handle your personal data, we will tell
@@ -246,7 +226,7 @@ export function PrivacyPage() {
         </P>
       </Section>
 
-      <Section id="contact" title="14. Contact">
+      <Section id="contact" title="13. Contact">
         <P>
           Questions about privacy, or a request about your data, can be sent to{' '}
           <MailLink email={CONTACT.email} />. We reply {CONTACT.responseTime} during {CONTACT.hours}
