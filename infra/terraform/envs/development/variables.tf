@@ -130,6 +130,26 @@ variable "clerk_webhook_secret" {
   default     = ""
 }
 
+variable "allow_live_paypal" {
+  description = <<-EOT
+    Acknowledge that this development deployment bills through PayPal's LIVE
+    estate, taking real money.
+
+    Required alongside paypal_environment = "live". It exists so that reaching
+    the live estate from the development environment is a deliberate, reviewable
+    line in a tfvars file rather than a one-character edit — the same shape as
+    allow_live_clerk_key below.
+
+    Set for pre-launch validation of the real payment pipeline: live
+    credentials, live webhook signature verification, and money actually
+    reaching the bank, on infrastructure that is otherwise development.
+    Consider paypal_test_pricing = true alongside it so those real charges are
+    $1.00 rather than the published $49.00.
+  EOT
+  type        = bool
+  default     = false
+}
+
 variable "allow_live_clerk_key" {
   description = <<-EOT
     Escape hatch for the guardrail that refuses a pk_live_/sk_live_ key in this
@@ -198,7 +218,14 @@ variable "payment_provider" {
 }
 
 variable "paypal_environment" {
-  description = "Which PayPal estate development bills against. Must be sandbox — see the precondition in main.tf."
+  description = <<-EOT
+    Which PayPal estate development bills against: "sandbox" or "live".
+
+    Defaults to sandbox. Setting it to "live" additionally requires
+    allow_live_paypal = true — see the precondition in main.tf — because a
+    checkout opened against the live estate takes real money from whoever is
+    testing.
+  EOT
   type        = string
   default     = "sandbox"
 

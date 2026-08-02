@@ -109,11 +109,14 @@ resource "terraform_data" "environment_guards" {
   input = "${var.environment}-${var.paypal_environment}-${var.payments_enabled}"
 
   lifecycle {
-    # Development must never bill through PayPal's live estate. A checkout
-    # opened here would take real money from whoever was testing.
+    # Development bills through PayPal's SANDBOX unless someone deliberately
+    # says otherwise. A checkout opened against the live estate takes real money
+    # from whoever is testing, so the switch is two values rather than one: the
+    # estate, and an explicit acknowledgement of what it means. Same shape as the
+    # live-Clerk-key guard below.
     precondition {
-      condition     = var.paypal_environment == "sandbox"
-      error_message = "paypal_environment must be \"sandbox\" in development — live PayPal credentials here charge real cards."
+      condition     = var.paypal_environment == "sandbox" || var.allow_live_paypal
+      error_message = "paypal_environment = \"live\" in development also requires allow_live_paypal = true — live PayPal credentials here charge real cards."
     }
 
     # A live Clerk key would put development sessions on production identities:
