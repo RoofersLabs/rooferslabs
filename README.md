@@ -25,6 +25,7 @@ documented where it is implemented.
 | AI             | OpenAI Realtime API (voice) · OpenAI Responses API (structured outputs) · RAG knowledge base            |
 | Telephony      | Twilio Programmable Voice + Media Streams                                                               |
 | Infrastructure | AWS (ECS/Fargate, S3, Secrets Manager, CloudWatch), Docker, Cloudflare                                  |
+| Payments       | PayPal Subscriptions (approval checkout, webhooks) — subscription required to use the app               |
 
 ---
 
@@ -36,7 +37,8 @@ rooferslabs/
 │   ├── api/                    # NestJS backend
 │   │   ├── prisma/             #   schema, migrations, seed
 │   │   └── src/
-│   │       ├── auth/           #   Clerk adapter, guards (auth/tenant/roles)
+│   │       ├── auth/           #   Clerk adapter, guards (auth/tenant/subscription/roles)
+│   │       ├── billing/        #   provider-agnostic checkout, portal, webhooks, gating
 │   │       ├── companies/      #   onboarding, business + AI configuration
 │   │       ├── knowledge/      #   knowledge base CRUD + chunk indexing
 │   │       ├── ai/             #   OpenAI adapter + RAG retrieval
@@ -49,7 +51,8 @@ rooferslabs/
 │   │       └── config/ prisma/ redis/
 │   └── web/                    # React + Vite installable PWA
 │       └── src/                # authenticated application only (no public site)
-│           ├── pages/          #   auth, onboarding, dashboard, settings
+│           ├── pages/          #   auth, onboarding, payment,
+│           │                   #   billing, dashboard, settings
 │           ├── components/ layouts/ hooks/ state/ providers/
 │           └── lib/ types/ styles/
 ├── packages/shared/            # contracts: enums, API envelope, AI types
@@ -69,39 +72,52 @@ rooferslabs/
 | **Twilio**     | Phone numbers, inbound calls, Media Streams            | https://twilio.com          |
 | **AWS**        | RDS, ECS/Fargate, S3, SQS, Secrets Manager, CloudWatch | https://aws.amazon.com      |
 | **Cloudflare** | DNS, TLS, WebSocket proxy, edge caching                | https://cloudflare.com      |
+| **PayPal**     | Subscription billing and payments                      | https://paypal.com          |
 
 ## Every environment variable
 
 Backend (root `.env`):
 
-| Variable                                     | Required | Description                                                |
-| -------------------------------------------- | -------- | ---------------------------------------------------------- |
-| `NODE_ENV`                                   | yes      | `development` / `production`                               |
-| `API_PORT`                                   | yes      | API port (default 4000)                                    |
-| `API_PUBLIC_URL`                             | yes      | Public API origin (webhooks, Swagger)                      |
-| `WEB_PUBLIC_URL`                             | yes      | Public PWA origin                                          |
-| `CORS_ORIGINS`                               | yes      | Comma-separated allowed origins                            |
-| `DATABASE_URL`                               | **yes**  | PostgreSQL connection string                               |
-| `REDIS_URL`                                  | yes      | Redis connection string                                    |
-| `CLERK_PUBLISHABLE_KEY`                      | **yes**  | Clerk `pk_…`                                               |
-| `CLERK_SECRET_KEY`                           | **yes**  | Clerk `sk_…` (server only)                                 |
-| `CLERK_JWT_KEY`                              | no       | PEM key for offline JWT verification                       |
-| `CLERK_WEBHOOK_SECRET`                       | no       | Clerk webhook signing secret                               |
-| `OPENAI_API_KEY`                             | **yes*** | OpenAI API key (*AI features disabled without it)          |
-| `OPENAI_REALTIME_MODEL`                      | no       | default `gpt-realtime`                                     |
-| `OPENAI_REALTIME_VOICE`                      | no       | default `marin`; fleet default, a company's own voice wins |
-| `OPENAI_REALTIME_URL`                        | no       | Realtime GA endpoint override (tests/proxies)              |
-| `OPENAI_RESPONSES_MODEL`                     | no       | default `gpt-4.1`                                          |
-| `OPENAI_EMBEDDING_MODEL`                     | no       | default `text-embedding-3-small`                           |
-| `TWILIO_ACCOUNT_SID`                         | **yes*** | Twilio account SID (*telephony)                            |
-| `TWILIO_AUTH_TOKEN`                          | **yes*** | Twilio auth token (webhook signatures)                     |
-| `TWILIO_MEDIA_STREAM_URL`                    | yes      | `wss://…/v1/telephony/media-stream`                        |
-| `AWS_REGION`                                 | yes      | AWS region                                                 |
-| `S3_BUCKET_RECORDINGS` / `S3_BUCKET_UPLOADS` | prod     | S3 bucket names                                            |
-| `SQS_QUEUE_URL`                              | no       | Jobs queue URL                                             |
-| `BACKGROUND_JOBS_INLINE`                     | no       | `true` = process jobs in-process (local dev)               |
-| `MIGRATE_ON_START`                           | no       | Container-only: run `migrate deploy` on boot               |
-| `LOG_LEVEL`                                  | no       | pino level (default `debug` dev / `info` prod)             |
+| Variable                                     | Required | Description                                                 |
+| -------------------------------------------- | -------- | ----------------------------------------------------------- |
+| `NODE_ENV`                                   | yes      | `development` / `production`                                |
+| `API_PORT`                                   | yes      | API port (default 4000)                                     |
+| `API_PUBLIC_URL`                             | yes      | Public API origin (webhooks, Swagger)                       |
+| `WEB_PUBLIC_URL`                             | yes      | Public PWA origin                                           |
+| `CORS_ORIGINS`                               | yes      | Comma-separated allowed origins                             |
+| `DATABASE_URL`                               | **yes**  | PostgreSQL connection string                                |
+| `REDIS_URL`                                  | yes      | Redis connection string                                     |
+| `CLERK_PUBLISHABLE_KEY`                      | **yes**  | Clerk `pk_…`                                                |
+| `CLERK_SECRET_KEY`                           | **yes**  | Clerk `sk_…` (server only)                                  |
+| `CLERK_JWT_KEY`                              | no       | PEM key for offline JWT verification                        |
+| `CLERK_WEBHOOK_SECRET`                       | no       | Clerk webhook signing secret                                |
+| `OPENAI_API_KEY`                             | **yes*** | OpenAI API key (*AI features disabled without it)           |
+| `OPENAI_REALTIME_MODEL`                      | no       | default `gpt-realtime`                                      |
+| `OPENAI_REALTIME_VOICE`                      | no       | default `marin`; fleet default, a company's own voice wins  |
+| `OPENAI_REALTIME_URL`                        | no       | Realtime GA endpoint override (tests/proxies)               |
+| `OPENAI_RESPONSES_MODEL`                     | no       | default `gpt-4.1`                                           |
+| `OPENAI_EMBEDDING_MODEL`                     | no       | default `text-embedding-3-small`                            |
+| `PAYMENTS_ENABLED`                           | no       | default `true`; `false` disables billing entirely (below)   |
+| `PAYMENT_PROVIDER`                           | no       | default `paypal`; the only supported provider               |
+| `PAYPAL_CLIENT_ID`                           | **yes†** | REST app client id (server only, never exposed)             |
+| `PAYPAL_CLIENT_SECRET`                       | **yes†** | REST app secret (server only, never exposed)                |
+| `PAYPAL_ENVIRONMENT`                         | no       | `sandbox` (default) \| `live`                               |
+| `PAYPAL_WEBHOOK_ID`                          | no       | Override only; setup registers a webhook and records its id |
+| `BILLING_TRIAL_PERIOD_DAYS`                  | no       | Ignored with a warning — PayPal sets trials on the plan     |
+| `BILLING_GRANDFATHER_BEFORE`                 | no       | RFC3339 instant; tenants created before it skip the paywall |
+| `TWILIO_ACCOUNT_SID`                         | **yes*** | Twilio account SID (*telephony)                             |
+| `TWILIO_AUTH_TOKEN`                          | **yes*** | Twilio auth token (webhook signatures)                      |
+| `TWILIO_MEDIA_STREAM_URL`                    | yes      | `wss://…/v1/telephony/media-stream`                         |
+| `AWS_REGION`                                 | yes      | AWS region                                                  |
+| `S3_BUCKET_RECORDINGS` / `S3_BUCKET_UPLOADS` | prod     | S3 bucket names                                             |
+| `SQS_QUEUE_URL`                              | no       | Jobs queue URL                                              |
+| `BACKGROUND_JOBS_INLINE`                     | no       | `true` = process jobs in-process (local dev)                |
+| `MIGRATE_ON_START`                           | no       | Container-only: run `migrate deploy` on boot                |
+| `LOG_LEVEL`                                  | no       | pino level (default `debug` dev / `info` prod)              |
+
+† Required in production only while `PAYMENTS_ENABLED` is `true` (the default).
+Only the active provider's variables are ever enforced. See
+[docs/billing.md](./docs/billing.md).
 
 Frontend (`apps/web/.env` — see [`apps/web/.env.example`](./apps/web/.env.example)):
 
@@ -116,10 +132,11 @@ Frontend (`apps/web/.env` — see [`apps/web/.env.example`](./apps/web/.env.exam
 2. **Clerk secret key** (`sk_test_…`/`sk_live_…`) — same page → backend `.env` only.
 3. **OpenAI API key** (`sk-…`) — platform.openai.com → API keys → backend `.env`. Must have access to the Realtime and Responses APIs.
 4. **Twilio Account SID + Auth Token** — Twilio Console home → backend `.env`.
-5. **AWS credentials** — not application config. Production authenticates with the ECS task
+5. **PayPal client id + secret** — then `npm run billing:paypal:setup`. See [docs/billing.md](./docs/billing.md).
+6. **AWS credentials** — not application config. Production authenticates with the ECS task
    role; locally the AWS CLI/SDK provider chain (`aws configure`, SSO, or `AWS_*` in your shell)
    is used, so no key pair is read from `.env`.
-6. **Cloudflare** — account credentials only (dashboard configuration, no key consumed by the app).
+7. **Cloudflare** — account credentials only (dashboard configuration, no key consumed by the app).
 
 ---
 
@@ -132,7 +149,7 @@ Frontend (`apps/web/.env` — see [`apps/web/.env.example`](./apps/web/.env.exam
 npm install
 
 # 2. Environment
-cp .env.example .env                 # fill in Clerk/OpenAI/Twilio keys
+cp .env.example .env                 # fill in Clerk/OpenAI/Twilio/PayPal keys
 cp apps/web/.env.example apps/web/.env   # set VITE_CLERK_PUBLISHABLE_KEY
 
 # 3. Prisma client
@@ -143,6 +160,7 @@ npm run prisma:generate              # no database needed — generates the clie
 # AWS, in private subnets with no public endpoint, so nothing on a laptop can
 # reach them. Anything that needs a database runs inside the VPC:
 #   infra/scripts/db.sh development status      # migrations
+#   infra/scripts/billing.sh development setup  # PayPal provisioning
 
 # 5. Run (two terminals)
 npm run dev:api                      # http://localhost:4000 — Swagger at /docs
@@ -154,24 +172,60 @@ To exercise a real phone call locally, expose the API with a tunnel
 `TWILIO_MEDIA_STREAM_URL=wss://<tunnel>/v1/telephony/media-stream`, and point a
 Twilio number's voice webhook at `https://<tunnel>/v1/telephony/incoming`.
 
-## Billing
+## Billing (PayPal)
 
-**There is none.** The MVP ships without any payment system: no checkout, no
-subscription, no provider webhook, and no payment wall. Every tenant that
-completes onboarding reaches the dashboard, and the flow is:
+A subscription is **mandatory** while `PAYMENTS_ENABLED` is `true`: a tenant can
+sign up and complete the four-step onboarding wizard, but the dashboard and every
+gated API stay locked until checkout completes.
 
-```text
-visitor → sign in → onboarding (4 steps) → dashboard
-```
+Billing is provider-agnostic. `BillingService` is the single entry point and
+depends only on a `BillingProvider` port; PayPal and Stripe are adapters behind
+it, and exactly one is active (`PAYMENT_PROVIDER`). No page, route, service, or
+database column names a processor. **Stripe is preserved but dormant** — never
+constructed, never loaded, and it refuses every call.
 
-Pricing still exists on the **marketing site** as a "coming soon" experience —
-the Founding Customer Program card on `/#pricing` keeps its design and its
-feature list, and its call to action is sign-up rather than checkout. Nothing on
-it calls the API, creates a customer, or initiates a payment.
+Checkout is a redirect to a PayPal approval URL the API mints, so **no payment
+credential ever reaches the browser** and there is no payment SDK in the web
+bundle.
 
-Re-introducing billing is a green-field addition rather than a flag flip: the
-provider port, the subscription models and the webhook ledger were all removed
-(see the `20260803130000_remove_billing` migration).
+**Setup is one command.** `npm run billing:paypal:setup` creates the PayPal
+product, the billing plans and the webhook, and records their ids in the
+database — so the only billing values ever configured by hand are
+`PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`. It is idempotent: re-running it
+changes nothing. The API refuses to start in a deployed environment if billing
+is enabled but the catalogue was never provisioned.
+
+**→ [docs/billing.md](./docs/billing.md)** covers the architecture, PayPal
+dashboard setup, every environment variable, webhook verification and
+idempotency, why cancellation is implemented as a suspension, deployment, and the
+checklist for re-enabling Stripe.
+
+### Running without billing
+
+`PAYMENTS_ENABLED=false` switches billing off platform-wide, so the platform runs
+before a payment account exists. It is a supported configuration, not a stopgap —
+no billing code is removed or bypassed, and flipping the flag back needs no code
+change:
+
+| Concern                 | `PAYMENTS_ENABLED=true` (default)   | `PAYMENTS_ENABLED=false`                     |
+| ----------------------- | ----------------------------------- | -------------------------------------------- |
+| Provider env            | Required in production (boot fails) | Not required at all                          |
+| Provider client         | Constructed on first use            | Never constructed                            |
+| `/v1/billing/*`         | Live                                | `503 PAYMENTS_DISABLED`                      |
+| Webhook route           | Registered                          | Not registered (the route does not exist)    |
+| Payment wall            | Enforced on every gated endpoint    | Open — every tenant has full access          |
+| Frontend flow           | onboarding → payment → dashboard    | onboarding → dashboard                       |
+| Payment / billing pages | Reachable                           | Route guard turns them away; nav link hidden |
+
+The API reports the flag on `GET /v1/auth/me` as `paymentsEnabled`, so the
+frontend derives the flow from the backend rather than from its own build-time
+configuration. It defaults to enabled on both sides: an absent or misspelled
+value keeps the wall up rather than silently giving the product away.
+
+In production the flag is `payments_enabled` in
+`infra/terraform/envs/production/terraform.tfvars`. Setting it to `true` without
+the active provider's credentials fails `terraform plan`, so the wall can never
+be switched on without the means to enforce it.
 
 ## Database migrations
 
@@ -243,12 +297,11 @@ on CI being green or even enabled. No Vercel.
 ElastiCache, S3, SQS, Secrets Manager, IAM, CloudWatch:
 
 ```bash
-cd infra/terraform/envs/development         # or envs/production
+cd infra/terraform/envs/production          # or envs/development
 cp terraform.tfvars.example terraform.tfvars   # domain + Clerk/OpenAI/Twilio/VAPID keys
 terraform init && terraform apply
-cd -
-infra/scripts/deploy.sh development          # build + push + roll the API service
-infra/scripts/deploy-web.sh development      # build + upload + invalidate the SPA
+../../scripts/deploy.sh production          # build + push + roll the API service
+../../scripts/deploy-web.sh production      # build + upload + invalidate the SPA
 ```
 
 Every script takes the environment as its first argument and never guesses one.

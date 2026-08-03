@@ -82,6 +82,7 @@ export class AdminRepository {
         skip,
         take,
         include: {
+          subscription: { select: { status: true, plan: true, trialEndsAt: true } },
           users: {
             where: { deletedAt: null },
             orderBy: { createdAt: 'asc' },
@@ -130,6 +131,7 @@ export class AdminRepository {
     return this.prisma.company.findUnique({
       where: { id },
       include: {
+        subscription: true,
         users: {
           where: { deletedAt: null },
           orderBy: { createdAt: 'asc' },

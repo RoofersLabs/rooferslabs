@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Building2, ChevronRight } from 'lucide-react';
 import { useAdminCompanies } from '@/hooks/queries';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-import { cn, timeAgo } from '@/lib/utils';
+import { cn, humanizeEnum, timeAgo } from '@/lib/utils';
 import { EnumStatusText } from '@/components/ui/StatusText';
 import { REFINED_CARD, REFINED_FIELD } from '@/components/ui/refinedControls';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { FilterBar } from '@/components/ui/FilterBar';
 import { SearchInput } from '@/components/ui/SearchInput';
@@ -24,14 +25,23 @@ import {
 } from '@/components/ui/table';
 import { ADMIN_ROUTES } from './routes';
 
+const FILTERS = [
+  { key: undefined, label: 'All' },
+  { key: 'TRIAL', label: 'Trial' },
+  { key: 'ACTIVE', label: 'Active' },
+  { key: 'INACTIVE', label: 'Inactive' },
+] as const;
+
 export function AdminCompaniesPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [subscription, setSubscription] = useState<string | undefined>(undefined);
   const debounced = useDebouncedValue(search);
   const navigate = useNavigate();
   const companies = useAdminCompanies({
     page,
     search: debounced || undefined,
+    subscription,
   });
 
   const total = companies.data?.pagination.totalRecords;
@@ -65,6 +75,21 @@ export function AdminCompaniesPage() {
             placeholder="Search company, email, phone…"
             aria-label="Search companies"
           />
+          <div className="flex gap-1">
+            {FILTERS.map((filter) => (
+              <Button
+                key={filter.label}
+                size="sm"
+                variant={subscription === filter.key ? 'primary' : 'ghost'}
+                onClick={() => {
+                  setSubscription(filter.key);
+                  setPage(1);
+                }}
+              >
+                {filter.label}
+              </Button>
+            ))}
+          </div>
         </FilterBar>
 
         {companies.isLoading ? (
@@ -80,10 +105,10 @@ export function AdminCompaniesPage() {
           // otherwise, and only one of them is worth investigating.
           <EmptyState
             icon={Building2}
-            title={search ? 'No companies match' : 'No companies yet'}
+            title={search || subscription ? 'No companies match' : 'No companies yet'}
             description={
-              search
-                ? 'Try a different search term.'
+              search || subscription
+                ? 'Try a different search term or clear the filter.'
                 : 'Companies appear here as soon as they sign up.'
             }
           />
@@ -111,7 +136,7 @@ export function AdminCompaniesPage() {
                       </span>
                     </span>
                     <span className="flex shrink-0 items-center gap-2">
-                      <EnumStatusText value={company.status} />
+                      <EnumStatusText value={company.subscriptionStatus} />
                       <ChevronRight className="h-4 w-4 text-ink-faint" aria-hidden />
                     </span>
                   </Link>
@@ -125,6 +150,7 @@ export function AdminCompaniesPage() {
                   <TableRow className="hover:bg-transparent">
                     <TableHead>Company</TableHead>
                     <TableHead>Owner</TableHead>
+                    <TableHead>Plan</TableHead>
                     <TableHead>Status</TableHead>
                     {/* The three activity columns are numbers: right-aligned so
                       digits line up on the decimal, which is what makes a
@@ -161,8 +187,11 @@ export function AdminCompaniesPage() {
                           {company.ownerEmail ?? '—'}
                         </span>
                       </TableCell>
+                      <TableCell className="text-ink-muted">
+                        {company.plan ? humanizeEnum(company.plan) : '—'}
+                      </TableCell>
                       <TableCell>
-                        <EnumStatusText value={company.status} />
+                        <EnumStatusText value={company.subscriptionStatus} />
                       </TableCell>
                       <TableCell className="font-num text-right tabular-nums">
                         {company.callsToday}

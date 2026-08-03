@@ -81,10 +81,15 @@ data "aws_subnets" "shared_private" {
 
 # ---- Guardrails --------------------------------------------------------------
 #
-# The ways this root could quietly become a second production, each failed at
-# plan time rather than discovered in production data.
+# Three ways this root could quietly become a second production, each failed at
+# plan time rather than discovered from a customer's bank statement.
 
 locals {
+  billing_credentials_present = (
+    var.paypal_client_id != "" &&
+    var.paypal_client_secret != ""
+  )
+
   uses_live_clerk_key = (
     startswith(var.clerk_publishable_key, "pk_live_") ||
     startswith(var.clerk_secret_key, "sk_live_")
@@ -92,14 +97,36 @@ locals {
 }
 
 resource "terraform_data" "environment_guards" {
-  input = var.environment
+  input = "${var.environment}-${var.paypal_environment}-${var.payments_enabled}"
 
   lifecycle {
+    # Development bills through PayPal's SANDBOX unless someone deliberately
+    # says otherwise. A checkout opened against the live estate takes real money
+    # from whoever is testing, so the switch is two values rather than one: the
+    # estate, and an explicit acknowledgement of what it means. Same shape as the
+    # live-Clerk-key guard below.
+    precondition {
+      condition     = var.paypal_environment == "sandbox" || var.allow_live_paypal
+      error_message = "paypal_environment = \"live\" in development also requires allow_live_paypal = true — live PayPal credentials here charge real cards."
+    }
+
     # A live Clerk key would put development sessions on production identities:
     # the same users, the same organizations, the same tokens.
     precondition {
       condition     = !local.uses_live_clerk_key || var.allow_live_clerk_key
       error_message = "clerk_publishable_key/clerk_secret_key look like production (pk_live_/sk_live_). Development must use the Clerk development instance."
+    }
+
+    # Same rule production applies: never boot an API that enforces a payment
+    # wall it has no credentials to enforce.
+    precondition {
+      condition = !var.payments_enabled || local.billing_credentials_present
+      error_message = join(" ", [
+        "payments_enabled = true requires paypal_client_id and paypal_client_secret.",
+        "The product, plans and webhook are provisioned by",
+        "`npm run billing:paypal:setup`, not configured here.",
+        "Set payments_enabled = false to run without billing.",
+      ])
     }
 
     # Two subnets in two AZs are what RDS and ElastiCache subnet groups require.
@@ -250,6 +277,19 @@ module "secrets" {
       TWILIO_ACCOUNT_SID = var.twilio_account_sid
       TWILIO_AUTH_TOKEN  = var.twilio_auth_token
     },
+    # Credentials are supplied whenever they EXIST, not only when the payment
+    # wall is up.
+    #
+    # Provisioning has to happen before billing can be enabled — `billing.sh`
+    # runs as a one-off task on this task definition and needs the credentials
+    # to reach PayPal — so gating them on payments_enabled created a deadlock:
+    # you could not provision until the wall was up, and the API refuses to boot
+    # with the wall up and nothing provisioned. Presence is the right condition;
+    # an unused credential in the task definition costs nothing.
+    var.payment_provider == "paypal" && var.paypal_client_id != "" ? {
+      PAYPAL_CLIENT_ID     = var.paypal_client_id
+      PAYPAL_CLIENT_SECRET = var.paypal_client_secret
+    } : {},
     var.clerk_webhook_secret != "" ? { CLERK_WEBHOOK_SECRET = var.clerk_webhook_secret } : {},
     var.vapid_private_key != "" ? { VAPID_PRIVATE_KEY = var.vapid_private_key } : {},
   )
@@ -380,6 +420,19 @@ module "api_service" {
     S3_BUCKET_UPLOADS       = module.s3.bucket_names["uploads"]
     SQS_QUEUE_URL           = module.sqs.queue_url
     BACKGROUND_JOBS_INLINE  = "true"
+
+    PAYMENTS_ENABLED = tostring(var.payments_enabled)
+    PAYMENT_PROVIDER = var.payment_provider
+
+    PAYPAL_ENVIRONMENT = var.paypal_environment
+    # Optional override. Normally empty: `billing:paypal:setup` registers the
+    # webhook and persists its id, so nothing has to be pasted here.
+    PAYPAL_WEBHOOK_ID = var.paypal_webhook_id
+    # Charges the separately provisioned test plan instead of the published
+    # one. See variables.tf. The API logs at error level while this is true.
+    PAYPAL_TEST_PRICING        = tostring(var.paypal_test_pricing)
+    BILLING_TRIAL_PERIOD_DAYS  = tostring(var.billing_trial_period_days)
+    BILLING_GRANDFATHER_BEFORE = var.billing_grandfather_before
   }
 
   secrets = merge(
@@ -390,6 +443,15 @@ module "api_service" {
       TWILIO_ACCOUNT_SID = "${module.secrets.app_secret_arn}:TWILIO_ACCOUNT_SID::"
       TWILIO_AUTH_TOKEN  = "${module.secrets.app_secret_arn}:TWILIO_AUTH_TOKEN::"
     },
+    # Kept in lockstep with app_secrets above: wired whenever the credentials
+    # exist, so a one-off provisioning task can authenticate before the wall is
+    # ever switched on.
+    var.payment_provider == "paypal" && var.paypal_client_id != ""
+    ? {
+      PAYPAL_CLIENT_ID     = "${module.secrets.app_secret_arn}:PAYPAL_CLIENT_ID::"
+      PAYPAL_CLIENT_SECRET = "${module.secrets.app_secret_arn}:PAYPAL_CLIENT_SECRET::"
+    }
+    : {},
     var.clerk_webhook_secret != ""
     ? { CLERK_WEBHOOK_SECRET = "${module.secrets.app_secret_arn}:CLERK_WEBHOOK_SECRET::" }
     : {},

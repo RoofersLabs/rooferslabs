@@ -68,8 +68,8 @@ export function useOnboarding(): OnboardingProgress {
       const next = nextStep(step);
 
       if (!next) {
-        // Last step: finish setup. The stage flips to `app` when the refreshed
-        // session reports COMPLETE, and the guard does the routing.
+        // Last step: finish setup. The stage flips to `payment` when the
+        // refreshed session reports COMPLETE, and the guard does the routing.
         await complete.mutateAsync();
         return;
       }

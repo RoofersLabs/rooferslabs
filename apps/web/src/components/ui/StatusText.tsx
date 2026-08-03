@@ -5,7 +5,7 @@ import { cn, humanizeEnum } from '@/lib/utils';
  *
  * Used by the pages refined to match the dashboard (Customers, Appointments,
  * Knowledge Base, Notifications). The shared `EnumBadge` is deliberately left
- * in place — Calls' detail view and Settings still render it, and
+ * in place — Calls' detail view, Settings and Billing still render it, and
  * their layouts rely on its fixed height.
  *
  * NOTE: the tone rules below are a third copy, after `components/ui/badge.tsx`

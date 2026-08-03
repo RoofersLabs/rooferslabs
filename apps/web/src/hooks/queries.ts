@@ -3,7 +3,7 @@
  *. Components never call fetch.
  */
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import type { OnboardingStep } from '@rooferslabs/shared';
+import type { BillingInterval, OnboardingStep, SubscriptionPlan } from '@rooferslabs/shared';
 import { api, type PaginatedResult } from '@/lib/api-client';
 import type {
   AiConfiguration,
@@ -15,20 +15,28 @@ import type {
   AdminAnalytics,
   AdminCompanyDetail,
   AdminCompanyRow,
+  BillingConfig,
+  CheckoutHandle,
   Customer,
   CustomerDetail,
   DashboardOverview,
   GlobalSearchResults,
+  InvoiceSummary,
   KnowledgeArticle,
   Notification,
   PhoneNumberSummary,
+  PlanChangeResult,
   ReceptionistStatus,
   Session,
+  SubscriptionSummary,
 } from '@/types/api';
 
 export const queryKeys = {
   session: ['session'] as const,
   company: ['company'] as const,
+  subscription: ['billing', 'subscription'] as const,
+  invoices: ['billing', 'invoices'] as const,
+  billingConfig: ['billing', 'config'] as const,
   aiConfig: ['company', 'ai-config'] as const,
   phoneNumber: ['company', 'phone-number'] as const,
   dashboard: ['dashboard'] as const,
@@ -54,7 +62,7 @@ export const queryKeys = {
 
 /**
  * The bootstrap session. `AccessProvider` is the single consumer and exposes
- * the derived identity and tenant to the rest of the app —
+ * the derived identity, tenant, and billing state to the rest of the app —
  * components read it through `useAccess()`, never by calling this again.
  */
 export function useSessionQuery(enabled: boolean) {
@@ -146,7 +154,7 @@ export function useUpdateAiConfig() {
  * Writing the server's own response into the session closes that window: the
  * cache is correct in the same tick the mutation resolves, so `canOpen` agrees
  * with the navigation. The invalidation still follows to reconcile the rest of
- * the session against the server.
+ * the session (subscription, flags) against the server.
  *
  * The cancel matters as much as the write. Each earlier step submits more than
  * one mutation — business details PATCHes the company and PUTs the hours before
@@ -204,9 +212,145 @@ export function useCompleteOnboarding() {
     onSuccess: async (company) => {
       qc.setQueryData(queryKeys.company, company);
       // Same reason as above, one stage further on: this is what flips the
-      // visitor from `onboarding` to `app`, so without it the final click
+      // visitor from `onboarding` to `payment`, so without it the final click
       // leaves them sitting on the review screen until a refetch happens to land.
       await syncSessionCompany(qc, company);
+      void qc.invalidateQueries({ queryKey: queryKeys.session });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Billing
+// ---------------------------------------------------------------------------
+//
+// Provider-agnostic throughout: every hook talks to our own API, and no payment
+// processor's SDK, key, or vocabulary appears in this file. Swapping providers
+// changes nothing here.
+
+/**
+ * What the browser is told about billing.
+ *
+ * Long-lived: which provider is active and which estate it points at only
+ * change on a redeploy, so this is fetched once and reused rather than
+ * re-requested on every mount of the payment page.
+ */
+export function useBillingConfig() {
+  return useQuery({
+    queryKey: queryKeys.billingConfig,
+    queryFn: () => api.get<BillingConfig>('/billing/config'),
+    staleTime: 60 * 60 * 1000,
+  });
+}
+
+/**
+ * The tenant's live subscription state. Polled briefly after checkout, because
+ * activation arrives asynchronously by webhook and can land after the browser
+ * is back on our own pages.
+ */
+export function useSubscription(options: { pollUntilActive?: boolean } = {}) {
+  return useQuery({
+    queryKey: queryKeys.subscription,
+    queryFn: () => api.get<SubscriptionSummary>('/billing/subscription'),
+    refetchInterval: (query) =>
+      options.pollUntilActive && !query.state.data?.isActive ? 2_000 : false,
+  });
+}
+
+/** The tenant's payment history, synchronized from the provider by webhook. */
+export function useInvoices() {
+  return useQuery({
+    queryKey: queryKeys.invoices,
+    queryFn: () => api.get<InvoiceSummary[]>('/billing/invoices'),
+  });
+}
+
+/**
+ * Start a checkout. Returns the URL to send the browser to.
+ *
+ * Nothing is charged by this call — it creates the subscription in a pending
+ * state, and the payer approves it at the provider. Activation arrives later by
+ * webhook, so a successful return here is never treated as proof of payment.
+ */
+export function useCreateCheckoutSession() {
+  return useMutation({
+    mutationFn: (selection: { plan: SubscriptionPlan; interval?: BillingInterval }) =>
+      api.post<CheckoutHandle>('/billing/checkout-session', selection),
+  });
+}
+
+/**
+ * Confirm the subscription the provider redirected back with.
+ *
+ * Closes the window between the payer approving at PayPal and the activation
+ * webhook arriving. Without it the billing page can only poll and hope; with it
+ * the tenant's real state is known on the first render after the redirect.
+ *
+ * Grants nothing — the server re-reads the subscription from the provider and
+ * stores what it says, exactly as the webhook would.
+ */
+export function useConfirmCheckout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (subscriptionId: string) =>
+      api.post<SubscriptionSummary>('/billing/checkout/confirm', { subscriptionId }),
+    onSuccess: (subscription) => {
+      qc.setQueryData(queryKeys.subscription, subscription);
+      void qc.invalidateQueries({ queryKey: queryKeys.session });
+      void qc.invalidateQueries({ queryKey: queryKeys.invoices });
+    },
+  });
+}
+
+/** Open the hosted customer portal (payment methods, invoices, receipts). */
+export function useCreatePortalSession() {
+  return useMutation({
+    mutationFn: () => api.post<{ url: string }>('/billing/portal-session'),
+  });
+}
+
+/**
+ * Move to a different plan. Upgrades apply now, downgrades at renewal.
+ *
+ * May come back with an `approvalUrl`, which means the change has NOT happened
+ * yet: the provider needs the payer to consent first. The caller is responsible
+ * for sending the browser there — see BillingPage.
+ */
+export function useChangePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (selection: { plan: SubscriptionPlan; interval?: BillingInterval }) =>
+      api.post<PlanChangeResult>('/billing/subscription/plan', selection),
+    onSuccess: ({ approvalUrl, ...subscription }) => {
+      // Only cache the subscription when it is the final answer. Writing a
+      // pending change into the cache would show the tenant a plan they have not
+      // agreed to pay for yet.
+      if (!approvalUrl) {
+        qc.setQueryData(queryKeys.subscription, subscription);
+      }
+      void qc.invalidateQueries({ queryKey: queryKeys.invoices });
+      void qc.invalidateQueries({ queryKey: queryKeys.session });
+    },
+  });
+}
+
+export function useCancelSubscription() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<SubscriptionSummary>('/billing/subscription/cancel'),
+    onSuccess: (subscription) => {
+      qc.setQueryData(queryKeys.subscription, subscription);
+      void qc.invalidateQueries({ queryKey: queryKeys.session });
+    },
+  });
+}
+
+export function useResumeSubscription() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<SubscriptionSummary>('/billing/subscription/resume'),
+    onSuccess: (subscription) => {
+      qc.setQueryData(queryKeys.subscription, subscription);
       void qc.invalidateQueries({ queryKey: queryKeys.session });
     },
   });
@@ -469,7 +613,7 @@ export function useGlobalSearch(q: string) {
 // convenience, never the protection.
 // ---------------------------------------------------------------------------
 
-export function useAdminCompanies(params: ListParams) {
+export function useAdminCompanies(params: ListParams & { subscription?: string }) {
   return useQuery({
     queryKey: queryKeys.adminCompanies(params),
     queryFn: () => api.getPaginated<AdminCompanyRow>('/admin/companies', params),

@@ -115,6 +115,11 @@ output "twilio_status_callback" {
   value = "https://${local.api_domain}/v1/telephony/status"
 }
 
+output "paypal_webhook_url" {
+  description = "Register a PayPal SANDBOX webhook here. Never a live one."
+  value       = "https://${local.api_domain}/v1/billing/webhook/paypal"
+}
+
 output "github_deploy_role_arn" {
   description = "Set as AWS_DEPLOY_ROLE_ARN on the GitHub `development` environment (Settings → Environments)."
   value       = module.github_oidc.deploy_role_arn

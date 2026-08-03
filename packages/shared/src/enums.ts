@@ -215,3 +215,78 @@ export enum AiVoice {
   SHIMMER = 'shimmer',
   VERSE = 'verse',
 }
+
+/**
+ * The payment processor a billing record belongs to.
+ *
+ * Persisted alongside every provider-issued identifier so a row is always
+ * self-describing: `providerCustomerId` is meaningless without knowing which
+ * system minted it. PayPal is the only processor the platform bills through;
+ * a future second provider is a new member here plus an adapter — the
+ * provider-port architecture (see apps/api/src/billing) needs nothing else.
+ */
+export enum PaymentProvider {
+  PAYPAL = 'PAYPAL',
+}
+
+/**
+ * How often a subscription renews.
+ *
+ * Only {@link BillingInterval.MONTH} is offered today. `YEAR` is modelled from
+ * the start so adding annual plans is a price-configuration change rather than
+ * a schema migration.
+ */
+export enum BillingInterval {
+  MONTH = 'MONTH',
+  YEAR = 'YEAR',
+}
+
+/**
+ * Billing status of a company's subscription.
+ *
+ * A provider-neutral superset: every processor's subscription states map onto
+ * these, plus `NONE` for a tenant that has never started checkout. Only
+ * `ACTIVE` and `TRIALING` grant access (see {@link ACTIVE_SUBSCRIPTION_STATUSES}).
+ *
+ * Some members are unreachable under some providers — PayPal has no notion of
+ * `INCOMPLETE` or `UNPAID`, for instance. That is deliberate: the enum is the
+ * union of what any provider can report, so switching providers never needs a
+ * data migration.
+ */
+export enum SubscriptionStatus {
+  NONE = 'NONE',
+  INCOMPLETE = 'INCOMPLETE',
+  INCOMPLETE_EXPIRED = 'INCOMPLETE_EXPIRED',
+  TRIALING = 'TRIALING',
+  ACTIVE = 'ACTIVE',
+  PAST_DUE = 'PAST_DUE',
+  CANCELED = 'CANCELED',
+  UNPAID = 'UNPAID',
+  PAUSED = 'PAUSED',
+}
+
+/** Subscription statuses that entitle a tenant to use the application. */
+export const ACTIVE_SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = [
+  SubscriptionStatus.ACTIVE,
+  SubscriptionStatus.TRIALING,
+];
+
+/** Self-serve subscription plans available at checkout. */
+export enum SubscriptionPlan {
+  STARTER = 'STARTER',
+  PROFESSIONAL = 'PROFESSIONAL',
+}
+
+/**
+ * Lifecycle of a synchronized invoice.
+ *
+ * Mirrors the provider's billing document so the tenant can see its payment
+ * history without a round-trip to the provider on every page load.
+ */
+export enum InvoiceStatus {
+  DRAFT = 'DRAFT',
+  OPEN = 'OPEN',
+  PAID = 'PAID',
+  VOID = 'VOID',
+  UNCOLLECTIBLE = 'UNCOLLECTIBLE',
+}

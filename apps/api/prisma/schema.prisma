@@ -47,6 +47,8 @@ model Company {
   notifications           Notification[]
   phoneNumbers            PhoneNumber[]
   pushSubscriptions       PushSubscription[]
+  subscription            Subscription?
+  invoices                Invoice[]
   users                   User[]
   notes                   CompanyNote[]
 
@@ -331,6 +333,153 @@ model CompanyNote {
   @@map("company_notes")
 }
 
+/// Billing state for a tenant, mirrored from the active payment provider by the
+/// webhook handler. The provider is the source of truth; this table is a local
+/// read-model so request-time authorization never depends on an outbound call.
+///
+/// Every provider-issued identifier is stored generically and qualified by
+/// `provider`, so a row always says which system minted its ids. Switching
+/// processors writes new rows against the new provider rather than migrating
+/// the old ones — the historical record stays intact and readable.
+model Subscription {
+  id                     String             @id @default(cuid())
+  companyId              String             @unique
+  /// Which processor issued the identifiers below.
+  provider               PaymentProvider    @default(PAYPAL)
+  providerCustomerId     String
+  providerSubscriptionId String?
+  providerPriceId        String?
+  status                 SubscriptionStatus @default(NONE)
+  plan                   SubscriptionPlan?
+  /// Renewal cadence. Null until a subscription actually exists.
+  billingInterval        BillingInterval?
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean            @default(false)
+  canceledAt             DateTime?
+  trialEndsAt            DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  company                Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invoices               Invoice[]
+
+  /// Scoped to the provider rather than global: two processors may legitimately
+  /// mint the same-looking id, and a tenant that moves between them must not
+  /// collide with its own former record.
+  @@unique([provider, providerCustomerId])
+  @@unique([provider, providerSubscriptionId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+/// A billing document synchronized from the provider, so a tenant can read its
+/// payment history without an outbound call on every page view.
+///
+/// Held deliberately thin: enough to render a history table and link out to the
+/// provider's own document. It is a cache, never an accounting record — the
+/// provider remains the authority on what was charged.
+model Invoice {
+  id                    String          @id @default(cuid())
+  companyId             String
+  subscriptionId        String?
+  provider              PaymentProvider
+  providerInvoiceId     String
+  /// The provider's human-facing reference, shown to the tenant.
+  number                String?
+  status                InvoiceStatus
+  /// ISO 4217, uppercase.
+  currency              String
+  /// Minor units (cents). Integers only — never store money as a float.
+  amountDue             Int
+  amountPaid            Int
+  issuedAt              DateTime?
+  paidAt                DateTime?
+  /// Hosted invoice or receipt at the provider, when one exists.
+  invoiceUrl            String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  company               Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  subscription          Subscription?   @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  /// The idempotency key for invoice synchronization: a redelivered webhook
+  /// updates the existing row instead of inserting a duplicate.
+  @@unique([provider, providerInvoiceId])
+  @@index([companyId, issuedAt])
+  @@map("invoices")
+}
+
+/// The webhook ledger — one row per event the provider has ever sent us.
+///
+/// This table is what makes webhook processing idempotent. Providers guarantee
+/// *at-least-once* delivery: the same event arrives again after a timeout, a
+/// 5xx, or a network blip, and events routinely arrive out of order. Inserting
+/// the provider's event id under a unique constraint *before* doing any work
+/// turns "have I already handled this?" into a database-enforced question
+/// rather than an application-level guess.
+///
+/// What the provisioner created at the payment provider, so the application can
+/// find it again.
+///
+/// The provider is still the source of truth — this table records *which* of its
+/// objects are ours. Without it the identifiers would have to be pasted into
+/// environment variables by hand, which is the manual step this exists to
+/// remove: `npm run billing:paypal:setup` writes these rows, and the API reads
+/// them.
+///
+/// Scoped by `environment` as well as `provider`, because a sandbox plan id and
+/// a live one are different objects that must never be confused. Charging a live
+/// customer against a sandbox plan fails; charging a sandbox test against a live
+/// plan takes real money.
+model BillingCatalog {
+  id          String          @id @default(cuid())
+  provider    PaymentProvider
+  /// `sandbox` or `live`. Not an enum: it is the provider's own word for its
+  /// estate, and providers do not agree on the vocabulary.
+  environment String
+  /// The logical name this deployment knows the object by — `product`,
+  /// `plan:STARTER:MONTH`, `webhook`. Stable across re-provisioning.
+  key         String
+  /// The identifier the provider issued: `P-…` for a plan, a webhook id, etc.
+  externalId  String
+  /// A hash of what we asked the provider to create.
+  ///
+  /// Lets the provisioner notice that the desired catalogue has changed — a new
+  /// price, a renamed plan — and say so, rather than silently continuing to bill
+  /// the old object because a row already existed.
+  fingerprint String
+  /// Anything worth reading back without another API call (amount, currency,
+  /// interval). Never a credential.
+  metadata    Json?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([provider, environment, key])
+  @@map("billing_catalog")
+}
+
+/// It doubles as the audit trail: a failed event keeps its error and attempt
+/// count, so a delivery that never succeeded is visible rather than lost.
+model WebhookEvent {
+  id              String             @id @default(cuid())
+  provider        PaymentProvider
+  /// The provider's own event id. Unique per provider — this is the dedupe key.
+  providerEventId String
+  eventType       String
+  status          WebhookEventStatus @default(PROCESSING)
+  /// Delivery count, incremented every time the provider re-sends this event.
+  attempts        Int                @default(1)
+  /// Last failure message, kept for triage. Null once processed.
+  error           String?
+  /// When the provider says the event occurred, not when we received it.
+  occurredAt      DateTime?
+  processedAt     DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@unique([provider, providerEventId])
+  @@index([status, createdAt])
+  @@map("webhook_events")
+}
+
 model AuditLog {
   id         String   @id @default(cuid())
   companyId  String
@@ -506,6 +655,53 @@ enum NotificationStatus {
   UNREAD
   READ
   ARCHIVED
+}
+
+enum SubscriptionStatus {
+  NONE
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+  PAUSED
+}
+
+enum SubscriptionPlan {
+  STARTER
+  PROFESSIONAL
+}
+
+/// The payment processor that issued a record's identifiers. Exactly one is
+/// active at a time (the API's PAYMENT_PROVIDER); the others stay readable.
+enum PaymentProvider {
+  PAYPAL
+}
+
+/// Renewal cadence. Only MONTH is sold today; YEAR is modelled up front so
+/// launching annual plans is a price-configuration change, not a migration.
+enum BillingInterval {
+  MONTH
+  YEAR
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+}
+
+/// Where a webhook delivery got to. PROCESSING is written before any work
+/// begins, so a crash mid-handler leaves evidence rather than a silent gap.
+enum WebhookEventStatus {
+  PROCESSING
+  PROCESSED
+  FAILED
+  IGNORED
 }
 
 enum PhoneNumberStatus {

@@ -7,9 +7,12 @@ import type {
   PlatformRole,
   AppointmentPriority,
   AppointmentStatus,
+  BillingInterval,
   CallDirection,
   CallStatus,
   CompanyStatus,
+  InvoiceStatus,
+  PaymentProvider,
   ConversationIntent,
   ConversationOutcome,
   ConversationStatus,
@@ -23,6 +26,8 @@ import type {
   OnboardingStep,
   PhoneNumberStatus,
   PropertyType,
+  SubscriptionPlan,
+  SubscriptionStatus,
   TranscriptEntry,
   UrgencyLevel,
   UserRole,
@@ -61,6 +66,8 @@ export interface AdminCompanyRow {
   status?: CompanyStatus;
   ownerName?: string | null;
   ownerEmail?: string | null;
+  plan?: SubscriptionPlan | null;
+  subscriptionStatus?: SubscriptionStatus;
   lastActiveAt: string | null;
   createdAt?: string;
   callsToday: number;
@@ -85,6 +92,12 @@ export interface AdminCompanyDetail {
     ownerName: string | null;
     ownerEmail: string | null;
     lastActiveAt: string | null;
+    subscription: {
+      status: SubscriptionStatus;
+      plan: SubscriptionPlan | null;
+      currentPeriodEnd: string | null;
+      trialEndsAt: string | null;
+    } | null;
   };
   usage: {
     totalCalls: number;
@@ -135,9 +148,88 @@ export interface SessionCompany {
   primaryColor: string | null;
 }
 
+/**
+ * Billing state for the tenant, mirrored from the payment provider by the
+ * backend.
+ *
+ * Nothing here names a processor. The frontend deliberately cannot tell which
+ * one is in use — that is what makes switching providers invisible to the UI.
+ */
+export interface SubscriptionSummary {
+  status: SubscriptionStatus;
+  plan: SubscriptionPlan | null;
+  interval: BillingInterval | null;
+  /** True when the tenant may use the application right now. */
+  isActive: boolean;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  trialEndsAt: string | null;
+  /** Whether a billing account exists, and therefore whether a portal can open. */
+  hasBillingAccount: boolean;
+}
+
+/** One row of the tenant's payment history. */
+export interface InvoiceSummary {
+  id: string;
+  number: string | null;
+  status: InvoiceStatus;
+  currency: string;
+  /** Minor units (cents) — formatted for display by the client. */
+  amountDue: number;
+  amountPaid: number;
+  issuedAt: string | null;
+  invoiceUrl: string | null;
+}
+
+/**
+ * What the browser is told about billing.
+ *
+ * Carries no secret. `clientId` is PayPal's publishable identifier — required
+ * to load the JS SDK for in-context buttons, incapable of moving money on its
+ * own — and `environment` exists so the UI can say out loud when it is pointed
+ * at a sandbox.
+ */
+export interface BillingConfig {
+  provider: PaymentProvider;
+  /** `sandbox` or `live`. A checkout that takes no money must not look like one that does. */
+  environment: string;
+  /** PayPal REST app client id (publishable) for the JS SDK. */
+  clientId: string;
+}
+
+/** A started checkout: the page to send the browser to. */
+export interface CheckoutHandle {
+  provider: PaymentProvider;
+  url: string;
+  /** Where the provider will return the browser once payment succeeds. */
+  successUrl: string;
+  /** The provider's id for the pending subscription, for in-context approval. */
+  subscriptionId: string | null;
+}
+
+/**
+ * The result of a plan change.
+ *
+ * `approvalUrl` is set when the provider needs the payer to consent before the
+ * change takes effect — PayPal requires it whenever the new plan costs more.
+ * Until the browser follows it, the subscription in this payload is still the
+ * old plan.
+ */
+export interface PlanChangeResult extends SubscriptionSummary {
+  approvalUrl: string | null;
+}
+
 export interface Session {
   user: SessionUser;
   company: SessionCompany | null;
+  /** Null while payments are disabled platform-wide — there is no wall to report. */
+  subscription: SubscriptionSummary | null;
+  /**
+   * Whether billing is switched on platform-wide (the API's PAYMENTS_ENABLED).
+   * The route guard skips the payment step when false, so the flag is enforced
+   * from a single place across both sides.
+   */
+  paymentsEnabled: boolean;
 }
 
 export interface AiConfiguration {

@@ -117,6 +117,14 @@ export class AdminService {
 
     const where: Prisma.CompanyWhereInput = {};
     if (query.status) where.status = query.status;
+    if (query.subscription === 'TRIAL') where.subscription = { status: 'TRIALING' };
+    if (query.subscription === 'ACTIVE') where.subscription = { status: 'ACTIVE' };
+    if (query.subscription === 'INACTIVE') {
+      where.OR = [
+        { subscription: null },
+        { subscription: { status: { notIn: ['ACTIVE', 'TRIALING'] } } },
+      ];
+    }
     if (query.search) {
       const term = query.search.trim();
       where.AND = [
@@ -149,6 +157,8 @@ export class AdminService {
           ? [owner.firstName, owner.lastName].filter(Boolean).join(' ') || null
           : null,
         ownerEmail: owner?.email ?? company.email ?? null,
+        plan: company.subscription?.plan ?? null,
+        subscriptionStatus: company.subscription?.status ?? 'NONE',
         lastActiveAt: owner?.lastActiveAt?.toISOString() ?? null,
         createdAt: company.createdAt.toISOString(),
         ...(totals.get(company.id) ?? { callsToday: 0, leadsToday: 0, appointmentsToday: 0 }),
@@ -206,6 +216,14 @@ export class AdminService {
           : null,
         ownerEmail: owner?.email ?? null,
         lastActiveAt: owner?.lastActiveAt?.toISOString() ?? null,
+        subscription: company.subscription
+          ? {
+              status: company.subscription.status,
+              plan: company.subscription.plan,
+              currentPeriodEnd: company.subscription.currentPeriodEnd?.toISOString() ?? null,
+              trialEndsAt: company.subscription.trialEndsAt?.toISOString() ?? null,
+            }
+          : null,
       },
       usage: {
         totalCalls: calls,

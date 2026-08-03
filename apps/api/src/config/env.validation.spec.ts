@@ -1,6 +1,6 @@
 import { validateEnv } from './env.validation';
 
-/** A fully-configured production environment. */
+/** A production environment with everything except the billing credentials. */
 const productionBase = {
   NODE_ENV: 'production',
   // AWS endpoints, not localhost: a deployed tier pointed at the machine
@@ -14,21 +14,119 @@ const productionBase = {
   WEB_PUBLIC_URL: 'https://example.com',
 };
 
+const paypalCredentials = {
+  PAYPAL_CLIENT_ID: 'AeA1QIZ...',
+  PAYPAL_CLIENT_SECRET: 'EGnHDxD...',
+  PAYPAL_WEBHOOK_ID: '8PT597110X687430LKGECATA',
+  PAYPAL_PLAN_STARTER_MONTHLY: 'P-5ML4271244454362WXNWU5NQ',
+  PAYPAL_PLAN_PROFESSIONAL_MONTHLY: 'P-1RN14801Y5581574TXNWU5PA',
+};
+
 beforeEach(() => jest.spyOn(console, 'warn').mockImplementation(() => undefined));
 afterEach(() => jest.restoreAllMocks());
 
-describe('validateEnv — production requirements', () => {
-  it('boots a fully configured production API', () => {
-    expect(() => validateEnv({ ...productionBase })).not.toThrow();
+describe('validateEnv — billing requirements', () => {
+  it('boots a production API with no billing variables when payments are disabled', () => {
+    // The whole point of the flag: ship before the payment account is approved.
+    expect(() => validateEnv({ ...productionBase, PAYMENTS_ENABLED: 'false' })).not.toThrow();
   });
 
-  it('refuses to boot production without the Clerk secret', () => {
-    expect(() => validateEnv({ ...productionBase, CLERK_SECRET_KEY: '' })).toThrow(
+  it('refuses to boot production with payments enabled and PayPal missing', () => {
+    // A production boot with the wall on but no working provider would lock
+    // every customer out, so this must stay fatal.
+    expect(() => validateEnv({ ...productionBase })).toThrow(/PAYPAL_CLIENT_ID/);
+  });
+
+  it('names every missing PayPal variable at once', () => {
+    expect(() => validateEnv({ ...productionBase })).toThrow(
+      /PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET/,
+    );
+  });
+
+  /**
+   * The point of the provisioning system: identifiers are not configuration.
+   * The product, the plans and the webhook are created by
+   * `billing:paypal:setup` and read from `billing_catalog`, so demanding them
+   * here would reintroduce exactly the manual step it removed. Whether the
+   * provisioning actually ran is checked at boot by BillingReadinessService,
+   * not by env validation.
+   */
+  it('never demands a plan, product or webhook identifier', () => {
+    const error = (() => {
+      try {
+        validateEnv({ ...productionBase });
+        return '';
+      } catch (e) {
+        return (e as Error).message;
+      }
+    })();
+
+    expect(error).not.toMatch(/PAYPAL_PLAN_/);
+    expect(error).not.toMatch(/PAYPAL_WEBHOOK_ID/);
+    expect(error).not.toMatch(/PRODUCT/i);
+  });
+
+  it('boots with only the two credentials', () => {
+    expect(() =>
+      validateEnv({
+        ...productionBase,
+        PAYPAL_CLIENT_ID: 'AeA1QIZ...',
+        PAYPAL_CLIENT_SECRET: 'EGnHDxD...',
+      }),
+    ).not.toThrow();
+  });
+
+  it('boots production with payments enabled once PayPal is configured', () => {
+    expect(() => validateEnv({ ...productionBase, ...paypalCredentials })).not.toThrow();
+  });
+
+  it('accepts the provider named explicitly', () => {
+    expect(() =>
+      validateEnv({ ...productionBase, ...paypalCredentials, PAYMENT_PROVIDER: 'paypal' }),
+    ).not.toThrow();
+  });
+
+  it('does not require annual plans — they are optional until launched', () => {
+    // Annual is modelled but not sold; requiring its plan ids would block a
+    // boot over a plan nobody can buy yet.
+    expect(() => validateEnv({ ...productionBase, ...paypalCredentials })).not.toThrow();
+  });
+
+  it('rejects a retired provider rather than booting without an adapter', () => {
+    // Stripe's adapter was removed with the rest of the multi-provider surface.
+    // A deployment still naming it must fail the boot, not fall back silently.
+    expect(() => validateEnv({ ...productionBase, PAYMENT_PROVIDER: 'stripe' })).toThrow(
+      /not a supported provider/,
+    );
+  });
+
+  it('rejects an unknown provider rather than guessing', () => {
+    // Falling back to a default would mean billing through a processor the
+    // operator did not choose.
+    expect(() => validateEnv({ ...productionBase, PAYMENT_PROVIDER: 'braintree' })).toThrow(
+      /not a supported provider/,
+    );
+  });
+
+  it('still enforces the non-billing production requirements when payments are off', () => {
+    // Disabling billing must not weaken anything else.
+    const withoutClerk = { ...productionBase, CLERK_SECRET_KEY: '' };
+    expect(() => validateEnv({ ...withoutClerk, PAYMENTS_ENABLED: 'false' })).toThrow(
       /CLERK_SECRET_KEY/,
     );
   });
 
-  it('requires nothing but a database outside a deployed tier', () => {
+  it('warns loudly when the payment wall is down', () => {
+    validateEnv({ ...productionBase, PAYMENTS_ENABLED: 'false' });
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('PAYMENTS_ENABLED=false'));
+  });
+
+  it('reports which provider is active on boot', () => {
+    validateEnv({ ...productionBase, ...paypalCredentials });
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('Payment provider: paypal'));
+  });
+
+  it('does not require billing credentials outside production regardless of the flag', () => {
     expect(() => validateEnv({ DATABASE_URL: 'postgresql://localhost:5432/db' })).not.toThrow();
   });
 });
@@ -44,6 +142,7 @@ describe('validateEnv — deployment tier', () => {
     REDIS_URL: 'redis://rooferslabs-development.x.cache.amazonaws.com:6379',
     API_PUBLIC_URL: 'https://api.dev.example.com',
     WEB_PUBLIC_URL: 'https://dev.example.com',
+    PAYMENTS_ENABLED: 'false',
   };
 
   it('holds a deployed development environment to the full configuration check', () => {
@@ -81,9 +180,9 @@ describe('validateEnv — deployment tier', () => {
 
 describe('validateEnv — no localhost in a deployed tier', () => {
   /**
-   * The regression this exists for: a deployed process reading a `DATABASE_URL`
-   * of `postgresql://…@localhost:5432/…` from the root `.env` while
-   * `APP_ENV=development` claimed it was talking to AWS, and connecting to
+   * The regression this exists for. `billing:paypal:setup` read a
+   * `DATABASE_URL` of `postgresql://…@localhost:5432/…` from the root `.env`
+   * while `APP_ENV=development` claimed it was talking to AWS, and connected to
    * nothing. Presence checks passed; the failure surfaced as a refused
    * connection rather than as the configuration mistake it was.
    */
@@ -96,6 +195,7 @@ describe('validateEnv — no localhost in a deployed tier', () => {
     REDIS_URL: 'redis://rooferslabs-development.x.cache.amazonaws.com:6379',
     API_PUBLIC_URL: 'https://api.dev.example.com',
     WEB_PUBLIC_URL: 'https://dev.example.com',
+    PAYMENTS_ENABLED: 'false',
   };
 
   it('accepts a deployed environment wired to AWS', () => {

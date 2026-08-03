@@ -152,6 +152,134 @@ variable "twilio_auth_token" {
   sensitive   = true
 }
 
+variable "payments_enabled" {
+  description = <<-EOT
+    Master switch for billing. When false the API boots with no payment
+    credentials at all: no provider client is constructed, no webhook route is
+    registered, the billing endpoints answer 503, and every tenant reaches the
+    product without a subscription (onboarding leads straight to the
+    dashboard). Set to true — together with the active provider's credentials —
+    to restore the payment wall.
+  EOT
+  type        = bool
+  default     = true
+}
+
+variable "payment_provider" {
+  description = <<-EOT
+    Which processor handles money. PayPal is the only implemented adapter; the
+    variable exists so a future second provider is a configuration change
+    rather than a rewrite.
+  EOT
+  type        = string
+  default     = "paypal"
+
+  validation {
+    # The list must match PROVIDER_ADAPTERS in the API. A value that passes here
+    # and has no adapter would plan cleanly and then crash the container at
+    # boot, which is far harder to diagnose than a failed plan.
+    condition     = contains(["paypal"], var.payment_provider)
+    error_message = "payment_provider must be \"paypal\" — the only implemented adapter."
+  }
+}
+
+# ---- PayPal (the active provider) ----------------------------------------------------
+#
+# These default to empty so the stack can be applied before the PayPal account
+# is live. The precondition in main.tf makes that safe: they become mandatory
+# the moment payments_enabled is true and paypal is selected, so an apply can
+# never turn the wall on without the credentials to enforce it.
+
+variable "paypal_client_id" {
+  description = <<-EOT
+    PayPal Developer Dashboard -> Apps & Credentials -> your REST app -> Client ID
+    (live app).
+
+    Publishable, like Clerk's pk_: the API serves it to the browser through
+    GET /v1/billing/config so the PayPal JS SDK can render the in-context
+    buttons. It cannot mint a token or move money on its own — that is
+    paypal_client_secret, which never leaves the server.
+  EOT
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "paypal_client_secret" {
+  description = "PayPal Developer Dashboard -> Apps & Credentials -> your REST app -> Secret (live app)."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "paypal_test_pricing" {
+  description = <<-EOT
+    Charge the separately provisioned test plan instead of the published one.
+
+    For proving a LIVE payment pipeline end to end — real credentials, real
+    webhook signatures, real money arriving in the bank — without taking a full
+    subscription fee to do it. The test plan is a distinct PayPal plan created
+    by `npm run billing:paypal:setup`; the published plan is never modified,
+    because PayPal cannot reprice a plan that has live subscriptions.
+
+    At the launch price the two amounts coincide ($1.00), so this changes
+    nothing today. It earns its keep the moment the published price rises.
+
+    Set it back to false to restore the published price for NEW checkouts.
+    Subscriptions created while it was true keep renewing at the test price.
+  EOT
+  type        = bool
+  default     = false
+}
+
+variable "paypal_webhook_id" {
+  description = <<-EOT
+    PayPal Developer Dashboard -> Webhooks -> the webhook registered against
+    /v1/billing/webhook/paypal, its ID (not its URL).
+
+    Not a secret and not a signing key: PayPal verifies a delivery by having the
+    API post the headers and body back to it along with this id, so possession
+    proves nothing. It is required because that call names the webhook whose
+    certificate should have signed the payload — without it every inbound
+    webhook is rejected.
+  EOT
+  type        = string
+  default     = ""
+}
+
+variable "paypal_environment" {
+  description = "Which PayPal estate to bill against: \"sandbox\" or \"live\"."
+  type        = string
+  default     = "live"
+
+  validation {
+    condition     = contains(["sandbox", "live"], var.paypal_environment)
+    error_message = "paypal_environment must be either \"sandbox\" or \"live\"."
+  }
+}
+
+variable "billing_trial_period_days" {
+  description = <<-EOT
+    Free-trial length applied to new checkouts. 0 disables trials.
+
+    Ignored under PayPal, which attaches a trial to the *plan* as a billing
+    cycle with tenure_type TRIAL. Configure it on the plan instead; the API
+    logs a warning if this is set to anything but 0.
+  EOT
+  type        = number
+  default     = 0
+}
+
+variable "billing_grandfather_before" {
+  description = <<-EOT
+    RFC3339 instant. Companies created strictly before it keep full access
+    without paying; everyone created on or after it hits the payment wall.
+    Empty (the default) applies the wall to every tenant.
+  EOT
+  type        = string
+  default     = ""
+}
+
 variable "vapid_public_key" {
   description = "Web Push VAPID public key (npx web-push generate-vapid-keys)."
   type        = string

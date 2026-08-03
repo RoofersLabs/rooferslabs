@@ -20,19 +20,27 @@ terraform {
 }
 
 locals {
-  # Clerk-, Google-Fonts- and API-aware CSP. Clerk production runs on
+  # Clerk-, Google-Fonts-, PayPal- and API-aware CSP. Clerk production runs on
   # clerk.<root_domain> (CNAME) or *.clerk.accounts.dev; both are allowed.
+  #
+  # PayPal appears in three directives because the checkout is in-context, not
+  # a redirect: the JS SDK script comes from www.paypal.com (sandbox included —
+  # the client id, not the host, selects the environment), the buttons and the
+  # card form render inside PayPal-owned iframes, and the SDK phones its own
+  # APIs from the page. paypalobjects.com serves the SDK's static assets. The
+  # redirect fallback needs none of this — the browser simply leaves — so these
+  # entries exist purely for the in-context path.
   default_csp = join(" ", [
     "default-src 'self';",
     "base-uri 'self';",
     "object-src 'none';",
     "frame-ancestors 'none';",
-    "script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://clerk.${var.root_domain} https://challenges.cloudflare.com;",
+    "script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://clerk.${var.root_domain} https://challenges.cloudflare.com https://www.paypal.com https://www.paypalobjects.com;",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
     "font-src 'self' https://fonts.gstatic.com;",
     "img-src 'self' data: blob: https:;",
-    "connect-src 'self' https://${var.api_domain} wss://${var.api_domain} https://*.clerk.accounts.dev https://clerk.${var.root_domain};",
-    "frame-src 'self' https://*.clerk.accounts.dev https://challenges.cloudflare.com;",
+    "connect-src 'self' https://${var.api_domain} wss://${var.api_domain} https://*.clerk.accounts.dev https://clerk.${var.root_domain} https://www.paypal.com https://www.sandbox.paypal.com https://api.paypal.com https://api.sandbox.paypal.com;",
+    "frame-src 'self' https://*.clerk.accounts.dev https://challenges.cloudflare.com https://www.paypal.com https://www.sandbox.paypal.com;",
     "worker-src 'self' blob:;",
     "manifest-src 'self';",
     "upgrade-insecure-requests",

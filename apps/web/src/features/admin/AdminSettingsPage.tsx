@@ -80,8 +80,9 @@ export function AdminSettingsPage() {
                   nobody reads an unverified tick as a live check. */}
               <Health label="OpenAI" ok={null} />
               <Health label="Twilio" ok={null} />
+              <Health label="Billing" ok={null} />
               <p className="mt-3 border-t border-line-subtle pt-3 text-caption text-ink-faint">
-                Database and cache are probed live. The two integrations above are not yet covered
+                Database and cache are probed live. The three integrations above are not yet covered
                 by the readiness endpoint and are reported as unknown rather than assumed healthy.
               </p>
             </>

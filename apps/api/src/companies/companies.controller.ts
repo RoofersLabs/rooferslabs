@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Patch, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@rooferslabs/shared';
-import { AllowNoCompany } from '../common/decorators/public.decorator';
+import { AllowInactiveSubscription, AllowNoCompany } from '../common/decorators/public.decorator';
 import { CurrentCompanyId } from '../common/decorators/current-company.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -18,8 +18,13 @@ import { UpdateBrandingDto, UpdateCompanyDto } from './dto/update-company.dto';
  * Company (tenant) management, and the write surface behind the guided
  * onboarding wizard.
  *
- * The wizard writes its progress through these endpoints; @AllowNoCompany marks
- * the one that runs before a tenant record exists at all.
+ * Onboarding runs *before* the payment wall — a tenant configures its business
+ * and its receptionist, then chooses a plan — so the endpoints the wizard needs
+ * carry @AllowInactiveSubscription. The exemption is deliberately listed per
+ * endpoint rather than applied to the controller: reads and writes that are not
+ * part of setup (branding, and everything under /calls, /customers,
+ * /appointments, /knowledge-articles, /dashboard, /telephony) stay behind the
+ * wall, so an unpaid tenant can complete setup and nothing else.
  */
 @ApiTags('Companies')
 @ApiBearerAuth()
@@ -36,6 +41,7 @@ export class CompaniesController {
   }
 
   @Get('me')
+  @AllowInactiveSubscription()
   @ApiOperation({ summary: "Get the caller's company" })
   async getMine(@CurrentCompanyId() companyId: string) {
     const company = await this.companies.getById(companyId);
@@ -44,6 +50,7 @@ export class CompaniesController {
 
   @Patch('me')
   @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @AllowInactiveSubscription()
   @ApiOperation({ summary: 'Update business information (onboarding step 2)' })
   async update(@CurrentCompanyId() companyId: string, @Body() dto: UpdateCompanyDto) {
     const company = await this.companies.updateBusinessInfo(companyId, dto);
@@ -52,6 +59,7 @@ export class CompaniesController {
 
   @Put('me/business-hours')
   @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @AllowInactiveSubscription()
   @ApiOperation({ summary: 'Set business hours (onboarding step 2)' })
   async setHours(@CurrentCompanyId() companyId: string, @Body() dto: SetBusinessHoursDto) {
     const company = await this.companies.setBusinessHours(companyId, dto.hours);
@@ -67,6 +75,7 @@ export class CompaniesController {
   }
 
   @Get('me/ai-configuration')
+  @AllowInactiveSubscription()
   @ApiOperation({ summary: 'Get the AI receptionist configuration' })
   async getAiConfig(@CurrentCompanyId() companyId: string) {
     const config = await this.companies.getAiConfiguration(companyId);
@@ -75,6 +84,7 @@ export class CompaniesController {
 
   @Patch('me/ai-configuration')
   @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @AllowInactiveSubscription()
   @ApiOperation({ summary: 'Update the AI receptionist configuration (onboarding step 3)' })
   async updateAiConfig(
     @CurrentCompanyId() companyId: string,
@@ -85,6 +95,7 @@ export class CompaniesController {
   }
 
   @Patch('me/onboarding')
+  @AllowInactiveSubscription()
   @ApiOperation({ summary: 'Advance the onboarding wizard to a step' })
   async setStep(@CurrentCompanyId() companyId: string, @Body() dto: SetOnboardingStepDto) {
     const company = await this.companies.setOnboardingStep(companyId, dto.step);
@@ -93,6 +104,7 @@ export class CompaniesController {
 
   @Post('me/onboarding/complete')
   @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @AllowInactiveSubscription()
   @ApiOperation({ summary: 'Complete onboarding (step 4) — setup is finished' })
   async complete(@CurrentCompanyId() companyId: string) {
     const company = await this.companies.completeOnboarding(companyId);

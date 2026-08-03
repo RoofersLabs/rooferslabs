@@ -15,6 +15,7 @@ import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import type { ApiValidationError } from '@rooferslabs/shared';
 import { AppModule } from './app.module';
+import { BillingReadinessService } from './billing/provisioning/billing-readiness.service';
 import { AppConfigService } from './config/app-config.service';
 import { MediaStreamBridge } from './telephony/media-stream.bridge';
 
@@ -112,6 +113,34 @@ async function bootstrap(): Promise<void> {
   SwaggerModule.setup('docs', app, document, {
     swaggerOptions: { persistAuthorization: true },
   });
+
+  // ── Billing readiness ──────────────────────────────────────────────────────
+  //
+  // Environment validation has already proved the *credentials* are present.
+  // This proves the catalogue was actually provisioned — that a product, a
+  // sellable plan and a webhook exist — which is a different question and the
+  // one a customer's checkout depends on.
+  //
+  // A deployed environment with the payment wall up and no catalogue would
+  // accept signups, take them through onboarding, and fail every single
+  // checkout with a 500. Refusing to start is strictly better: the deployment
+  // fails visibly, the previous task keeps serving, and the log says what to
+  // run. Locally it is a warning, because a developer working on something
+  // else should not need a PayPal account to boot the API.
+  const readiness = await app.get(BillingReadinessService).check();
+  if (!readiness.ready) {
+    const diagnosis = BillingReadinessService.format(readiness);
+    if (config.isDeployed) {
+      logger.error(
+        `Refusing to start: billing is enabled but not fully provisioned.\n${diagnosis}\n` +
+          `Run \`npm run billing:paypal:setup\` against this environment, then redeploy.`,
+        'Bootstrap',
+      );
+      await app.close();
+      process.exit(1);
+    }
+    logger.warn(`Billing is not fully provisioned.\n${diagnosis}`, 'Bootstrap');
+  }
 
   await app.listen(config.api.port, '0.0.0.0');
   logger.log(

@@ -20,7 +20,9 @@ export type Stage =
   | 'anonymous'
   /** Signed in, but the company record or its guided setup is unfinished. */
   | 'onboarding'
-  /** Signed in and onboarded. The application proper. */
+  /** Setup finished, no active subscription. The payment wall. */
+  | 'payment'
+  /** Signed in, onboarded, and paying. The application proper. */
   | 'app';
 
 /**
@@ -35,6 +37,8 @@ export const ROUTES = {
   signIn: '/sign-in',
   signUp: '/sign-up',
   onboarding: '/onboarding',
+  payment: '/payment',
+  billing: '/billing',
   /** The canonical dashboard. `home('app')` resolves here. */
   dashboard: '/dashboard',
   calls: '/calls',
@@ -92,24 +96,46 @@ export interface AccessFacts {
   isSignedIn: boolean;
   /** Null until the tenant creates its company in wizard step 1. */
   onboardingStep: OnboardingStep | null;
+  /** Mirrors the payment provider via the backend. Grandfathered tenants also read true. */
+  isSubscribed: boolean;
+  /**
+   * Whether billing is switched on platform-wide, reported by the API so the
+   * flag is enforced from one place on both sides. When false the payment step
+   * does not exist: onboarding leads straight to the dashboard.
+   */
+  paymentsEnabled: boolean;
 }
 
 /**
  * Reduce the session to a stage. This is the *only* place the ordering
- * auth → onboarding → app is encoded.
+ * auth → onboarding → payment → app is encoded.
  */
-export function resolveStage({ isSignedIn, onboardingStep }: AccessFacts): Stage {
+export function resolveStage({
+  isSignedIn,
+  onboardingStep,
+  isSubscribed,
+  paymentsEnabled,
+}: AccessFacts): Stage {
   if (!isSignedIn) return 'anonymous';
   // No company yet, or the wizard never reached the end: setup is unfinished.
   if (onboardingStep === null || onboardingStep !== OnboardingStep.COMPLETE) {
     return 'onboarding';
   }
+  // With billing off there is no wall, so 'payment' is unreachable and a
+  // finished tenant goes straight into the application.
+  if (paymentsEnabled && !isSubscribed) return 'payment';
   return 'app';
 }
 
-/** The stages `resolveStage` can actually produce. */
-export function reachableStages(): readonly Stage[] {
-  return ['anonymous', 'onboarding', 'app'];
+/**
+ * The stages `resolveStage` can actually produce. With payments off nothing
+ * resolves to 'payment', which is what makes the billing routes unreachable
+ * without special-casing them in the guard.
+ */
+export function reachableStages(paymentsEnabled: boolean): readonly Stage[] {
+  return paymentsEnabled
+    ? ['anonymous', 'onboarding', 'payment', 'app']
+    : ['anonymous', 'onboarding', 'app'];
 }
 
 /**
@@ -137,6 +163,8 @@ export function home(stage: Stage): GuardedRoute {
       return ROUTES.signIn;
     case 'onboarding':
       return ROUTES.onboarding;
+    case 'payment':
+      return ROUTES.payment;
     case 'app':
       return ROUTES.dashboard;
   }
@@ -147,15 +175,26 @@ export type RouteAccess = Record<GuardedRoute, readonly Stage[]>;
 /**
  * Which stages may view each guarded route.
  *
- * Expressing the audience in a table rather than in the guard keeps every
- * routing decision in one place, and keeps the whole policy a pure function of
- * the session.
+ * `/billing` is intentionally reachable from both `payment` and `app`: a tenant
+ * lands there after paying, when the webhook that flips it to active has usually
+ * not landed yet. Excluding `payment` would bounce every successful payer off
+ * their own receipt.
+ *
+ * With payments off both billing routes admit no stage at all, so any attempt
+ * to reach them redirects to the visitor's own landing route. Expressing it in
+ * the table rather than in the guard keeps every routing decision in one place,
+ * and keeps the whole policy a pure function of the session.
  */
-export function routeAccess(): RouteAccess {
+export function routeAccess(paymentsEnabled: boolean): RouteAccess {
   return {
     [ROUTES.signIn]: ['anonymous'],
     [ROUTES.signUp]: ['anonymous'],
     [ROUTES.onboarding]: ['onboarding'],
+    [ROUTES.payment]: paymentsEnabled ? ['payment'] : [],
+    // Reachable while unpaid *and* while paying: a tenant returning from the
+    // provider's approval page lands here before the activation webhook has,
+    // and a tenant following a "your payment failed" email is usually past due.
+    [ROUTES.billing]: paymentsEnabled ? ['payment', 'app'] : [],
     // The application proper. Every one of these requires a finished tenant.
     [ROUTES.dashboard]: ['app'],
     [ROUTES.calls]: ['app'],
@@ -191,10 +230,14 @@ export function redirectFor(
  * Proves the routing table cannot loop: for every stage a visitor can actually
  * be in, following `home()` from any disallowed route must land somewhere that
  * stage is allowed to be, so every redirect terminates in exactly one hop.
+ *
+ * Only reachable stages are checked. With payments off `home('payment')` still
+ * names `/payment`, which admits nobody — but no session resolves to 'payment',
+ * so that pairing never occurs at runtime.
  */
-export function assertNoRedirectCycles(): void {
-  const access = routeAccess();
-  for (const stage of reachableStages()) {
+export function assertNoRedirectCycles(paymentsEnabled: boolean): void {
+  const access = routeAccess(paymentsEnabled);
+  for (const stage of reachableStages(paymentsEnabled)) {
     const destination = home(stage);
     if (!access[destination].includes(stage)) {
       throw new Error(

@@ -9,5 +9,8 @@ export const ROLES_KEY = 'roles';
 /** Route decorator key marking an endpoint as not requiring a company yet. */
 export const ALLOW_NO_COMPANY_KEY = 'allowNoCompany';
 
+/** Route decorator key marking an endpoint as reachable without active billing. */
+export const ALLOW_INACTIVE_SUBSCRIPTION_KEY = 'allowInactiveSubscription';
+
 /** Header used to correlate a request across logs and the response envelope. */
 export const REQUEST_ID_HEADER = 'x-request-id';

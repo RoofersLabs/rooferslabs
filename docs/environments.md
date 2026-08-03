@@ -13,6 +13,7 @@ data.
 | Stack name             | `rooferslabs-production`                        | `rooferslabs-development`          |
 | `NODE_ENV` / `APP_ENV` | `production` / `production`                     | `development` / `development`      |
 | Clerk                  | production instance                             | development instance               |
+| PayPal                 | live (after cutover)                            | sandbox, enforced                  |
 
 ## What is isolated, and what is not
 
@@ -62,7 +63,8 @@ connection string dies at boot with the variable named in the message.
    `develop` alone. A workflow run on the wrong branch cannot assume the role at
    all — this is the layer that is not bypassable by editing a file.
 2. **Terraform.** Two roots, two state files, no shared resource that holds
-   data. A precondition refuses a live Clerk key in development.
+   data. Preconditions refuse a live Clerk key or a live PayPal estate in
+   development.
 3. **Deploy scripts.** `infra/scripts/env.sh` resolves the environment from the
    argument, `$ENVIRONMENT`, or the branch — never a default. Production refuses
    to ship from a branch other than `main`. `deploy-web.sh` refuses to publish a
@@ -98,13 +100,19 @@ infra/scripts/db.sh development deploy    # apply pending migrations by hand
 `deploy` is rarely needed: the container runs `prisma migrate deploy` on every
 start (`docker/api-entrypoint.sh`), so shipping the API applies the migrations.
 
-Migrations are **written by hand** — `prisma migrate diff` turns a rename into a
-data-destroying DROP + ADD, so it is not trusted here — and applied with
-`db.sh`.
+Migrations are **written by hand** — see the note in
+`prisma/migrations/20260729120000_provider_agnostic_billing/migration.sql` for
+why `prisma migrate diff` is not trusted here — and applied with `db.sh`.
 
 `prisma migrate dev` must never be pointed at a deployed database: it will offer
 to reset it. The deployed path is `migrate deploy` and nothing else — which is
 why `db.sh` takes an environment rather than a connection string.
+
+PayPal provisioning works the same way and for the same reason:
+
+```bash
+infra/scripts/billing.sh development setup   # npm run billing:paypal:setup
+```
 
 ## Bringing up the development environment
 
@@ -151,7 +159,8 @@ and prints the records to add.
 No production secret belongs in development, and no development secret in
 production. Terraform enforces what it can:
 
-- `envs/development` refuses to plan with a `pk_live_`/`sk_live_` Clerk key.
+- `envs/development` refuses to plan with a `pk_live_`/`sk_live_` Clerk key, or
+  with `paypal_environment = "live"`.
 - `envs/production` refuses to plan with `develop` in its deploy branches.
 
 The rest is discipline: use a separate OpenAI key and a Twilio subaccount for
@@ -160,12 +169,14 @@ it).
 
 ## Outstanding production cutovers
 
-One thing about production is still development-grade, tracked in
+Two things about production are still development-grade, both tracked in
 `infra/terraform/envs/production/terraform.tfvars`:
 
 1. `rooferslabs.com` authenticates against the Clerk **development** instance.
    Supply `pk_live_`/`sk_live_` and apply.
+2. The payment wall is **down**: no PayPal account is configured yet, so every
+   tenant reaches the product without paying. Supply live credentials and plan
+   IDs, set `paypal_environment = "live"`, set `payments_enabled = true`, and
+   apply.
 
-There is no billing cutover: the payment subsystem was removed for the MVP, so
-every tenant reaches the product without paying and pricing is a "coming soon"
-marketing experience only.
+Neither is blocked by the environment split; both are a `terraform apply` away.

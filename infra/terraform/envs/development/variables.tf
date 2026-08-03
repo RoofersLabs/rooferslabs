@@ -130,6 +130,26 @@ variable "clerk_webhook_secret" {
   default     = ""
 }
 
+variable "allow_live_paypal" {
+  description = <<-EOT
+    Acknowledge that this development deployment bills through PayPal's LIVE
+    estate, taking real money.
+
+    Required alongside paypal_environment = "live". It exists so that reaching
+    the live estate from the development environment is a deliberate, reviewable
+    line in a tfvars file rather than a one-character edit — the same shape as
+    allow_live_clerk_key below.
+
+    Set for pre-launch validation of the real payment pipeline: live
+    credentials, live webhook signature verification, and money actually
+    reaching the bank, on infrastructure that is otherwise development.
+    Consider paypal_test_pricing = true alongside it so those real charges are
+    $1.00 rather than the published $49.00.
+  EOT
+  type        = bool
+  default     = false
+}
+
 variable "allow_live_clerk_key" {
   description = <<-EOT
     Escape hatch for the guardrail that refuses a pk_live_/sk_live_ key in this
@@ -176,6 +196,95 @@ variable "openai_responses_model" {
 variable "openai_embedding_model" {
   type    = string
   default = "text-embedding-3-small"
+}
+
+# ---- Billing -----------------------------------------------------------------
+
+variable "payments_enabled" {
+  description = "Master switch for billing. False opens the payment wall entirely: no provider client, no webhook route, every tenant reaches the product without a subscription."
+  type        = bool
+  default     = true
+}
+
+variable "payment_provider" {
+  description = "Which processor handles money. PayPal is the only implemented adapter."
+  type        = string
+  default     = "paypal"
+
+  validation {
+    # Must match PROVIDER_ADAPTERS in the API: a value with no adapter would
+    # plan cleanly and then crash the container at boot.
+    condition     = contains(["paypal"], var.payment_provider)
+    error_message = "payment_provider must be \"paypal\" — the only implemented adapter."
+  }
+}
+
+variable "paypal_environment" {
+  description = <<-EOT
+    Which PayPal estate development bills against: "sandbox" or "live".
+
+    Defaults to sandbox. Setting it to "live" additionally requires
+    allow_live_paypal = true — see the precondition in main.tf — because a
+    checkout opened against the live estate takes real money from whoever is
+    testing.
+  EOT
+  type        = string
+  default     = "sandbox"
+
+  validation {
+    condition     = contains(["sandbox", "live"], var.paypal_environment)
+    error_message = "paypal_environment must be either \"sandbox\" or \"live\"."
+  }
+}
+
+variable "paypal_client_id" {
+  description = "PayPal SANDBOX REST app Client ID. Server-side only — PayPal's checkout is a redirect, so the browser never receives a credential."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "paypal_client_secret" {
+  description = "PayPal SANDBOX REST app Secret."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "paypal_test_pricing" {
+  description = <<-EOT
+    Charge the provisioned $1.00 test plan instead of the published $49.00 one.
+
+    For proving a LIVE payment pipeline end to end — real credentials, real
+    webhook signatures, real money arriving in the bank — without taking a full
+    subscription fee to do it. The $1.00 plan is a separate PayPal plan created
+    by `npm run billing:paypal:setup`; the published plan is never modified.
+
+    Nothing else changes: the site still advertises $49 everywhere, and the
+    customer sees $1.00 for the first time on PayPal's own approval page.
+
+    Set it back to false to restore the published price for NEW checkouts.
+    Subscriptions created while it was true keep renewing at $1.00.
+  EOT
+  type        = bool
+  default     = false
+}
+
+variable "paypal_webhook_id" {
+  description = "Id of the PayPal sandbox webhook pointed at this environment's /v1/billing/webhook/paypal. Not a secret: it names the webhook whose signature PayPal should check a delivery against."
+  type        = string
+  default     = ""
+}
+
+variable "billing_trial_period_days" {
+  type    = number
+  default = 0
+}
+
+variable "billing_grandfather_before" {
+  description = "RFC3339 instant; companies created before it skip the payment wall. Empty applies the wall to every tenant."
+  type        = string
+  default     = ""
 }
 
 # ---- Web push ----------------------------------------------------------------

@@ -24,13 +24,18 @@
     "format:check": "prettier --check \"{apps,packages,infra}/**/*.{ts,tsx,js,jsx,json,md}\" \"*.{json,md}\" \".*.json\"",
     "prisma:generate": "npm run prisma:generate --workspace @rooferslabs/api",
     "prisma:migrate": "npm run prisma:migrate --workspace @rooferslabs/api",
-    "prisma:seed": "npm run prisma:seed --workspace @rooferslabs/api"
+    "prisma:seed": "npm run prisma:seed --workspace @rooferslabs/api",
+    "billing:paypal:setup": "infra/scripts/billing.sh"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
     "husky": "^9.1.7",
+    "lint-staged": "^17.0.8",
     "prettier": "^3.4.2",
     "typescript": "^5.7.3"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,md}": "prettier --write"
   }
 }

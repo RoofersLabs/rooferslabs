@@ -14,25 +14,27 @@ export const FOUNDING_PROGRAM = {
   name: 'Founding Customer Program',
   /** Used below `sm`, where the full name would crowd out the offer itself. */
   shortName: 'Founding Program',
-  cta: 'See what’s included',
+  price: 49,
+  cta: 'Claim Your Spot',
   /** Below `sm` the offer earns the width; the link keeps `cta` as its
       accessible name, so nothing is lost to a screen reader. */
-  ctaShort: 'Details',
+  ctaShort: 'Claim',
   /** In-page target. A fragment keeps the reader on the page and inherits the
       site's smooth scrolling, which already stands down for reduced motion. */
   href: '#pricing',
 } as const;
 
+const { price } = FOUNDING_PROGRAM;
+
 /**
- * The offer at two lengths. Pricing has not opened, so the bar announces the
- * programme rather than a figure — a price here that nothing can be paid at
- * would be the one claim on the page a visitor could act on and fail. Only one
- * is ever in the accessibility tree: the other is `display: none`, not visually
+ * The offer at two lengths. The bar says one thing now — a price — so a phone
+ * only has to drop the product name to keep it on a single line. Only one is
+ * ever in the accessibility tree: the other is `display: none`, not visually
  * hidden.
  */
 const OFFER = {
-  full: 'Early access is opening soon.',
-  short: 'Opening soon',
+  full: `Get rooferslabs for just $${price}/month.`,
+  short: `Just $${price}/month`,
 } as const;
 
 /**
@@ -89,8 +91,8 @@ export function AnnouncementBar() {
         >
           <p className="flex min-w-0 items-center gap-2 sm:gap-2.5">
             {/* On the narrowest phones the programme name is the first thing to
-                go: the announcement is the reason to look, and truncating it
-                reads as broken. */}
+                go: the price is the reason to look, and a truncated price reads
+                as broken. */}
             <span className="whitespace-nowrap text-white max-[359px]:hidden">
               <span className="sm:hidden">{FOUNDING_PROGRAM.shortName}</span>
               <span className="hidden sm:inline">{FOUNDING_PROGRAM.name}</span>
