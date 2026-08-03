@@ -473,6 +473,29 @@ export class BillingService {
       ? ACTIVE_SUBSCRIPTION_STATUSES.includes(previous.status as SubscriptionStatus)
       : false;
 
+    // A resolved id that names no company is not the same as no id at all, and
+    // it used to reach the upsert and die on the foreign key. That made the
+    // delivery FAIL, which answers 5xx, which asks the provider to retry
+    // something that can never succeed — the event was still failing on its
+    // third attempt. `custom_id` is whatever was set when the subscription was
+    // created, so it can outlive the company it named, or name one that never
+    // existed. Ignoring it is permanent and correct: the provider gets a 2xx
+    // and stops. Only checked when there is no existing row, because a row's
+    // own foreign key already proves its company is there.
+    if (!previous) {
+      const company = await this.prisma.company.findUnique({
+        where: { id: companyId },
+        select: { id: true },
+      });
+      if (!company) {
+        this.logger.warn(
+          `Subscription ${subscription.providerSubscriptionId} names company ${companyId}, ` +
+            `which does not exist — ignoring the event rather than failing it.`,
+        );
+        return BillingService.toSummary(null);
+      }
+    }
+
     const reconciled = BillingService.reconcilePendingCancellation(subscription, previous);
 
     const row = await this.repo.upsert(companyId, {

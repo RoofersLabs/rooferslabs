@@ -427,6 +427,31 @@ describe('BillingService — synchronization', () => {
     expect(summary.status).toBe(SubscriptionStatus.NONE);
   });
 
+  /**
+   * A `custom_id` that names a company which does not exist.
+   *
+   * Caught in production on 2026-08-03: the id was truthy, so it passed the
+   * "cannot attribute" check above and died on `subscriptions_companyId_fkey`
+   * instead. A failed delivery answers 5xx, so PayPal retried an event that
+   * could never succeed — three attempts on the ledger and counting. It must be
+   * ignored permanently, exactly like an unattributable one.
+   */
+  it('ignores a subscription naming a company that no longer exists', async () => {
+    const { service, repo, companies } = makeService({
+      existing: null,
+      byCustomer: null,
+      company: null, // the id resolves, the company does not
+    });
+
+    const summary = await service.applySubscription(
+      makeProviderSubscription({ companyId: 'company_deleted' }),
+    );
+
+    expect(repo.upsert).not.toHaveBeenCalled();
+    expect(companies.provisionReceptionistNumber).not.toHaveBeenCalled();
+    expect(summary.status).toBe(SubscriptionStatus.NONE);
+  });
+
   it('prefers the stored customer mapping over the echoed reference', async () => {
     // The stored mapping is ours and cannot be spoofed by payload contents.
     const { service, repo } = makeService({
