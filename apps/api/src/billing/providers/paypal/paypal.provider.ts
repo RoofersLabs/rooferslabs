@@ -42,6 +42,7 @@ import type {
   WebhookRequest,
 } from '../../types/billing.types';
 import { PayPalClient } from './paypal.client';
+import { PayPalFunding } from './paypal.funding';
 import { saleToProviderInvoice, toProviderSubscription } from './paypal.mapper';
 import { PayPalPlans } from './paypal.plans';
 import { approvalLink, PayPalSubscriptions } from './paypal.subscriptions';
@@ -67,10 +68,20 @@ export class PayPalProvider implements BillingProvider {
     private readonly plans: PayPalPlans,
     private readonly subscriptions: PayPalSubscriptions,
     private readonly verifier: PayPalWebhookVerifier,
+    private readonly funding: PayPalFunding,
   ) {}
 
   get isConfigured(): boolean {
     return this.client.isConfigured;
+  }
+
+  /**
+   * Only the sources this account can *vault*. A subscription is a billing
+   * agreement, so a method PayPal will not store cannot back one — see
+   * PayPalFunding for why eligibility alone is the wrong test.
+   */
+  fundingSources(): Promise<string[]> {
+    return this.funding.sources();
   }
 
   // ── Catalogue ────────────────────────────────────────────────────────────

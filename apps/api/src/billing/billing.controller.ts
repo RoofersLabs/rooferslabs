@@ -38,10 +38,10 @@ export class BillingController {
   @ApiOperation({
     summary: 'Public billing configuration the browser needs to open a checkout',
   })
-  getConfig() {
+  async getConfig() {
     // Served rather than baked into the frontend bundle so rotating the token
     // does not require a rebuild and redeploy of the web app.
-    return respond(this.billing.getPublicConfig(), 'Billing configuration retrieved.');
+    return respond(await this.billing.getPublicConfig(), 'Billing configuration retrieved.');
   }
 
   @Get('subscription')

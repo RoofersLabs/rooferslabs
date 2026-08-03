@@ -195,6 +195,16 @@ export interface BillingConfig {
   environment: string;
   /** PayPal REST app client id (publishable) for the JS SDK. */
   clientId: string;
+  /**
+   * Which payment methods to render buttons for, decided by the API.
+   *
+   * A subscription needs a funding source the processor will store for future
+   * charges, and whether it will is a property of the merchant account. The
+   * browser must not infer this: the SDK's own `isEligible()` reports whether a
+   * button may render, not whether a recurring charge against it can ever be
+   * approved.
+   */
+  fundingSources: string[];
 }
 
 /** A started checkout: the page to send the browser to. */

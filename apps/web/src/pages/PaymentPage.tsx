@@ -38,8 +38,18 @@ const OFFER = {
   cta: 'Subscribe with PayPal',
   reassurance: 'Cancel anytime. No hidden fees.',
   security: 'Secure payments powered by PayPal',
-  accepted: 'PayPal · Visa · Mastercard · American Express · Discover · Debit cards',
 } as const;
+
+/**
+ * What the trust line names, per funding source the API offers.
+ *
+ * Derived rather than fixed: listing methods a payer cannot actually use is
+ * the same broken promise as rendering a button that fails, one line lower.
+ */
+const ACCEPTED: Record<string, string> = {
+  paypal: 'PayPal',
+  card: 'Visa · Mastercard · American Express · Discover · Debit cards',
+};
 
 const FEATURES = [
   'AI Receptionist',
@@ -136,12 +146,18 @@ export function PaymentPage() {
     [confirmSubscription, navigate],
   );
 
+  // Stable across renders, so the SDK effect does not tear its buttons down
+  // every time the query object is replaced with an identical payload.
+  const allowedKey = (config.data?.fundingSources ?? []).join(',');
+
   /** Load the SDK and render whichever funding sources this account supports. */
   useEffect(() => {
     // No clientId yet: either the config is still loading (the skeleton holds
     // the space) or it failed — and failure is derived at render time below
     // rather than mirrored into state here.
     if (!config.data?.clientId) return;
+    const allowed = allowedKey ? allowedKey.split(',') : [];
+    if (allowed.length === 0) return;
 
     let disposed = false;
     const rendered: PayPalButtons[] = [];
@@ -151,14 +167,20 @@ export function PaymentPage() {
         const paypal = await loadPayPalSdk(config.data.clientId);
         if (disposed) return;
 
-        const slots: Array<[string, HTMLDivElement | null]> = [
-          [paypal.FUNDING.PAYPAL, paypalSlot.current],
-          [paypal.FUNDING.CARD, cardSlot.current],
+        // The API decides which methods are offered — it is the only side that
+        // knows which ones this merchant account can vault for recurring use.
+        // `isEligible()` is still consulted below, but it answers a narrower
+        // question ("may this button render?") and would happily render a
+        // wallet whose approval always fails.
+        const offered = new Set(allowed);
+        const slots: Array<[string, string, HTMLDivElement | null]> = [
+          ['paypal', paypal.FUNDING.PAYPAL, paypalSlot.current],
+          ['card', paypal.FUNDING.CARD, cardSlot.current],
         ];
 
         let mounted = 0;
-        for (const [fundingSource, slot] of slots) {
-          if (!slot) continue;
+        for (const [name, fundingSource, slot] of slots) {
+          if (!slot || !offered.has(name)) continue;
           const buttons = paypal.Buttons({
             fundingSource,
             style: { shape: 'pill', label: 'subscribe', height: 44 },
@@ -169,9 +191,6 @@ export function PaymentPage() {
               setOpenError('The payment could not be completed. Please try again.');
             },
           });
-          // Ineligible is PayPal's own per-account answer (for example, a
-          // wallet the account cannot vault for subscriptions): skip the
-          // button rather than render one that dies on approval.
           if (!buttons.isEligible()) continue;
           rendered.push(buttons);
           await buttons.render(slot);
@@ -191,12 +210,17 @@ export function PaymentPage() {
       disposed = true;
       for (const buttons of rendered) void buttons.close().catch(() => undefined);
     };
-  }, [config.data?.clientId, createSubscription, onApprove]);
+  }, [config.data?.clientId, allowedKey, createSubscription, onApprove]);
 
   // A config that failed to load means the SDK can never boot — the redirect
   // path needs no client id, so it takes over. Derived, not stored: the effect
   // above never has to mirror query state into component state.
   const mode: SdkState = config.isError ? 'fallback' : sdkState;
+
+  const accepted = (config.data?.fundingSources ?? [])
+    .map((source) => ACCEPTED[source])
+    .filter(Boolean)
+    .join(' · ');
 
   /** The redirect fallback: navigate to PayPal's hosted approval page. */
   const startRedirect = async () => {
@@ -337,7 +361,7 @@ export function PaymentPage() {
                 nothing here needs image assets or their licensing. */}
             <div className="mt-4 border-t border-line-subtle pt-4 text-center">
               <p className="text-caption font-medium text-ink-muted">{OFFER.security}</p>
-              <p className="mt-1 text-caption text-ink-faint">{OFFER.accepted}</p>
+              {accepted && <p className="mt-1 text-caption text-ink-faint">{accepted}</p>}
             </div>
           </Card>
 

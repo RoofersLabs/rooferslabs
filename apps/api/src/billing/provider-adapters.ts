@@ -18,6 +18,7 @@
 import type { Provider, Type } from '@nestjs/common';
 import { PaymentProvider } from '@rooferslabs/shared';
 import type { BillingProvider } from './interfaces/billing-provider.interface';
+import { PayPalFunding } from './providers/paypal/paypal.funding';
 import { PayPalPlans } from './providers/paypal/paypal.plans';
 import { PayPalProvider } from './providers/paypal/paypal.provider';
 import { PayPalSubscriptions } from './providers/paypal/paypal.subscriptions';
@@ -43,6 +44,6 @@ export const PROVIDER_ADAPTERS: Record<PaymentProvider, ProviderAdapter> = {
   [PaymentProvider.PAYPAL]: {
     adapter: PayPalProvider,
     webhookController: PayPalWebhookController,
-    collaborators: [PayPalPlans, PayPalSubscriptions, PayPalWebhookVerifier],
+    collaborators: [PayPalPlans, PayPalSubscriptions, PayPalWebhookVerifier, PayPalFunding],
   },
 };

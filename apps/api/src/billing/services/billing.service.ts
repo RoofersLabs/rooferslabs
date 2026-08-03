@@ -124,11 +124,19 @@ export class BillingService {
    * at a sandbox — a checkout that takes no money should never look like one
    * that does.
    */
-  getPublicConfig(): { provider: PaymentProvider; environment: string; clientId: string } {
+  async getPublicConfig(): Promise<{
+    provider: PaymentProvider;
+    environment: string;
+    clientId: string;
+    fundingSources: string[];
+  }> {
     return {
       provider: this.config.payments.provider,
       environment: this.config.paypal.environment,
       clientId: this.config.paypal.clientId,
+      // Which buttons to render is the provider's answer, not ours: only it
+      // knows which methods this merchant account can store for recurring use.
+      fundingSources: await this.provider.fundingSources(),
     };
   }
 

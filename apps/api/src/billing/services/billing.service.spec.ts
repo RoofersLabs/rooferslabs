@@ -121,6 +121,7 @@ function makeService(
       .fn()
       .mockReturnValue({ plan: SubscriptionPlan.STARTER, interval: BillingInterval.MONTH }),
     verifyAndParseWebhook: jest.fn(),
+    fundingSources: jest.fn().mockResolvedValue(['card']),
   } as unknown as jest.Mocked<BillingProvider>;
 
   const config = {
@@ -470,13 +471,14 @@ describe('BillingService — synchronization', () => {
 });
 
 describe('BillingService — public config', () => {
-  it('carries no secret', () => {
+  it('carries no secret', async () => {
     const { service } = makeService();
-    const config = service.getPublicConfig();
+    const config = await service.getPublicConfig();
     expect(config).toEqual({
       provider: PaymentProvider.PAYPAL,
       environment: 'sandbox',
       clientId: expect.any(String),
+      fundingSources: ['card'],
     });
     // The client id is publishable by design (it ships in PayPal's public SDK
     // URL); the *secret* must never appear here in any spelling.
@@ -489,11 +491,12 @@ describe('BillingService — public config', () => {
    * beyond these three would mean something leaked into the client — the
    * regression this guards.
    */
-  it('exposes exactly three fields', () => {
+  it('exposes exactly four fields', async () => {
     const { service } = makeService();
-    expect(Object.keys(service.getPublicConfig()).sort()).toEqual([
+    expect(Object.keys(await service.getPublicConfig()).sort()).toEqual([
       'clientId',
       'environment',
+      'fundingSources',
       'provider',
     ]);
   });

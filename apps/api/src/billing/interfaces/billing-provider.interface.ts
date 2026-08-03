@@ -148,4 +148,19 @@ export interface BillingProvider {
    * assertion that the payload genuinely came from the provider.
    */
   verifyAndParseWebhook(request: WebhookRequest): Promise<ProviderWebhookEvent>;
+
+  /**
+   * Which payment methods the browser should offer for a NEW subscription.
+   *
+   * On the port because it is a question only the provider can answer, and the
+   * answer is about this merchant account rather than about the product: a
+   * recurring charge needs a funding source the processor will store for
+   * future use, and whether it will is an account capability that can change
+   * without a deploy.
+   *
+   * Returned as opaque strings the client maps to buttons. A provider with one
+   * universal method may return a single entry; the caller must not assume a
+   * particular set.
+   */
+  fundingSources(): Promise<string[]>;
 }

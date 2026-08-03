@@ -3,6 +3,7 @@ import { PROVIDER_ADAPTERS } from './provider-adapters';
 import { PayPalPlans } from './providers/paypal/paypal.plans';
 import { PayPalProvider } from './providers/paypal/paypal.provider';
 import { PayPalSubscriptions } from './providers/paypal/paypal.subscriptions';
+import { PayPalFunding } from './providers/paypal/paypal.funding';
 import { PayPalWebhookVerifier } from './providers/paypal/paypal.webhook';
 import { PayPalWebhookController } from './webhooks/paypal-webhook.controller';
 
@@ -29,7 +30,7 @@ describe('Provider table', () => {
     expect(PROVIDER_ADAPTERS[PaymentProvider.PAYPAL]).toEqual({
       adapter: PayPalProvider,
       webhookController: PayPalWebhookController,
-      collaborators: [PayPalPlans, PayPalSubscriptions, PayPalWebhookVerifier],
+      collaborators: [PayPalPlans, PayPalSubscriptions, PayPalWebhookVerifier, PayPalFunding],
     });
   });
 
@@ -45,7 +46,7 @@ describe('Provider table', () => {
    */
   it('registers every collaborator the active adapter needs', () => {
     const paypal = PROVIDER_ADAPTERS[PaymentProvider.PAYPAL];
-    expect(paypal.collaborators).toHaveLength(3);
+    expect(paypal.collaborators).toHaveLength(4);
     expect(new Set(paypal.collaborators).size).toBe(paypal.collaborators?.length);
   });
 });
