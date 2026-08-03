@@ -249,6 +249,39 @@ describe('PayPalProvisioningService — second run', () => {
     expect(upsert).toHaveBeenCalled();
   });
 
+  /**
+   * Adoption must judge the price on a full plan, not on the list summary.
+   *
+   * PayPal's plan LIST returns id, name and status but no `billing_cycles`.
+   * Comparing against that summary reported drift on every single adoption —
+   * "bills an unreadable amount" — which is both false and, worse, inert: a
+   * plan that had genuinely drifted looked exactly the same. This is that
+   * regression, with the two responses deliberately different.
+   */
+  it('re-reads the full plan before judging an adopted price', async () => {
+    const summary = { id: PLAN_ID, name: 'Starter' }; // no billing_cycles, as PayPal lists it
+    const full = {
+      id: PLAN_ID,
+      name: 'Starter',
+      billing_cycles: [
+        {
+          tenure_type: 'REGULAR',
+          pricing_scheme: { fixed_price: { value: '1.0', currency_code: 'USD' } },
+        },
+      ],
+    };
+
+    const { service, catalog } = makeService({ plans: [summary] });
+    (catalog.getPlan as jest.Mock).mockResolvedValue(full);
+
+    const report = await service.provision();
+
+    // The comparison saw the priced plan, never the summary.
+    expect(catalog.planMatches).toHaveBeenCalledWith(full, expect.anything());
+    expect(catalog.planMatches).not.toHaveBeenCalledWith(summary, expect.anything());
+    expect(step(report, PLAN_KEY)?.drift).toBeUndefined();
+  });
+
   it('re-provisions when a recorded object has been deleted at PayPal', async () => {
     const { service, createProduct } = makeService({
       stored: { product: { externalId: PRODUCT_ID } },

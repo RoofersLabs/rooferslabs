@@ -316,9 +316,18 @@ export class PayPalProvisioningService {
     );
     if (existing) {
       await this.repo.upsert(this.scope, { key, externalId: existing.id, fingerprint, metadata });
-      const drift = this.catalog.planMatches(existing, expected)
+
+      // The list endpoint returns a summary: it carries id, name and status but
+      // no `billing_cycles`, so comparing prices against it reports drift for
+      // every adoption and reads the amount as unreadable. Re-read the plan in
+      // full before saying anything about what it charges — an adoption that
+      // cannot see a price must not be the thing that tells you the price is
+      // wrong. Falling back to the summary keeps a failed read from breaking the
+      // run; it simply produces the same honest "unreadable" note.
+      const full = (await this.catalog.getPlan(existing.id)) ?? existing;
+      const drift = this.catalog.planMatches(full, expected)
         ? undefined
-        : `Adopted plan ${existing.id} bills ${priceOf(existing)}, not ${plan.amount} ${plan.currency}.`;
+        : `Adopted plan ${existing.id} bills ${priceOf(full)}, not ${plan.amount} ${plan.currency}.`;
       return {
         key,
         action: 'reused',
