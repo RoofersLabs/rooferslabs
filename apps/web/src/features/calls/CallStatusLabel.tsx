@@ -6,7 +6,7 @@ import { cn, humanizeEnum } from '@/lib/utils';
  * A Calls-scoped counterpart to the shared `EnumBadge`: identical tone mapping,
  * rendered as bare semibold colored text with no fill, border or pill. The
  * shared badge is deliberately left alone — Customers, Appointments, Knowledge,
- * Settings and Billing all still render it, and their tables rely on its fixed
+ * and Settings all still render it, and their tables rely on its fixed
  * height for row rhythm.
  *
  * NOTE: this mapping is duplicated from `components/ui/badge.tsx` and

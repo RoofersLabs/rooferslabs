@@ -44,17 +44,6 @@ twilio_auth_token  = "xxxxxxxxxxxxxxxxxxxxxxxx"
 vapid_public_key  = ""
 vapid_private_key = ""
 
-# ---- Billing (PayPal sandbox) ------------------------------------------------
-# paypal_environment is forced to "sandbox" by a precondition in main.tf.
-#
-# Set payments_enabled = false to run development with the payment wall down
-# (every tenant reaches the product without a subscription) — often what you
-# want while working on something that is not billing.
-payments_enabled = false
-
-# paypal_client_id                 = "AeA1QIZxxxxxxxx"
-# paypal_client_secret             = "EGnHDxDxxxxxxxx"
-
 # ---- Optional tuning ---------------------------------------------------------
 
 # api_desired_count      = 1

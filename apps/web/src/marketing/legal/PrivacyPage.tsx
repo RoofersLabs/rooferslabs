@@ -22,7 +22,7 @@ export function PrivacyPage() {
         <Callout>
           For caller data, our customer decides why the calls are answered and recorded, and we act
           on their instructions. In data-protection terms our customer is the controller and we are
-          the processor. For account and billing data, we are the controller.
+          the processor. For account data, we are the controller.
         </Callout>
       </Section>
 
@@ -42,12 +42,6 @@ export function PrivacyPage() {
           address, and what is wrong with their roof.
         </P>
 
-        <Subheading>Billing information</Subheading>
-        <P>
-          Your billing name, email, country, and subscription status. We hold identifiers issued by
-          our payment processor and the status of your subscription, and nothing more.
-        </P>
-
         <Subheading>Technical information</Subheading>
         <P>
           IP address, browser and device type, and log records of requests to the application. This
@@ -64,7 +58,6 @@ export function PrivacyPage() {
           </LI>
           <LI>To send you notifications about calls, leads, and appointments.</LI>
           <LI>To create and manage your account, and to authenticate you.</LI>
-          <LI>To take payment and manage your subscription.</LI>
           <LI>To provide support and answer your questions.</LI>
           <LI>To secure the Service, investigate abuse, and comply with legal obligations.</LI>
           <LI>
@@ -80,17 +73,13 @@ export function PrivacyPage() {
 
       <Section id="payment" title="4. Payment information">
         <Callout>
-          Payments are processed by <Strong>PayPal</Strong>. Card numbers, bank details, and PayPal
-          account credentials are entered on PayPal’s own systems and are{' '}
-          <Strong>never transmitted to or stored by rooferslabs</Strong>. We hold only the
-          identifiers PayPal issues, your subscription status, and the payment history needed to
-          show you what you have paid.
+          <Strong>We do not take payments.</Strong> The Service is not yet paid for, there is no
+          checkout, and no payment processor is connected to it. We hold{' '}
+          <Strong>no card numbers, bank details, or billing records of any kind</Strong>.
         </Callout>
         <P>
-          To take a payment we send PayPal your billing email address and your business name, and
-          PayPal returns a payer identifier and a subscription identifier that we store against your
-          account. PayPal is an independent controller of the payment data it collects and applies
-          its own privacy policy to that processing.
+          When paid plans open we will name the payment processor here, describe exactly what is
+          shared with it, and publish this section in updated form before any charge is made.
         </P>
       </Section>
 
@@ -113,10 +102,6 @@ export function PrivacyPage() {
             <Strong>Essential cookies</Strong> keep you signed in, protect against cross-site
             request forgery, and remember interface preferences such as whether the sidebar is
             collapsed.
-          </LI>
-          <LI>
-            <Strong>Payment cookies</Strong> are set by PayPal on its own pages when you approve or
-            manage a subscription, so a payment can be completed securely.
           </LI>
         </UL>
         <P>

@@ -10,7 +10,7 @@ import { cn, humanizeEnum } from '@/lib/utils';
  * weight and hue carry the meaning on their own.
  *
  * This lives under `features/dashboard/` rather than `components/ui/` because
- * Calls, Customers, Appointments, Knowledge, Settings and Billing all still use
+ * Calls, Customers, Appointments, Knowledge and Settings all still use
  * the badge form, and their tables depend on its fixed height for row rhythm.
  */
 type Tone = 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'brand';

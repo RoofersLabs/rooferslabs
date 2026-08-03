@@ -5,8 +5,8 @@ import { ROUTES } from '@/auth/stages';
 import { Logo } from '@/components/Brand';
 
 /**
- * The shell for authenticated pages that sit outside the sidebar: onboarding,
- * the payment wall, billing, and the not-found page.
+ * The shell for authenticated pages that sit outside the sidebar: onboarding
+ * and the not-found page.
  *
  * It reuses the application header's own measurements — 64px tall, hairline
  * bottom border, translucent blur — so stepping out of the sidebar never feels

@@ -3,7 +3,7 @@
  *
  * Customers, Appointments, Knowledge Base and Notifications each apply these
  * explicitly. Nothing here is a default: `Card`, `Button`, `SearchInput` and
- * `Select` are untouched, so Calls, Settings, Billing, onboarding and every
+ * `Select` are untouched, so Calls, Settings, onboarding and every
  * modal keep exactly the appearance they have today.
  *
  * Radii come from the product scale in styles/tokens.css — `md` is 12px, `xl`

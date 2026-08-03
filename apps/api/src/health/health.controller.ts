@@ -1,6 +1,5 @@
 import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { BillingReadinessService } from '../billing/provisioning/billing-readiness.service';
 import { Public } from '../common/decorators/public.decorator';
 import { respond } from '../common/response';
 import { PrismaService } from '../prisma/prisma.service';
@@ -12,7 +11,6 @@ export class HealthController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
-    private readonly billing: BillingReadinessService,
   ) {}
 
   @Get()
@@ -44,45 +42,6 @@ export class HealthController {
       status === 'ready'
         ? 'All dependencies healthy.'
         : 'Cache is degraded; service remains available.',
-    );
-  }
-
-  /**
-   * Whether this deployment can actually take money, and what is missing.
-   *
-   * Separate from `/ready` because they answer different questions and belong to
-   * different audiences: `/ready` decides whether the ALB keeps this task in
-   * rotation, and billing must never influence that — an instance that serves
-   * every existing customer perfectly should not be pulled out because a plan
-   * has not been provisioned yet.
-   *
-   * Public, and deliberately redacted: it returns check names and remedies, and
-   * never an identifier. Knowing that a deployment's billing is unconfigured is
-   * of no use to an attacker; knowing its live plan ids might be.
-   */
-  @Get('billing')
-  @Public()
-  @ApiOperation({ summary: 'Billing provisioning diagnostics' })
-  async billingReadiness() {
-    const readiness = await this.billing.check();
-    return respond(
-      {
-        ready: readiness.ready,
-        enabled: readiness.enabled,
-        provider: readiness.provider,
-        environment: readiness.environment,
-        testPricing: readiness.testPricing,
-        checks: readiness.checks.map((check) => ({
-          name: check.name,
-          ok: check.ok,
-          ...(check.remedy ? { remedy: check.remedy } : {}),
-        })),
-      },
-      readiness.ready
-        ? readiness.testPricing
-          ? 'Billing is ready, charging TEST pricing.'
-          : 'Billing is ready.'
-        : 'Billing is not fully provisioned.',
     );
   }
 

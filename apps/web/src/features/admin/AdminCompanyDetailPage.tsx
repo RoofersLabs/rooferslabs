@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Building2 } from 'lucide-react';
 import { useAdminCompany } from '@/hooks/queries';
-import { formatDateTime, formatDuration, formatPhone, humanizeEnum, timeAgo } from '@/lib/utils';
+import { formatDateTime, formatDuration, formatPhone, timeAgo } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DetailRow } from '@/components/ui/DetailRow';
 import { EnumStatusText } from '@/components/ui/StatusText';
@@ -98,14 +98,6 @@ export function AdminCompanyDetailPage() {
                   company.phoneNumbers[0]?.phoneNumber
                     ? formatPhone(company.phoneNumbers[0].phoneNumber)
                     : '—'
-                }
-              />
-              <DetailRow
-                label="Subscription"
-                value={
-                  company.subscription
-                    ? `${humanizeEnum(company.subscription.status)}${company.subscription.plan ? ` · ${humanizeEnum(company.subscription.plan)}` : ''}`
-                    : 'None'
                 }
               />
               <DetailRow

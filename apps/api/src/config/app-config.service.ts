@@ -48,18 +48,6 @@ export class AppConfigService {
     return this.root.clerk;
   }
 
-  get payments(): AppConfig['payments'] {
-    return this.root.payments;
-  }
-
-  get paypal(): AppConfig['paypal'] {
-    return this.root.paypal;
-  }
-
-  get stripe(): AppConfig['stripe'] {
-    return this.root.stripe;
-  }
-
   get openai(): AppConfig['openai'] {
     return this.root.openai;
   }

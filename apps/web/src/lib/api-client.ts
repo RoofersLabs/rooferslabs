@@ -17,31 +17,6 @@ export class ApiError extends Error {
 /** Generous client-side cap so a hung request never hangs the UI forever. */
 const REQUEST_TIMEOUT_MS = 30_000;
 
-type SubscriptionRequiredListener = () => void;
-
-const subscriptionRequiredListeners = new Set<SubscriptionRequiredListener>();
-
-/**
- * Subscribe to "the API says this tenant is no longer entitled" (HTTP 402
- * SUBSCRIPTION_REQUIRED, returned by every gated endpoint once a subscription
- * lapses). Returns an unsubscribe function.
- *
- * The client deliberately does not navigate. It used to call
- * `window.location.assign('/payment')`, which reloaded the whole SPA from an
- * arbitrary point mid-request and needed its own hand-rolled loop guard.
- * Routing is now the sole responsibility of the access stage: the listener
- * refetches the session, the stage recomputes, and the route guard moves the
- * user — one decision site, no reload, no second copy of the rules.
- */
-export function onSubscriptionRequired(listener: SubscriptionRequiredListener): () => void {
-  subscriptionRequiredListeners.add(listener);
-  return () => subscriptionRequiredListeners.delete(listener);
-}
-
-function notifySubscriptionRequired(): void {
-  for (const listener of subscriptionRequiredListeners) listener();
-}
-
 type TokenGetter = () => Promise<string | null>;
 
 let getToken: TokenGetter = async () => null;
@@ -117,7 +92,6 @@ async function request<T>(
 
   if (!payload.success) {
     const err = payload.error;
-    if (response.status === 402) notifySubscriptionRequired();
     throw new ApiError(err.code, err.message, response.status, err.validationErrors);
   }
   return payload;

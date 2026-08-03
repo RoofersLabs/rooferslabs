@@ -56,9 +56,9 @@ EMAIL="${2:-}"
 case "$ACTION" in
   status) PRISMA_CMD="migrate status" ;;
   deploy) PRISMA_CMD="migrate deploy" ;;
-  platform-users | grant-owner | revoke-owner) PRISMA_CMD="" ;;
+  platform-users | grant-owner | revoke-owner | counts | reset-data) PRISMA_CMD="" ;;
   *)
-    echo "usage: $0 [production|development] [status|deploy|platform-users|grant-owner <email>|revoke-owner <email>]" >&2
+    echo "usage: $0 [production|development] [status|deploy|counts|reset-data|platform-users|grant-owner <email>|revoke-owner <email>]" >&2
     exit 2
     ;;
 esac
@@ -70,6 +70,29 @@ case "$ACTION" in
 esac
 
 command -v jq >/dev/null || { echo "error: jq is required." >&2; exit 1; }
+
+# `reset-data` is the only irreversible action here. There is no undo, no soft
+# delete and no snapshot taken on the way past, so it asks — naming the
+# environment, so muscle memory on `development` cannot empty `production`.
+# `--yes` exists for a scripted launch sequence and must be typed deliberately.
+if [ "$ACTION" = "reset-data" ] && [ "${2:-}" != "--yes" ]; then
+  cat >&2 <<EOF
+
+  ⚠  PERMANENTLY DELETES ALL DATA in the $ENVIRONMENT database.
+
+     Preserved: schema, enums, indexes, constraints, _prisma_migrations.
+     Removed:   every application row.
+
+     Run '$0 $ENVIRONMENT counts' first to see exactly what will go.
+
+EOF
+  printf '  Type the environment name (%s) to continue: ' "$ENVIRONMENT" >&2
+  read -r answer
+  if [ "$answer" != "$ENVIRONMENT" ]; then
+    echo "  Aborted — nothing was deleted." >&2
+    exit 1
+  fi
+fi
 
 CLUSTER="${ECS_CLUSTER:-$(tf_out ecs_cluster_name)}"
 SERVICE="${API_SERVICE:-$(tf_out api_service_name)}"
@@ -98,6 +121,28 @@ case "$ACTION" in
     ;;
   platform-users)
     CONTAINER_CMD='node -e "const{PrismaClient}=require(\"@prisma/client\");const p=new PrismaClient();p.user.findMany({where:{platformRole:\"OWNER\",deletedAt:null},select:{id:true,email:true,clerkUserId:true}}).then(u=>console.log(u.length?JSON.stringify(u,null,1):\"No accounts hold platform access.\")).finally(()=>p.\$disconnect())"'
+    ;;
+  counts | reset-data)
+    # Every model, children before parents.
+    #
+    # Explicit rather than a TRUNCATE of whatever pg_tables reports: the order
+    # below IS the foreign-key dependency plan, it is reviewable in a diff, and
+    # a model added later shows up as a missing name here rather than being
+    # silently swept. `company` cascades most of this on its own — deleting in
+    # order anyway means the row counts reported are the rows actually removed,
+    # not a cascade nobody watched.
+    ORDER='["knowledgeChunk","appointment","conversation","call","knowledgeArticle","notification","pushSubscription","companyNote","auditLog","aiConfiguration","customer","phoneNumber","user","company"]'
+
+    COUNT_JS='const{PrismaClient}=require("@prisma/client");const p=new PrismaClient();const M='"$ORDER"';(async()=>{let t=0;const skip=[];for(const k of M){if(!p[k]){skip.push(k);console.log("  "+k.padEnd(20)+"    n/a");continue}const n=await p[k].count();t+=n;console.log("  "+k.padEnd(20)+String(n).padStart(9));}console.log("  "+"-".repeat(29));console.log("  "+"TOTAL".padEnd(20)+String(t).padStart(9));if(skip.length)console.log("\n  NOT IN THIS IMAGE (deployed build predates the model): "+skip.join(", "))})().catch(e=>{console.error(e.message);process.exit(1)}).finally(()=>p.$disconnect())'
+
+    if [ "$ACTION" = "counts" ]; then
+      CONTAINER_CMD="node -e '$COUNT_JS'"
+    else
+      # One transaction: a failure part-way through leaves the database exactly
+      # as it was rather than half-emptied with dangling references.
+      RESET_JS='const{PrismaClient}=require("@prisma/client");const p=new PrismaClient();const M='"$ORDER"';(async()=>{const skip=M.filter(k=>!p[k]);const K=M.filter(k=>p[k]);const before={};for(const k of K)before[k]=await p[k].count();const del=await p.$transaction(K.map(k=>p[k].deleteMany({})));console.log("  deleted (in dependency order):");K.forEach((k,i)=>console.log("  "+k.padEnd(20)+String(del[i].count).padStart(9)+"   (was "+before[k]+")"));if(skip.length)console.log("\n  NOT DELETED - not in this image: "+skip.join(", "));console.log();console.log("  remaining:");let t=0;for(const k of K){const n=await p[k].count();t+=n;console.log("  "+k.padEnd(20)+String(n).padStart(9));}console.log("  "+"-".repeat(29));console.log("  "+"TOTAL".padEnd(20)+String(t).padStart(9));const mig=await p.$queryRawUnsafe("SELECT count(*)::int AS n FROM _prisma_migrations");console.log();console.log("  _prisma_migrations rows preserved: "+mig[0].n);})().catch(e=>{console.error(e.message);process.exit(1)}).finally(()=>p.$disconnect())'
+      CONTAINER_CMD="node -e '$RESET_JS'"
+    fi
     ;;
   grant-owner | revoke-owner)
     ROLE=$([ "$ACTION" = "grant-owner" ] && echo OWNER || echo NONE)

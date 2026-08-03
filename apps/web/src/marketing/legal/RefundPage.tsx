@@ -8,20 +8,26 @@ export function RefundPage() {
     <LegalLayout
       title="Refund Policy"
       subtitle="When we refund, how to ask, and how long it takes. Written to be used, not to be argued with."
-      seoDescription="The rooferslabs refund policy — subscription refunds, cancellation, duplicate and accidental payments, billing disputes, and processing times."
+      seoDescription="The rooferslabs refund policy — how refunds will work when paid plans open, cancellation, duplicate payments, and processing times."
       path={MARKETING_ROUTES.refunds}
     >
       <Section id="principle" title="Our position">
+        <Callout>
+          <Strong>No charges are being made yet.</Strong> r1 echo is in its founding-customer phase,
+          paid plans have not opened, and no payment method is collected anywhere in the product. So
+          there is nothing to refund today. This policy sets out the commitment we are making for
+          when billing does open.
+        </Callout>
         <P>
           rooferslabs exists to make sure a roofing business never misses a call. If it has not done
           that for you, we would rather refund you than keep money you do not think you got value
           for.
         </P>
-        <Callout>
-          If the Service did not work as described and you tell us within <Strong>30 days</Strong>{' '}
-          of the charge, we will refund it. You do not need to justify the decision, and asking will
-          not affect how we treat you afterwards.
-        </Callout>
+        <P>
+          Once paid plans open: if the Service did not work as described and you tell us within{' '}
+          <Strong>30 days</Strong> of the charge, we will refund it. You will not need to justify
+          the decision, and asking will not affect how we treat you afterwards.
+        </P>
       </Section>
 
       <Section id="subscriptions" title="Subscription refunds">
@@ -46,7 +52,7 @@ export function RefundPage() {
 
       <Section id="cancellation" title="Cancellation">
         <P>
-          You can cancel at any time from your billing settings, or by emailing{' '}
+          You will be able to cancel at any time from your account settings, or by emailing{' '}
           <MailLink email={CONTACT.email} />. There is no cancellation fee and no notice period.
         </P>
         <P>
@@ -84,9 +90,8 @@ export function RefundPage() {
           being suspended while the bank investigates.
         </P>
         <P>
-          Payments are processed by <Strong>PayPal</Strong>, so a charge may appear on your
-          statement as a PayPal payment. If one looks unfamiliar, that is usually why. You can see
-          every charge against your subscription in your own PayPal account.
+          We will name our payment processor here when paid plans open, so you can recognise how a
+          charge appears on your statement.
         </P>
       </Section>
 
@@ -110,12 +115,11 @@ export function RefundPage() {
             <Strong>Our decision:</Strong> {CONTACT.responseTime} of receiving your request.
           </LI>
           <LI>
-            <Strong>We issue the refund through PayPal:</Strong> usually within 1–3 business days of
-            approval.
+            <Strong>We issue the refund:</Strong> usually within 1–3 business days of approval.
           </LI>
           <LI>
-            <Strong>Your bank or PayPal balance posts it:</Strong> typically 5–10 business days
-            after that, depending on the payment method. This last step is outside our control.
+            <Strong>Your bank or card posts it:</Strong> typically 5–10 business days after that,
+            depending on the payment method. This last step is outside our control.
           </LI>
         </UL>
         <P>

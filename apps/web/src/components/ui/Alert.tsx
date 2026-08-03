@@ -32,7 +32,7 @@ const tones: Record<Tone, { surface: string; icon: LucideIcon; iconColor: string
 /**
  * An inline notice: a tinted, bordered strip with a leading status icon.
  *
- * Billing, checkout and the wizard each grew their own version of this from raw
+ * Several surfaces each grew their own version of this from raw
  * blue/yellow/red utilities. One component now owns the shape, so a warning
  * looks the same wherever it appears — and always carries an icon, so the
  * message is not conveyed by colour alone.

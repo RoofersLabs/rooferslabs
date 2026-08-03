@@ -22,12 +22,6 @@ terraform {
 locals {
   # Clerk-, Google-Fonts- and API-aware CSP. Clerk production runs on
   # clerk.<root_domain> (CNAME) or *.clerk.accounts.dev; both are allowed.
-  #
-  # Payments need no CSP allowance at all. PayPal's checkout is a full-page
-  # redirect to paypal.com, so nothing is injected into this document and
-  # nothing is framed by it: the browser simply leaves. That is why there is no
-  # payment host in script-src, frame-src or connect-src, and adding one would
-  # widen the policy for no working reason.
   default_csp = join(" ", [
     "default-src 'self';",
     "base-uri 'self';",

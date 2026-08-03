@@ -93,9 +93,9 @@ export function TermsPage() {
 
       <Section id="cancellation" title="5. Cancellation">
         <P>
-          You may cancel at any time from your billing settings, or by emailing{' '}
-          <MailLink email={CONTACT.email} />. Cancellation stops the next renewal; your subscription
-          remains active until the end of the period you have already paid for, and you keep full
+          You may close your account at any time by emailing <MailLink email={CONTACT.email} />.
+          When paid plans open, cancelling will stop the next renewal; your subscription will remain
+          active until the end of the period you have already paid for, and you will keep full
           access until then.
         </P>
         <P>

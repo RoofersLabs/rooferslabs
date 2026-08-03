@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 /**
  * One label/value pair inside a `<dl>`.
  *
- * The conversation detail sidebar, the billing summary and the onboarding
+ * The conversation detail sidebar and the onboarding
  * review step each grew their own copy of this and drifted into three slightly
  * different paddings. An empty value renders an em dash rather than a blank
  * cell, so a missing field always reads as "not set" rather than as a bug.

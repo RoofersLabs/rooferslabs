@@ -9,12 +9,6 @@ export class AdminCompanyQueryDto extends PaginationQueryDto {
   @IsEnum(CompanyStatus)
   status?: CompanyStatus;
 
-  /** Billing bucket, which is what "trial / active / inactive" means here. */
-  @ApiPropertyOptional({ enum: ['TRIAL', 'ACTIVE', 'INACTIVE'] })
-  @IsOptional()
-  @IsIn(['TRIAL', 'ACTIVE', 'INACTIVE'])
-  subscription?: 'TRIAL' | 'ACTIVE' | 'INACTIVE';
-
   // `sort` is inherited from PaginationQueryDto as a validated string. It is
   // deliberately not redeclared here: a `declare` field is erased at compile
   // time, so its class-validator decorators would never run. The service treats

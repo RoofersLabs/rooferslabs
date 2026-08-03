@@ -66,24 +66,6 @@ export enum ApiErrorCode {
   EXTERNAL_SERVICE_ERROR = 'EXTERNAL_SERVICE_ERROR',
   INTERNAL_ERROR = 'INTERNAL_ERROR',
   ONBOARDING_INCOMPLETE = 'ONBOARDING_INCOMPLETE',
-  /** No active subscription — the client must send the user to billing. */
-  SUBSCRIPTION_REQUIRED = 'SUBSCRIPTION_REQUIRED',
-  SUBSCRIPTION_NOT_FOUND = 'SUBSCRIPTION_NOT_FOUND',
-  /**
-   * Billing is switched off platform-wide (PAYMENTS_ENABLED=false), so the
-   * billing surface is unavailable. Distinct from SUBSCRIPTION_REQUIRED: that
-   * one means "go and pay", this one means "paying is not possible right now"
-   * — and access is not restricted while it applies.
-   */
-  PAYMENTS_DISABLED = 'PAYMENTS_DISABLED',
-  /**
-   * The billing operation was addressed to a provider that is not the active
-   * one (the API's PAYMENT_PROVIDER). Distinct from PAYMENTS_DISABLED: billing
-   * as a whole is on, but this particular processor is dormant.
-   */
-  BILLING_PROVIDER_DISABLED = 'BILLING_PROVIDER_DISABLED',
-  /** The active billing provider is missing the credentials it needs to run. */
-  BILLING_PROVIDER_UNCONFIGURED = 'BILLING_PROVIDER_UNCONFIGURED',
   COMPANY_NOT_FOUND = 'COMPANY_NOT_FOUND',
   CUSTOMER_NOT_FOUND = 'CUSTOMER_NOT_FOUND',
   CONVERSATION_NOT_FOUND = 'CONVERSATION_NOT_FOUND',

@@ -1,7 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Pencil, Sparkles } from 'lucide-react';
 import { OnboardingStep } from '@rooferslabs/shared';
-import { useAccess } from '@/auth/AccessProvider';
 import { stepPath } from '@/auth/stages';
 import { useAiConfig, useCompany } from '@/hooks/queries';
 import { formatTimeRange } from '@/lib/utils';
@@ -57,21 +56,19 @@ function ReviewSection({
 /**
  * Step 4 — review and confirm.
  *
- * Deliberately read-only: it writes nothing of its own, it only finalises. That
- * keeps every tenant-scoped write in the wizard inside `/companies`, so the
- * payment wall stays closed around the rest of the API while setup runs.
+ * Deliberately read-only: it writes nothing of its own, it only finalises, which
+ * keeps every tenant-scoped write in the wizard inside `/companies`.
  */
 export function ReviewStep() {
   const navigate = useNavigate();
-  const { paymentsEnabled } = useAccess();
   const { advanceFrom, isSaving, error } = useOnboarding();
   const company = useCompany();
   const config = useAiConfig();
 
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    // The stage flips to `payment` once the session reports COMPLETE; the
-    // route guard performs the navigation, so there is none here.
+    // The stage flips to `app` once the session reports COMPLETE; the route
+    // guard performs the navigation, so there is none here.
     await advanceFrom(OnboardingStep.KNOWLEDGE);
   };
 
@@ -147,16 +144,14 @@ export function ReviewStep() {
           <div className="min-w-0">
             <p className="text-h5 text-ink">You’re all set</p>
             <p className="mt-1 text-body text-ink-muted">
-              {paymentsEnabled
-                ? 'Finishing setup takes you to plan selection. Your receptionist goes live once your subscription is active.'
-                : 'Finishing setup takes you straight to your dashboard.'}
+              Finishing setup takes you straight to your dashboard.
             </p>
           </div>
         </div>
         <StepError error={error} />
         <StepActions
           submitting={isSaving}
-          submitLabel={paymentsEnabled ? 'Finish setup & choose a plan' : 'Finish setup'}
+          submitLabel="Finish setup"
           onBack={() => navigate(stepPath(OnboardingStep.AI))}
         />
       </Card>

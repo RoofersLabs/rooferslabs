@@ -9,7 +9,6 @@ import {
   Bell,
   Home,
   Settings,
-  CreditCard,
 } from 'lucide-react';
 import { useAccess } from '@/auth/AccessProvider';
 import { cn } from '@/lib/utils';
@@ -69,7 +68,7 @@ const BOTTOM_NAV: BottomNavItem[] = [
 
 /** Main application shell: sidebar navigation + header (docs/05 §22–23). */
 export function AppLayout() {
-  const { company, paymentsEnabled } = useAccess();
+  const { company } = useAccess();
   const unread = useUnreadCount();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -104,12 +103,6 @@ export function AppLayout() {
     ROUTES.notifications,
   ].some((route) => pathname === route || pathname.startsWith(`${route}/`));
 
-  // Billing is appended rather than shown-and-broken: with payments disabled the
-  // route guard turns the link away and the API answers 503.
-  const navigation = paymentsEnabled
-    ? [...NAVIGATION, { to: ROUTES.billing, label: 'Billing', icon: CreditCard }]
-    : NAVIGATION;
-
   return (
     <SidebarProvider className="bg-base">
       <Sidebar collapsible="offcanvas" className="border-line-subtle">
@@ -124,7 +117,7 @@ export function AppLayout() {
         </SidebarHeader>
         <SidebarContent className="gap-1 px-3 py-4">
           <SidebarMenu>
-            {navigation.map((item) => {
+            {NAVIGATION.map((item) => {
               const isActive = pathname === item.to || pathname.startsWith(`${item.to}/`);
               return (
                 <SidebarMenuItem key={item.to}>

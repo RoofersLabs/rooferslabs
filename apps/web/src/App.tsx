@@ -11,8 +11,6 @@ import { AppLayout } from '@/layouts/AppLayout';
 import { FullScreenSpinner } from '@/components/ui/spinner';
 import { SignInPage, SignUpPage } from '@/pages/AuthPages';
 import { OnboardingLayout } from '@/pages/onboarding/OnboardingLayout';
-import { PaymentPage } from '@/pages/PaymentPage';
-import { BillingPage } from '@/pages/BillingPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { CallsPage } from '@/features/calls/CallsPage';
@@ -96,18 +94,13 @@ function AuthenticatedShell() {
  * redirects on its own — there is exactly one decision site (`redirectFor`) and
  * one place that renders its outcome (`RouteGuard`), which is what makes the flow
  *
- *     visitor → sign in → onboarding (4 steps) → payment → dashboard
+ *     visitor → sign in → onboarding (4 steps) → dashboard
  *
  * enforceable in both directions without any page knowing about the others.
- *
- * The payment step drops out of that chain when the API reports payments as
- * disabled, leaving onboarding → dashboard. The route entries below stay exactly
- * as they are: the access table denies every stage, so the guard turns them away
- * on its own and the billing pages remain wired up for the day billing returns.
  */
 /**
- * The customer application: marketing, auth, onboarding, billing, dashboard.
- * Unchanged, and not mounted at all on the admin hostname.
+ * The customer application: marketing, auth, onboarding, dashboard.
+ * Not mounted at all on the admin hostname.
  */
 function CustomerApp() {
   return (
@@ -131,8 +124,8 @@ function CustomerApp() {
 
       {/* Public in the same way `/` is: no session, no stage, no guard. They sit
           beside the marketing route rather than inside AuthenticatedShell so a
-          reader following a footer link — or a payment provider's reviewer
-          opening one cold — never waits on an auth SDK to paint a document. */}
+          reader following a footer link never waits on an auth SDK to paint a
+          document. */}
       {[
         { path: MARKETING_ROUTES.terms, element: <TermsPage /> },
         { path: MARKETING_ROUTES.privacy, element: <PrivacyPage /> },
@@ -161,18 +154,6 @@ function CustomerApp() {
         <Route element={<RouteGuard route={ROUTES.onboarding} />}>
           <Route path={ROUTES.onboarding} element={<OnboardingLayout />} />
           <Route path={`${ROUTES.onboarding}/:step`} element={<OnboardingLayout />} />
-        </Route>
-
-        {/* The payment wall. Unreachable once subscribed — that guard is the
-            reason a paying tenant never sees this page again. */}
-        <Route element={<RouteGuard route={ROUTES.payment} />}>
-          <Route path={ROUTES.payment} element={<PaymentPage />} />
-        </Route>
-
-        {/* Billing is reachable while unpaid *and* while paying: a tenant lands
-            here after paying, before the activation webhook has landed. */}
-        <Route element={<RouteGuard route={ROUTES.billing} />}>
-          <Route path={ROUTES.billing} element={<BillingPage />} />
         </Route>
 
         {/* The application proper — one guard, one shell, every feature page

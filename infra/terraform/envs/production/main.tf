@@ -183,57 +183,16 @@ module "sqs" {
 
 # ---- Secrets -----------------------------------------------------------------------
 
-# Turning the payment wall on without the credentials to enforce it would boot an
-# API that rejects every customer, so fail the plan instead of the deployment.
-#
-# Only the *selected* provider's credentials are demanded. That is what lets the
-# stack run with no Stripe account at all while PayPal is active, and would let
-# it run with no PayPal account if the two were ever swapped.
-locals {
-  billing_credentials_present = (
-    var.payment_provider == "paypal"
-    ? (
-      var.paypal_client_id != "" &&
-      var.paypal_client_secret != ""
-    )
-    : (
-      var.stripe_secret_key != "" &&
-      var.stripe_webhook_secret != "" &&
-      var.stripe_price_starter != "" &&
-      var.stripe_price_professional != ""
-    )
-  )
-}
-
-resource "terraform_data" "payments_config_check" {
-  input = "${var.payments_enabled}-${var.payment_provider}"
-
-  lifecycle {
-    precondition {
-      condition = !var.payments_enabled || local.billing_credentials_present
-      error_message = join(" ", [
-        "payments_enabled = true with payment_provider = \"paypal\" requires paypal_client_id",
-        "and paypal_client_secret. The product, plans and webhook are provisioned by",
-        "`npm run billing:paypal:setup` and are not Terraform variables. With",
-        "payment_provider = \"stripe\" it requires",
-        "stripe_secret_key, stripe_webhook_secret, stripe_price_starter and",
-        "stripe_price_professional. Set payments_enabled = false to run without billing.",
-      ])
-    }
-  }
-}
-
 module "secrets" {
   source = "../../modules/secrets"
 
   name         = local.name
   database_url = module.rds.database_url
 
-  # Billing keys are written only while payments are enabled, and only for the
-  # provider actually in use. They are omitted rather than stored empty because
-  # the task definition below reads individual JSON keys out of this secret — a
-  # key that exists but is blank would start a task that then fails env
-  # validation, which is harder to diagnose than a key that is simply not wired.
+  # Optional keys are omitted rather than stored empty: the task definition below
+  # reads individual JSON keys out of this secret, and a key that exists but is
+  # blank would start a task that then fails env validation — harder to diagnose
+  # than a key that is simply not wired.
   app_secrets = merge(
     {
       CLERK_SECRET_KEY   = var.clerk_secret_key
@@ -241,26 +200,6 @@ module "secrets" {
       TWILIO_ACCOUNT_SID = var.twilio_account_sid
       TWILIO_AUTH_TOKEN  = var.twilio_auth_token
     },
-    # Billing gates every tenant's access, so with payments on the API refuses
-    # to boot without these. The dormant provider's keys are never stored — the
-    # platform holds no credentials for a processor it is not using.
-    # Credentials are supplied whenever they EXIST, not only when the payment
-    # wall is up.
-    #
-    # Provisioning has to happen before billing can be enabled — `billing.sh`
-    # runs as a one-off task on this task definition and needs the credentials
-    # to reach PayPal — so gating them on payments_enabled created a deadlock:
-    # you could not provision until the wall was up, and the API refuses to boot
-    # with the wall up and nothing provisioned. Presence is the right condition;
-    # an unused credential in the task definition costs nothing.
-    var.payment_provider == "paypal" && var.paypal_client_id != "" ? {
-      PAYPAL_CLIENT_ID     = var.paypal_client_id
-      PAYPAL_CLIENT_SECRET = var.paypal_client_secret
-    } : {},
-    var.payments_enabled && var.payment_provider == "stripe" ? {
-      STRIPE_SECRET_KEY     = var.stripe_secret_key
-      STRIPE_WEBHOOK_SECRET = var.stripe_webhook_secret
-    } : {},
     var.clerk_webhook_secret != "" ? { CLERK_WEBHOOK_SECRET = var.clerk_webhook_secret } : {},
     var.vapid_private_key != "" ? { VAPID_PRIVATE_KEY = var.vapid_private_key } : {},
   )
@@ -381,27 +320,6 @@ module "api_service" {
     # Queue is provisioned and permitted; consumers arrive in a later release.
     SQS_QUEUE_URL          = module.sqs.queue_url
     BACKGROUND_JOBS_INLINE = "true"
-    # Master switch for billing. False boots the API with no provider at all.
-    PAYMENTS_ENABLED = tostring(var.payments_enabled)
-    # Which processor is active. The other stays compiled but never constructed.
-    PAYMENT_PROVIDER = var.payment_provider
-    # No plan or product id appears here. They are created by
-    # `npm run billing:paypal:setup` and persisted in the billing_catalog table,
-    # which is what removes the paste-an-identifier-into-Terraform step
-    # entirely. The API refuses to start if they are missing — see
-    # BillingReadinessService.
-    PAYPAL_ENVIRONMENT = var.paypal_environment
-    # Optional override, for a webhook registered by hand. Normally empty: setup
-    # registers one and records its id.
-    PAYPAL_WEBHOOK_ID = var.paypal_webhook_id
-    # Temporary: charges the $1.00 test plan instead of the published $49.00
-    # one. See variables.tf. The API logs at error level while this is true.
-    PAYPAL_TEST_PRICING       = tostring(var.paypal_test_pricing)
-    STRIPE_PRICE_STARTER      = var.stripe_price_starter
-    STRIPE_PRICE_PROFESSIONAL = var.stripe_price_professional
-    BILLING_TRIAL_PERIOD_DAYS = tostring(var.billing_trial_period_days)
-    # Tenants that predate the payment wall keep access without paying.
-    BILLING_GRANDFATHER_BEFORE = var.billing_grandfather_before
   }
 
   secrets = merge(
@@ -413,23 +331,6 @@ module "api_service" {
       TWILIO_AUTH_TOKEN  = "${module.secrets.app_secret_arn}:TWILIO_AUTH_TOKEN::"
 
     },
-    # Kept in lockstep with app_secrets above: wired only when payments are on,
-    # and only for the provider actually in use.
-    # Kept in lockstep with app_secrets above: wired whenever the credentials
-    # exist, so a one-off provisioning task can authenticate before the wall is
-    # ever switched on.
-    var.payment_provider == "paypal" && var.paypal_client_id != ""
-    ? {
-      PAYPAL_CLIENT_ID     = "${module.secrets.app_secret_arn}:PAYPAL_CLIENT_ID::"
-      PAYPAL_CLIENT_SECRET = "${module.secrets.app_secret_arn}:PAYPAL_CLIENT_SECRET::"
-    }
-    : {},
-    var.payments_enabled && var.payment_provider == "stripe"
-    ? {
-      STRIPE_SECRET_KEY     = "${module.secrets.app_secret_arn}:STRIPE_SECRET_KEY::"
-      STRIPE_WEBHOOK_SECRET = "${module.secrets.app_secret_arn}:STRIPE_WEBHOOK_SECRET::"
-    }
-    : {},
     var.clerk_webhook_secret != ""
     ? { CLERK_WEBHOOK_SECRET = "${module.secrets.app_secret_arn}:CLERK_WEBHOOK_SECRET::" }
     : {},
