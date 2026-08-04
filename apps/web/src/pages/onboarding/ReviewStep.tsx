@@ -40,7 +40,7 @@ function ReviewSection({
         <CardTitle as="h2">{title}</CardTitle>
         <Link
           to={editTo}
-          className="focus-ring -mr-2 inline-flex shrink-0 items-center gap-1.5 rounded-nav px-2 py-1 text-small font-medium text-ink-muted transition-colors duration-fast ease-standard hover:bg-surface-3 hover:text-accent"
+          className="focus-ring -mr-2 inline-flex shrink-0 items-center gap-1.5 px-2 py-1 text-small font-medium text-ink-muted transition-colors duration-fast ease-standard hover:bg-surface-3 hover:text-accent"
         >
           <Pencil className="h-3.5 w-3.5" aria-hidden />
           Edit

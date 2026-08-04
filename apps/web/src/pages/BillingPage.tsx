@@ -246,7 +246,7 @@ export function BillingPage() {
                               href={invoice.invoiceUrl}
                               target="_blank"
                               rel="noreferrer noopener"
-                              className="focus-ring rounded-xs font-medium text-accent transition-colors duration-fast ease-standard hover:text-accent-hover"
+                              className="focus-ring rounded-focus font-medium text-accent transition-colors duration-fast ease-standard hover:text-accent-hover"
                             >
                               {invoice.number ?? 'View'}
                             </a>
@@ -273,7 +273,7 @@ export function BillingPage() {
       <p className="mt-10">
         <Link
           to={isActive ? ROUTES.dashboard : ROUTES.marketing}
-          className="focus-ring inline-flex items-center gap-1.5 rounded-xs text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
+          className="focus-ring inline-flex items-center gap-1.5 rounded-focus text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden />
           {isActive ? 'Back to dashboard' : 'Back to home'}

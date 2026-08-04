@@ -37,7 +37,7 @@ export function AdminLayout() {
               end={item.end}
               className={({ isActive }) =>
                 cn(
-                  'focus-ring flex h-9 shrink-0 items-center gap-2 rounded-nav px-3 text-small font-medium transition-colors duration-fast',
+                  'focus-ring flex h-9 shrink-0 items-center gap-2 px-3 text-small font-medium transition-colors duration-fast',
                   isActive
                     ? 'bg-accent-subtle text-accent'
                     : 'text-ink-muted hover:bg-surface-2 hover:text-ink',

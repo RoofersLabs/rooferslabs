@@ -183,7 +183,21 @@ export function AppLayout() {
               accessible name is on `aria-label`, so nothing is lost to a screen
               reader; only the visual hint is dropped, and only where it could
               not be read anyway. */}
-          <GlobalSearch inputClassName="rounded-full placeholder:text-transparent sm:placeholder:text-ink-faint" />
+          {/* The field takes the product's square geometry like every other
+              input. It carried `rounded-full` when it was the one control in a
+              row of pills; in a square interface that pill was the only
+              non-button curve above the fold, and it read as an oversight
+              rather than as a choice.
+
+              Below `sm` the header carries the drawer trigger, the install
+              button, the bell and the avatar, which leaves the elastic search
+              about 145px — enough to render "Search c" and then clip mid-word.
+              Hiding the placeholder rather than shortening it leaves the
+              magnifier alone in the field, which is what both mobile platforms
+              do. The accessible name is on `aria-label`, so nothing is lost to
+              a screen reader; only the visual hint is dropped, and only where
+              it could not be read anyway. */}
+          <GlobalSearch inputClassName="placeholder:text-transparent sm:placeholder:text-ink-faint" />
 
           {/* `shrink-0`: these controls have a fixed size and the search does
               not, so the row must give its space back from the search rather

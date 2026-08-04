@@ -57,7 +57,7 @@ export function AdminCompanyDetailPage() {
     <div>
       <Link
         to={ADMIN_ROUTES.companies}
-        className="focus-ring mb-4 inline-flex items-center gap-1.5 rounded-xs text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
+        className="focus-ring mb-4 inline-flex items-center gap-1.5 rounded-focus text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Back to companies

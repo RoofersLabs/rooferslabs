@@ -89,7 +89,7 @@
 @layer components {
   /* Standard surface container: flat surface, hairline border, small shadow. */
   .card {
-    @apply rounded-panel border border-line-subtle bg-surface shadow-card;
+    @apply border border-line-subtle bg-surface shadow-card;
   }
 
   /**

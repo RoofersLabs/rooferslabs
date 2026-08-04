@@ -86,7 +86,7 @@ export function KnowledgePage() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }, (_, i) => (
             <Card key={i} className="px-6 py-5">
-              <Skeleton className="h-10 w-10 rounded-panel" />
+              <Skeleton className="h-10 w-10" />
               <Skeleton className="mt-4 h-4 w-4/5" />
               <Skeleton className="mt-2.5 h-3 w-full" />
               <Skeleton className="mt-1.5 h-3 w-3/5" />

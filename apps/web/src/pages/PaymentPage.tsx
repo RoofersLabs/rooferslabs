@@ -369,7 +369,7 @@ export function PaymentPage() {
             Already subscribed?{' '}
             <Link
               to={ROUTES.billing}
-              className="focus-ring rounded-xs font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
+              className="focus-ring rounded-focus font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
             >
               Manage billing
             </Link>

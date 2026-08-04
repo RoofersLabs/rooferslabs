@@ -23,7 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton';
  * for density. Everything else — every colour, every state — is shared.
  */
 const fieldBase =
-  'focus-field block w-full rounded-field border border-line bg-surface text-form-input text-ink placeholder:text-ink-faint hover:border-line-strong';
+  'focus-field block w-full border border-line bg-surface text-form-input text-ink placeholder:text-ink-faint hover:border-line-strong';
 
 export const fieldClass = cn(fieldBase, 'mt-2 h-11 px-3.5');
 
@@ -113,10 +113,7 @@ export function StepCard({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <Card
       as="form"
-      className={cn(
-        'animate-rise-in gap-6 p-6 shadow-md [animation-delay:80ms] sm:p-8',
-        className,
-      )}
+      className={cn('animate-rise-in gap-6 p-6 shadow-md [animation-delay:80ms] sm:p-8', className)}
       {...props}
     />
   );
@@ -149,7 +146,7 @@ export function ToggleCard({
   return (
     <label
       className={cn(
-        'flex cursor-pointer items-start gap-3 rounded-panel border p-4 transition-colors duration-fast ease-standard',
+        'flex cursor-pointer items-start gap-3 border p-4 transition-colors duration-fast ease-standard',
         checked
           ? 'border-accent-border bg-accent-subtle'
           : 'border-line-subtle bg-surface hover:border-line-strong hover:bg-surface-2',
@@ -285,11 +282,11 @@ export function StepLoading() {
         <Skeleton className="h-8 w-2/3 max-w-[22rem] sm:h-10" />
         <Skeleton className="h-6 w-full max-w-[28rem]" />
       </div>
-      <div className="space-y-6 rounded-panel border border-line-subtle bg-surface p-6 shadow-md sm:p-8">
+      <div className="space-y-6 border border-line-subtle bg-surface p-6 shadow-md sm:p-8">
         {[0, 1, 2].map((row) => (
           <div key={row} className="space-y-2">
             <Skeleton className="h-4 w-28" />
-            <Skeleton className="h-11 w-full rounded-field" />
+            <Skeleton className="h-11 w-full" />
           </div>
         ))}
       </div>

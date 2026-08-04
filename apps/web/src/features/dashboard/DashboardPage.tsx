@@ -60,7 +60,7 @@ export function DashboardPage() {
       {(needsPhoneSetup || needsForwarding) && (
         <Link
           to={`${ROUTES.settings}/phone`}
-          className="focus-ring flex items-center gap-4 rounded-panel border border-accent-border bg-accent-subtle px-6 py-5 transition-colors duration-fast ease-standard hover:border-accent"
+          className="focus-ring flex items-center gap-4 border border-accent-border bg-accent-subtle px-6 py-5 transition-colors duration-fast ease-standard hover:border-accent"
         >
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-ink-on-brand">
             <PhoneForwarded className="h-5 w-5" aria-hidden />

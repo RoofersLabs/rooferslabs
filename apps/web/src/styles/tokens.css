@@ -167,44 +167,50 @@
   --gutter-mobile: var(--space-4);
 
   /* ── Radius ───────────────────────────────────────────────────────────── */
-  /* The primitive scale. Kept intact — the marketing site and a few decorative
-     surfaces still choose from it directly. Product UI should not: it names one
-     of the semantic radii below, so the application's geometry can be retuned
-     from four lines rather than from several hundred class strings. */
-  --radius-none: 0px;
-  --radius-xs: 6px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 14px;
-  --radius-xl: 16px;
-  --radius-2xl: 20px;
-  --radius-full: 9999px;
-
-  /* ── Semantic radius ──────────────────────────────────────────────────── */
   /*
-   * Three roles, and the whole application's geometry follows from them.
+   * THE APPLICATION IS SQUARE. There is one structural geometry and it is 0px.
    *
-   * `panel` is every structural container — cards, tables, dialogs, drawers,
-   * bottom sheets, banners. Nearly square on purpose: at 5px an edge reads as
-   * deliberate structure rather than as a soft tile, which is the difference
-   * between an operations tool and a consumer app.
+   * There used to be two scales — a primitive one (xs…2xl) that the marketing
+   * site and stray components picked from directly, and a semantic one
+   * (panel/field/nav) that the product used. Two scales meant two places for a
+   * radius to come back, and a `rounded-lg` written in a new component would
+   * have silently reintroduced one. So every structural name, primitive and
+   * semantic alike, is now an alias of a single value.
    *
-   * `field` matches `panel` so an input sits flush inside the panel that holds
-   * it instead of describing a second, rounder rectangle within the first.
-   *
-   * `nav` is deliberately the odd one out. Sidebar hover and active fills are
-   * transient washes behind text, not structure, and a 5px fill on a 44px row
-   * reads as a hard rectangle sliding under the cursor. At 14px the fill stays
-   * soft while everything structural around it stays crisp — and one value now
-   * covers every sidebar surface (rows, sub-rows, group labels, actions), which
-   * previously ranged from 12px to 16px depending on the element.
-   *
-   * Buttons and badges are pills and name --radius-full directly; none of these
-   * touch them.
+   * The practical consequence: `rounded-xs`, `rounded-md`, `rounded-2xl`,
+   * `rounded-panel` — every `rounded-*` utility except the two exceptions below
+   * — resolves to 0. A component cannot render a rounded structural corner even
+   * by asking for one, which is the point. Changing --radius-structural is the
+   * only way to reintroduce curvature anywhere.
    */
-  --radius-panel: 5px;
-  --radius-field: 5px;
-  --radius-nav: 14px;
+  --radius-structural: 0px;
+
+  --radius-none: var(--radius-structural);
+  --radius-xs: var(--radius-structural);
+  --radius-sm: var(--radius-structural);
+  --radius-md: var(--radius-structural);
+  --radius-lg: var(--radius-structural);
+  --radius-xl: var(--radius-structural);
+  --radius-2xl: var(--radius-structural);
+  --radius-panel: var(--radius-structural);
+  --radius-field: var(--radius-structural);
+
+  /*
+   * The two exceptions, and the only rounded geometry left in the product.
+   *
+   * `full` is the pill and the circle: buttons at every level, badges, chips,
+   * avatars, toggles, status dots, the bottom bar's active indicator. These are
+   * controls, not structure, and squaring them would make the interface read as
+   * unfinished rather than as deliberate.
+   *
+   * `focus` exists so the keyboard ring around an inline text link keeps the
+   * softness it has today. It is deliberately NOT structural: it draws around
+   * a run of text that has no box of its own, where a hard right angle reads as
+   * a rendering artefact rather than as a design. It matches the global
+   * :focus-visible fallback in index.css.
+   */
+  --radius-full: 9999px;
+  --radius-focus: 4px;
 
   /* ── Motion ───────────────────────────────────────────────────────────── */
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);

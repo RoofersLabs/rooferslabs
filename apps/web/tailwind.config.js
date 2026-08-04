@@ -237,19 +237,29 @@ export default {
         'form-label': ['0.8125rem', { lineHeight: '1.4', fontWeight: '500' }],
         'form-input': ['0.9375rem', { lineHeight: '1.5', fontWeight: '400' }],
       },
+      // Every key Tailwind ships with is redeclared here, not just the ones the
+      // product happens to use. This block lives under `extend`, so any key left
+      // out would keep Tailwind's stock value — the bare `rounded` utility
+      // (0.25rem) and `rounded-3xl` (1.5rem) were exactly that gap, reachable
+      // from any new component and invisible in a token audit. Naming all of
+      // them means there is no `rounded-*` class in the framework that escapes
+      // this theme. Structure is square; only `full` and `focus` curve. See the
+      // radius block in styles/tokens.css.
       borderRadius: {
+        none: 'var(--radius-structural)',
+        DEFAULT: 'var(--radius-structural)',
         xs: 'var(--radius-xs)',
         sm: 'var(--radius-sm)',
         md: 'var(--radius-md)',
         lg: 'var(--radius-lg)',
         xl: 'var(--radius-xl)',
         '2xl': 'var(--radius-2xl)',
-        full: 'var(--radius-full)',
-        // Semantic roles — what product UI should name. See the radius block in
-        // styles/tokens.css for why `nav` is softer than the other two.
+        '3xl': 'var(--radius-structural)',
+        '4xl': 'var(--radius-structural)',
         panel: 'var(--radius-panel)',
         field: 'var(--radius-field)',
-        nav: 'var(--radius-nav)',
+        full: 'var(--radius-full)',
+        focus: 'var(--radius-focus)',
       },
       boxShadow: {
         xs: 'var(--shadow-xs)',

@@ -206,7 +206,7 @@ function NumberCard({ phoneNumber, verified }: { phoneNumber: string; verified: 
       <StepEyebrow step={1} />
       <h2 className="text-h5 text-ink">Your AI Receptionist Number</h2>
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <span className="font-num rounded-panel border border-accent-border bg-accent-subtle px-5 py-2.5 text-h4 text-accent">
+        <span className="font-num border border-accent-border bg-accent-subtle px-5 py-2.5 text-h4 text-accent">
           {formatPhone(phoneNumber)}
         </span>
         <Button variant="secondary" onClick={() => void copy()}>

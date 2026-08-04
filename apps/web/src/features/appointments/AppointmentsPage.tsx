@@ -79,7 +79,7 @@ export function AppointmentsPage() {
                       {appointment.conversationId && (
                         <Link
                           to={`/conversations/${appointment.conversationId}`}
-                          className="focus-ring rounded text-caption font-medium text-accent hover:underline"
+                          className="focus-ring text-caption font-medium text-accent hover:underline"
                         >
                           View call
                         </Link>

@@ -40,17 +40,17 @@ function TrendChart({ series }: { series: Series[] }) {
             <div key={point.day} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
               <div className="flex w-full flex-1 items-end justify-center gap-0.5">
                 <span
-                  className="w-1/3 rounded-t-xs bg-accent"
+                  className="w-1/3 bg-accent"
                   style={{ height: `${(point.calls / peak) * 100}%` }}
                   title={`${point.calls} calls`}
                 />
                 <span
-                  className="w-1/3 rounded-t-xs bg-success"
+                  className="w-1/3 bg-success"
                   style={{ height: `${(point.leads / peak) * 100}%` }}
                   title={`${point.leads} leads`}
                 />
                 <span
-                  className="w-1/3 rounded-t-xs bg-warning"
+                  className="w-1/3 bg-warning"
                   style={{ height: `${(point.appointments / peak) * 100}%` }}
                   title={`${point.appointments} appointments`}
                 />
@@ -107,7 +107,7 @@ export function AdminAnalyticsPage() {
                   ['bg-warning', 'Appointments'],
                 ].map(([swatch, label]) => (
                   <span key={label} className="flex items-center gap-1.5">
-                    <span className={cn('h-2 w-2 rounded-xs', swatch)} aria-hidden />
+                    <span className={cn('h-2 w-2', swatch)} aria-hidden />
                     {label}
                   </span>
                 ))}
@@ -149,7 +149,7 @@ export function AdminAnalyticsPage() {
                     <TableCell className="font-medium">
                       <Link
                         to={ADMIN_ROUTES.company(row.companyId)}
-                        className="focus-ring rounded-xs text-accent transition-colors duration-fast hover:text-accent-hover"
+                        className="focus-ring rounded-focus text-accent transition-colors duration-fast hover:text-accent-hover"
                       >
                         {row.companyName}
                       </Link>

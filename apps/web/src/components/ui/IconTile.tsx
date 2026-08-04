@@ -26,7 +26,10 @@ const sizes = {
 
 const shapes = {
   circle: 'rounded-full',
-  square: 'rounded-panel',
+  // Genuinely square — the product's structural geometry is 0px, so this shape
+  // adds nothing rather than naming a radius that would be overridden to 0
+  // anyway. `circle` stays a real class because a circle is a control shape.
+  square: '',
 } as const;
 
 export type IconTileTone = keyof typeof tones;

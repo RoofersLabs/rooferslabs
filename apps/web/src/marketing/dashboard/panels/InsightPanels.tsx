@@ -109,10 +109,7 @@ export function AnalyticsPanel({ className }: { className?: string }) {
           <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-2">
             <div className="flex w-full flex-1 items-end">
               <motion.div
-                className={cn(
-                  'w-full rounded-[3px]',
-                  value === peak ? 'bg-mk-accent-ring' : 'bg-white/15',
-                )}
+                className={cn('w-full', value === peak ? 'bg-mk-accent-ring' : 'bg-white/15')}
                 initial={{ height: reduced ? `${(value / peak) * 100}%` : '0%' }}
                 whileInView={{ height: `${(value / peak) * 100}%` }}
                 viewport={VIEWPORT}

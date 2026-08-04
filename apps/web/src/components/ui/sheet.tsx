@@ -80,7 +80,7 @@ function SheetContent({
           // sized to it is cut off by the address bar on arrival. `min-h-0` on
           // the body is what actually lets the content scroll inside a flex
           // column instead of overflowing the panel.
-          'data-[side=bottom]:max-h-[85dvh] data-[side=bottom]:rounded-t-panel',
+          'data-[side=bottom]:max-h-[85dvh]',
           'data-[side=bottom]:data-[state=open]:animate-sheet-in data-[side=bottom]:data-[state=closed]:animate-sheet-out',
           className,
         )}

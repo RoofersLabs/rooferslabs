@@ -145,7 +145,7 @@ function LeadDetail({ lead }: { lead: PriorityLead }) {
 
         <Link
           to={`${ROUTES.conversations}/${lead.id}`}
-          className="focus-ring mt-2 mb-4 inline-flex items-center gap-1 rounded-xs text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
+          className="focus-ring mt-2 mb-4 inline-flex items-center gap-1 rounded-focus text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
         >
           Open the full call
           <ArrowRight className="h-3.5 w-3.5" aria-hidden />

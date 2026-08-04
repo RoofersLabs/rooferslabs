@@ -107,7 +107,7 @@ export function CustomerDetailPage() {
     <div>
       <Link
         to={ROUTES.customers}
-        className="focus-ring mb-4 inline-flex items-center gap-1.5 rounded-xs text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
+        className="focus-ring mb-4 inline-flex items-center gap-1.5 rounded-focus text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Back to customers
@@ -291,7 +291,7 @@ function IconAction({
       title={title}
       aria-pressed={pressed}
       className={cn(
-        'focus-ring group flex flex-col items-center gap-2 rounded-nav px-1 py-2',
+        'focus-ring group flex flex-col items-center gap-2 px-1 py-2',
         'transition-colors duration-fast ease-standard',
         'disabled:cursor-not-allowed disabled:opacity-40',
         !disabled && 'hover:bg-surface-2',
@@ -443,7 +443,7 @@ function Appointments({ appointments }: { appointments: Appointment[] }) {
           <CardContent>
             <Link
               to={ROUTES.appointments}
-              className="focus-ring inline-flex items-center gap-1 rounded-xs text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
+              className="focus-ring inline-flex items-center gap-1 rounded-focus text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
             >
               Manage in Appointments
               <ArrowRight className="h-3.5 w-3.5" aria-hidden />

@@ -57,7 +57,7 @@ export function DashboardHeader({
  *
  * Flat colored text, matching the dashboard's other status indicators — no
  * fill, no border, no pill. The dot stays because it is the only non-color
- * signal here, and `rounded-xs` survives solely to keep the focus ring from
+ * signal here, and `rounded-focus` survives solely to keep the focus ring from
  * boxing the text at a hard right angle; it never renders as a chip.
  */
 function StatusChip({
@@ -73,7 +73,7 @@ function StatusChip({
     <Link
       to={`${ROUTES.settings}/phone`}
       className={cn(
-        'focus-ring inline-flex items-center gap-1.5 rounded-xs text-caption font-semibold underline-offset-2 transition-colors duration-fast hover:underline',
+        'focus-ring inline-flex items-center gap-1.5 rounded-focus text-caption font-semibold underline-offset-2 transition-colors duration-fast hover:underline',
         good ? 'text-success' : 'text-warning',
       )}
     >

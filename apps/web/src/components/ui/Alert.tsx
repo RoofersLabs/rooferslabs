@@ -52,7 +52,7 @@ export function Alert({
   return (
     <div
       role={tone === 'danger' ? 'alert' : 'status'}
-      className={cn('flex items-start gap-3 rounded-panel border px-4 py-3.5', surface, className)}
+      className={cn('flex items-start gap-3 border px-4 py-3.5', surface, className)}
     >
       <Icon className={cn('mt-0.5 h-4 w-4 shrink-0', iconColor)} aria-hidden />
       <div className="min-w-0 flex-1">

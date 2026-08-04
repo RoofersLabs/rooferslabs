@@ -174,7 +174,7 @@ export function AdminCompaniesPage() {
                         <Link
                           to={ADMIN_ROUTES.company(company.id)}
                           onClick={(e) => e.stopPropagation()}
-                          className="focus-ring rounded-xs font-medium text-ink transition-colors duration-fast hover:text-accent"
+                          className="focus-ring rounded-focus font-medium text-ink transition-colors duration-fast hover:text-accent"
                         >
                           {company.name}
                         </Link>

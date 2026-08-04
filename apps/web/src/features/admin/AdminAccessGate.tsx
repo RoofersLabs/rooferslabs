@@ -54,7 +54,7 @@ function AdminAccessDenied({ email }: { email: string | null }) {
         <p className="mt-3 max-w-sm text-small text-ink-faint">
           If you are a rooferslabs customer, your dashboard is at{' '}
           <a
-            className="focus-ring rounded-xs text-accent transition-colors duration-fast hover:text-accent-hover"
+            className="focus-ring rounded-focus text-accent transition-colors duration-fast hover:text-accent-hover"
             href="https://rooferslabs.com/dashboard"
           >
             rooferslabs.com

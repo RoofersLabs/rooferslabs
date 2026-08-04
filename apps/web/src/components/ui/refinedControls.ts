@@ -6,19 +6,19 @@
  * softened search inputs — because only some pages had been through a design
  * pass and the rest had to keep the appearance they shipped with.
  *
- * The global geometry pass removed that split: `Card`, `Input`, `SearchInput`
- * and every structural container now name the semantic radii in
- * styles/tokens.css (`--radius-panel`, `--radius-field`), so a page opting into
- * a radius here would be opting *out* of the product's own geometry — the
- * opposite of what this file is for. The radii are therefore empty rather than
- * deleted, so the call sites that reference them keep working and keep
- * documenting which pages were refined first.
+ * The geometry passes removed that split entirely. The product's structural
+ * radius is now 0px for every container and every field (see the radius block
+ * in styles/tokens.css), so a page naming a radius here would be opting *out*
+ * of the product's own geometry — the opposite of what this file is for. The
+ * radii are therefore empty rather than deleted, so the call sites that
+ * reference them keep working and keep documenting which pages were refined
+ * first.
  */
 
-/** Content surfaces. Now inherited from `Card` — see `--radius-panel`. */
+/** Content surfaces. Geometry comes from `Card`, which is square. */
 export const REFINED_CARD = '';
 
-/** Search fields and dropdowns. Now inherited from `Input` — see `--radius-field`. */
+/** Search fields and dropdowns. Geometry comes from `Input`, which is square. */
 export const REFINED_FIELD = '';
 
 /**

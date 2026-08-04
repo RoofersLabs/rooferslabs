@@ -93,7 +93,7 @@ export function ConversationDetailPage() {
     <div>
       <Link
         to={ROUTES.calls}
-        className="focus-ring mb-4 inline-flex items-center gap-1.5 rounded-xs text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
+        className="focus-ring mb-4 inline-flex items-center gap-1.5 rounded-focus text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Back to calls
@@ -147,7 +147,7 @@ export function ConversationDetailPage() {
             // The same recipe the Settings tabs use, so this reads as one
             // pattern across the product rather than a second kind of tab.
             className={cn(
-              'focus-ring flex h-10 shrink-0 items-center gap-2.5 rounded-nav px-3.5 text-body font-medium transition-colors duration-fast',
+              'focus-ring flex h-10 shrink-0 items-center gap-2.5 px-3.5 text-body font-medium transition-colors duration-fast',
               tab === item.key
                 ? 'bg-accent-subtle text-accent'
                 : 'text-ink-muted hover:bg-surface-2 hover:text-ink',
@@ -235,7 +235,7 @@ export function ConversationDetailPage() {
                   </dl>
                   <Link
                     to={ROUTES.appointments}
-                    className="focus-ring mt-4 inline-flex items-center gap-1 rounded-xs text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
+                    className="focus-ring mt-4 inline-flex items-center gap-1 rounded-focus text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
                   >
                     Manage in Appointments
                     <ArrowRight className="h-3.5 w-3.5" aria-hidden />
@@ -277,8 +277,8 @@ export function ConversationDetailPage() {
                     <div
                       className={
                         entry.role === 'assistant'
-                          ? 'max-w-[80%] rounded-2xl rounded-tl-sm bg-accent-subtle px-4 py-2.5'
-                          : 'max-w-[80%] rounded-2xl rounded-tr-sm bg-surface-3 px-4 py-2.5'
+                          ? 'max-w-[80%] bg-accent-subtle px-4 py-2.5'
+                          : 'max-w-[80%] bg-surface-3 px-4 py-2.5'
                       }
                     >
                       <p className="text-caption font-semibold uppercase tracking-wide text-ink-faint">

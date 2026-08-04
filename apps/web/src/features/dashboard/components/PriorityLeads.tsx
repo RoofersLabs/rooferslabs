@@ -47,7 +47,7 @@ export function PriorityLeads({ leads, isLoading }: { leads: PriorityLead[]; isL
         <h2 className="text-h5 text-ink">Priority leads</h2>
         <Link
           to={ROUTES.calls}
-          className="focus-ring inline-flex shrink-0 items-center gap-1 rounded-xs text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
+          className="focus-ring inline-flex shrink-0 items-center gap-1 rounded-focus text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
         >
           View all
           <ArrowRight className="h-3.5 w-3.5" aria-hidden />
