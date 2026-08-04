@@ -174,6 +174,12 @@ Twilio number's voice webhook at `https://<tunnel>/v1/telephony/incoming`.
 
 ## Billing (PayPal)
 
+> **Production is in Open Beta: the payment wall is down** (`payments_enabled =
+false`, since 2026-08-04), so a tenant goes marketing → sign-in → onboarding →
+> dashboard with no payment step. Development keeps the wall up. Nothing is
+> removed — see [Open Beta](./docs/billing.md#open-beta-the-wall-is-down) for the
+> mechanism and the one-variable reversal.
+
 A subscription is **mandatory** while `PAYMENTS_ENABLED` is `true`: a tenant can
 sign up and complete the four-step onboarding wizard, but the dashboard and every
 gated API stay locked until checkout completes.

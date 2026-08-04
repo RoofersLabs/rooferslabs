@@ -5,6 +5,14 @@ processor. The provider-port architecture survives it: `BillingService` talks
 to the `BillingProvider` interface alone, so a second processor is an adapter
 plus a row in `PROVIDER_ADAPTERS`, never a service or page change.
 
+> **Production is in Open Beta — the payment wall is DOWN.** Since 2026-08-04
+> production runs `payments_enabled = false`, so a tenant goes marketing →
+> sign-in → onboarding → dashboard with no payment step. Nothing here has been
+> removed or rewritten for it; see [Open Beta](#open-beta-the-wall-is-down)
+> for what that flag does and how to put the wall back up. **Development still
+> runs with the wall up**, which is where the checkout flow stays testable.
+
+- [Open Beta: the wall is down](#open-beta-the-wall-is-down)
 - [Architecture](#architecture)
 - [PayPal setup](#paypal-setup)
 - [Environment variables](#environment-variables)
@@ -16,6 +24,75 @@ plus a row in `PROVIDER_ADAPTERS`, never a service or page change.
 - [Local development](#local-development)
 - [Adding a second provider](#adding-a-second-provider)
 - [Migration notes](#migration-notes)
+
+---
+
+## Open Beta: the wall is down
+
+Production currently bypasses billing entirely so the MVP can be put in front of
+real roofing companies without asking them to pay. This is a **runtime flag, not
+a code change** — every line of the billing system below is still compiled in,
+still tested, and still provisioned at PayPal.
+
+|                             | Production (Open Beta)                           | Development                             |
+| --------------------------- | ------------------------------------------------ | --------------------------------------- |
+| `payments_enabled`          | `false`                                          | `true`                                  |
+| Tenant journey              | marketing → sign-in → onboarding → **dashboard** | …→ onboarding → **payment** → dashboard |
+| `SubscriptionGuard`         | admits every tenant                              | 402 without an active subscription      |
+| `/payment`, `/billing`      | admit no stage; redirect to the dashboard        | reachable as normal                     |
+| Billing nav item, plan CTAs | hidden                                           | shown                                   |
+| `/v1/billing/*`             | `503 PAYMENTS_DISABLED`                          | serves checkout                         |
+| PayPal webhook route        | not registered (`404`)                           | registered                              |
+| Subscription sweep          | not scheduled                                    | runs                                    |
+
+### How one flag does all of that
+
+`PAYMENTS_ENABLED` is read once per side and everything else derives from it, so
+there is no second place to keep in sync and nothing to grep for at the call
+sites:
+
+- **API** — `isPaymentsEnabled()` (`apps/api/src/config/payments.flag.ts`) is
+  read before the DI container exists, because `BillingModule` uses it to decide
+  whether the webhook route is registered at all. Inside the container it is
+  `config.payments.enabled`, which `BillingService.hasActiveSubscription()`
+  short-circuits on — that is the single line that opens the wall for
+  `SubscriptionGuard` and every endpoint behind it.
+- **Frontend** — the API reports the flag on the session (`GET /v1/auth/me` →
+  `paymentsEnabled`). `AccessProvider` puts it in context and the stage machine
+  (`apps/web/src/auth/stages.ts`) derives the rest: `resolveStage()` cannot
+  return `'payment'`, and `routeAccess()` gives `/payment` and `/billing` an
+  empty stage list so they redirect instead of rendering. Because the value
+  travels on the session, **the browser needs no rebuild** — flipping the API
+  flips the UI.
+
+The frontend defaults to `true` while the session is still loading, matching the
+API's own fail-closed default, so a slow response can never flash the billing
+surface at a paying tenant.
+
+### Putting the wall back up
+
+```bash
+# infra/terraform/envs/production/paypal.auto.tfvars  (gitignored)
+payments_enabled = true
+```
+
+```bash
+cd infra/terraform/envs/production && terraform apply
+curl -s https://api.rooferslabs.com/v1/health/billing   # "enabled": true
+```
+
+That is the whole reversal: one variable and an apply. No code change, no web
+deploy. `terraform plan` refuses `payments_enabled = true` without the provider
+credentials, and the API refuses to boot if the catalogue is not provisioned, so
+the wall cannot come back up in a state that could not take a payment.
+
+**Before flipping it back**, note that tenants onboarded during the beta have no
+subscription. The moment the flag goes true they resolve to the `payment` stage
+and are held at `/payment` until they check out — which is the intended
+behaviour, but it is a hard cutover for people already using the product. The
+grandfather clause exists for exactly this: set `billing_grandfather_before` to
+the cutover timestamp and every tenant created before it keeps full access
+(`BillingService.isGrandfathered()`), so only new signups meet the wall.
 
 ---
 
@@ -236,17 +313,17 @@ npm run billing:paypal:setup
 
 **Two.** That is the whole billing configuration.
 
-| Variable                         | Required | Notes                                                       |
-| -------------------------------- | -------- | ----------------------------------------------------------- |
-| `PAYPAL_CLIENT_ID`               | **yes†** | Server-side only, never exposed                             |
-| `PAYPAL_CLIENT_SECRET`           | **yes†** | Server-side only, never exposed                             |
-| `PAYMENTS_ENABLED`               | no       | Default `true`. `false` opens the wall entirely             |
-| `PAYMENT_PROVIDER`               | no       | Default `paypal`; the only supported provider               |
-| `PAYPAL_ENVIRONMENT`             | no       | `sandbox` (default) \| `live`                               |
-| `PAYPAL_WEBHOOK_ID`              | no       | Override only. Setup registers a webhook and records its id |
-| `PAYPAL_TEST_PRICING`            | no       | Default `false`. `true` charges the token test price — see below |
-| `BILLING_TRIAL_PERIOD_DAYS`      | no       | Ignored with a warning — PayPal sets trials on the plan     |
-| `BILLING_GRANDFATHER_BEFORE`     | no       | Tenants created before this instant skip the wall           |
+| Variable                     | Required | Notes                                                            |
+| ---------------------------- | -------- | ---------------------------------------------------------------- |
+| `PAYPAL_CLIENT_ID`           | **yes†** | Server-side only, never exposed                                  |
+| `PAYPAL_CLIENT_SECRET`       | **yes†** | Server-side only, never exposed                                  |
+| `PAYMENTS_ENABLED`           | no       | Default `true`. `false` opens the wall entirely                  |
+| `PAYMENT_PROVIDER`           | no       | Default `paypal`; the only supported provider                    |
+| `PAYPAL_ENVIRONMENT`         | no       | `sandbox` (default) \| `live`                                    |
+| `PAYPAL_WEBHOOK_ID`          | no       | Override only. Setup registers a webhook and records its id      |
+| `PAYPAL_TEST_PRICING`        | no       | Default `false`. `true` charges the token test price — see below |
+| `BILLING_TRIAL_PERIOD_DAYS`  | no       | Ignored with a warning — PayPal sets trials on the plan          |
+| `BILLING_GRANDFATHER_BEFORE` | no       | Tenants created before this instant skip the wall                |
 
 † Required in a **deployed** environment while `PAYMENTS_ENABLED=true`.
 
