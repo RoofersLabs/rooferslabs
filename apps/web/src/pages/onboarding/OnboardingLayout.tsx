@@ -1,5 +1,6 @@
 import { Navigate, useLocation, useParams } from 'react-router-dom';
 import { UserButton } from '@clerk/clerk-react';
+import { USER_BUTTON_APPEARANCE } from '@/lib/clerk-appearance';
 import { OnboardingStep } from '@rooferslabs/shared';
 import { cn } from '@/lib/utils';
 import { StandaloneLayout } from '@/layouts/StandaloneLayout';
@@ -124,7 +125,7 @@ export function OnboardingLayout() {
   const StepScreen = STEP_SCREENS[step];
 
   return (
-    <StandaloneLayout action={<UserButton />}>
+    <StandaloneLayout action={<UserButton appearance={USER_BUTTON_APPEARANCE} />}>
       <Stepper current={step} furthestIndex={stepIndex(furthest)} />
       <StepScreen />
     </StandaloneLayout>

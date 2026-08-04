@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { UserButton } from '@clerk/clerk-react';
+import { USER_BUTTON_APPEARANCE } from '@/lib/clerk-appearance';
 import { useAccess } from '@/auth/AccessProvider';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/auth/stages';
@@ -205,7 +206,7 @@ export function AppLayout() {
                 <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-emergency ring-2 ring-surface" />
               )}
             </Button>
-            <UserButton />
+            <UserButton appearance={USER_BUTTON_APPEARANCE} />
           </div>
         </header>
 

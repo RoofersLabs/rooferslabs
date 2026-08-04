@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { UserButton } from '@clerk/clerk-react';
+import { USER_BUTTON_APPEARANCE } from '@/lib/clerk-appearance';
 import { cn } from '@/lib/utils';
 import { ADMIN_ROUTES } from './routes';
 import {
@@ -56,10 +57,7 @@ export function AdminLayout() {
 
         {/* Sign-out lives here because there is no customer header on this
             surface to carry a UserButton. */}
-        <UserButton
-          appearance={{ elements: { avatarBox: 'h-8 w-8' } }}
-          afterSignOutUrl={ADMIN_ROUTES.root}
-        />
+        <UserButton appearance={USER_BUTTON_APPEARANCE} afterSignOutUrl={ADMIN_ROUTES.root} />
       </header>
 
       <Outlet />
