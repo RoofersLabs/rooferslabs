@@ -36,7 +36,7 @@ export function CallsPage() {
       <Card className="overflow-hidden">
         <FilterBar>
           <SearchInput
-            className="sm:max-w-xs"
+            className="sm:max-w-sm sm:flex-1"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);

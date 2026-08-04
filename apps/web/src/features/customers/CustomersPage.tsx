@@ -54,13 +54,13 @@ export function CustomersPage() {
       <Card className="overflow-hidden">
         <FilterBar>
           <SearchInput
-            className="sm:max-w-xs"
+            className="sm:max-w-sm sm:flex-1"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(1);
             }}
-            placeholder="Search name, phone, email, address…"
+            placeholder="Search name, phone or email…"
             aria-label="Search customers"
           />
         </FilterBar>

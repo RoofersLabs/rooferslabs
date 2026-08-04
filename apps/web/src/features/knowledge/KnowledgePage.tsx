@@ -54,7 +54,7 @@ export function KnowledgePage() {
       <Card className="mb-6">
         <FilterBar className="border-b-0">
           <SearchInput
-            className="flex-1 sm:max-w-xs"
+            className="flex-1 sm:max-w-sm"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);

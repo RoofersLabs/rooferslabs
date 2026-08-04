@@ -122,7 +122,7 @@ export function AppLayout() {
             {company && <p className="truncate text-caption text-ink-faint">{company.name}</p>}
           </div>
         </SidebarHeader>
-        <SidebarContent className="gap-1 px-3 py-4">
+        <SidebarContent className="gap-1.5 px-3 py-4">
           <SidebarMenu>
             {navigation.map((item) => {
               const isActive = pathname === item.to || pathname.startsWith(`${item.to}/`);
@@ -136,9 +136,9 @@ export function AppLayout() {
                       'text-body font-medium text-ink-muted data-[active=true]:bg-accent-subtle data-[active=true]:text-accent data-[active=true]:hover:bg-accent-subtle data-[active=true]:hover:text-accent hover:bg-surface-3 hover:text-ink',
                       // One radius covers both the active fill and the hover
                       // fill — they are the same element, not two layers. The
-                      // value itself is `--radius-nav`, carried by the base
-                      // component, so every sidebar surface shares it and this
-                      // row no longer opts out with a radius of its own.
+                      // pill itself comes from the base component, so every
+                      // sidebar surface shares it and this row does not opt out
+                      // with a shape of its own.
                     )}
                   >
                     <NavLink to={item.to}>
@@ -167,37 +167,19 @@ export function AppLayout() {
             which is what makes the status bar read as part of the app. On
             hardware that reserves nothing the inset is zero and the row alone
             sets the 64px height. */}
-        <header className="gutter-safe-x sticky top-0 z-20 flex h-[calc(4rem+env(safe-area-inset-top))] items-center gap-3 border-b border-line-subtle bg-[color-mix(in_oklab,var(--surface-1)_88%,transparent)] pt-[env(safe-area-inset-top)] backdrop-blur">
+        <header className="group/header gutter-safe-x sticky top-0 z-20 flex h-[calc(4rem+env(safe-area-inset-top))] items-center gap-3 border-b border-line-subtle bg-[color-mix(in_oklab,var(--surface-1)_88%,transparent)] pt-[env(safe-area-inset-top)] backdrop-blur">
           <SidebarTrigger className="text-ink-muted hover:bg-surface-3 hover:text-ink lg:hidden" />
 
           {/* One header for the whole authenticated app: these radii are no
               longer scoped per route, so the search field and the controls
               beside it are pixel-identical on every page and nothing animates
               as the user moves between them. No page overrides them. */}
-          {/* Below `sm` the header carries the drawer trigger, the install
-              button, the bell and the avatar, which leaves the elastic search
-              about 145px — enough to render "Search c" and then clip mid-word.
-              Hiding the placeholder rather than shortening it leaves the
-              magnifier alone in the field, which is what both mobile platforms
-              do and what the control already looks like once focused. The
-              accessible name is on `aria-label`, so nothing is lost to a screen
-              reader; only the visual hint is dropped, and only where it could
-              not be read anyway. */}
-          {/* The field takes the product's square geometry like every other
-              input. It carried `rounded-full` when it was the one control in a
-              row of pills; in a square interface that pill was the only
-              non-button curve above the fold, and it read as an oversight
-              rather than as a choice.
-
-              Below `sm` the header carries the drawer trigger, the install
-              button, the bell and the avatar, which leaves the elastic search
-              about 145px — enough to render "Search c" and then clip mid-word.
-              Hiding the placeholder rather than shortening it leaves the
-              magnifier alone in the field, which is what both mobile platforms
-              do. The accessible name is on `aria-label`, so nothing is lost to
-              a screen reader; only the visual hint is dropped, and only where
-              it could not be read anyway. */}
-          <GlobalSearch inputClassName="placeholder:text-transparent sm:placeholder:text-ink-faint" />
+          {/* Collapsed to a 40px pill by default — see GlobalSearch. That
+              retires the placeholder-hiding this call site used to need: the
+              field only ever renders at a width that can show its placeholder,
+              so the hint fades in with the expansion instead of being
+              suppressed on the viewport where it could not fit. */}
+          <GlobalSearch />
 
           {/* `shrink-0`: these controls have a fixed size and the search does
               not, so the row must give its space back from the search rather
@@ -207,7 +189,7 @@ export function AppLayout() {
             {/* `tracking-tight` is the only typographic change; the secondary
                 variant already puts the label at `text-ink`, the highest
                 contrast token on this surface, so nothing is recoloured. */}
-            <InstallPwaButton className="rounded-full tracking-tight" />
+            <InstallPwaButton className="rounded-full tracking-tight group-has-[[data-search-expanded=true]]/header:hidden sm:group-has-[[data-search-expanded=true]]/header:inline-flex" />
             <Button
               variant="ghost"
               size="icon"

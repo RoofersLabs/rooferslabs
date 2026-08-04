@@ -44,12 +44,26 @@ const variants: Record<Variant, string> = {
  * That is +4px a side over the old 16px-radius shape, so every labelled button
  * is 8px wider than it was. Icon sizes are square and unaffected.
  */
+/**
+ * Heights are unchanged — they are what keeps a button aligned with the inputs
+ * and search fields beside it, and changing them would move every row in the
+ * product. What grew is the horizontal padding and the gap, so a label sits
+ * further from the pill's curve and the tap area is wider without the control
+ * getting taller.
+ *
+ * `sm`, `md` and `icon` additionally gain a transparent 44px hit area: at 32px
+ * and 40px they sit below the 44px minimum both mobile platforms publish. `after:`
+ * draws that area rather than padding, so the button still *measures* 32px and
+ * the rows it sits in do not move. Rows carrying several `sm` buttons keep them
+ * comfortably apart, so the areas do not overlap.
+ */
 const sizes: Record<Size, string> = {
-  sm: 'h-8 gap-1.5 px-4 text-small',
-  md: 'h-10 gap-2 px-5 text-button',
-  lg: 'h-12 gap-2 px-6 text-body-lg',
-  'icon-sm': 'h-8 w-8 shrink-0',
-  icon: 'h-10 w-10 shrink-0',
+  sm: "relative h-8 gap-2 px-5 text-small after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2 after:content-['']",
+  md: "relative h-10 gap-2.5 px-6 text-button after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2 after:content-['']",
+  lg: 'h-12 gap-2.5 px-7 text-body-lg',
+  'icon-sm':
+    "relative h-8 w-8 shrink-0 after:absolute after:left-1/2 after:top-1/2 after:h-11 after:w-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-['']",
+  icon: "relative h-10 w-10 shrink-0 after:absolute after:left-1/2 after:top-1/2 after:h-11 after:w-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-['']",
   'icon-lg': 'h-12 w-12 shrink-0',
 };
 
