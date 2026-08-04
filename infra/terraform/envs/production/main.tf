@@ -211,6 +211,71 @@ resource "terraform_data" "payments_config_check" {
   }
 }
 
+# The mirror of the guardrail envs/development has had from the start. That one
+# keeps production identities out of development; this one keeps development
+# identities out of production, which is the direction that actually broke:
+# the frontend was moved to the live Clerk instance while clerk_secret_key here
+# stayed on the development one, and every authenticated request 401'd.
+locals {
+  clerk_publishable_tier = startswith(var.clerk_publishable_key, "pk_live_") ? "live" : (
+    startswith(var.clerk_publishable_key, "pk_test_") ? "test" : "unknown"
+  )
+  # nonsensitive() because clerk_secret_key is sensitive and that taints anything
+  # derived from it — including this one-word tier, which would leave the error
+  # messages below suppressed ("refers to sensitive values") exactly when someone
+  # needs to read them. Which Clerk instance production points at is not a
+  # secret; the key is, and it never appears here.
+  clerk_secret_tier = nonsensitive(
+    startswith(var.clerk_secret_key, "sk_live_") ? "live" : (
+      startswith(var.clerk_secret_key, "sk_test_") ? "test" : "unknown"
+    )
+  )
+}
+
+resource "terraform_data" "clerk_config_check" {
+  input = "${local.clerk_publishable_tier}-${local.clerk_secret_tier}"
+
+  lifecycle {
+    # No escape hatch: a publishable key and a secret key from different Clerk
+    # instances is never a configuration anyone wants. The API verifies session
+    # tokens against the JWKS belonging to the secret key, so the pair being
+    # split means sign-in succeeds and then every authenticated call fails.
+    precondition {
+      condition = (
+        local.clerk_publishable_tier == "unknown" ||
+        local.clerk_secret_tier == "unknown" ||
+        local.clerk_publishable_tier == local.clerk_secret_tier
+      )
+      error_message = join(" ", [
+        "clerk_publishable_key is from Clerk's ${local.clerk_publishable_tier} instance",
+        "but clerk_secret_key is from the ${local.clerk_secret_tier} instance.",
+        "Take both from one instance: Clerk Dashboard -> API Keys.",
+      ])
+    }
+
+    # Separate from the pair check, and escapable, because a consistent test
+    # pair is a real serving configuration — it is how production ran before the
+    # cutover — just not one live customers should be signing in to.
+    #
+    # Stated as "must be live" rather than "must not be test" so that an empty
+    # or malformed key fails here too. Written the other way round, a blank
+    # clerk_secret_key would sail through and Terraform would store an empty
+    # CLERK_SECRET_KEY, which env validation then rejects at boot — turning a
+    # caught misconfiguration into a task that crash-loops.
+    precondition {
+      condition = local.clerk_secret_tier == "live" || var.allow_test_clerk_key
+      error_message = join(" ", [
+        "clerk_secret_key must be the LIVE Clerk instance's key (sk_live_...); it is",
+        "currently ${local.clerk_secret_tier == "unknown" ? "empty or malformed" : "a ${local.clerk_secret_tier} key"}.",
+        "Production's frontend already signs users in to the live instance, so until this",
+        "matches, every authenticated request answers 401. Get it from Clerk Dashboard ->",
+        "API Keys with the instance switched to production. Set allow_test_clerk_key = true",
+        "only to ship unrelated infrastructure while the cutover is outstanding.",
+      ])
+    }
+  }
+}
+
 module "secrets" {
   source = "../../modules/secrets"
 

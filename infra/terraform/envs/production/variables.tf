@@ -127,6 +127,21 @@ variable "clerk_publishable_key" {
   type        = string
 }
 
+variable "allow_test_clerk_key" {
+  description = <<-EOT
+    Escape hatch for the guardrail that refuses Clerk's development instance
+    (sk_test_/pk_test_) in production. Set it only to ship unrelated infrastructure
+    while the Clerk cutover is still outstanding — it does not make the
+    configuration correct, and live visitors keep signing in to the development
+    user pool for as long as it is true.
+
+    It does NOT relax the separate check that the publishable and secret keys come
+    from the same instance; nothing legitimises that.
+  EOT
+  type        = bool
+  default     = false
+}
+
 variable "clerk_webhook_secret" {
   description = "Clerk → Webhooks signing secret (optional)."
   type        = string

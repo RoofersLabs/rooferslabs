@@ -55,9 +55,45 @@ export class ClerkService {
       if (!claims.sub) throw new UnauthorizedError('Invalid session token.');
       return { clerkUserId: claims.sub };
     } catch (error) {
-      this.logger.debug(`Token verification failed: ${(error as Error).message}`);
+      this.logVerificationFailure(error);
       throw new UnauthorizedError('Your session is invalid or has expired.');
     }
+  }
+
+  /**
+   * Separates the two kinds of verification failure, because they need opposite
+   * treatment and used to be indistinguishable at `debug` — which production
+   * (LOG_LEVEL=info) does not emit at all, so a total auth outage and a single
+   * stale tab both looked like a bare 401 with no server-side trace.
+   *
+   * An expired or not-yet-valid token is routine: Clerk session tokens live ~60s
+   * and the client refreshes them, so a few in flight across a refresh boundary
+   * mean nothing. Anything about signatures or JWKS is the opposite — it does
+   * not depend on the user, it fails identically for everyone, and it almost
+   * always means CLERK_SECRET_KEY belongs to a different Clerk instance than the
+   * publishable key the frontend bundle was built with.
+   */
+  private logVerificationFailure(error: unknown): void {
+    const reason = (error as { reason?: string }).reason;
+    const message = (error as Error).message;
+
+    if (reason === 'token-expired' || reason === 'token-not-active-yet') {
+      this.logger.debug(`Token rejected (${reason}).`);
+      return;
+    }
+
+    const instance = this.secretKey.startsWith('sk_live_')
+      ? 'live'
+      : this.secretKey.startsWith('sk_test_')
+        ? 'development'
+        : 'unrecognized';
+
+    this.logger.warn(
+      `Token verification failed (reason=${reason ?? 'unknown'}): ${message}. ` +
+        `This API verifies against Clerk's ${instance} instance — if every ` +
+        `authenticated request is failing, check that the frontend bundle's ` +
+        `VITE_CLERK_PUBLISHABLE_KEY names that same instance.`,
+    );
   }
 
   /** Fetch a user's profile from Clerk (used only on first provisioning). */

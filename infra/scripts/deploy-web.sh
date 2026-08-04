@@ -78,6 +78,42 @@ case "$ENVIRONMENT" in
     ;;
 esac
 
+# The Clerk instance is decided in two places that cannot see each other: this
+# key (GitHub Environment secret VITE_CLERK_PUBLISHABLE_KEY, baked into the
+# bundle) and CLERK_SECRET_KEY in the environment's Secrets Manager entry
+# (Terraform's clerk_secret_key). They must name the SAME instance — the API
+# verifies a token against the JWKS belonging to its secret key, so a bundle
+# signing users in to the live instance while the API holds a test key makes
+# every authenticated request 401 with nothing wrong on either side alone.
+#
+# The tier prefix is the only part of the pair checkable from here, and it is
+# exactly the half that diverged: pinning it to the environment means a bundle
+# can never silently change instances without the API being moved to match.
+case "$ENVIRONMENT" in
+  production)
+    case "$VITE_CLERK_PUBLISHABLE_KEY" in
+      pk_live_*) ;;
+      *)
+        echo "error: production build carries a non-live Clerk key (${VITE_CLERK_PUBLISHABLE_KEY:0:8}…)." >&2
+        echo "       Production must authenticate against the live Clerk instance." >&2
+        echo "       Fix the GitHub Environment secret VITE_CLERK_PUBLISHABLE_KEY (production)," >&2
+        echo "       or clerk_publishable_key in infra/terraform/envs/production." >&2
+        exit 1
+        ;;
+    esac
+    ;;
+  development)
+    case "$VITE_CLERK_PUBLISHABLE_KEY" in
+      pk_test_*) ;;
+      *)
+        echo "error: development build carries a live Clerk key (${VITE_CLERK_PUBLISHABLE_KEY:0:8}…)." >&2
+        echo "       Development sessions would act on production identities." >&2
+        exit 1
+        ;;
+    esac
+    ;;
+esac
+
 rl_banner "Deploying the SPA"
 echo "  bucket:       $BUCKET"
 echo "  distribution: $DISTRIBUTION_ID"

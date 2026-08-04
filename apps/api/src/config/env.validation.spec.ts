@@ -233,3 +233,61 @@ describe('validateEnv — no localhost in a deployed tier', () => {
     expect(() => validateEnv({ DATABASE_URL: 'postgresql://u:p@localhost:5432/db' })).not.toThrow();
   });
 });
+
+/**
+ * The regression these cover shipped to production: the frontend bundle was
+ * rebuilt with the live Clerk publishable key while CLERK_SECRET_KEY stayed on
+ * the development instance. Sign-in worked, health checks worked, telephony
+ * worked, and every authenticated request answered 401 — because `verifyToken`
+ * resolves the JWKS from the secret key's instance and the tokens were minted
+ * by the other one.
+ */
+describe('validateEnv — Clerk instance pairing', () => {
+  const withKeys = (publishable: string, secret: string) => ({
+    ...productionBase,
+    PAYMENTS_ENABLED: 'false',
+    CLERK_PUBLISHABLE_KEY: publishable,
+    CLERK_SECRET_KEY: secret,
+  });
+
+  it('refuses a live publishable key paired with a development secret key', () => {
+    expect(() => validateEnv(withKeys('pk_live_abc', 'sk_test_abc'))).toThrow(
+      /CLERK_PUBLISHABLE_KEY is from Clerk's live instance but CLERK_SECRET_KEY is from the test instance/,
+    );
+  });
+
+  it('refuses the mirror image, so neither key is privileged over the other', () => {
+    expect(() => validateEnv(withKeys('pk_test_abc', 'sk_live_abc'))).toThrow(
+      /from Clerk's test instance but CLERK_SECRET_KEY is from the live instance/,
+    );
+  });
+
+  it('explains the 401 the mismatch causes, since that is the only symptom', () => {
+    expect(() => validateEnv(withKeys('pk_live_abc', 'sk_test_abc'))).toThrow(/401/);
+  });
+
+  it('accepts a matched live pair', () => {
+    expect(() => validateEnv(withKeys('pk_live_abc', 'sk_live_abc'))).not.toThrow();
+  });
+
+  it('accepts a matched test pair — wrong for production, but not incoherent', () => {
+    expect(() => validateEnv(withKeys('pk_test_abc', 'sk_test_abc'))).not.toThrow();
+  });
+
+  /**
+   * Key formats are Clerk's to define, not this check's. Rejecting an
+   * unrecognised prefix here would turn a future key format into a boot failure
+   * for a configuration that is actually fine.
+   */
+  it('ignores keys whose prefix it does not recognise', () => {
+    expect(() => validateEnv(withKeys('pk_live_abc', 'some-proxy-managed-value'))).not.toThrow();
+  });
+
+  it('warns rather than failing when production runs a consistent test pair', () => {
+    // It is a real serving configuration — it is how production ran before the
+    // cutover — so refusing to boot would take down working telephony.
+    const warn = jest.spyOn(console, 'warn');
+    expect(() => validateEnv(withKeys('pk_test_abc', 'sk_test_abc'))).not.toThrow();
+    expect(warn.mock.calls.flat().join('\n')).toMatch(/DEVELOPMENT instance/);
+  });
+});
