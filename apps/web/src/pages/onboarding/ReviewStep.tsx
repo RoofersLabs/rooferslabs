@@ -1,5 +1,4 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Pencil, Sparkles } from 'lucide-react';
 import { OnboardingStep } from '@rooferslabs/shared';
 import { useAccess } from '@/auth/AccessProvider';
 import { stepPath } from '@/auth/stages';
@@ -11,6 +10,7 @@ import { IconTile } from '@/components/ui/IconTile';
 import { VOICE_NAMES } from './AiStep';
 import { StepActions, StepError, StepHeading, StepLoading } from './fields';
 import { useOnboarding } from './useOnboarding';
+import { PencilIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
 /**
  * One reviewable section of the wizard's answers, with a link back to it.
@@ -42,7 +42,7 @@ function ReviewSection({
           to={editTo}
           className="focus-ring -mr-2 inline-flex shrink-0 items-center gap-1.5 px-2 py-1 text-small font-medium text-ink-muted transition-colors duration-fast ease-standard hover:bg-surface-3 hover:text-accent"
         >
-          <Pencil className="h-3.5 w-3.5" aria-hidden />
+          <PencilIcon className="h-4 w-4" aria-hidden />
           Edit
           <span className="sr-only"> {title}</span>
         </Link>
@@ -143,7 +143,7 @@ export function ReviewStep() {
         className="animate-rise-in gap-6 p-6 shadow-md [animation-delay:290ms] sm:p-8"
       >
         <div className="flex items-start gap-4">
-          <IconTile icon={Sparkles} tone="brand" size="md" shape="square" />
+          <IconTile icon={SparklesIcon} tone="brand" size="md" />
           <div className="min-w-0">
             <p className="text-h5 text-ink">You’re all set</p>
             <p className="mt-1 text-body text-ink-muted">

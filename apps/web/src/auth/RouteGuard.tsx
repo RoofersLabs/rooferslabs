@@ -1,18 +1,18 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { IconTile } from '@/components/ui/IconTile';
 import { FullScreenSpinner } from '@/components/ui/spinner';
 import { useAccess } from './AccessProvider';
 import { redirectFor, type GuardedRoute } from './stages';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 /** The session request failed — routing cannot be decided, so offer a retry. */
 function SessionError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-base p-6">
       <Card className="max-w-md items-center px-8 py-10 text-center">
-        <IconTile icon={AlertTriangle} tone="emergency" size="xl" shape="square" />
+        <IconTile icon={ExclamationTriangleIcon} tone="emergency" size="xl" />
         <h1 className="mt-5 text-h4 text-ink">We couldn’t load your workspace</h1>
         <p className="mt-1.5 max-w-sm text-body leading-6 text-ink-muted">
           {message || 'Please try again in a moment.'}

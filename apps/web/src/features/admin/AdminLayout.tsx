@@ -1,17 +1,21 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { UserButton } from '@clerk/clerk-react';
-import { Building2, BarChart3, Settings2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ADMIN_ROUTES } from './routes';
+import {
+  AdjustmentsHorizontalIcon,
+  BuildingOffice2Icon,
+  ChartBarIcon,
+} from '@heroicons/react/24/outline';
 
 /**
  * `end` on Companies so the tab does not stay lit while a company's own page is
  * open — that page is a level down, not the list.
  */
 const NAV = [
-  { to: ADMIN_ROUTES.companies, label: 'Companies', icon: Building2, end: false },
-  { to: ADMIN_ROUTES.analytics, label: 'Analytics', icon: BarChart3, end: true },
-  { to: ADMIN_ROUTES.settings, label: 'Settings', icon: Settings2, end: true },
+  { to: ADMIN_ROUTES.companies, label: 'Companies', icon: BuildingOffice2Icon, end: false },
+  { to: ADMIN_ROUTES.analytics, label: 'Analytics', icon: ChartBarIcon, end: true },
+  { to: ADMIN_ROUTES.settings, label: 'Settings', icon: AdjustmentsHorizontalIcon, end: true },
 ] as const;
 
 /**

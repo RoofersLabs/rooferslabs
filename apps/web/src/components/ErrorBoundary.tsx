@@ -1,7 +1,9 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { ICON_SIZE } from '@/components/ui/icon';
+import { cn } from '@/lib/utils';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -34,9 +36,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     return (
       <div className="flex min-h-screen items-center justify-center bg-base p-6">
         <Card className="max-w-md items-center px-8 py-10 text-center">
-          <span className="mb-5 flex h-14 w-14 items-center justify-center bg-emergency-subtle text-emergency">
-            <AlertTriangle className="h-6 w-6" aria-hidden />
-          </span>
+          <ExclamationTriangleIcon
+            className={cn('mb-4 text-emergency', ICON_SIZE.empty)}
+            aria-hidden
+          />
           <h1 className="text-h4 text-ink">Something went wrong</h1>
           <p className="mt-1.5 max-w-sm text-body leading-6 text-ink-muted">
             An unexpected error occurred. Reloading usually fixes it — your data is safe.

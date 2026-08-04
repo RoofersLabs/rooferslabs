@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Phone } from 'lucide-react';
 import { ROUTES } from '@/auth/stages';
 import { cn, formatDateTime, formatDuration, formatPhone, humanizeEnum } from '@/lib/utils';
 import { DetailRow } from '@/components/ui/DetailRow';
@@ -16,6 +15,7 @@ import type { PriorityLead } from '../insights';
 // opened from a dashboard card and closes back onto it, so the priority and
 // outcome must read exactly as they do on the card behind it.
 import { EnumStatusLabel, StatusLabel } from './StatusLabel';
+import { ArrowRightIcon, PhoneIcon } from '@heroicons/react/24/outline';
 
 /** Same mapping the card uses, so the priority reads identically in both places. */
 const TONES = {
@@ -148,7 +148,7 @@ function LeadDetail({ lead }: { lead: PriorityLead }) {
           className="focus-ring mt-2 mb-4 inline-flex items-center gap-1 rounded-focus text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
         >
           Open the full call
-          <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+          <ArrowRightIcon className="h-4 w-4" aria-hidden />
         </Link>
       </div>
 
@@ -159,7 +159,7 @@ function LeadDetail({ lead }: { lead: PriorityLead }) {
       <div className="border-t border-line-subtle px-6 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
         {lead.phone ? (
           <a href={`tel:${lead.phone}`} className={buttonClass('primary', 'lg', 'w-full')}>
-            <Phone className="h-4 w-4" aria-hidden />
+            <PhoneIcon className="h-4 w-4" aria-hidden />
             Call Homeowner
           </a>
         ) : (

@@ -1,7 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { Link, type LinkProps } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
 type Size = 'sm' | 'md' | 'lg' | 'icon-sm' | 'icon' | 'icon-lg';
@@ -74,6 +74,12 @@ export function buttonClass(variant: Variant = 'primary', size: Size = 'md', cla
     // `text-*` size from a `text-*` color; before, the size class below silently
     // deleted it and every button inherited near-black.
     'focus-ring inline-flex select-none items-center justify-center whitespace-nowrap rounded-full font-semibold',
+    // One icon size for every button in the product, set here rather than at the
+    // call sites — which is what stopped a 12px glyph on one page and a 16px one
+    // on the next. 18px is the brief's action size: large enough to read beside
+    // a 14px label, small enough that it never out-weighs it. A call site can
+    // still override, and `size-*` loses to a later `h-*/w-*` in twMerge.
+    '[&_svg]:size-[18px] [&_svg]:shrink-0',
     // Named properties rather than `transition-all`.
     //
     // `all` also animates layout — width, padding, height — so a button that
@@ -108,7 +114,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       className={buttonClass(variant, size, className)}
       {...props}
     >
-      {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+      {loading && <ArrowPathIcon className="h-4 w-4 animate-spin" aria-hidden />}
       {children}
     </button>
   );

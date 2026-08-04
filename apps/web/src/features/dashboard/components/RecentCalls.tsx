@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { Phone, ShieldAlert } from 'lucide-react';
 import type { Conversation } from '@/types/api';
 import { formatDuration, formatPhone, humanizeEnum, timeAgo } from '@/lib/utils';
 import { IconTile } from '@/components/ui/IconTile';
@@ -7,6 +6,7 @@ import { ListSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { EnumStatusLabel } from './StatusLabel';
 import { SectionCard } from './SectionCard';
+import { PhoneIcon, ShieldExclamationIcon } from '@heroicons/react/24/outline';
 
 /**
  * The primary dashboard surface: a readable log of the most recent answered
@@ -35,7 +35,7 @@ export function RecentCalls({
         <ListSkeleton rows={5} />
       ) : !conversations?.length ? (
         <EmptyState
-          icon={Phone}
+          icon={PhoneIcon}
           title="No calls yet"
           description="Once your number is forwarded, every answered call will appear here."
         />
@@ -54,7 +54,7 @@ export function RecentCalls({
                   className="focus-ring flex items-center gap-4 px-6 py-4 transition-colors duration-fast hover:bg-surface-2"
                 >
                   <IconTile
-                    icon={conversation.isEmergency ? ShieldAlert : Phone}
+                    icon={conversation.isEmergency ? ShieldExclamationIcon : PhoneIcon}
                     tone={conversation.isEmergency ? 'emergency' : 'brand'}
                   />
 

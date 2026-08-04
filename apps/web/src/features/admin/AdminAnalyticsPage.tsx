@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart3 } from 'lucide-react';
 import { useAdminAnalytics } from '@/hooks/queries';
 import { cn, formatDuration } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ADMIN_ROUTES } from './routes';
+import { ChartBarIcon } from '@heroicons/react/24/outline';
 
 type Series = { day: string; calls: number; leads: number; appointments: number };
 
@@ -125,7 +125,7 @@ export function AdminAnalyticsPage() {
           <ListSkeleton />
         ) : !analytics.data?.companies.length ? (
           <EmptyState
-            icon={BarChart3}
+            icon={ChartBarIcon}
             title="No activity in this window"
             description="Try the 30-day view."
           />

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Download } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
+import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 
 /**
  * Downloads a call recording through the authenticated API proxy — Twilio
@@ -42,7 +42,7 @@ export function RecordingDownload({ callId }: { callId: string }) {
       <Button variant="secondary" size="sm" loading={loading} onClick={() => void download()}>
         {/* The button supplies its own spinner while loading, so the icon would
             otherwise sit beside it. */}
-        {!loading && <Download className="h-4 w-4" aria-hidden />}
+        {!loading && <ArrowDownTrayIcon className="h-4 w-4" aria-hidden />}
         Download call recording
       </Button>
       {failed && (

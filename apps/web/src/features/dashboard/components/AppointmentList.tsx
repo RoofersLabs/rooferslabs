@@ -1,10 +1,10 @@
-import { CalendarClock } from 'lucide-react';
 import type { Appointment } from '@/types/api';
 import { formatDate, humanizeEnum } from '@/lib/utils';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { EnumStatusLabel } from './StatusLabel';
 import { SectionCard } from './SectionCard';
+import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 
 /** A compact, timeline-style list of upcoming appointment requests. */
 export function AppointmentList({
@@ -26,7 +26,7 @@ export function AppointmentList({
         <ListSkeleton rows={4} />
       ) : !appointments?.length ? (
         <EmptyState
-          icon={CalendarClock}
+          icon={CalendarDaysIcon}
           title="No appointment requests"
           description="When callers request estimates or inspections, they’ll show up here."
         />

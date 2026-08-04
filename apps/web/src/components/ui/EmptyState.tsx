@@ -1,6 +1,6 @@
-import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './button';
+import { ICON_SIZE, type IconComponent } from '@/components/ui/icon';
 
 export function EmptyState({
   icon: Icon,
@@ -10,7 +10,7 @@ export function EmptyState({
   onAction,
   actionClassName,
 }: {
-  icon?: LucideIcon;
+  icon?: IconComponent;
   title: string;
   description?: string;
   actionLabel?: string;
@@ -24,11 +24,7 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-      {Icon && (
-        <div className="mb-5 flex h-14 w-14 items-center justify-center bg-accent-subtle text-accent">
-          <Icon className="h-6 w-6" aria-hidden />
-        </div>
-      )}
+      {Icon && <Icon className={cn('mb-4 text-ink-faint', ICON_SIZE.empty)} aria-hidden />}
       <h3 className="text-h5 text-ink">{title}</h3>
       {description && (
         <p className="mt-1.5 max-w-sm text-body leading-6 text-ink-muted">{description}</p>

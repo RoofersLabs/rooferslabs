@@ -1,5 +1,4 @@
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Building2 } from 'lucide-react';
 import { useAdminCompany } from '@/hooks/queries';
 import { formatDateTime, formatDuration, formatPhone, humanizeEnum, timeAgo } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +10,7 @@ import { LoadingBlock } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { ADMIN_ROUTES } from './routes';
+import { ArrowLeftIcon, BuildingOffice2Icon } from '@heroicons/react/24/outline';
 
 /**
  * One tenant at a glance: who they are, and how much the AI has done for them.
@@ -42,7 +42,7 @@ export function AdminCompanyDetailPage() {
           />
         ) : (
           <EmptyState
-            icon={Building2}
+            icon={BuildingOffice2Icon}
             title="Company not found"
             description="It may have been removed."
           />
@@ -59,14 +59,14 @@ export function AdminCompanyDetailPage() {
         to={ADMIN_ROUTES.companies}
         className="focus-ring mb-4 inline-flex items-center gap-1.5 rounded-focus text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
       >
-        <ArrowLeft className="h-4 w-4" aria-hidden />
+        <ArrowLeftIcon className="h-4 w-4" aria-hidden />
         Back to companies
       </Link>
 
       <PageHeader
         title={
           <span className="flex flex-wrap items-center gap-3">
-            <IconTile icon={Building2} tone="brand" size="lg" />
+            <IconTile icon={BuildingOffice2Icon} tone="brand" size="lg" />
             {company.name}
             <EnumStatusText value={company.status} />
           </span>

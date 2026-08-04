@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { CheckCircle2, Copy, PhoneForwarded, PhoneCall, Power, ShieldCheck } from 'lucide-react';
 import {
   useCompany,
   usePhoneNumber,
@@ -18,6 +17,14 @@ import { IconTile } from '@/components/ui/IconTile';
 import { Input, Select } from '@/components/ui/input';
 import { LoadingBlock } from '@/components/ui/spinner';
 import { CARRIER_GUIDES } from './forwarding';
+import {
+  CheckCircleIcon,
+  DocumentDuplicateIcon,
+  PhoneArrowDownLeftIcon,
+  PhoneArrowUpRightIcon,
+  PowerIcon,
+  ShieldCheckIcon,
+} from '@heroicons/react/24/outline';
 
 /**
  * Phone Setup: the owner's activation journey, in plain language —
@@ -36,7 +43,7 @@ export function PhoneSetupTab() {
   if (!number) {
     return (
       <Card className="items-center px-8 py-12 text-center">
-        <IconTile icon={PhoneForwarded} size="xl" shape="square" />
+        <IconTile icon={PhoneArrowUpRightIcon} size="xl" />
         <h2 className="mt-5 text-h4 text-ink">Get your AI receptionist number</h2>
         <p className="mt-1.5 max-w-md text-body leading-6 text-ink-muted">
           We’ll set up a local number for your business (matching your area code when available) and
@@ -48,7 +55,7 @@ export function PhoneSetupTab() {
           </Alert>
         )}
         <Button className="mt-6" loading={provision.isPending} onClick={() => provision.mutate()}>
-          <PhoneForwarded className="h-4 w-4" aria-hidden />
+          <PhoneArrowUpRightIcon className="h-4 w-4" aria-hidden />
           Get my AI receptionist number
         </Button>
       </Card>
@@ -122,7 +129,7 @@ function ControlCenterCard() {
               s.enabled ? 'translate-x-[72px]' : 'translate-x-1',
             )}
           >
-            <Power
+            <PowerIcon
               className={cn('m-1.5 h-4 w-4', s.enabled ? 'text-success' : 'text-ink-faint')}
               aria-hidden
             />
@@ -210,12 +217,12 @@ function NumberCard({ phoneNumber, verified }: { phoneNumber: string; verified: 
           {formatPhone(phoneNumber)}
         </span>
         <Button variant="secondary" onClick={() => void copy()}>
-          <Copy className="h-4 w-4" aria-hidden />
+          <DocumentDuplicateIcon className="h-4 w-4" aria-hidden />
           {copied ? 'Copied!' : 'Copy'}
         </Button>
         {verified ? (
           <Badge tone="success">
-            <ShieldCheck className="h-3 w-3" aria-hidden />
+            <ShieldCheckIcon className="h-4 w-4" aria-hidden />
             AI Receptionist Active
           </Badge>
         ) : (
@@ -290,7 +297,7 @@ function ForwardingCard({
         </Button>
         {update.isSuccess && !update.isPending && (
           <span className="flex items-center gap-1.5 text-small font-medium text-success">
-            <CheckCircle2 className="h-4 w-4" aria-hidden />
+            <CheckCircleIcon className="h-4 w-4" aria-hidden />
             Saved
           </span>
         )}
@@ -327,7 +334,7 @@ function VerifyCard() {
     <Card className="px-6 py-6">
       <StepEyebrow step={3} />
       <h2 className="flex items-center gap-2 text-h5 text-ink">
-        <PhoneCall className="h-4 w-4 text-accent" aria-hidden />
+        <PhoneArrowDownLeftIcon className="h-4 w-4 text-accent" aria-hidden />
         Turn on your AI receptionist
       </h2>
       <p className="mt-1 text-small text-ink-muted">
@@ -344,7 +351,7 @@ function VerifyCard() {
         loading={verify.isPending}
         onClick={() => verify.mutate()}
       >
-        <CheckCircle2 className="h-4 w-4" aria-hidden />
+        <CheckCircleIcon className="h-4 w-4" aria-hidden />
         Verify forwarding
       </Button>
     </Card>

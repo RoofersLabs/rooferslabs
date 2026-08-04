@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { BookOpen, Plus, Trash2 } from 'lucide-react';
 import { KnowledgeCategory } from '@rooferslabs/shared';
 import {
   useDeleteKnowledgeArticle,
@@ -23,6 +22,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/pagination';
+import { BookOpenIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 export function KnowledgePage() {
   const [page, setPage] = useState(1);
@@ -45,7 +45,7 @@ export function KnowledgePage() {
         description="Everything your AI receptionist knows about your business. It answers callers using only this content."
         actions={
           <Button className={REFINED_BUTTON} onClick={() => setCreating(true)}>
-            <Plus className="h-4 w-4" aria-hidden />
+            <PlusIcon className="h-4 w-4" aria-hidden />
             New article
           </Button>
         }
@@ -105,7 +105,7 @@ export function KnowledgePage() {
       ) : !articles.data?.items.length ? (
         <Card>
           <EmptyState
-            icon={BookOpen}
+            icon={BookOpenIcon}
             title="No articles yet"
             description="Add FAQs, services, warranty terms, pricing guidance, and policies so the AI can answer accurately."
             actionLabel="Write your first article"
@@ -127,7 +127,7 @@ export function KnowledgePage() {
                   'card-interactive focus-ring flex flex-col items-start px-6 py-5 text-left',
                 )}
               >
-                <IconTile icon={BookOpen} shape="square" />
+                <IconTile icon={BookOpenIcon} />
                 <span className="mt-4 line-clamp-2 text-body font-medium text-ink">
                   {article.title}
                 </span>
@@ -242,7 +242,7 @@ function ArticleModal({
               loading={remove.isPending}
               onClick={() => remove.mutate(article.id, { onSuccess: onClose })}
             >
-              <Trash2 className="h-4 w-4" aria-hidden />
+              <TrashIcon className="h-4 w-4" aria-hidden />
               Delete
             </Button>
           ) : (

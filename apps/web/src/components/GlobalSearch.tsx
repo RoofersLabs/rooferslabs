@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, CalendarClock, BookOpen, User } from 'lucide-react';
 import { useGlobalSearch } from '@/hooks/queries';
 import { humanizeEnum, timeAgo } from '@/lib/utils';
 import { SearchInput } from '@/components/ui/SearchInput';
+import { BookOpenIcon, CalendarDaysIcon, PhoneIcon, UserIcon } from '@heroicons/react/24/outline';
 
 /**
  * Header search with debounced global results across all business entities.
@@ -80,7 +80,7 @@ export function GlobalSearch({ inputClassName }: { inputClassName?: string }) {
                   {data.customers.map((c) => (
                     <SearchRow
                       key={c.id}
-                      icon={<User className="h-4 w-4 text-ink-faint" />}
+                      icon={<UserIcon className="h-4 w-4 text-ink-faint" />}
                       title={c.fullName ?? c.phone ?? 'Unknown'}
                       subtitle={c.email ?? c.phone ?? ''}
                       onClick={() => go('/customers')}
@@ -93,7 +93,7 @@ export function GlobalSearch({ inputClassName }: { inputClassName?: string }) {
                   {data.conversations.map((c) => (
                     <SearchRow
                       key={c.id}
-                      icon={<Phone className="h-4 w-4 text-ink-faint" />}
+                      icon={<PhoneIcon className="h-4 w-4 text-ink-faint" />}
                       title={c.customer?.fullName ?? 'Caller'}
                       subtitle={`${c.summary?.slice(0, 60) ?? ''} · ${timeAgo(c.createdAt)}`}
                       onClick={() => go(`/conversations/${c.id}`)}
@@ -106,7 +106,7 @@ export function GlobalSearch({ inputClassName }: { inputClassName?: string }) {
                   {data.appointments.map((a) => (
                     <SearchRow
                       key={a.id}
-                      icon={<CalendarClock className="h-4 w-4 text-ink-faint" />}
+                      icon={<CalendarDaysIcon className="h-4 w-4 text-ink-faint" />}
                       title={a.serviceRequested ?? 'Appointment'}
                       subtitle={humanizeEnum(a.status)}
                       onClick={() => go('/appointments')}
@@ -119,7 +119,7 @@ export function GlobalSearch({ inputClassName }: { inputClassName?: string }) {
                   {data.knowledgeArticles.map((k) => (
                     <SearchRow
                       key={k.id}
-                      icon={<BookOpen className="h-4 w-4 text-ink-faint" />}
+                      icon={<BookOpenIcon className="h-4 w-4 text-ink-faint" />}
                       title={k.title}
                       subtitle={humanizeEnum(k.category)}
                       onClick={() => go('/knowledge')}

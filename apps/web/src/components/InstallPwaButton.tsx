@@ -1,9 +1,18 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { Download, Share, PlusSquare, Smartphone, Monitor, MoreVertical } from 'lucide-react';
 import { usePwaInstall } from '@/hooks/usePwaInstall';
+import { ICON_SIZE } from '@/components/ui/icon';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/Modal';
+import {
+  ArrowDownTrayIcon,
+  ComputerDesktopIcon,
+  DevicePhoneMobileIcon,
+  EllipsisVerticalIcon,
+  PlusCircleIcon,
+  ShareIcon,
+} from '@heroicons/react/24/outline';
 
 /**
  * "Add to Home Screen" button for the top navigation (MVP requirement).
@@ -14,7 +23,7 @@ import { Modal } from '@/components/ui/Modal';
  *
  * Behaviour comes from `strategy` (see `usePwaInstall`):
  *   native      → Android Chrome/Edge/Samsung: the OS prompt, no modal
- *   ios         → iOS/iPadOS: Share-sheet steps, since Safari has no prompt
+ *   ios         → iOS/iPadOS: share-sheet steps, since Safari has no prompt
  *   mobile-help → handheld without a prompt: browser-menu steps
  *   desktop     → the unchanged QR flow, plus native install when offered
  *
@@ -44,7 +53,7 @@ export function InstallPwaButton({ className }: { className?: string }) {
         onClick={onClick}
         aria-label="Add rooferslabs to your Home Screen"
       >
-        <Download className="h-4 w-4" aria-hidden />
+        <ArrowDownTrayIcon className="h-4 w-4" aria-hidden />
         <span className="hidden sm:inline">Add to Home Screen</span>
         <span className="sm:hidden">Install</span>
       </Button>
@@ -66,9 +75,7 @@ export function InstallPwaButton({ className }: { className?: string }) {
 function Step({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <li className="flex items-start gap-3">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-accent">
-        {icon}
-      </span>
+      <span className="shrink-0 pt-0.5 text-accent">{icon}</span>
       <span className="pt-1">{children}</span>
     </li>
   );
@@ -82,13 +89,13 @@ function Step({ icon, children }: { icon: React.ReactNode; children: React.React
 function MobileInstructions() {
   return (
     <ol className="space-y-4 text-body text-ink">
-      <Step icon={<MoreVertical className="h-4 w-4" aria-hidden />}>
+      <Step icon={<EllipsisVerticalIcon className="h-4 w-4" aria-hidden />}>
         Open your browser’s menu — the <strong>⋮</strong> or <strong>≡</strong> button.
       </Step>
-      <Step icon={<PlusSquare className="h-4 w-4" aria-hidden />}>
+      <Step icon={<PlusCircleIcon className="h-4 w-4" aria-hidden />}>
         Tap <strong>Install app</strong> or <strong>Add to Home screen</strong>.
       </Step>
-      <Step icon={<Download className="h-4 w-4" aria-hidden />}>
+      <Step icon={<ArrowDownTrayIcon className="h-4 w-4" aria-hidden />}>
         Confirm. rooferslabs will open full-screen from your Home Screen, and you’ll stay signed in.
       </Step>
     </ol>
@@ -99,13 +106,13 @@ function MobileInstructions() {
 function IosInstructions() {
   return (
     <ol className="space-y-4 text-body text-ink">
-      <Step icon={<Share className="h-4 w-4" aria-hidden />}>
+      <Step icon={<ShareIcon className="h-4 w-4" aria-hidden />}>
         Tap the <strong>Share</strong> button in Safari’s toolbar.
       </Step>
-      <Step icon={<PlusSquare className="h-4 w-4" aria-hidden />}>
+      <Step icon={<PlusCircleIcon className="h-4 w-4" aria-hidden />}>
         Scroll down and tap <strong>Add to Home Screen</strong>.
       </Step>
-      <Step icon={<Download className="h-4 w-4" aria-hidden />}>
+      <Step icon={<ArrowDownTrayIcon className="h-4 w-4" aria-hidden />}>
         Tap <strong>Add</strong>. rooferslabs will appear on your Home Screen like a native app.
       </Step>
     </ol>
@@ -131,9 +138,10 @@ function DesktopInstall({
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-4">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-accent">
-          <Smartphone className="h-4 w-4" aria-hidden />
-        </span>
+        <DevicePhoneMobileIcon
+          className={cn('shrink-0 text-accent', ICON_SIZE.metric)}
+          aria-hidden
+        />
         <div className="min-w-0 flex-1">
           <p className="text-body font-semibold text-ink">On your phone (recommended)</p>
           <p className="mt-0.5 text-small text-ink-muted">
@@ -152,16 +160,17 @@ function DesktopInstall({
 
       {canPrompt && (
         <div className="flex items-start gap-4 border-t border-line-subtle pt-5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-accent">
-            <Monitor className="h-4 w-4" aria-hidden />
-          </span>
+          <ComputerDesktopIcon
+            className={cn('shrink-0 text-accent', ICON_SIZE.metric)}
+            aria-hidden
+          />
           <div className="min-w-0 flex-1">
             <p className="text-body font-semibold text-ink">On this computer</p>
             <p className="mt-0.5 text-small text-ink-muted">
               Install rooferslabs as a desktop app for quick access from your dock or taskbar.
             </p>
             <Button className="mt-3" size="sm" variant="secondary" onClick={() => void onInstall()}>
-              <Download className="h-4 w-4" aria-hidden />
+              <ArrowDownTrayIcon className="h-4 w-4" aria-hidden />
               Install on this computer
             </Button>
           </div>

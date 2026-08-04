@@ -1,8 +1,8 @@
-import type { LucideIcon } from 'lucide-react';
-import { CheckCircle2, Clock, Timer, Flame } from 'lucide-react';
 import { ConversationOutcome, LeadQuality, UrgencyLevel } from '@rooferslabs/shared';
 import type { Conversation, DashboardOverview } from '@/types/api';
 import { formatDuration, formatPhone, humanizeEnum } from '@/lib/utils';
+import { BoltIcon, CheckCircleIcon, ClockIcon, FireIcon } from '@heroicons/react/24/outline';
+import type { IconComponent } from '@/components/ui/icon';
 
 /**
  * Everything below is derived on the client from data the dashboard already
@@ -11,7 +11,7 @@ import { formatDuration, formatPhone, humanizeEnum } from '@/lib/utils';
  */
 
 export interface SummaryTile {
-  icon: LucideIcon;
+  icon: IconComponent;
   label: string;
   value: string;
   hint: string;
@@ -45,25 +45,25 @@ export function deriveReceptionistSummary(
 
   return [
     {
-      icon: CheckCircle2,
+      icon: CheckCircleIcon,
       label: 'Resolution rate',
       value: total ? `${resolutionRate}%` : '—',
       hint: total ? `${resolved} of ${total} recent calls` : 'No recent calls',
     },
     {
-      icon: Clock,
+      icon: ClockIcon,
       label: 'Avg. call length',
       value: avgSeconds ? formatDuration(avgSeconds) : '—',
       hint: durations.length ? `Across ${durations.length} recent calls` : 'No recent calls',
     },
     {
-      icon: Timer,
+      icon: BoltIcon,
       label: 'Hours saved',
       value: weeklyCalls ? `${hoursSaved.toFixed(1)}h` : '—',
       hint: weeklyCalls ? `≈ ${weeklyCalls} calls this week` : 'This week',
     },
     {
-      icon: Flame,
+      icon: FireIcon,
       label: 'Leads today',
       value: `${metrics?.todaysLeads ?? 0}`,
       hint: 'Captured by your AI',

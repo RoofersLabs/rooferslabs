@@ -1,8 +1,8 @@
-import { BarChart3 } from 'lucide-react';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { InsightRow } from '../insights';
 import { SectionCard } from './SectionCard';
+import { ChartBarIcon } from '@heroicons/react/24/outline';
 
 /**
  * Ranked list of what recent callers wanted, with a share percentage and a
@@ -25,7 +25,7 @@ export function InsightList({
         </div>
       ) : !rows.length ? (
         <EmptyState
-          icon={BarChart3}
+          icon={ChartBarIcon}
           title="Not enough data yet"
           description="Once the AI has handled a few calls, you’ll see what your customers ask for most."
         />

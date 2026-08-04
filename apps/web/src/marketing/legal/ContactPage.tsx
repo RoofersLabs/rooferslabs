@@ -1,11 +1,11 @@
 import { useId, useState, type FormEvent } from 'react';
-import { Clock, Mail, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MARKETING_ROUTES } from '../routes';
 import { marketingButtonClass } from '../components/Button';
 import { LegalLayout } from './LegalLayout';
 import { MailLink, P, Section } from './Prose';
 import { CONTACT } from './content';
+import { ChatBubbleLeftRightIcon, ClockIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 
 interface Fields {
   name: string;
@@ -48,19 +48,19 @@ export function ContactPage() {
       <Section id="reach-us" title="How to reach us">
         <div className="grid gap-4 sm:grid-cols-2">
           <DetailCard
-            icon={<Mail className="h-4 w-4" aria-hidden />}
+            icon={<EnvelopeIcon className="h-4 w-4" aria-hidden />}
             label="Email"
             value={<MailLink email={CONTACT.email} />}
             note="The fastest route for anything — sales, support, billing, or a data request."
           />
           <DetailCard
-            icon={<Clock className="h-4 w-4" aria-hidden />}
+            icon={<ClockIcon className="h-4 w-4" aria-hidden />}
             label="Business hours"
             value={<span className="text-white">{CONTACT.hours}</span>}
             note="Messages sent outside these hours are answered the next business day."
           />
           <DetailCard
-            icon={<MessageSquare className="h-4 w-4" aria-hidden />}
+            icon={<ChatBubbleLeftRightIcon className="h-4 w-4" aria-hidden />}
             label="Response time"
             value={<span className="text-white">Typically {CONTACT.responseTime}</span>}
             note="Urgent problems with a live phone line are prioritised over everything else."

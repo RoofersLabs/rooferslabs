@@ -1,6 +1,6 @@
 import { forwardRef, type InputHTMLAttributes } from 'react';
-import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 export interface SearchInputProps extends InputHTMLAttributes<HTMLInputElement> {
   /** Required: the field carries no visible label, so it needs an accessible one. */
@@ -27,8 +27,8 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(functi
 ) {
   return (
     <div className={cn('relative', className)}>
-      <Search
-        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
+      <MagnifyingGlassIcon
+        className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-ink-faint"
         aria-hidden
       />
       <input

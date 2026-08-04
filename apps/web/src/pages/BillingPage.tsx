@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, CreditCard } from 'lucide-react';
 import { SubscriptionStatus } from '@rooferslabs/shared';
 import { ROUTES } from '@/auth/stages';
 import { StandaloneLayout } from '@/layouts/StandaloneLayout';
@@ -24,6 +23,7 @@ import {
 } from '@/hooks/queries';
 import { ApiError } from '@/lib/api-client';
 import { formatDate, humanizeEnum } from '@/lib/utils';
+import { ArrowLeftIcon, CreditCardIcon } from '@heroicons/react/24/outline';
 
 /**
  * Minor units → a readable amount.
@@ -192,7 +192,7 @@ export function BillingPage() {
                 loading={portal.isPending}
                 onClick={() => void openPortal()}
               >
-                <CreditCard className="h-4 w-4" aria-hidden />
+                <CreditCardIcon className="h-4 w-4" aria-hidden />
                 {portal.isPending ? 'Opening…' : 'Manage payment method'}
               </Button>
             )}
@@ -275,7 +275,7 @@ export function BillingPage() {
           to={isActive ? ROUTES.dashboard : ROUTES.marketing}
           className="focus-ring inline-flex items-center gap-1.5 rounded-focus text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
         >
-          <ArrowLeft className="h-4 w-4" aria-hidden />
+          <ArrowLeftIcon className="h-4 w-4" aria-hidden />
           {isActive ? 'Back to dashboard' : 'Back to home'}
         </Link>
       </p>

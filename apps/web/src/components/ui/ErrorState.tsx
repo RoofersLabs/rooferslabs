@@ -1,5 +1,7 @@
-import { AlertTriangle } from 'lucide-react';
 import { Button } from './button';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { ICON_SIZE } from '@/components/ui/icon';
+import { cn } from '@/lib/utils';
 
 /**
  * Inline failure state for panels and lists — the counterpart of EmptyState,
@@ -16,9 +18,7 @@ export function ErrorState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-      <div className="mb-5 flex h-14 w-14 items-center justify-center bg-emergency-subtle text-emergency">
-        <AlertTriangle className="h-6 w-6" aria-hidden />
-      </div>
+      <ExclamationTriangleIcon className={cn('mb-4 text-emergency', ICON_SIZE.empty)} aria-hidden />
       <h3 className="text-h5 text-ink">{title}</h3>
       <p className="mt-1.5 max-w-sm text-body leading-6 text-ink-muted">
         {message || 'Please try again in a moment.'}

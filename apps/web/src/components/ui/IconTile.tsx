@@ -1,35 +1,39 @@
-import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ICON_SIZE, type IconComponent } from '@/components/ui/icon';
 
-/** Tinted fill + matching icon hue, drawn from the shared semantic tokens. */
+/**
+ * Icon hue, drawn from the shared semantic tokens.
+ *
+ * Colour only. These used to be `bg-*-subtle text-*` pairs, so every leading
+ * icon in the product sat on a tinted 32–56px tile. That treatment made a list
+ * of calls read as a list of illustrations: the fills were the loudest thing on
+ * the row, they competed with the status colours beside them, and six of them
+ * down a table turned the page into a colour chart. The hue carries the same
+ * meaning on its own, and the row is quieter for it.
+ */
 const tones = {
-  brand: 'bg-accent-subtle text-accent',
-  emergency: 'bg-emergency-subtle text-emergency',
-  success: 'bg-success-subtle text-success',
-  warning: 'bg-warning-subtle text-warning',
-  info: 'bg-info-subtle text-info',
-  neutral: 'bg-surface-3 text-ink-muted',
+  brand: 'text-accent',
+  emergency: 'text-emergency',
+  success: 'text-success',
+  warning: 'text-warning',
+  info: 'text-info',
+  neutral: 'text-ink-faint',
 } as const;
 
 /**
- * Four tile sizes, each pairing a box with the icon size that reads correctly
- * inside it. Sizing the box and the glyph together is the point: hand-written
- * pairs are how one list ended up with 20px icons in 36px tiles and another
- * with 16px icons in 40px tiles.
+ * The glyph sizes, named by role rather than by tile.
+ *
+ * `sm`…`xl` stay as the public names because nineteen call sites use them and
+ * their *relative* order is still what those pages mean; what changed is that
+ * each now resolves to a role in ICON_SIZE instead of to a box-plus-glyph pair.
+ * One scale for the whole product is what stops a 20px glyph appearing in one
+ * list and a 16px one in the next.
  */
 const sizes = {
-  sm: { box: 'h-8 w-8', icon: 'h-4 w-4' },
-  md: { box: 'h-10 w-10', icon: 'h-5 w-5' },
-  lg: { box: 'h-12 w-12', icon: 'h-6 w-6' },
-  xl: { box: 'h-14 w-14', icon: 'h-6 w-6' },
-} as const;
-
-const shapes = {
-  circle: 'rounded-full',
-  // Genuinely square — the product's structural geometry is 0px, so this shape
-  // adds nothing rather than naming a radius that would be overridden to 0
-  // anyway. `circle` stays a real class because a circle is a control shape.
-  square: '',
+  sm: ICON_SIZE.status,
+  md: ICON_SIZE.nav,
+  lg: ICON_SIZE.metric,
+  xl: ICON_SIZE.empty,
 } as const;
 
 export type IconTileTone = keyof typeof tones;
@@ -37,33 +41,23 @@ export type IconTileTone = keyof typeof tones;
 /**
  * The standard leading icon of a list row, a card header, or an empty state.
  *
- * Used everywhere an icon sits in a tinted container, so the tile size, radius
- * and icon size can only ever come in the combinations defined above.
+ * Despite the name this no longer draws a tile — it is the one place the
+ * product's icon size and colour are decided, which is why the name and the
+ * call sites stayed put rather than churning nineteen files to rename it.
+ *
+ * `shrink-0` matters more than it looks: these sit beside truncating text in
+ * flex rows, and without it the glyph is what compresses.
  */
 export function IconTile({
   icon: Icon,
   tone = 'brand',
   size = 'md',
-  shape = 'circle',
   className,
 }: {
-  icon: LucideIcon;
+  icon: IconComponent;
   tone?: IconTileTone;
   size?: keyof typeof sizes;
-  shape?: keyof typeof shapes;
   className?: string;
 }) {
-  return (
-    <span
-      className={cn(
-        'flex shrink-0 items-center justify-center',
-        sizes[size].box,
-        shapes[shape],
-        tones[tone],
-        className,
-      )}
-    >
-      <Icon className={sizes[size].icon} aria-hidden />
-    </span>
-  );
+  return <Icon className={cn('shrink-0', sizes[size], tones[tone], className)} aria-hidden />;
 }

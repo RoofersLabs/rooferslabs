@@ -1,6 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ROUTES } from '@/auth/stages';
 import { formatPhone } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
@@ -10,6 +9,7 @@ import type { PriorityLead } from '../insights';
 import { LeadDetailSheet } from './LeadDetailSheet';
 import { StatusLabel } from './StatusLabel';
 import { useCardCarousel } from './useCardCarousel';
+import { ArrowRightIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 /**
  * Priority as flat colored text — no fill, no border, no pill.
@@ -50,7 +50,7 @@ export function PriorityLeads({ leads, isLoading }: { leads: PriorityLead[]; isL
           className="focus-ring inline-flex shrink-0 items-center gap-1 rounded-focus text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
         >
           View all
-          <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+          <ArrowRightIcon className="h-4 w-4" aria-hidden />
         </Link>
       </div>
 
@@ -217,7 +217,7 @@ function LeadCarousel({ leads }: { leads: PriorityLead[] }) {
             disabled={!carousel.canGoPrevious}
             aria-label="Previous lead"
           >
-            <ChevronLeft className="h-4 w-4" aria-hidden />
+            <ChevronLeftIcon className="h-4 w-4" aria-hidden />
           </Button>
           <Button
             variant="ghost"
@@ -226,7 +226,7 @@ function LeadCarousel({ leads }: { leads: PriorityLead[] }) {
             disabled={!carousel.canGoNext}
             aria-label="Next lead"
           >
-            <ChevronRight className="h-4 w-4" aria-hidden />
+            <ChevronRightIcon className="h-4 w-4" aria-hidden />
           </Button>
         </div>
       </div>

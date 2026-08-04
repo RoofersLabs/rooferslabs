@@ -2,12 +2,12 @@ import type { ReactNode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { ClerkProvider, useAuth } from '@clerk/clerk-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Wrench } from 'lucide-react';
 import { config } from '@/config';
 import { ApiError, setTokenGetter } from '@/lib/api-client';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Card } from '@/components/ui/card';
 import { IconTile } from '@/components/ui/IconTile';
+import { WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,7 +45,7 @@ function ConfigError({ errors }: { errors: string[] }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-base p-6">
       <Card className="max-w-lg px-8 py-8">
-        <IconTile icon={Wrench} tone="warning" size="xl" shape="square" />
+        <IconTile icon={WrenchScrewdriverIcon} tone="warning" size="xl" />
         <h1 className="mt-5 text-h4 text-ink">Configuration required</h1>
         <p className="mt-1.5 text-body leading-6 text-ink-muted">
           The app can’t start until these environment variables in{' '}

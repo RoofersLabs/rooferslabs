@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Building2, ChevronRight } from 'lucide-react';
 import { useAdminCompanies } from '@/hooks/queries';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { humanizeEnum, timeAgo } from '@/lib/utils';
@@ -23,6 +22,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ADMIN_ROUTES } from './routes';
+import { BuildingOffice2Icon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 const FILTERS = [
   { key: undefined, label: 'All' },
@@ -102,7 +102,7 @@ export function AdminCompaniesPage() {
           // A filtered-out list and a genuinely empty platform look identical
           // otherwise, and only one of them is worth investigating.
           <EmptyState
-            icon={Building2}
+            icon={BuildingOffice2Icon}
             title={search || subscription ? 'No companies match' : 'No companies yet'}
             description={
               search || subscription
@@ -135,7 +135,7 @@ export function AdminCompaniesPage() {
                     </span>
                     <span className="flex shrink-0 items-center gap-2">
                       <EnumStatusText value={company.subscriptionStatus} />
-                      <ChevronRight className="h-4 w-4 text-ink-faint" aria-hidden />
+                      <ChevronRightIcon className="h-4 w-4 text-ink-faint" aria-hidden />
                     </span>
                   </Link>
                 </li>

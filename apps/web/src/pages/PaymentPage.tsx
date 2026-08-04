@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Check } from 'lucide-react';
 import { BillingInterval, SubscriptionPlan } from '@rooferslabs/shared';
 import { ROUTES } from '@/auth/stages';
 import { useBillingConfig, useConfirmCheckout, useCreateCheckoutSession } from '@/hooks/queries';
@@ -12,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CheckIcon } from '@heroicons/react/24/outline';
 
 /**
  * The one plan on sale. The wall used to offer a choice of two; the launch is a
@@ -312,12 +312,7 @@ export function PaymentPage() {
             <ul className="mt-5 space-y-2 border-t border-line-subtle pt-5">
               {FEATURES.map((feature) => (
                 <li key={feature} className="flex items-center gap-2.5 text-small text-ink">
-                  <span
-                    aria-hidden="true"
-                    className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-accent-subtle"
-                  >
-                    <Check className="h-2.5 w-2.5 text-accent" strokeWidth={3} />
-                  </span>
+                  <CheckIcon className="h-4 w-4 shrink-0 text-accent" aria-hidden />
                   {feature}
                 </li>
               ))}

@@ -1,16 +1,5 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { UserButton } from '@clerk/clerk-react';
-import {
-  LayoutDashboard,
-  Phone,
-  Users,
-  CalendarClock,
-  BookOpen,
-  Bell,
-  Home,
-  Settings,
-  CreditCard,
-} from 'lucide-react';
 import { useAccess } from '@/auth/AccessProvider';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/auth/stages';
@@ -31,19 +20,30 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
+import {
+  BellIcon,
+  BookOpenIcon,
+  CalendarDaysIcon,
+  Cog6ToothIcon,
+  CreditCardIcon,
+  HomeIcon,
+  PhoneIcon,
+  Squares2X2Icon,
+  UsersIcon,
+} from '@heroicons/react/24/outline';
 
 /**
  * Sidebar destinations, read from ROUTES rather than written as literals so the
  * nav can never point somewhere the route table does not serve.
  */
 const NAVIGATION = [
-  { to: ROUTES.dashboard, label: 'Dashboard', icon: LayoutDashboard },
-  { to: ROUTES.calls, label: 'Calls', icon: Phone },
-  { to: ROUTES.customers, label: 'Customers', icon: Users },
-  { to: ROUTES.appointments, label: 'Appointments', icon: CalendarClock },
-  { to: ROUTES.knowledge, label: 'Knowledge Base', icon: BookOpen },
-  { to: ROUTES.notifications, label: 'Notifications', icon: Bell },
-  { to: ROUTES.settings, label: 'Settings', icon: Settings },
+  { to: ROUTES.dashboard, label: 'Dashboard', icon: Squares2X2Icon },
+  { to: ROUTES.calls, label: 'Calls', icon: PhoneIcon },
+  { to: ROUTES.customers, label: 'Customers', icon: UsersIcon },
+  { to: ROUTES.appointments, label: 'Appointments', icon: CalendarDaysIcon },
+  { to: ROUTES.knowledge, label: 'Knowledge Base', icon: BookOpenIcon },
+  { to: ROUTES.notifications, label: 'Notifications', icon: BellIcon },
+  { to: ROUTES.settings, label: 'Settings', icon: Cog6ToothIcon },
 ];
 
 /**
@@ -61,10 +61,10 @@ const NAVIGATION = [
  * user already reads it as.
  */
 const BOTTOM_NAV: BottomNavItem[] = [
-  { to: ROUTES.dashboard, label: 'Home', icon: Home },
-  { to: ROUTES.calls, label: 'Calls', icon: Phone },
-  { to: ROUTES.notifications, label: 'Notifications', icon: Bell },
-  { to: ROUTES.settings, label: 'Settings', icon: Settings },
+  { to: ROUTES.dashboard, label: 'Home', icon: HomeIcon },
+  { to: ROUTES.calls, label: 'Calls', icon: PhoneIcon },
+  { to: ROUTES.notifications, label: 'Notifications', icon: BellIcon },
+  { to: ROUTES.settings, label: 'Settings', icon: Cog6ToothIcon },
 ];
 
 /** Main application shell: sidebar navigation + header (docs/05 §22–23). */
@@ -107,7 +107,7 @@ export function AppLayout() {
   // Billing is appended rather than shown-and-broken: with payments disabled the
   // route guard turns the link away and the API answers 503.
   const navigation = paymentsEnabled
-    ? [...NAVIGATION, { to: ROUTES.billing, label: 'Billing', icon: CreditCard }]
+    ? [...NAVIGATION, { to: ROUTES.billing, label: 'Billing', icon: CreditCardIcon }]
     : NAVIGATION;
 
   return (
@@ -218,7 +218,7 @@ export function AppLayout() {
               onClick={() => navigate(ROUTES.notifications)}
               aria-label={`Notifications${unreadCount ? ` (${unreadCount} unread)` : ''}`}
             >
-              <Bell className="h-5 w-5" aria-hidden />
+              <BellIcon className="h-5 w-5" aria-hidden />
               {unreadCount > 0 && (
                 <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-emergency ring-2 ring-surface" />
               )}

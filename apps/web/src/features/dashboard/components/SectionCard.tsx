@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowRightIcon } from '@heroicons/react/24/outline';
 
 /**
  * A titled dashboard panel with an optional "view all" link in its header.
@@ -39,7 +39,7 @@ export function SectionCard({
             className="focus-ring inline-flex shrink-0 items-center gap-1 rounded-focus text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
           >
             {action.label}
-            <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            <ArrowRightIcon className="h-4 w-4" aria-hidden />
           </Link>
         )}
       </CardHeader>

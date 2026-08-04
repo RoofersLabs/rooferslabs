@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarClock, MapPin } from 'lucide-react';
 import { AppointmentStatus } from '@rooferslabs/shared';
 import { useAppointments, useUpdateAppointment } from '@/hooks/queries';
 import { formatDateTime, humanizeEnum, timeAgo } from '@/lib/utils';
@@ -13,6 +12,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/pagination';
+import { CalendarDaysIcon, MapPinIcon } from '@heroicons/react/24/outline';
 
 const STATUS_FILTERS = ['', ...Object.values(AppointmentStatus)] as const;
 
@@ -57,7 +57,7 @@ export function AppointmentsPage() {
           />
         ) : !appointments.data?.items.length ? (
           <EmptyState
-            icon={CalendarClock}
+            icon={CalendarDaysIcon}
             title="No appointments"
             description="When callers request inspections or estimates, they’ll appear here for you to confirm."
           />
@@ -69,7 +69,7 @@ export function AppointmentsPage() {
                   key={appointment.id}
                   className="flex flex-col gap-4 px-6 py-4 transition-colors duration-fast hover:bg-surface-2 sm:flex-row sm:items-center"
                 >
-                  <IconTile icon={CalendarClock} className="hidden sm:flex" />
+                  <IconTile icon={CalendarDaysIcon} className="hidden sm:flex" />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-body font-medium text-ink">
@@ -97,7 +97,7 @@ export function AppointmentsPage() {
                       </span>
                       {appointment.propertyAddress && (
                         <span className="inline-flex items-center gap-1">
-                          <MapPin className="h-3 w-3" aria-hidden />
+                          <MapPinIcon className="h-4 w-4" aria-hidden />
                           {appointment.propertyAddress}
                         </span>
                       )}

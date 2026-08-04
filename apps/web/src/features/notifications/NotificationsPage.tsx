@@ -1,16 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Bell,
-  BellRing,
-  CheckCheck,
-  ShieldAlert,
-  CalendarClock,
-  Flame,
-  Phone,
-  Check,
-  Undo2,
-} from 'lucide-react';
 import { NotificationType } from '@rooferslabs/shared';
 import {
   useMarkAllNotificationsRead,
@@ -30,6 +19,17 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/pagination';
+import {
+  ArrowUturnLeftIcon,
+  BellAlertIcon,
+  BellIcon,
+  CalendarDaysIcon,
+  CheckCircleIcon,
+  CheckIcon,
+  FireIcon,
+  PhoneIcon,
+  ShieldExclamationIcon,
+} from '@heroicons/react/24/outline';
 
 /**
  * Push opt-in/out for this browser. Hidden when the browser lacks Push support
@@ -46,7 +46,7 @@ function PushNotificationsCard() {
     // and the button on one optical line once they fit.
     <Card className="mb-6 gap-3 px-5 py-4 sm:flex-row sm:items-center sm:gap-4">
       <div className="flex min-w-0 flex-1 items-center gap-3">
-        <IconTile icon={BellRing} size="sm" />
+        <IconTile icon={BellAlertIcon} size="sm" />
         <div className="min-w-0">
           <p className="text-body font-semibold text-ink">
             {status === 'subscribed' ? 'Push notifications are on' : 'Enable push notifications'}
@@ -87,12 +87,12 @@ function PushNotificationsCard() {
   );
 }
 
-const typeIcon: Record<string, typeof Bell> = {
-  [NotificationType.EMERGENCY]: ShieldAlert,
-  [NotificationType.APPOINTMENT_REQUEST]: CalendarClock,
-  [NotificationType.NEW_LEAD]: Flame,
-  [NotificationType.NEW_CALL]: Phone,
-  [NotificationType.CALL_SUMMARY]: Phone,
+const typeIcon: Record<string, typeof BellIcon> = {
+  [NotificationType.EMERGENCY]: ShieldExclamationIcon,
+  [NotificationType.APPOINTMENT_REQUEST]: CalendarDaysIcon,
+  [NotificationType.NEW_LEAD]: FireIcon,
+  [NotificationType.NEW_CALL]: PhoneIcon,
+  [NotificationType.CALL_SUMMARY]: PhoneIcon,
 };
 
 export function NotificationsPage() {
@@ -126,7 +126,7 @@ export function NotificationsPage() {
               loading={markAll.isPending}
               onClick={() => markAll.mutate()}
             >
-              <CheckCheck className="h-4 w-4" aria-hidden />
+              <CheckCircleIcon className="h-4 w-4" aria-hidden />
               Mark all read
             </Button>
           ) : undefined
@@ -146,7 +146,7 @@ export function NotificationsPage() {
           />
         ) : !notifications.data?.items.length ? (
           <EmptyState
-            icon={Bell}
+            icon={BellIcon}
             title="You’re all caught up"
             description="Notifications about calls, leads, and emergencies will appear here."
           />
@@ -154,7 +154,7 @@ export function NotificationsPage() {
           <>
             <ul className="divide-y divide-line-subtle">
               {notifications.data.items.map((notification) => {
-                const Icon = typeIcon[notification.type] ?? Bell;
+                const Icon = typeIcon[notification.type] ?? BellIcon;
                 const unread = notification.status === 'UNREAD';
                 const critical = notification.priority === 'CRITICAL';
                 return (
@@ -206,9 +206,9 @@ export function NotificationsPage() {
                       className="focus-ring flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors duration-fast hover:bg-surface-3 hover:text-ink"
                     >
                       {unread ? (
-                        <Check className="h-4 w-4" aria-hidden />
+                        <CheckIcon className="h-4 w-4" aria-hidden />
                       ) : (
-                        <Undo2 className="h-4 w-4" aria-hidden />
+                        <ArrowUturnLeftIcon className="h-4 w-4" aria-hidden />
                       )}
                     </button>
                   </li>

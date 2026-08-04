@@ -1,11 +1,11 @@
 import { Children, cloneElement, isValidElement, type ReactNode } from 'react';
 import type { FieldError } from 'react-hook-form';
-import { ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 
 /**
  * Onboarding registers its inputs with `react-hook-form`, which wants a bare
@@ -226,7 +226,7 @@ export function StepActions({
     <div className="flex flex-col-reverse gap-3 border-t border-line-subtle pt-6 sm:flex-row sm:items-center sm:justify-between">
       {onBack && (
         <Button type="button" variant="ghost" size="md" onClick={onBack} className="h-11 px-3">
-          <ChevronLeft className="h-4 w-4" aria-hidden />
+          <ChevronLeftIcon className="h-4 w-4" aria-hidden />
           Back
         </Button>
       )}

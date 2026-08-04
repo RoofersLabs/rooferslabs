@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { config } from '@/config';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DetailRow } from '@/components/ui/DetailRow';
 import { LoadingBlock } from '@/components/ui/spinner';
 import { ErrorState } from '@/components/ui/ErrorState';
+import { CheckCircleIcon, MinusCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 
 interface Readiness {
   status: 'ready' | 'degraded';
@@ -13,7 +13,7 @@ interface Readiness {
 }
 
 function Health({ label, ok }: { label: string; ok: boolean | null }) {
-  const Icon = ok === null ? MinusCircle : ok ? CheckCircle2 : XCircle;
+  const Icon = ok === null ? MinusCircleIcon : ok ? CheckCircleIcon : XCircleIcon;
   const tone = ok === null ? 'text-ink-faint' : ok ? 'text-success' : 'text-emergency';
   return (
     <div className="flex items-center justify-between gap-6 py-2.5 text-small">

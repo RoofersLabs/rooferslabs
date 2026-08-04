@@ -1,7 +1,7 @@
-import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 /**
  * Accessible modal dialog built on Radix Dialog (via shadcn): focus trapping,
@@ -42,7 +42,7 @@ export function Modal({
             onClick={onClose}
             aria-label="Close dialog"
           >
-            <X className="h-4 w-4" aria-hidden />
+            <XMarkIcon className="h-4 w-4" aria-hidden />
           </Button>
         </div>
         <div className="px-6 py-5">{children}</div>

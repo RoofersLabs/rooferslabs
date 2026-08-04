@@ -1,17 +1,5 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import {
-  ArrowLeft,
-  ArrowRight,
-  Bot,
-  User,
-  ShieldAlert,
-  Sparkles,
-  CalendarClock,
-  PhoneCall,
-  Phone,
-  MessageSquare,
-} from 'lucide-react';
 import { useConversation } from '@/hooks/queries';
 import { ApiError } from '@/lib/api-client';
 import { cn, formatDateTime, formatDuration, formatPhone, humanizeEnum } from '@/lib/utils';
@@ -25,6 +13,18 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { RecordingDownload } from '@/components/RecordingDownload';
 import { ROUTES } from '@/auth/stages';
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  CalendarDaysIcon,
+  ChatBubbleLeftRightIcon,
+  CpuChipIcon,
+  PhoneArrowDownLeftIcon,
+  PhoneIcon,
+  ShieldExclamationIcon,
+  SparklesIcon,
+  UserIcon,
+} from '@heroicons/react/24/outline';
 
 /**
  * Two views, not three. Summary carries everything needed to act on the call —
@@ -33,8 +33,8 @@ import { ROUTES } from '@/auth/stages';
  * the reader click to assemble a picture they needed all of anyway.
  */
 const TABS = [
-  { key: 'summary', label: 'Summary', icon: Sparkles },
-  { key: 'transcript', label: 'Transcript', icon: MessageSquare },
+  { key: 'summary', label: 'Summary', icon: SparklesIcon },
+  { key: 'transcript', label: 'Transcript', icon: ChatBubbleLeftRightIcon },
 ] as const;
 
 type TabKey = (typeof TABS)[number]['key'];
@@ -60,7 +60,7 @@ export function ConversationDetailPage() {
       <Card>
         {notFound ? (
           <EmptyState
-            icon={PhoneCall}
+            icon={PhoneArrowDownLeftIcon}
             title="Conversation not found"
             description="It may have been removed or you may not have access to it."
           />
@@ -78,7 +78,7 @@ export function ConversationDetailPage() {
     return (
       <Card>
         <EmptyState
-          icon={PhoneCall}
+          icon={PhoneArrowDownLeftIcon}
           title="Conversation not found"
           description="It may have been removed or you may not have access to it."
         />
@@ -95,7 +95,7 @@ export function ConversationDetailPage() {
         to={ROUTES.calls}
         className="focus-ring mb-4 inline-flex items-center gap-1.5 rounded-focus text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
       >
-        <ArrowLeft className="h-4 w-4" aria-hidden />
+        <ArrowLeftIcon className="h-4 w-4" aria-hidden />
         Back to calls
       </Link>
 
@@ -105,7 +105,7 @@ export function ConversationDetailPage() {
         title={
           <span className="flex flex-wrap items-center gap-3">
             <IconTile
-              icon={data.isEmergency ? ShieldAlert : Phone}
+              icon={data.isEmergency ? ShieldExclamationIcon : PhoneIcon}
               tone={data.isEmergency ? 'emergency' : 'brand'}
               size="lg"
             />
@@ -117,7 +117,7 @@ export function ConversationDetailPage() {
             <EnumStatusText value={data.outcome} />
             {data.isEmergency && (
               <StatusText tone="danger" className="inline-flex items-center gap-1">
-                <ShieldAlert className="h-3 w-3" aria-hidden />
+                <ShieldExclamationIcon className="h-4 w-4" aria-hidden />
                 Emergency
               </StatusText>
             )}
@@ -174,7 +174,7 @@ export function ConversationDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-accent" aria-hidden />
+                  <SparklesIcon className="h-4 w-4 text-accent" aria-hidden />
                   Summary
                 </CardTitle>
               </CardHeader>
@@ -220,7 +220,7 @@ export function ConversationDetailPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <CalendarClock className="h-4 w-4 text-accent" aria-hidden />
+                    <CalendarDaysIcon className="h-4 w-4 text-accent" aria-hidden />
                     Appointment request
                   </CardTitle>
                 </CardHeader>
@@ -238,7 +238,7 @@ export function ConversationDetailPage() {
                     className="focus-ring mt-4 inline-flex items-center gap-1 rounded-focus text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
                   >
                     Manage in Appointments
-                    <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                    <ArrowRightIcon className="h-4 w-4" aria-hidden />
                   </Link>
                 </CardContent>
               </Card>
@@ -270,7 +270,7 @@ export function ConversationDetailPage() {
                     }
                   >
                     <IconTile
-                      icon={entry.role === 'assistant' ? Bot : User}
+                      icon={entry.role === 'assistant' ? CpuChipIcon : UserIcon}
                       tone={entry.role === 'assistant' ? 'brand' : 'neutral'}
                       size="sm"
                     />

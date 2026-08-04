@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Building2, Clock, Bot, PhoneForwarded, CheckCircle2, Pencil } from 'lucide-react';
 import { AiVoice } from '@rooferslabs/shared';
 import {
   useAiConfig,
@@ -18,12 +17,20 @@ import { Checkbox, Input, Select, Textarea } from '@/components/ui/input';
 import { LoadingBlock } from '@/components/ui/spinner';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PhoneSetupTab } from './PhoneSetupTab';
+import {
+  BuildingOffice2Icon,
+  CheckCircleIcon,
+  ClockIcon,
+  CpuChipIcon,
+  PencilIcon,
+  PhoneArrowUpRightIcon,
+} from '@heroicons/react/24/outline';
 
 const TABS = [
-  { key: 'business', label: 'Business', icon: Building2 },
-  { key: 'hours', label: 'Hours', icon: Clock },
-  { key: 'ai', label: 'AI Receptionist', icon: Bot },
-  { key: 'phone', label: 'Phone Setup', icon: PhoneForwarded },
+  { key: 'business', label: 'Business', icon: BuildingOffice2Icon },
+  { key: 'hours', label: 'Hours', icon: ClockIcon },
+  { key: 'ai', label: 'AI Receptionist', icon: CpuChipIcon },
+  { key: 'phone', label: 'Phone Setup', icon: PhoneArrowUpRightIcon },
 ] as const;
 
 /**
@@ -115,7 +122,7 @@ function SaveBar({
       )}
       {saved && !saving && !error && (
         <p className="flex items-center gap-1 text-small text-success">
-          <CheckCircle2 className="h-4 w-4" aria-hidden />
+          <CheckCircleIcon className="h-4 w-4" aria-hidden />
           Saved
         </p>
       )}
@@ -211,7 +218,7 @@ function BusinessTab() {
             </p>
           </div>
           <Button variant="secondary" className="shrink-0" onClick={() => setEditing(true)}>
-            <Pencil className="h-4 w-4" aria-hidden />
+            <PencilIcon className="h-4 w-4" aria-hidden />
             Edit details
           </Button>
         </div>

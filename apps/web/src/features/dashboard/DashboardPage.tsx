@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, PhoneForwarded } from 'lucide-react';
 import { useDashboard, usePhoneNumber, useReceptionistStatus } from '@/hooks/queries';
 import { useAccess } from '@/auth/AccessProvider';
-import { formatPhone } from '@/lib/utils';
+import { cn, formatPhone } from '@/lib/utils';
+import { ICON_SIZE } from '@/components/ui/icon';
 import { Card } from '@/components/ui/card';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -16,6 +16,7 @@ import { ReceptionistSummary } from './components/ReceptionistSummary';
 import { InsightList } from './components/InsightList';
 import { PriorityLeads } from './components/PriorityLeads';
 import { derivePriorityLeads, deriveReceptionistSummary, deriveTopInsights } from './insights';
+import { ArrowRightIcon, PhoneArrowUpRightIcon } from '@heroicons/react/24/outline';
 
 export function DashboardPage() {
   const dashboard = useDashboard();
@@ -62,9 +63,10 @@ export function DashboardPage() {
           to={`${ROUTES.settings}/phone`}
           className="focus-ring flex items-center gap-4 border border-accent-border bg-accent-subtle px-6 py-5 transition-colors duration-fast ease-standard hover:border-accent"
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-ink-on-brand">
-            <PhoneForwarded className="h-5 w-5" aria-hidden />
-          </span>
+          <PhoneArrowUpRightIcon
+            className={cn('shrink-0 text-accent', ICON_SIZE.metric)}
+            aria-hidden
+          />
           <span className="min-w-0 flex-1">
             <span className="block text-body font-semibold text-ink">
               {needsPhoneSetup
@@ -77,7 +79,7 @@ export function DashboardPage() {
                 : `Forward your business line to ${formatPhone(phone.data?.phoneNumber)} so the AI starts answering.`}
             </span>
           </span>
-          <ArrowRight className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+          <ArrowRightIcon className="h-4 w-4 shrink-0 text-accent" aria-hidden />
         </Link>
       )}
 

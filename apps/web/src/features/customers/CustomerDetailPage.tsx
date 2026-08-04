@@ -1,19 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { LucideIcon } from 'lucide-react';
-import {
-  ArrowLeft,
-  ArrowRight,
-  CalendarClock,
-  ChevronRight,
-  MessageSquare,
-  Pencil,
-  Phone,
-  PhoneCall,
-  Star,
-  Trash2,
-  User,
-} from 'lucide-react';
 import { useCustomer, useDeleteCustomer, useSaveCustomer } from '@/hooks/queries';
 import { ApiError } from '@/lib/api-client';
 import {
@@ -37,6 +23,20 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { ROUTES } from '@/auth/stages';
 import { CustomerModal } from './CustomersPage';
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  CalendarDaysIcon,
+  ChatBubbleLeftRightIcon,
+  ChevronRightIcon,
+  PencilIcon,
+  PhoneArrowDownLeftIcon,
+  PhoneIcon,
+  TrashIcon,
+  UserIcon,
+} from '@heroicons/react/24/outline';
+import { StarIcon } from '@heroicons/react/24/solid';
+import type { IconComponent } from '@/components/ui/icon';
 
 /**
  * The customer profile — a read-only view of everything the front office knows
@@ -72,7 +72,7 @@ export function CustomerDetailPage() {
       <Card>
         {notFound || !customer.data ? (
           <EmptyState
-            icon={User}
+            icon={UserIcon}
             title="Customer not found"
             description="They may have been removed, or you may not have access to them."
           />
@@ -109,19 +109,19 @@ export function CustomerDetailPage() {
         to={ROUTES.customers}
         className="focus-ring mb-4 inline-flex items-center gap-1.5 rounded-focus text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
       >
-        <ArrowLeft className="h-4 w-4" aria-hidden />
+        <ArrowLeftIcon className="h-4 w-4" aria-hidden />
         Back to customers
       </Link>
 
       <PageHeader
         title={
           <span className="flex flex-wrap items-center gap-3">
-            <IconTile icon={User} tone="brand" size="lg" />
+            <IconTile icon={UserIcon} tone="brand" size="lg" />
             {name}
             <EnumStatusText value={data.status} />
             {data.isFavorite && (
               <StatusText tone="brand" className="inline-flex items-center gap-1">
-                <Star className="h-3 w-3 fill-accent" aria-hidden />
+                <StarIcon className="h-4 w-4 fill-accent" aria-hidden />
                 Favorite
               </StatusText>
             )}
@@ -175,36 +175,36 @@ export function CustomerDetailPage() {
                 exists for — and the rest step down to icons with labels. */}
             {data.phone ? (
               <a href={`tel:${data.phone}`} className={buttonClass('primary', 'lg', 'w-full')}>
-                <Phone className="h-4 w-4" aria-hidden />
+                <PhoneIcon className="h-4 w-4" aria-hidden />
                 Call customer
               </a>
             ) : (
               <Button size="lg" className="w-full" disabled>
-                <Phone className="h-4 w-4" aria-hidden />
+                <PhoneIcon className="h-4 w-4" aria-hidden />
                 Call customer
               </Button>
             )}
 
             <div className="mt-4 grid grid-cols-4 gap-2">
               <IconAction
-                icon={Star}
+                icon={StarIcon}
                 label={data.isFavorite ? 'Favorited' : 'Favorite'}
                 onClick={toggleFavorite}
                 active={data.isFavorite}
                 pressed={data.isFavorite}
               />
-              <IconAction icon={Pencil} label="Edit" onClick={() => setEditing(true)} />
+              <IconAction icon={PencilIcon} label="Edit" onClick={() => setEditing(true)} />
               {/* Outbound SMS is not wired up yet. Shown disabled rather than
                   hidden so the action is discoverable the day it lands, and
                   nobody waits for a message that never sends. */}
               <IconAction
-                icon={MessageSquare}
+                icon={ChatBubbleLeftRightIcon}
                 label="SMS"
                 disabled
                 title="Text messaging is coming soon"
               />
               <IconAction
-                icon={Trash2}
+                icon={TrashIcon}
                 label="Delete"
                 onClick={() => setConfirmingDelete(true)}
                 tone="danger"
@@ -272,7 +272,7 @@ function IconAction({
   active = false,
   pressed,
 }: {
-  icon: LucideIcon;
+  icon: IconComponent;
   label: string;
   onClick?: () => void;
   disabled?: boolean;
@@ -345,7 +345,7 @@ function RecentActivity({ conversations }: { conversations: CustomerDetail['conv
           {conversations.map((entry) => (
             <li key={entry.id} className="flex items-start gap-3 px-6 py-4">
               <IconTile
-                icon={entry.isEmergency ? PhoneCall : Phone}
+                icon={entry.isEmergency ? PhoneArrowDownLeftIcon : PhoneIcon}
                 tone={entry.isEmergency ? 'emergency' : 'brand'}
                 size="sm"
               />
@@ -399,7 +399,7 @@ function RecentCalls({ conversations }: { conversations: CustomerDetail['convers
                   </span>
                 </span>
                 <EnumStatusText value={entry.outcome} className="shrink-0 text-right" />
-                <ChevronRight className="h-4 w-4 shrink-0 text-ink-faint" aria-hidden />
+                <ChevronRightIcon className="h-4 w-4 shrink-0 text-ink-faint" aria-hidden />
               </Link>
             </li>
           ))}
@@ -424,7 +424,7 @@ function Appointments({ appointments }: { appointments: Appointment[] }) {
           <ul className="divide-y divide-line-subtle border-t border-line-subtle">
             {appointments.map((appointment) => (
               <li key={appointment.id} className="flex items-start gap-3 px-6 py-4">
-                <IconTile icon={CalendarClock} tone="brand" size="sm" />
+                <IconTile icon={CalendarDaysIcon} tone="brand" size="sm" />
                 <div className="min-w-0 flex-1">
                   <span className="block truncate text-body font-medium text-ink">
                     {appointment.serviceRequested ?? 'Appointment'}
@@ -446,7 +446,7 @@ function Appointments({ appointments }: { appointments: Appointment[] }) {
               className="focus-ring inline-flex items-center gap-1 rounded-focus text-small font-medium text-accent transition-colors duration-fast hover:text-accent-hover"
             >
               Manage in Appointments
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+              <ArrowRightIcon className="h-4 w-4" aria-hidden />
             </Link>
           </CardContent>
         </>

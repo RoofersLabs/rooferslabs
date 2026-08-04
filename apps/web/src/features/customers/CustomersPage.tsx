@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Users, Plus, Star, ChevronRight } from 'lucide-react';
 import { PropertyType } from '@rooferslabs/shared';
 import { useCustomers, useSaveCustomer } from '@/hooks/queries';
 import { ROUTES } from '@/auth/stages';
@@ -28,6 +27,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { ChevronRightIcon, PlusIcon, UsersIcon } from '@heroicons/react/24/outline';
+import { StarIcon } from '@heroicons/react/24/solid';
 
 export function CustomersPage() {
   const [page, setPage] = useState(1);
@@ -44,7 +45,7 @@ export function CustomersPage() {
         description="Everyone who has called or been added to your front office."
         actions={
           <Button className={REFINED_BUTTON} onClick={() => setCreating(true)}>
-            <Plus className="h-4 w-4" aria-hidden />
+            <PlusIcon className="h-4 w-4" aria-hidden />
             Add customer
           </Button>
         }
@@ -74,7 +75,7 @@ export function CustomersPage() {
           />
         ) : !customers.data?.items.length ? (
           <EmptyState
-            icon={Users}
+            icon={UsersIcon}
             title="No customers yet"
             description="Customers are created automatically from inbound calls, or add one manually."
             actionLabel="Add customer"
@@ -99,7 +100,7 @@ export function CustomersPage() {
                           {customer.fullName ?? 'Unknown caller'}
                         </span>
                         {customer.isFavorite && (
-                          <Star
+                          <StarIcon
                             className="h-3.5 w-3.5 shrink-0 fill-accent text-accent"
                             aria-label="Favorite"
                           />
@@ -117,7 +118,7 @@ export function CustomersPage() {
                     </span>
                     <span className="flex shrink-0 items-center gap-2">
                       <EnumStatusText value={customer.status} className="shrink-0" />
-                      <ChevronRight className="h-4 w-4 text-ink-faint" aria-hidden />
+                      <ChevronRightIcon className="h-4 w-4 text-ink-faint" aria-hidden />
                     </span>
                   </Link>
                 </li>
@@ -146,7 +147,7 @@ export function CustomersPage() {
                         <span className="flex items-center gap-1.5">
                           {customer.fullName ?? 'Unknown caller'}
                           {customer.isFavorite && (
-                            <Star
+                            <StarIcon
                               className="h-3.5 w-3.5 shrink-0 fill-accent text-accent"
                               aria-label="Favorite"
                             />

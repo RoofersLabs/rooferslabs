@@ -1,12 +1,12 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ICON_SIZE, type IconComponent } from '@/components/ui/icon';
 
 export type BottomNavItem = {
   to: string;
   /** Not rendered — the bar is icons only — but read aloud as the link's name. */
   label: string;
-  icon: LucideIcon;
+  icon: IconComponent;
 };
 
 /**
@@ -150,7 +150,7 @@ export function BottomNav({ items, className }: { items: BottomNavItem[]; classN
                 >
                   <item.icon
                     className={cn(
-                      'h-[22px] w-[22px]',
+                      ICON_SIZE.nav,
                       // Colour crosses over faster than the fill travels, so the
                       // icon has arrived by the time the fill reaches it. The 1px
                       // lift is the whole of the icon's own animation — enough to

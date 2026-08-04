@@ -1,7 +1,7 @@
 import type { PaginationMeta } from '@rooferslabs/shared';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './button';
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 /**
  * List/table footer. Shares the surrounding surface's 24px gutter so its rule
@@ -38,7 +38,7 @@ export function Pagination({
           disabled={!pagination.hasPreviousPage}
           onClick={() => onPageChange(pagination.page - 1)}
         >
-          <ChevronLeft className="h-4 w-4" aria-hidden />
+          <ChevronLeftIcon className="h-4 w-4" aria-hidden />
           Previous
         </Button>
         <Button
@@ -48,7 +48,7 @@ export function Pagination({
           onClick={() => onPageChange(pagination.page + 1)}
         >
           Next
-          <ChevronRight className="h-4 w-4" aria-hidden />
+          <ChevronRightIcon className="h-4 w-4" aria-hidden />
         </Button>
       </div>
     </nav>

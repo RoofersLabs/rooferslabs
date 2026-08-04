@@ -1,12 +1,18 @@
-import type { LucideIcon } from 'lucide-react';
-import { Phone, Flame, ShieldAlert, CalendarClock, Minus } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { IconTile, type IconTileTone } from '@/components/ui/IconTile';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { DashboardOverview } from '@/types/api';
+import {
+  CalendarDaysIcon,
+  FireIcon,
+  MinusIcon,
+  PhoneIcon,
+  ShieldExclamationIcon,
+} from '@heroicons/react/24/outline';
+import type { IconComponent } from '@/components/ui/icon';
 
 type Metric = {
-  icon: LucideIcon;
+  icon: IconComponent;
   label: string;
   value: number | undefined;
   tone: IconTileTone;
@@ -22,7 +28,7 @@ function MetricColumn({ icon, label, value, tone }: Metric) {
     // `p-5` on mobile, where two columns share the width; `p-6` from `sm` up,
     // which is the gutter every other dashboard panel uses.
     <div className="flex flex-col gap-4 bg-surface p-5 sm:p-6">
-      <IconTile icon={icon} tone={tone} shape="square" />
+      <IconTile icon={icon} tone={tone} />
       <div>
         {value === undefined ? (
           <Skeleton className="h-9 w-14" />
@@ -33,7 +39,7 @@ function MetricColumn({ icon, label, value, tone }: Metric) {
         {/* No day-over-day analytics are wired up yet — show a neutral, honest
             placeholder in the comparison slot until real trends are connected. */}
         <span className="mt-1.5 flex items-center gap-1 text-caption text-ink-faint">
-          <Minus className="h-3 w-3" aria-hidden />
+          <MinusIcon className="h-4 w-4" aria-hidden />
           vs. yesterday
         </span>
       </div>
@@ -50,16 +56,16 @@ function MetricColumn({ icon, label, value, tone }: Metric) {
  */
 export function AnalyticsPanel({ metrics }: { metrics: DashboardOverview['metrics'] | undefined }) {
   const items: Metric[] = [
-    { icon: Phone, label: 'Calls today', value: metrics?.todaysCalls, tone: 'brand' },
-    { icon: Flame, label: 'Leads today', value: metrics?.todaysLeads, tone: 'success' },
+    { icon: PhoneIcon, label: 'Calls today', value: metrics?.todaysCalls, tone: 'brand' },
+    { icon: FireIcon, label: 'Leads today', value: metrics?.todaysLeads, tone: 'success' },
     {
-      icon: ShieldAlert,
+      icon: ShieldExclamationIcon,
       label: 'Emergencies today',
       value: metrics?.todaysEmergencies,
       tone: 'emergency',
     },
     {
-      icon: CalendarClock,
+      icon: CalendarDaysIcon,
       label: 'Pending appointments',
       value: metrics?.pendingAppointments,
       tone: 'warning',

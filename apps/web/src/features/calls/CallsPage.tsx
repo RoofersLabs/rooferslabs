@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Phone, PhoneMissed, ShieldAlert } from 'lucide-react';
 import { useCalls } from '@/hooks/queries';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { formatDateTime, formatDuration, formatPhone } from '@/lib/utils';
@@ -14,6 +13,12 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/pagination';
 import { CallStatusLabel } from './CallStatusLabel';
+import {
+  ChevronRightIcon,
+  PhoneIcon,
+  PhoneXMarkIcon,
+  ShieldExclamationIcon,
+} from '@heroicons/react/24/outline';
 
 export function CallsPage() {
   const [page, setPage] = useState(1);
@@ -52,7 +57,7 @@ export function CallsPage() {
           />
         ) : !calls.data?.items.length ? (
           <EmptyState
-            icon={PhoneMissed}
+            icon={PhoneXMarkIcon}
             title="No calls yet"
             description="Calls will appear here as soon as your forwarded number starts ringing."
           />
@@ -64,7 +69,7 @@ export function CallsPage() {
                 const row = (
                   <div className="group flex items-center gap-4 px-6 py-4 transition-colors duration-fast hover:bg-surface-2">
                     <IconTile
-                      icon={isEmergency ? ShieldAlert : Phone}
+                      icon={isEmergency ? ShieldExclamationIcon : PhoneIcon}
                       tone={isEmergency ? 'emergency' : 'brand'}
                     />
                     <div className="min-w-0 flex-1">
@@ -94,7 +99,7 @@ export function CallsPage() {
                       </p>
                     </div>
                     {call.conversation && (
-                      <ChevronRight
+                      <ChevronRightIcon
                         className="h-4 w-4 shrink-0 text-ink-faint opacity-0 transition-opacity duration-fast group-hover:opacity-100"
                         aria-hidden
                       />

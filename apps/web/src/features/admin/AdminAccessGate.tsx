@@ -1,6 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
-import { ShieldAlert } from 'lucide-react';
 import { useAccess } from '@/auth/AccessProvider';
 import { LogoMark } from '@/components/Brand';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { ROUTES } from '@/auth/stages';
 import { ADMIN_ROUTES } from './routes';
 import { resolveAdminAccess } from './adminAccess';
+import { ShieldExclamationIcon } from '@heroicons/react/24/outline';
 
 /**
  * A branded hold while identity resolves.
@@ -45,7 +45,7 @@ function AdminAccessDenied({ email }: { email: string | null }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-base p-6">
       <Card className="max-w-md items-center px-8 py-10 text-center">
-        <IconTile icon={ShieldAlert} tone="emergency" size="xl" shape="square" />
+        <IconTile icon={ShieldExclamationIcon} tone="emergency" size="xl" />
         <h1 className="mt-5 text-h4 text-ink">Access denied</h1>
         <p className="mt-2 max-w-sm text-body leading-6 text-ink-muted">
           {email ? <span className="font-medium text-ink">{email}</span> : 'This account'} is not

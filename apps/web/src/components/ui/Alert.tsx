@@ -1,30 +1,35 @@
 import type { ReactNode } from 'react';
-import { AlertTriangle, CheckCircle2, Info, ShieldAlert } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  InformationCircleIcon,
+  ShieldExclamationIcon,
+} from '@heroicons/react/24/outline';
+import type { IconComponent } from '@/components/ui/icon';
 
 type Tone = 'info' | 'success' | 'warning' | 'danger';
 
 /** Each tone pairs its tint and border with a distinct icon, never colour alone. */
-const tones: Record<Tone, { surface: string; icon: LucideIcon; iconColor: string }> = {
+const tones: Record<Tone, { surface: string; icon: IconComponent; iconColor: string }> = {
   info: {
     surface: 'border-info-border bg-info-subtle',
-    icon: Info,
+    icon: InformationCircleIcon,
     iconColor: 'text-info',
   },
   success: {
     surface: 'border-success-border bg-success-subtle',
-    icon: CheckCircle2,
+    icon: CheckCircleIcon,
     iconColor: 'text-success',
   },
   warning: {
     surface: 'border-warning-border bg-warning-subtle',
-    icon: AlertTriangle,
+    icon: ExclamationTriangleIcon,
     iconColor: 'text-warning',
   },
   danger: {
     surface: 'border-emergency-border bg-emergency-subtle',
-    icon: ShieldAlert,
+    icon: ShieldExclamationIcon,
     iconColor: 'text-emergency',
   },
 };
