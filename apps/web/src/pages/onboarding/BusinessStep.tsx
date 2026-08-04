@@ -219,7 +219,7 @@ export function BusinessStep() {
               : undefined
           }
         >
-          <div className="divide-y divide-line-subtle overflow-hidden rounded-xl border border-line">
+          <div className="divide-y divide-line-subtle overflow-hidden rounded-panel border border-line">
             {DAYS.map((day, index) => {
               const closed = hours?.[index]?.closed ?? false;
               return (

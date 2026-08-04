@@ -26,7 +26,7 @@ const sizes = {
 
 const shapes = {
   circle: 'rounded-full',
-  square: 'rounded-lg',
+  square: 'rounded-panel',
 } as const;
 
 export type IconTileTone = keyof typeof tones;

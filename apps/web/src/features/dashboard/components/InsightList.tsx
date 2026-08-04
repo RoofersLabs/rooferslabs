@@ -46,7 +46,7 @@ export function InsightList({
               </div>
               <div className="mt-2 ml-7 h-1.5 overflow-hidden rounded-full bg-surface-3">
                 <div
-                  className="h-full rounded-full bg-accent transition-all duration-base ease-standard"
+                  className="h-full rounded-full bg-accent transition-[width] duration-base ease-standard"
                   style={{ width: `${row.percent}%` }}
                 />
               </div>

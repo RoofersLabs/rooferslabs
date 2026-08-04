@@ -245,6 +245,11 @@ export default {
         xl: 'var(--radius-xl)',
         '2xl': 'var(--radius-2xl)',
         full: 'var(--radius-full)',
+        // Semantic roles — what product UI should name. See the radius block in
+        // styles/tokens.css for why `nav` is softer than the other two.
+        panel: 'var(--radius-panel)',
+        field: 'var(--radius-field)',
+        nav: 'var(--radius-nav)',
       },
       boxShadow: {
         xs: 'var(--shadow-xs)',

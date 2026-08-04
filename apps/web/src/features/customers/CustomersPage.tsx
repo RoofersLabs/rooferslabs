@@ -6,9 +6,9 @@ import { useCustomers, useSaveCustomer } from '@/hooks/queries';
 import { ROUTES } from '@/auth/stages';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import type { Customer } from '@/types/api';
-import { cn, formatPhone, humanizeEnum, timeAgo } from '@/lib/utils';
+import { formatPhone, humanizeEnum, timeAgo } from '@/lib/utils';
 import { EnumStatusText } from '@/components/ui/StatusText';
-import { REFINED_BUTTON, REFINED_CARD, REFINED_FIELD } from '@/components/ui/refinedControls';
+import { REFINED_BUTTON } from '@/components/ui/refinedControls';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { FilterBar } from '@/components/ui/FilterBar';
@@ -50,11 +50,10 @@ export function CustomersPage() {
         }
       />
 
-      <Card className={cn('overflow-hidden', REFINED_CARD)}>
+      <Card className="overflow-hidden">
         <FilterBar>
           <SearchInput
             className="sm:max-w-xs"
-            inputClassName={REFINED_FIELD}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);

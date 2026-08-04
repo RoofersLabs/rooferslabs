@@ -65,7 +65,7 @@ export function SettingsPage() {
               to={`/settings/${item.key}`}
               aria-current={tab === item.key ? 'page' : undefined}
               className={cn(
-                'focus-ring flex h-10 shrink-0 items-center gap-2.5 rounded-md px-3.5 text-body font-medium transition-colors duration-fast lg:w-full',
+                'focus-ring flex h-10 shrink-0 items-center gap-2.5 rounded-nav px-3.5 text-body font-medium transition-colors duration-fast lg:w-full',
                 tab === item.key
                   ? 'bg-accent-subtle text-accent'
                   : 'text-ink-muted hover:bg-surface-2 hover:text-ink',
@@ -311,7 +311,7 @@ function BusinessTab() {
  * radius, border and hover as every other control.
  */
 const timeInputClass =
-  'focus-ring h-10 rounded-md border border-line bg-surface px-3 text-form-input text-ink transition-colors duration-fast ease-standard hover:border-line-strong';
+  'focus-ring h-10 rounded-field border border-line bg-surface px-3 text-form-input text-ink transition-colors duration-fast ease-standard hover:border-line-strong';
 
 const WEEK: BusinessHour[] = [
   { day: 'monday', open: '08:00', close: '18:00', closed: false },
@@ -349,7 +349,7 @@ function HoursTab() {
         {current.map((hour, index) => (
           <div
             key={hour.day}
-            className="flex flex-wrap items-center gap-3 rounded-md border border-line-subtle px-4 py-2.5 transition-colors duration-fast hover:border-line-strong"
+            className="flex flex-wrap items-center gap-3 rounded-panel border border-line-subtle px-4 py-2.5 transition-colors duration-fast hover:border-line-strong"
           >
             <span className="w-24 shrink-0 text-body font-medium capitalize text-ink">
               {hour.day}
@@ -483,7 +483,7 @@ function AiTab() {
         {toggles.map((toggle) => (
           <label
             key={toggle.field}
-            className="flex cursor-pointer items-start gap-3 rounded-md border border-line-subtle p-4 transition-colors duration-fast hover:border-line-strong"
+            className="flex cursor-pointer items-start gap-3 rounded-panel border border-line-subtle p-4 transition-colors duration-fast hover:border-line-strong"
           >
             <Checkbox
               className="mt-0.5"

@@ -287,7 +287,7 @@ export function PaymentPage() {
             </Alert>
           )}
 
-          <Card className="rounded-2xl px-6 py-6 shadow-md sm:px-8">
+          <Card className="px-6 py-6 shadow-md sm:px-8">
             <Badge tone="brand">{OFFER.badge}</Badge>
 
             <h1 className="mt-4 text-balance text-h4 text-ink">{OFFER.headline}</h1>

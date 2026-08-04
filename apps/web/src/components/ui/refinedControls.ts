@@ -1,33 +1,34 @@
 /**
- * Opt-in class sets for the pages refined to match the dashboard.
+ * Opt-in class sets for pages that were refined ahead of the rest of the app.
  *
- * Customers, Appointments, Knowledge Base and Notifications each apply these
- * explicitly. Nothing here is a default: `Card`, `Button`, `SearchInput` and
- * `Select` are untouched, so Calls, Settings, Billing, onboarding and every
- * modal keep exactly the appearance they have today.
+ * These exist for a reason that has now largely gone away. They used to carry
+ * radii — `REFINED_CARD` sharpened the shared `Card` and `REFINED_FIELD`
+ * softened search inputs — because only some pages had been through a design
+ * pass and the rest had to keep the appearance they shipped with.
  *
- * Radii come from the product scale in styles/tokens.css — `md` is 12px, `xl`
- * is 16px — and are appended after each component's own class string, where
- * twMerge drops the base radius in favour of these.
+ * The global geometry pass removed that split: `Card`, `Input`, `SearchInput`
+ * and every structural container now name the semantic radii in
+ * styles/tokens.css (`--radius-panel`, `--radius-field`), so a page opting into
+ * a radius here would be opting *out* of the product's own geometry — the
+ * opposite of what this file is for. The radii are therefore empty rather than
+ * deleted, so the call sites that reference them keep working and keep
+ * documenting which pages were refined first.
  */
 
-/** Content surfaces: 16px → 12px, matching the dashboard's sharper panels. */
-export const REFINED_CARD = 'rounded-md';
+/** Content surfaces. Now inherited from `Card` — see `--radius-panel`. */
+export const REFINED_CARD = '';
+
+/** Search fields and dropdowns. Now inherited from `Input` — see `--radius-field`. */
+export const REFINED_FIELD = '';
 
 /**
- * Search fields and dropdowns: 12px → 16px, matching the dashboard header's
- * search. Height, padding, border and focus ring are untouched.
- */
-export const REFINED_FIELD = 'rounded-xl';
-
-/**
- * Page-level CTAs. Tighter tracking is now the only thing this changes —
- * weight, size and colour are left alone, and contrast is untouched (already
- * 10.3:1, white on --brand-700, in the light theme).
+ * Page-level CTAs. Tighter tracking is the only thing this changes — weight,
+ * size and colour are left alone, and contrast is untouched (already 10.3:1,
+ * white on --brand-700, in the light theme).
  *
- * It used to carry `rounded-xl` as well, to match the fields these CTAs sit
- * beside. That is gone: `Button` is a pill everywhere now, so naming a radius
- * here would only be this handful of pages quietly opting out of the product's
- * button shape — which is the opposite of what this file is for.
+ * It used to carry a radius as well, to match the fields these CTAs sit beside.
+ * That is gone: `Button` is a pill everywhere, so naming a radius here would
+ * only be this handful of pages quietly opting out of the product's button
+ * shape.
  */
 export const REFINED_BUTTON = 'tracking-tight';

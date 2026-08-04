@@ -135,8 +135,10 @@ export function AppLayout() {
                     className={cn(
                       'text-body font-medium text-ink-muted data-[active=true]:bg-accent-subtle data-[active=true]:text-accent data-[active=true]:hover:bg-accent-subtle data-[active=true]:hover:text-accent hover:bg-surface-3 hover:text-ink',
                       // One radius covers both the active fill and the hover
-                      // fill — they are the same element, not two layers.
-                      'rounded-xl',
+                      // fill — they are the same element, not two layers. The
+                      // value itself is `--radius-nav`, carried by the base
+                      // component, so every sidebar surface shares it and this
+                      // row no longer opts out with a radius of its own.
                     )}
                   >
                     <NavLink to={item.to}>
@@ -157,14 +159,31 @@ export function AppLayout() {
       </Sidebar>
 
       <SidebarInset className={cn('bg-base', guardOverflow && 'min-w-0')}>
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line-subtle bg-[color-mix(in_oklab,var(--surface-1)_88%,transparent)] px-4 backdrop-blur sm:px-6">
+        {/* The header owns the top safe area. With `viewport-fit=cover` the
+            document runs under the status bar and the notch, so an installed
+            PWA would otherwise set the search field and the avatar beneath the
+            clock. Padding by the inset — rather than offsetting the whole
+            header — keeps the blurred bar running to the physical top edge,
+            which is what makes the status bar read as part of the app. On
+            hardware that reserves nothing the inset is zero and the row alone
+            sets the 64px height. */}
+        <header className="gutter-safe-x sticky top-0 z-20 flex h-[calc(4rem+env(safe-area-inset-top))] items-center gap-3 border-b border-line-subtle bg-[color-mix(in_oklab,var(--surface-1)_88%,transparent)] pt-[env(safe-area-inset-top)] backdrop-blur">
           <SidebarTrigger className="text-ink-muted hover:bg-surface-3 hover:text-ink lg:hidden" />
 
           {/* One header for the whole authenticated app: these radii are no
               longer scoped per route, so the search field and the controls
               beside it are pixel-identical on every page and nothing animates
               as the user moves between them. No page overrides them. */}
-          <GlobalSearch inputClassName="rounded-full" />
+          {/* Below `sm` the header carries the drawer trigger, the install
+              button, the bell and the avatar, which leaves the elastic search
+              about 145px — enough to render "Search c" and then clip mid-word.
+              Hiding the placeholder rather than shortening it leaves the
+              magnifier alone in the field, which is what both mobile platforms
+              do and what the control already looks like once focused. The
+              accessible name is on `aria-label`, so nothing is lost to a screen
+              reader; only the visual hint is dropped, and only where it could
+              not be read anyway. */}
+          <GlobalSearch inputClassName="rounded-full placeholder:text-transparent sm:placeholder:text-ink-faint" />
 
           {/* `shrink-0`: these controls have a fixed size and the search does
               not, so the row must give its space back from the search rather
@@ -194,15 +213,17 @@ export function AppLayout() {
           </div>
         </header>
 
-        {/* 32px page gutter matches the vertical rhythm the pages themselves
+        {/* 24px page gutter matches the vertical rhythm the pages themselves
             use between sections, so the shell never feels tighter than its
-            contents.
+            contents. It was 32px, which read as a margin around the product
+            rather than as part of it — the density pass took the shell and the
+            sections down together so the ratio between them is unchanged.
 
             Below `lg` the gutter also has to clear the tab bar, which is fixed
-            and therefore out of flow: 2rem of gutter + the bar's 4rem row +
+            and therefore out of flow: 1.5rem of gutter + the bar's 4rem row +
             whatever the device reserves for its home indicator. Without it the
             last row of every page sits under the bar. */}
-        <main className="mx-auto w-full max-w-dashboard px-4 py-8 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:pb-8">
+        <main className="gutter-safe-page mx-auto w-full max-w-dashboard py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-6">
           <Outlet />
         </main>
 

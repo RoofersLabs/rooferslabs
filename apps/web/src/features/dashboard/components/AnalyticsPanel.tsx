@@ -67,7 +67,7 @@ export function AnalyticsPanel({ metrics }: { metrics: DashboardOverview['metric
   ];
 
   return (
-    <Card as="section" aria-label="Today’s key metrics" className="overflow-hidden rounded-md">
+    <Card as="section" aria-label="Today’s key metrics" className="overflow-hidden">
       {/* Two up on a phone, not stacked: four full-width rows pushed the calls
           list off the bottom of the screen. `auto-rows-fr` equalises the two
           rows so all four cells are the same height whether or not a label

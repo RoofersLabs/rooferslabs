@@ -3,9 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Building2, ChevronRight } from 'lucide-react';
 import { useAdminCompanies } from '@/hooks/queries';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-import { cn, humanizeEnum, timeAgo } from '@/lib/utils';
+import { humanizeEnum, timeAgo } from '@/lib/utils';
 import { EnumStatusText } from '@/components/ui/StatusText';
-import { REFINED_CARD, REFINED_FIELD } from '@/components/ui/refinedControls';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { FilterBar } from '@/components/ui/FilterBar';
@@ -62,11 +61,10 @@ export function AdminCompaniesPage() {
         }
       />
 
-      <Card className={cn('overflow-hidden', REFINED_CARD)}>
+      <Card className="overflow-hidden">
         <FilterBar>
           <SearchInput
             className="sm:max-w-xs"
-            inputClassName={REFINED_FIELD}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);

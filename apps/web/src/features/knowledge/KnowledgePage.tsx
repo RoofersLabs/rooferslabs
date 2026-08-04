@@ -10,7 +10,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import type { KnowledgeArticle } from '@/types/api';
 import { cn, humanizeEnum, timeAgo } from '@/lib/utils';
 import { StatusText, EnumStatusText } from '@/components/ui/StatusText';
-import { REFINED_BUTTON, REFINED_CARD, REFINED_FIELD } from '@/components/ui/refinedControls';
+import { REFINED_BUTTON } from '@/components/ui/refinedControls';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { FilterBar } from '@/components/ui/FilterBar';
@@ -51,11 +51,10 @@ export function KnowledgePage() {
         }
       />
 
-      <Card className={cn('mb-6', REFINED_CARD)}>
+      <Card className="mb-6">
         <FilterBar className="border-b-0">
           <SearchInput
             className="flex-1 sm:max-w-xs"
-            inputClassName={REFINED_FIELD}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -71,7 +70,7 @@ export function KnowledgePage() {
               setPage(1);
             }}
             aria-label="Filter by category"
-            className={cn('sm:w-52', REFINED_FIELD)}
+            className="sm:w-52"
           >
             <option value="">All categories</option>
             {Object.values(KnowledgeCategory).map((value) => (
@@ -86,8 +85,8 @@ export function KnowledgePage() {
       {articles.isLoading ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }, (_, i) => (
-            <Card key={i} className={cn('px-6 py-5', REFINED_CARD)}>
-              <Skeleton className="h-10 w-10 rounded-lg" />
+            <Card key={i} className="px-6 py-5">
+              <Skeleton className="h-10 w-10 rounded-panel" />
               <Skeleton className="mt-4 h-4 w-4/5" />
               <Skeleton className="mt-2.5 h-3 w-full" />
               <Skeleton className="mt-1.5 h-3 w-3/5" />
@@ -96,7 +95,7 @@ export function KnowledgePage() {
           ))}
         </div>
       ) : articles.isError ? (
-        <Card className={REFINED_CARD}>
+        <Card>
           <ErrorState
             title="Couldn’t load the knowledge base"
             message={(articles.error as Error).message}
@@ -104,7 +103,7 @@ export function KnowledgePage() {
           />
         </Card>
       ) : !articles.data?.items.length ? (
-        <Card className={REFINED_CARD}>
+        <Card>
           <EmptyState
             icon={BookOpen}
             title="No articles yet"
@@ -122,11 +121,10 @@ export function KnowledgePage() {
                 key={article.id}
                 onClick={() => setEditing(article)}
                 className={cn(
+                  // `.card-interactive` composes `.card`, which now carries
+                  // `--radius-panel` — the same radius the `Card` component
+                  // uses — so an article tile needs no radius of its own.
                   'card-interactive focus-ring flex flex-col items-start px-6 py-5 text-left',
-                  // `.card-interactive` composes `.card`, whose 14px radius is
-                  // applied via @apply and so is not a class twMerge can see —
-                  // the override has to be listed here explicitly.
-                  REFINED_CARD,
                 )}
               >
                 <IconTile icon={BookOpen} shape="square" />
@@ -149,7 +147,7 @@ export function KnowledgePage() {
               </button>
             ))}
           </div>
-          <Card className={cn('mt-6', REFINED_CARD)}>
+          <Card className="mt-6">
             <Pagination
               className="border-t-0"
               pagination={articles.data.pagination}

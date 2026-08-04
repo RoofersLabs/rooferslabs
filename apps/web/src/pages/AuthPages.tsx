@@ -9,7 +9,7 @@ function AuthShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen flex-col items-center justify-center bg-base px-4 py-12">
       <Link
         to={ROUTES.marketing}
-        className="focus-ring mb-8 flex items-center gap-2.5 rounded-md"
+        className="focus-ring mb-8 flex items-center gap-2.5 rounded-field"
         aria-label="rooferslabs home"
       >
         <Logo size="lg" className="text-brand-950" />

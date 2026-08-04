@@ -34,7 +34,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     return (
       <div className="flex min-h-screen items-center justify-center bg-base p-6">
         <Card className="max-w-md items-center px-8 py-10 text-center">
-          <span className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-emergency-subtle text-emergency">
+          <span className="mb-5 flex h-14 w-14 items-center justify-center rounded-panel bg-emergency-subtle text-emergency">
             <AlertTriangle className="h-6 w-6" aria-hidden />
           </span>
           <h1 className="text-h4 text-ink">Something went wrong</h1>

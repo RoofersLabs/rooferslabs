@@ -26,7 +26,7 @@ function Card({
     <Tag
       data-slot="card"
       className={cn(
-        'flex flex-col rounded-xl border border-line-subtle bg-surface shadow-card',
+        'flex flex-col rounded-panel border border-line-subtle bg-surface shadow-card',
         className,
       )}
       {...props}

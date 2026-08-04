@@ -144,7 +144,7 @@ function DesktopInstall({
             <img
               src={qrDataUrl}
               alt="QR code that opens rooferslabs on your phone"
-              className="mt-3 h-40 w-40 rounded-lg border border-line-subtle"
+              className="mt-3 h-40 w-40 rounded-panel border border-line-subtle"
             />
           )}
         </div>

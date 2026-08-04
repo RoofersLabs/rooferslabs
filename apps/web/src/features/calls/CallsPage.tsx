@@ -32,9 +32,6 @@ export function CallsPage() {
         <FilterBar>
           <SearchInput
             className="sm:max-w-xs"
-            // Matches the dashboard header's field (12px → 16px). Height,
-            // padding, border and focus ring are untouched.
-            inputClassName="rounded-xl"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);

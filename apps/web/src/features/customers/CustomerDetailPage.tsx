@@ -291,7 +291,7 @@ function IconAction({
       title={title}
       aria-pressed={pressed}
       className={cn(
-        'focus-ring group flex flex-col items-center gap-2 rounded-md px-1 py-2',
+        'focus-ring group flex flex-col items-center gap-2 rounded-nav px-1 py-2',
         'transition-colors duration-fast ease-standard',
         'disabled:cursor-not-allowed disabled:opacity-40',
         !disabled && 'hover:bg-surface-2',
@@ -311,7 +311,7 @@ function IconAction({
       >
         <Icon
           className={cn(
-            'h-4 w-4 transition-all duration-fast ease-standard',
+            'h-4 w-4 transition-[fill,color] duration-fast ease-standard',
             active && 'fill-ink-on-brand',
           )}
           aria-hidden

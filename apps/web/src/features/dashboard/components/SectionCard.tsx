@@ -26,10 +26,11 @@ export function SectionCard({
   className?: string;
   bodyClassName?: string;
 }) {
-  // `rounded-md` (12px) sharpens the shared Card's 16px for the dashboard only —
-  // twMerge drops the base radius, and every other page keeps it.
+  // No radius of its own: `Card` carries `--radius-panel`, which every
+  // structural container in the product now shares. `overflow-hidden` stays —
+  // it is what clips the table and list rows to the panel's corners.
   return (
-    <Card as="section" aria-label={title} className={cn('overflow-hidden rounded-md', className)}>
+    <Card as="section" aria-label={title} className={cn('overflow-hidden', className)}>
       <CardHeader className="items-center">
         <CardTitle as="h2">{title}</CardTitle>
         {action && (

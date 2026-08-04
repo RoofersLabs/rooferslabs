@@ -3,9 +3,8 @@ import { Link } from 'react-router-dom';
 import { CalendarClock, MapPin } from 'lucide-react';
 import { AppointmentStatus } from '@rooferslabs/shared';
 import { useAppointments, useUpdateAppointment } from '@/hooks/queries';
-import { cn, formatDateTime, humanizeEnum, timeAgo } from '@/lib/utils';
+import { formatDateTime, humanizeEnum, timeAgo } from '@/lib/utils';
 import { EnumStatusText } from '@/components/ui/StatusText';
-import { REFINED_CARD, REFINED_FIELD } from '@/components/ui/refinedControls';
 import { Card } from '@/components/ui/card';
 import { IconTile } from '@/components/ui/IconTile';
 import { Select } from '@/components/ui/input';
@@ -30,7 +29,7 @@ export function AppointmentsPage() {
         description="Visit and estimate requests captured by your AI receptionist."
         actions={
           <Select
-            className={cn('w-48', REFINED_FIELD)}
+            className="w-48"
             value={status}
             onChange={(e) => {
               setStatus(e.target.value);
@@ -47,7 +46,7 @@ export function AppointmentsPage() {
         }
       />
 
-      <Card className={cn('overflow-hidden', REFINED_CARD)}>
+      <Card className="overflow-hidden">
         {appointments.isLoading ? (
           <ListSkeleton />
         ) : appointments.isError ? (
@@ -107,7 +106,6 @@ export function AppointmentsPage() {
                   </div>
                   <div className="shrink-0 sm:w-44">
                     <Select
-                      className={REFINED_FIELD}
                       value={appointment.status}
                       onChange={(e) =>
                         update.mutate({

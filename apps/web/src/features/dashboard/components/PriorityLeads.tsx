@@ -279,7 +279,7 @@ function LeadCard({
     // and stretch to the tallest, so without it a lead with no summary would
     // leave a short card floating in a tall row. Filling instead means the
     // section's height is fixed and swiping never resizes the page underneath.
-    <Card as="article" className="h-full rounded-lg px-7 py-8">
+    <Card as="article" className="h-full px-7 py-8">
       <div className="flex items-start justify-between gap-3">
         <h3 className="min-w-0 flex-1 truncate text-h4 text-ink">{lead.name}</h3>
         {/* Position, not progress dots: "4 of 18" says how much work is left,
@@ -396,7 +396,7 @@ function LeadSkeletonCard() {
     // Every metric here is `LeadCard`'s, down to the gutters: this is the shape
     // the section holds while the request is in flight, so any figure that
     // drifts from the real card is a jump at the moment the leads arrive.
-    <Card className="rounded-lg px-7 py-8">
+    <Card className="px-7 py-8">
       <Skeleton className="h-7 w-44" />
       <Skeleton className="mt-2 h-4 w-32" />
       <Skeleton className="mt-1.5 h-4 w-52" />

@@ -68,7 +68,7 @@ export function GlobalSearch({ inputClassName }: { inputClassName?: string }) {
       />
 
       {open && debounced.trim().length >= 2 && (
-        <div className="absolute z-40 mt-2 max-h-96 w-full overflow-y-auto rounded-xl border border-line-subtle bg-surface-overlay p-2 shadow-dropdown">
+        <div className="absolute z-40 mt-2 max-h-96 w-full overflow-y-auto rounded-panel border border-line-subtle bg-surface-overlay p-2 shadow-dropdown">
           {results.isLoading ? (
             <p className="px-3 py-4 text-body text-ink-muted">Searching…</p>
           ) : !hasResults ? (
@@ -160,7 +160,7 @@ function SearchRow({
   return (
     <button
       onClick={onClick}
-      className="focus-ring flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors duration-fast hover:bg-surface-2"
+      className="focus-ring flex w-full items-center gap-3 rounded-nav px-3 py-2 text-left transition-colors duration-fast hover:bg-surface-2"
     >
       {icon}
       <span className="min-w-0">

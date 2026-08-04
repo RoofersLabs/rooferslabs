@@ -53,7 +53,11 @@ export function BottomNav({ items, className }: { items: BottomNavItem[]; classN
       aria-label="Primary"
       className={cn(
         'fixed inset-x-0 bottom-0 z-30 lg:hidden',
-        'rounded-t-2xl border-t border-line-subtle bg-surface',
+        // Near-square top corners, like the platform's own tab bars. The 20px
+        // it used to carry let the page show through two visible notches at the
+        // screen edge, which is the one thing that reads as "web page in a
+        // frame" rather than as part of the chassis.
+        'rounded-t-panel border-t border-line-subtle bg-surface',
         // The iOS home indicator and the Android gesture pill live inside the
         // viewport. Padding the bar by the inset — rather than lifting it off
         // the floor — is what keeps the white running to the physical edge, so
@@ -61,6 +65,10 @@ export function BottomNav({ items, className }: { items: BottomNavItem[]; classN
         // the bar is a separate object. On hardware that reserves nothing the
         // padding is zero and the row alone sets the height.
         'pb-[env(safe-area-inset-bottom)]',
+        // Landscape on a notched phone puts the cutout beside the bar, not
+        // above it, so the row needs the horizontal insets too or the outer
+        // tabs sit under the hardware.
+        'pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]',
         className,
       )}
     >

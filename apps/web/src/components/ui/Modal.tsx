@@ -29,7 +29,7 @@ export function Modal({
       <DialogContent
         showCloseButton={false}
         className={cn(
-          'gap-0 rounded-2xl border border-line-subtle bg-surface-overlay p-0 text-ink ring-0 shadow-dialog',
+          'gap-0 rounded-panel border border-line-subtle bg-surface-overlay p-0 text-ink ring-0 shadow-dialog',
           wide ? 'sm:max-w-2xl' : 'sm:max-w-lg',
         )}
       >

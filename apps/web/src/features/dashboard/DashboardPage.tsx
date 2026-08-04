@@ -38,7 +38,7 @@ export function DashboardPage() {
     return (
       <div>
         <PageHeader title="Dashboard" description="Today’s activity across your front office." />
-        <Card className="rounded-md">
+        <Card>
           <ErrorState
             title="Couldn’t load your dashboard"
             message={(dashboard.error as Error).message}
@@ -54,13 +54,13 @@ export function DashboardPage() {
   const needsForwarding = Boolean(phone.data && !phone.data.forwardingVerifiedAt);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <DashboardHeader firstName={firstName} receptionist={receptionist.data} />
 
       {(needsPhoneSetup || needsForwarding) && (
         <Link
           to={`${ROUTES.settings}/phone`}
-          className="focus-ring flex items-center gap-4 rounded-md border border-accent-border bg-accent-subtle px-6 py-5 transition-colors duration-fast hover:border-accent"
+          className="focus-ring flex items-center gap-4 rounded-panel border border-accent-border bg-accent-subtle px-6 py-5 transition-colors duration-fast ease-standard hover:border-accent"
         >
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-ink-on-brand">
             <PhoneForwarded className="h-5 w-5" aria-hidden />
@@ -91,7 +91,7 @@ export function DashboardPage() {
       <AnalyticsPanel metrics={metrics} />
 
       {/* Sections 2 & 3 — Recent calls (primary) + Upcoming appointments */}
-      <div className="grid gap-6 lg:grid-cols-5">
+      <div className="grid gap-4 lg:grid-cols-5">
         <RecentCalls
           conversations={dashboard.data?.recentConversations}
           isLoading={dashboard.isLoading}
@@ -110,7 +110,7 @@ export function DashboardPage() {
           `hidden lg:flex` rather than an unmounted branch — the panel keeps one
           definition, and the desktop grid is untouched. `flex`, not `block`,
           because the Card it renders is a flex column. */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <ReceptionistSummary tiles={summaryTiles} isLoading={dashboard.isLoading} />
         <InsightList
           rows={insightRows}

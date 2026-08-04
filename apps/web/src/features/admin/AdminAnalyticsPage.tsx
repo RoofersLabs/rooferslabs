@@ -72,7 +72,7 @@ export function AdminAnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <Card as="section" className="rounded-md">
+      <Card as="section">
         <CardHeader className="items-center">
           <CardTitle as="h2">Platform trend</CardTitle>
           <div className="flex gap-1">
@@ -117,7 +117,7 @@ export function AdminAnalyticsPage() {
         </CardContent>
       </Card>
 
-      <Card as="section" className="overflow-hidden rounded-md">
+      <Card as="section" className="overflow-hidden">
         <CardHeader>
           <CardTitle as="h2">By company</CardTitle>
         </CardHeader>

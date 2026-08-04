@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
  * there is deliberately no `transition-colors` here to fight it.
  */
 const baseField =
-  'focus-field block w-full rounded-md border border-line bg-surface px-3 text-form-input text-ink placeholder:text-ink-faint hover:border-line-strong disabled:cursor-not-allowed disabled:bg-surface-disabled disabled:text-ink-disabled disabled:hover:border-line';
+  'focus-field block w-full rounded-field border border-line bg-surface px-3 text-form-input text-ink placeholder:text-ink-faint hover:border-line-strong disabled:cursor-not-allowed disabled:bg-surface-disabled disabled:text-ink-disabled disabled:hover:border-line';
 
 /** Single-line controls sit at the shared 40px control height. */
 const fixedHeightField = cn(baseField, 'h-10 py-0');

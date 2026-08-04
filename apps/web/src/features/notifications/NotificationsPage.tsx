@@ -21,7 +21,7 @@ import {
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import type { Notification } from '@/types/api';
 import { cn, timeAgo } from '@/lib/utils';
-import { REFINED_BUTTON, REFINED_CARD } from '@/components/ui/refinedControls';
+import { REFINED_BUTTON } from '@/components/ui/refinedControls';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { IconTile } from '@/components/ui/IconTile';
@@ -44,7 +44,7 @@ function PushNotificationsCard() {
     // One row on a desktop, two on a phone — never the ragged three the
     // wrapping copy used to produce. `sm:items-center` keeps the icon, the text
     // and the button on one optical line once they fit.
-    <Card className={cn('mb-6 gap-3 px-5 py-4 sm:flex-row sm:items-center sm:gap-4', REFINED_CARD)}>
+    <Card className="mb-6 gap-3 px-5 py-4 sm:flex-row sm:items-center sm:gap-4">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <IconTile icon={BellRing} size="sm" />
         <div className="min-w-0">
@@ -135,7 +135,7 @@ export function NotificationsPage() {
 
       <PushNotificationsCard />
 
-      <Card className={cn('overflow-hidden', REFINED_CARD)}>
+      <Card className="overflow-hidden">
         {notifications.isLoading ? (
           <ListSkeleton />
         ) : notifications.isError ? (
@@ -203,7 +203,7 @@ export function NotificationsPage() {
                       }
                       title={unread ? 'Mark as read' : 'Mark as unread'}
                       aria-label={`Mark “${notification.title}” as ${unread ? 'read' : 'unread'}`}
-                      className="focus-ring flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-ink-faint transition-colors duration-fast hover:bg-surface-3 hover:text-ink"
+                      className="focus-ring flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors duration-fast hover:bg-surface-3 hover:text-ink"
                     >
                       {unread ? (
                         <Check className="h-4 w-4" aria-hidden />

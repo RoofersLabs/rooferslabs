@@ -36,7 +36,7 @@ export function PhoneSetupTab() {
   if (!number) {
     return (
       <Card className="items-center px-8 py-12 text-center">
-        <IconTile icon={PhoneForwarded} size="xl" shape="square" className="rounded-2xl" />
+        <IconTile icon={PhoneForwarded} size="xl" shape="square" />
         <h2 className="mt-5 text-h4 text-ink">Get your AI receptionist number</h2>
         <p className="mt-1.5 max-w-md text-body leading-6 text-ink-muted">
           We’ll set up a local number for your business (matching your area code when available) and
@@ -206,7 +206,7 @@ function NumberCard({ phoneNumber, verified }: { phoneNumber: string; verified: 
       <StepEyebrow step={1} />
       <h2 className="text-h5 text-ink">Your AI Receptionist Number</h2>
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <span className="font-num rounded-md border border-accent-border bg-accent-subtle px-5 py-2.5 text-h4 text-accent">
+        <span className="font-num rounded-panel border border-accent-border bg-accent-subtle px-5 py-2.5 text-h4 text-accent">
           {formatPhone(phoneNumber)}
         </span>
         <Button variant="secondary" onClick={() => void copy()}>

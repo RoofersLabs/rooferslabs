@@ -147,7 +147,7 @@ export function ConversationDetailPage() {
             // The same recipe the Settings tabs use, so this reads as one
             // pattern across the product rather than a second kind of tab.
             className={cn(
-              'focus-ring flex h-10 shrink-0 items-center gap-2.5 rounded-md px-3.5 text-body font-medium transition-colors duration-fast',
+              'focus-ring flex h-10 shrink-0 items-center gap-2.5 rounded-nav px-3.5 text-body font-medium transition-colors duration-fast',
               tab === item.key
                 ? 'bg-accent-subtle text-accent'
                 : 'text-ink-muted hover:bg-surface-2 hover:text-ink',

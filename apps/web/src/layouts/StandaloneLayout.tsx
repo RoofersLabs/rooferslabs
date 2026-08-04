@@ -43,7 +43,7 @@ export function StandaloneLayout({
           {brandLinksHome ? (
             <Link
               to={ROUTES.marketing}
-              className="focus-ring flex items-center gap-2.5 rounded-md"
+              className="focus-ring flex items-center gap-2.5 rounded-field"
               aria-label="rooferslabs home"
             >
               {brand}

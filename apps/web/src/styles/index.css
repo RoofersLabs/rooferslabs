@@ -7,11 +7,31 @@
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
+    /*
+     * The document, not just the body, carries the app's surface. With
+     * `viewport-fit=cover` the safe-area strips (notch, home indicator) are
+     * painted from the *root* background, so leaving html transparent is what
+     * produces the white band above and below an installed PWA on iOS — the
+     * "browser-like gap" that gives a standalone app away.
+     */
+    background-color: var(--bg-base);
+    /* Stops the rubber-band overscroll from revealing a bare canvas behind the
+       app, which is the other tell. Vertical scrolling inside the page is
+       untouched; only the chain to the document is cut. */
+    overscroll-behavior-y: none;
   }
 
   body {
     @apply bg-base text-ink antialiased;
     font-family: var(--font-sans);
+    /*
+     * `svh` is the *small* viewport height — the viewport with the mobile
+     * browser's chrome shown. Sizing to it means the layout is computed once
+     * against the smaller of the two states rather than being recalculated,
+     * and reflowing, every time the URL bar collapses on scroll. In a
+     * standalone PWA there is no chrome and svh equals the full screen.
+     */
+    min-height: 100svh;
   }
 
   ::selection {
@@ -69,7 +89,44 @@
 @layer components {
   /* Standard surface container: flat surface, hairline border, small shadow. */
   .card {
-    @apply rounded-lg border border-line-subtle bg-surface shadow-card;
+    @apply rounded-panel border border-line-subtle bg-surface shadow-card;
+  }
+
+  /**
+   * Horizontal page gutters that also clear the display cutout.
+   *
+   * These replace `px-4 sm:px-6 [lg:px-8]` on the shell's full-bleed rows. The
+   * inset only bites in landscape on a notched phone, where the cutout and the
+   * rounded screen corners eat into one edge and content set flush to it is
+   * clipped by the hardware — and a landscape phone is well past the `sm`
+   * breakpoint, so a Tailwind `sm:px-6` would have quietly replaced the inset
+   * rather than kept it. Expressing it as `max()` at every breakpoint is what
+   * makes the inset survive; where it is smaller than the design's own gutter
+   * (desktop, portrait, any device without a cutout) it is inert.
+   */
+  .gutter-safe-x {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  .gutter-safe-page {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  @media (min-width: 640px) {
+    .gutter-safe-x,
+    .gutter-safe-page {
+      padding-left: max(1.5rem, env(safe-area-inset-left));
+      padding-right: max(1.5rem, env(safe-area-inset-right));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .gutter-safe-page {
+      padding-left: max(2rem, env(safe-area-inset-left));
+      padding-right: max(2rem, env(safe-area-inset-right));
+    }
   }
 
   /* Card that lifts on hover (dashboard widgets, list rows, feature blocks). */

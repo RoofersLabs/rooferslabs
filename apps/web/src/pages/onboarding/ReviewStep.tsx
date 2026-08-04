@@ -33,14 +33,14 @@ function ReviewSection({
   return (
     <Card
       as="section"
-      className="animate-rise-in rounded-2xl shadow-md"
+      className="animate-rise-in shadow-md"
       style={{ animationDelay: `${80 + index * 70}ms` }}
     >
       <CardHeader className="items-center px-6 sm:px-8">
         <CardTitle as="h2">{title}</CardTitle>
         <Link
           to={editTo}
-          className="focus-ring -mr-2 inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 text-small font-medium text-ink-muted transition-colors duration-fast ease-standard hover:bg-surface-3 hover:text-accent"
+          className="focus-ring -mr-2 inline-flex shrink-0 items-center gap-1.5 rounded-nav px-2 py-1 text-small font-medium text-ink-muted transition-colors duration-fast ease-standard hover:bg-surface-3 hover:text-accent"
         >
           <Pencil className="h-3.5 w-3.5" aria-hidden />
           Edit
@@ -140,7 +140,7 @@ export function ReviewStep() {
       <Card
         as="form"
         onSubmit={onSubmit}
-        className="animate-rise-in gap-6 rounded-2xl p-6 shadow-md [animation-delay:290ms] sm:p-8"
+        className="animate-rise-in gap-6 p-6 shadow-md [animation-delay:290ms] sm:p-8"
       >
         <div className="flex items-start gap-4">
           <IconTile icon={Sparkles} tone="brand" size="md" shape="square" />

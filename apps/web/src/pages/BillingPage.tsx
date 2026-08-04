@@ -246,7 +246,7 @@ export function BillingPage() {
                               href={invoice.invoiceUrl}
                               target="_blank"
                               rel="noreferrer noopener"
-                              className="focus-ring rounded-xs font-medium text-accent hover:text-accent-hover"
+                              className="focus-ring rounded-xs font-medium text-accent transition-colors duration-fast ease-standard hover:text-accent-hover"
                             >
                               {invoice.number ?? 'View'}
                             </a>

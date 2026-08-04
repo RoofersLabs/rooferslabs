@@ -167,6 +167,10 @@
   --gutter-mobile: var(--space-4);
 
   /* ── Radius ───────────────────────────────────────────────────────────── */
+  /* The primitive scale. Kept intact — the marketing site and a few decorative
+     surfaces still choose from it directly. Product UI should not: it names one
+     of the semantic radii below, so the application's geometry can be retuned
+     from four lines rather than from several hundred class strings. */
   --radius-none: 0px;
   --radius-xs: 6px;
   --radius-sm: 8px;
@@ -175,6 +179,32 @@
   --radius-xl: 16px;
   --radius-2xl: 20px;
   --radius-full: 9999px;
+
+  /* ── Semantic radius ──────────────────────────────────────────────────── */
+  /*
+   * Three roles, and the whole application's geometry follows from them.
+   *
+   * `panel` is every structural container — cards, tables, dialogs, drawers,
+   * bottom sheets, banners. Nearly square on purpose: at 5px an edge reads as
+   * deliberate structure rather than as a soft tile, which is the difference
+   * between an operations tool and a consumer app.
+   *
+   * `field` matches `panel` so an input sits flush inside the panel that holds
+   * it instead of describing a second, rounder rectangle within the first.
+   *
+   * `nav` is deliberately the odd one out. Sidebar hover and active fills are
+   * transient washes behind text, not structure, and a 5px fill on a 44px row
+   * reads as a hard rectangle sliding under the cursor. At 14px the fill stays
+   * soft while everything structural around it stays crisp — and one value now
+   * covers every sidebar surface (rows, sub-rows, group labels, actions), which
+   * previously ranged from 12px to 16px depending on the element.
+   *
+   * Buttons and badges are pills and name --radius-full directly; none of these
+   * touch them.
+   */
+  --radius-panel: 5px;
+  --radius-field: 5px;
+  --radius-nav: 14px;
 
   /* ── Motion ───────────────────────────────────────────────────────────── */
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
