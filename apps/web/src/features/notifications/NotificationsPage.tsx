@@ -203,7 +203,12 @@ export function NotificationsPage() {
                       }
                       title={unread ? 'Mark as read' : 'Mark as unread'}
                       aria-label={`Mark “${notification.title}” as ${unread ? 'read' : 'unread'}`}
-                      className="focus-ring flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors duration-fast hover:bg-surface-3 hover:text-ink"
+                      // 36px is the visual size the row wants; 44px is the size a thumb
+                      // needs. The `after:` block adds the difference as an
+                      // invisible hit area, so the control still measures 36px
+                      // and the row does not grow — the same treatment the
+                      // shared Button applies to its small sizes.
+                      className="focus-ring relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors duration-fast after:absolute after:left-1/2 after:top-1/2 after:h-11 after:w-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:bg-surface-3 hover:text-ink"
                     >
                       {unread ? (
                         <CheckIcon className="h-4 w-4" aria-hidden />

@@ -28,7 +28,8 @@ export function DashboardHeader({
   const name = firstName?.trim();
   return (
     <PageHeader
-      // The dashboard's sections are spaced by the page's own `space-y-6`.
+      // The dashboard's sections are spaced by the page's own `space-y-4`, so
+      // the header contributes no bottom margin of its own.
       className="mb-0"
       title={`${greetingFor()}${name ? `, ${name}` : ''}!`}
       description="Here’s what’s happening with your business today."

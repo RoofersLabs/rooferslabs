@@ -44,6 +44,6 @@ export const ICON_SIZE = {
   nav: 'h-5 w-5',
   /** Dashboard metric tiles and card headers — 24px. */
   metric: 'h-6 w-6',
-  /** Empty and error states, the one place an icon leads — 32px. */
-  empty: 'h-8 w-8',
+  /** Empty and error states, the one place an icon leads — 28px. */
+  empty: 'h-7 w-7',
 } as const;

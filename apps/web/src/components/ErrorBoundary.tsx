@@ -37,7 +37,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       <div className="flex min-h-screen items-center justify-center bg-base p-6">
         <Card className="max-w-md items-center px-8 py-10 text-center">
           <ExclamationTriangleIcon
-            className={cn('mb-4 text-emergency', ICON_SIZE.empty)}
+            className={cn('mb-3 text-emergency', ICON_SIZE.empty)}
             aria-hidden
           />
           <h1 className="text-h4 text-ink">Something went wrong</h1>
