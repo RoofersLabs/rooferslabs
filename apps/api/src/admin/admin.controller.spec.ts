@@ -5,6 +5,8 @@ import { ALLOW_NO_COMPANY_KEY } from '../common/constants';
 import { ForbiddenError } from '../common/exceptions/domain.exception';
 import { TenantGuard } from '../auth/guards/tenant.guard';
 import { PlatformAdminGuard } from '../auth/guards/platform-admin.guard';
+import type { ClerkService } from '../auth/clerk.service';
+import { PlatformAdminService } from '../auth/platform-admin.service';
 import type { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
 import { AdminController } from './admin.controller';
 
@@ -43,6 +45,14 @@ function contextFor(user: AuthenticatedUser): ExecutionContext {
 describe('AdminController tenancy', () => {
   const reflector = new Reflector();
 
+  it('carries the platform guard at the class level, so every route inherits it', () => {
+    // The protection is structural: a route added to this controller is guarded
+    // because it is here. A per-route decorator would make it depend on someone
+    // remembering, and the endpoint that got forgotten would be cross-tenant.
+    const guards = Reflect.getMetadata('__guards__', AdminController) as unknown[] | undefined;
+    expect(guards).toContain(PlatformAdminGuard);
+  });
+
   it('declares @AllowNoCompany, so the global tenant guards let staff through', () => {
     const optOut = reflector.getAllAndOverride<boolean>(ALLOW_NO_COMPANY_KEY, [
       AdminController.prototype.overview,
@@ -66,12 +76,15 @@ describe('AdminController tenancy', () => {
     expect(() => new TenantGuard(reflector).canActivate(elsewhere)).toThrow(ForbiddenError);
   });
 
-  it('skipping the tenant check does not skip authorisation', () => {
-    const guard = new PlatformAdminGuard();
-    expect(guard.canActivate(contextFor(staff))).toBe(true);
+  it('skipping the tenant check does not skip authorisation', async () => {
+    const clerk = {
+      getProfile: jest.fn().mockResolvedValue({ email: staff.email }),
+    } as unknown as ClerkService;
+    const guard = new PlatformAdminGuard(new PlatformAdminService(clerk));
+    await expect(guard.canActivate(contextFor(staff))).resolves.toBe(true);
 
     // A customer — companyless or not — is still refused by the platform guard.
-    const customer = { ...staff, platformRole: PlatformRole.NONE, companyId: 'company_1' };
-    expect(() => guard.canActivate(contextFor(customer))).toThrow(ForbiddenError);
+    const customer = { ...staff, email: 'owner@a-roofing-company.com', companyId: 'company_1' };
+    await expect(guard.canActivate(contextFor(customer))).rejects.toThrow(ForbiddenError);
   });
 });

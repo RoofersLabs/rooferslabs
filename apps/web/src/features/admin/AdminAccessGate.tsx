@@ -77,7 +77,10 @@ function AdminAccessDenied({ email }: { email: string | null }) {
  * single request, and would refuse a caller who defeated everything here.
  *
  * It reads `platformRole`, never `role`. Every customer is a `UserRole.OWNER`,
- * so that field could never distinguish staff from the customer base.
+ * so that field could never distinguish staff from the customer base. The value
+ * arrives already decided: the API derives it from the account's email against
+ * the staff allow-list, so this file holds no copy of the rule to fall out of
+ * step with.
  *
  * Ordering matters: nothing renders until both Clerk and the session have
  * resolved, so the portal never flashes a wrong state on the way to the right

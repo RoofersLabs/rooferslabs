@@ -85,8 +85,12 @@ model User {
   lastName           String?
   avatarUrl          String?
   role               UserRole           @default(OWNER)
-  /// Access to the internal admin portal. Defaults to NONE so a new account
-  /// never gains platform access by being created.
+  /// Legacy. The admin portal is gated on the staff email allow-list in
+  /// `packages/shared/src/platform-admin.ts`, checked against the signed-in
+  /// Clerk account — so whatever this column says grants nothing. Kept because
+  /// dropping it would rewrite the table for no behavioural gain; the API
+  /// derives the principal's `platformRole` from the email instead of reading
+  /// it from here.
   platformRole       PlatformRole       @default(NONE)
   emailNotifications Boolean            @default(true)
   lastActiveAt       DateTime?

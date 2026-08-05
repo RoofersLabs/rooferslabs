@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import type { CompanyStatus, OnboardingStep } from '@rooferslabs/shared';
+import { PlatformRole, type CompanyStatus, type OnboardingStep } from '@rooferslabs/shared';
 import type { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
 import { BillingService, type SubscriptionSummary } from '../billing/services/billing.service';
 import { AppConfigService } from '../config/app-config.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { ClerkService } from './clerk.service';
+import { PlatformAdminService } from './platform-admin.service';
 
 export interface SessionCompanySummary {
   id: string;
@@ -42,20 +43,29 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly billing: BillingService,
     private readonly config: AppConfigService,
+    private readonly admins: PlatformAdminService,
   ) {}
 
   /** Build the bootstrap session payload for the authenticated user. */
   async getSession(user: AuthenticatedUser): Promise<SessionResponse> {
     const paymentsEnabled = this.config.payments.enabled;
-    if (!user.companyId) {
-      return { user, company: null, subscription: null, paymentsEnabled };
+    // The client's admin gate reads `platformRole` off this payload, so it is
+    // the confirmed answer rather than the cheap one the principal carries:
+    // whatever the browser is told here is exactly what the admin API will
+    // honour a moment later. Costs a Clerk call only for staff — for everybody
+    // else the allow-list settles it without leaving the process.
+    const sessionUser = await this.withConfirmedPlatformRole(user);
+    if (!sessionUser.companyId) {
+      return { user: sessionUser, company: null, subscription: null, paymentsEnabled };
     }
 
     // Skipped entirely when payments are off: there is no subscription to
     // report, and reporting one would imply a wall that is not being enforced.
-    const subscription = paymentsEnabled ? await this.billing.getSummary(user.companyId) : null;
+    const subscription = paymentsEnabled
+      ? await this.billing.getSummary(sessionUser.companyId)
+      : null;
     const company = await this.prisma.company.findUnique({
-      where: { id: user.companyId },
+      where: { id: sessionUser.companyId },
       select: {
         id: true,
         name: true,
@@ -68,7 +78,7 @@ export class AuthService {
     });
 
     return {
-      user,
+      user: sessionUser,
       subscription,
       paymentsEnabled,
       company: company
@@ -83,6 +93,21 @@ export class AuthService {
           }
         : null,
     };
+  }
+
+  /**
+   * The principal with its platform role settled by the one authority.
+   *
+   * `toAuthenticatedUser` derives the field from the account's email, which is
+   * right for every request that only needs to know whether to bother. The
+   * session is different: the browser decides what to render from this value,
+   * so it gets the answer that has been confirmed against Clerk — the same call
+   * `PlatformAdminGuard` makes, sharing its cache.
+   */
+  private async withConfirmedPlatformRole(user: AuthenticatedUser): Promise<AuthenticatedUser> {
+    if (user.platformRole !== PlatformRole.OWNER) return user;
+    const confirmed = await this.admins.isAdmin(user);
+    return confirmed ? user : { ...user, platformRole: PlatformRole.NONE };
   }
 
   /**

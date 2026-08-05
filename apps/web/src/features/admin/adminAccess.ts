@@ -25,7 +25,14 @@ export interface AdminAccessFacts {
   /** True while `/auth/me` is in flight. */
   sessionLoading: boolean;
   sessionFailed: boolean;
-  /** From the session. Anything other than platform OWNER is refused. */
+  /**
+   * From the session, and computed by the API rather than stored anywhere: the
+   * server derives it from the signed-in account's email against the staff
+   * allow-list in `@rooferslabs/shared`. The client asks the same question the
+   * API's guard asks, and gets it from the side that decides.
+   *
+   * Anything other than platform OWNER is refused.
+   */
   platformRole: PlatformRole | undefined;
 }
 

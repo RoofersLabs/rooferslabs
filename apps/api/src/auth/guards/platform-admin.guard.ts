@@ -1,33 +1,25 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { PlatformRole } from '@rooferslabs/shared';
-import { ForbiddenError } from '../../common/exceptions/domain.exception';
 import type { AuthenticatedRequest } from '../../common/interfaces/authenticated-request.interface';
+import { PlatformAdminService } from '../platform-admin.service';
 
 /**
  * The only gate on the internal admin portal.
  *
- * It checks `platformRole`, never `role`. `UserRole.OWNER` is the default
- * assigned to every account at signup — it means "owner of this roofing
- * company", so gating on it would have opened the portal to the entire customer
- * base. `platformRole` defaults to NONE, so an account gains nothing by
- * existing; it has to be granted in the database by hand.
+ * The question it asks lives in {@link PlatformAdminService}, which is also what
+ * builds the answer handed to the browser — so the portal's front door and its
+ * API cannot come to different conclusions about the same person.
  *
  * Applied at the controller level rather than per route, so a new admin
  * endpoint is protected by being added to the controller rather than by a
  * developer remembering a decorator.
- *
- * The error is deliberately the same 403 a customer would get from any other
- * forbidden resource: it does not confirm that an admin surface exists.
  */
 @Injectable()
 export class PlatformAdminGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    const platformRole = request.authUser?.platformRole;
+  constructor(private readonly admins: PlatformAdminService) {}
 
-    if (platformRole !== PlatformRole.OWNER) {
-      throw new ForbiddenError('You do not have access to this resource.');
-    }
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    await this.admins.assertAdmin(request.authUser);
     return true;
   }
 }

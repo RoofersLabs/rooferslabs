@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { User } from '@prisma/client';
-import { PlatformRole, UserRole } from '@rooferslabs/shared';
+import { PlatformRole, UserRole, isPlatformAdminEmail } from '@rooferslabs/shared';
 import type { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
 import { NotFoundError } from '../common/exceptions/domain.exception';
 import { UsersRepository } from './users.repository';
@@ -70,7 +70,16 @@ export class UsersService {
     await this.repo.updateLastActive(id).catch(() => undefined);
   }
 
-  /** Map a persisted user to the request-scoped authenticated principal. */
+  /**
+   * Map a persisted user to the request-scoped authenticated principal.
+   *
+   * `platformRole` is derived from the account's email rather than read from
+   * the column of the same name. The column is no longer the authority — see
+   * `isPlatformAdminEmail` — and computing the field here means every consumer
+   * of the principal (the session payload, the client's admin gate, the guard
+   * on the admin API) is answering from the one rule, and a stray `OWNER` left
+   * in a row grants nothing at all.
+   */
   toAuthenticatedUser(user: User): AuthenticatedUser {
     return {
       id: user.id,
@@ -79,7 +88,7 @@ export class UsersService {
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role as UserRole,
-      platformRole: user.platformRole as PlatformRole,
+      platformRole: isPlatformAdminEmail(user.email) ? PlatformRole.OWNER : PlatformRole.NONE,
       companyId: user.companyId,
     };
   }

@@ -29,8 +29,9 @@ import {
  *
  * `PlatformAdminGuard` is applied to the whole controller, not per route: a new
  * endpoint added here is protected because it is here, rather than because
- * somebody remembered a decorator. It checks `platformRole`, never `role` —
- * every customer is a `UserRole.OWNER`, so that role could never gate this.
+ * somebody remembered a decorator. It admits the staff email allow-list in
+ * `@rooferslabs/shared` and nothing else — never `role`, which is
+ * `UserRole.OWNER` for every customer on the platform.
  *
  * Read-only over tenant data. The only writes are company notes, which are
  * admin-owned and unreachable from any customer endpoint.
@@ -44,9 +45,9 @@ import {
  * was ever consulted.
  *
  * Opting out of the *tenant* checks does not opt out of authorisation. The
- * guard below still runs, and still requires `platformRole === OWNER`. The two
- * answer different questions: which company is this, versus may this person see
- * every company.
+ * guard below still runs, and still requires an allow-listed staff address. The
+ * two answer different questions: which company is this, versus may this person
+ * see every company.
  */
 @ApiTags('Admin')
 @ApiBearerAuth()

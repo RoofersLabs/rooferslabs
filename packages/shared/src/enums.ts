@@ -21,6 +21,10 @@ export enum UserRole {
  * so gating the internal admin portal on that role would hand it to the entire
  * customer base. This enum exists so the two authorities can never be confused,
  * and it defaults to NONE so access fails closed.
+ *
+ * It is a *conclusion*, not a grant. The API computes it per request from
+ * {@link isPlatformAdminEmail} and hands it to the client; the column of the
+ * same name is a leftover that decides nothing.
  */
 export enum PlatformRole {
   /** No access to the admin portal. The default for every account. */

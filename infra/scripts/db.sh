@@ -10,9 +10,11 @@
 #   infra/scripts/db.sh development status         # which migrations are applied
 #   infra/scripts/db.sh production  status
 #   infra/scripts/db.sh development deploy         # apply pending migrations
-#   infra/scripts/db.sh production  platform-users # who can reach the admin portal
-#   infra/scripts/db.sh production  grant-owner <email>
-#   infra/scripts/db.sh production  revoke-owner <email>
+#   infra/scripts/db.sh production  platform-users # rows still holding the
+#                                                  # legacy platform role
+#
+# Who can reach the admin portal is no longer a database question: it is the
+# allow-list in packages/shared/src/platform-admin.ts.
 #
 # The environment is the first argument. It can be omitted on the main/develop
 # branches, where it is inferred — but naming it is the better habit for a
@@ -46,26 +48,38 @@ fi
 ACTION="${1:-status}"
 EMAIL="${2:-}"
 
-# Platform access is granted by hand, deliberately. There is no self-service
-# path to it and no endpoint that sets it: a role that reads every tenant's data
-# should require someone with database access to decide, and leave a record of
-# having decided. `node -e` rather than raw SQL so the update goes through the
-# same Prisma client and enum the application uses — a typo in a role name fails
-# here instead of writing a value nothing can read.
+# Platform access is no longer a row. It is an allow-list of email addresses in
+# `packages/shared/src/platform-admin.ts`, checked against the signed-in Clerk
+# account on every admin request — so it changes by a commit and a deploy, and
+# the `platformRole` column grants nothing whatever it says.
+#
+# `grant-owner` and `revoke-owner` are kept as commands rather than deleted
+# because the old habit is worth answering: a hand that reaches for them should
+# be told where authority actually lives, not left believing a write succeeded.
+# `platform-users` still reads the column, which is now only useful for finding
+# rows left over from the old model.
 
 case "$ACTION" in
   status) PRISMA_CMD="migrate status" ;;
   deploy) PRISMA_CMD="migrate deploy" ;;
-  platform-users | grant-owner | revoke-owner) PRISMA_CMD="" ;;
-  *)
-    echo "usage: $0 [production|development] [status|deploy|platform-users|grant-owner <email>|revoke-owner <email>]" >&2
+  platform-users) PRISMA_CMD="" ;;
+  grant-owner | revoke-owner)
+    cat >&2 <<EOF
+error: platform access is not granted in the database any more.
+
+  The admin portal admits exactly the addresses listed in
+  packages/shared/src/platform-admin.ts, matched against the signed-in Clerk
+  account's verified primary email. Writing platformRole here would change
+  nothing.
+
+  To change who is staff: edit that list, open a PR, and deploy. To see rows
+  still carrying the old role, run '$0 $ENVIRONMENT platform-users'.
+EOF
     exit 2
     ;;
-esac
-
-case "$ACTION" in
-  grant-owner | revoke-owner)
-    [ -n "$EMAIL" ] || { echo "usage: $0 [environment] $ACTION <email>" >&2; exit 2; }
+  *)
+    echo "usage: $0 [production|development] [status|deploy|platform-users]" >&2
+    exit 2
     ;;
 esac
 
@@ -97,13 +111,9 @@ case "$ACTION" in
     CONTAINER_CMD="npx prisma $PRISMA_CMD --schema apps/api/prisma/schema.prisma"
     ;;
   platform-users)
-    CONTAINER_CMD='node -e "const{PrismaClient}=require(\"@prisma/client\");const p=new PrismaClient();p.user.findMany({where:{platformRole:\"OWNER\",deletedAt:null},select:{id:true,email:true,clerkUserId:true}}).then(u=>console.log(u.length?JSON.stringify(u,null,1):\"No accounts hold platform access.\")).finally(()=>p.\$disconnect())"'
-    ;;
-  grant-owner | revoke-owner)
-    ROLE=$([ "$ACTION" = "grant-owner" ] && echo OWNER || echo NONE)
-    # Matched on email and reported by count, so granting to a typo — or to an
-    # address that turns out to have two records — is visible rather than silent.
-    CONTAINER_CMD="node -e \"const{PrismaClient}=require('@prisma/client');const p=new PrismaClient();p.user.updateMany({where:{email:'$EMAIL',deletedAt:null},data:{platformRole:'$ROLE'}}).then(r=>p.user.findMany({where:{email:'$EMAIL',deletedAt:null},select:{id:true,email:true,platformRole:true}}).then(u=>console.log('updated '+r.count+' record(s): '+JSON.stringify(u)))).finally(()=>p.\\\$disconnect())\""
+    # Reports the leftovers, and says plainly that they are leftovers: these
+    # rows no longer open anything.
+    CONTAINER_CMD='node -e "const{PrismaClient}=require(\"@prisma/client\");const p=new PrismaClient();p.user.findMany({where:{platformRole:\"OWNER\",deletedAt:null},select:{id:true,email:true,clerkUserId:true}}).then(u=>console.log(u.length?\"These rows still carry platformRole=OWNER. It no longer grants portal access — the allow-list in packages/shared/src/platform-admin.ts does.\n\"+JSON.stringify(u,null,1):\"No rows carry the legacy platform role.\")).finally(()=>p.\$disconnect())"'
     ;;
 esac
 
