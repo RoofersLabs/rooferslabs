@@ -69,8 +69,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
 type Box = { width: number; height: number };
 
 type Fitted =
-  | { kind: 'iphone'; spec: IphoneSpec; outer: Box }
-  | { kind: 'ipad'; spec: IpadSpec; outer: Box };
+  { kind: 'iphone'; spec: IphoneSpec; outer: Box } | { kind: 'ipad'; spec: IpadSpec; outer: Box };
 
 function fitScreenWidth<Spec extends { screen: { width: number } }>(
   available: number,
