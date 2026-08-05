@@ -406,8 +406,10 @@ export const articles: PreviewArticle[] = [
   {
     id: 'k1',
     title: 'What happens on an emergency call after hours?',
+    // "roof leak" is here on purpose: it is what the tour types into the
+    // knowledge base search, and this is the article the search has to find.
     excerpt:
-      'Active leaks, storm damage and anything letting water into the property are paged straight to the on-call crew, and a tarp visit is held for the next morning.',
+      'A roof leak, storm damage, or anything letting water into the property is paged straight to the on-call crew, and a tarp visit is held for the next morning.',
     category: 'EMERGENCY',
     updated: '2 days ago',
     version: 4,
