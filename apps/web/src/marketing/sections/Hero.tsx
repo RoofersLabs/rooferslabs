@@ -44,15 +44,14 @@ export function Hero() {
           </p>
         </div>
 
-        <div
-          role="region"
-          aria-label="Scrollable product preview"
-          tabIndex={0}
-          className="-mx-6 min-h-[560px] flex-1 overflow-x-auto overscroll-x-contain px-6 pb-10 [-ms-overflow-style:none] [-webkit-overflow-scrolling:touch] [scrollbar-width:none] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mk-accent-ring focus-visible:ring-offset-4 focus-visible:ring-offset-black sm:-mx-8 sm:px-8 sm:pb-12 lg:mx-0 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden"
-        >
-          <div className="w-[1040px] max-w-none lg:w-full">
-            <ProductShowcase />
-          </div>
+        {/* The preview used to be a fixed 1040px canvas dragged sideways in a
+            horizontal scroller below `lg`, because the old mock-up had one
+            desktop layout and no other. It does not any more: it rebuilds
+            itself at each breakpoint the way the application does — sidebar to
+            drawer, table to list, four columns to two — so it simply takes the
+            width it is given. */}
+        <div className="flex-1 pb-10 sm:pb-12">
+          <ProductShowcase />
         </div>
       </Container>
     </section>

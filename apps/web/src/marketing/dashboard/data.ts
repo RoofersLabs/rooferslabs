@@ -4,351 +4,491 @@
  * This is the marketing surface's own fixture set, not a mirror of the API
  * types — it exists to show what the product does, and it is deliberately
  * static so the preview renders identically on every visit and needs no
- * network. Names and numbers are invented.
+ * network. Company, callers and numbers are invented.
+ *
+ * Status values are written as the product's real enum strings (`EMERGENCY`,
+ * `APPOINTMENT_REQUESTED`, `HOT`…) rather than as pre-formatted labels, so the
+ * preview can run them through the same `humanizeEnum` and the same
+ * `EnumStatusText` tone rules the authenticated pages use. A caller who is
+ * orange in the app is orange here, because it is literally the same rule.
+ *
+ * Relative times are written out instead of derived from `Date.now()`. The
+ * dashboard's own `timeAgo` is right for live records; here it would make every
+ * screenshot, every visual diff and every page load slightly different for no
+ * gain.
  */
 
-export type CallStatus = 'booked' | 'qualified' | 'emergency' | 'followup';
+/** The fictional business the preview is signed in as. */
+export const COMPANY = {
+  name: 'Summit Roofing',
+  /** The signed-in owner — the greeting is addressed to them. */
+  firstName: 'Ray',
+  initials: 'RS',
+  host: 'app.rooferslabs.com',
+} as const;
 
-export type Call = {
+/* ── Calls ───────────────────────────────────────────────────────────────── */
+
+export type PreviewCall = {
   id: string;
   name: string;
+  /** E.164, so the preview formats it through the product's own `formatPhone`. */
   phone: string;
   city: string;
-  time: string;
-  duration: string;
+  /** `ConversationOutcome` — drives the status colour. */
+  outcome: string;
+  /** `ConversationIntent` — what the Top insights panel counts. */
   intent: string;
-  status: CallStatus;
-  /** Lead score, 0–100, from the qualification model. */
-  score: number;
+  summary: string;
+  duration: string;
+  /** Pre-rendered `timeAgo` output. */
+  ago: string;
+  /** Pre-rendered `formatDateTime` output, for the Calls table. */
+  at: string;
+  isEmergency: boolean;
 };
 
-export const STATUS_LABEL: Record<CallStatus, string> = {
-  booked: 'Booked',
-  qualified: 'Qualified',
-  emergency: 'Emergency',
-  followup: 'Follow-up',
-};
-
-export const calls: Call[] = [
+export const calls: PreviewCall[] = [
   {
     id: 'c1',
     name: 'Dana Whitfield',
-    phone: '(614) 555-0182',
+    phone: '+16145550182',
     city: 'Dublin, OH',
-    time: '2:41 AM',
+    outcome: 'EMERGENCY',
+    intent: 'EMERGENCY_REPAIR',
+    summary:
+      'Water coming through the kitchen ceiling after last night’s storm. On-call crew paged and an emergency tarp booked for 7:00 AM.',
     duration: '3m 12s',
-    intent: 'Storm damage — active leak',
-    status: 'emergency',
-    score: 96,
+    ago: '12 minutes ago',
+    at: 'Today, 2:41 AM',
+    isEmergency: true,
   },
   {
     id: 'c2',
     name: 'Marcus Bell',
-    phone: '(614) 555-0143',
+    phone: '+16145550143',
     city: 'Westerville, OH',
-    time: '8:05 AM',
+    outcome: 'APPOINTMENT_REQUESTED',
+    intent: 'NEW_ESTIMATE',
+    summary:
+      'Twenty-two year old architectural shingle roof, no interior staining yet. Estimate booked for Thursday at 10:00 AM.',
     duration: '2m 48s',
-    intent: 'Full roof replacement quote',
-    status: 'booked',
-    score: 91,
+    ago: '38 minutes ago',
+    at: 'Today, 8:05 AM',
+    isEmergency: false,
   },
   {
     id: 'c3',
     name: 'Priya Raman',
-    phone: '(614) 555-0119',
+    phone: '+16145550119',
     city: 'Hilliard, OH',
-    time: '9:22 AM',
+    outcome: 'APPOINTMENT_REQUESTED',
+    intent: 'INSPECTION',
+    summary:
+      'Wind lifted shingles off the rear slope. Nothing coming through inside. Inspection booked for Wednesday at 1:00 PM.',
     duration: '1m 57s',
-    intent: 'Missing shingles after wind',
-    status: 'booked',
-    score: 84,
+    ago: '1 hour ago',
+    at: 'Today, 9:22 AM',
+    isEmergency: false,
   },
   {
     id: 'c4',
     name: 'Tom Alvarez',
-    phone: '(614) 555-0167',
+    phone: '+16145550167',
     city: 'Grove City, OH',
-    time: '10:14 AM',
+    outcome: 'LEAD_CAPTURED',
+    intent: 'NEW_ESTIMATE',
+    summary:
+      'Gutter replacement across the front elevation only. In service area, ready to schedule. Estimator calling back within the hour.',
     duration: '1m 20s',
-    intent: 'Gutter repair estimate',
-    status: 'qualified',
-    score: 72,
+    ago: '2 hours ago',
+    at: 'Today, 10:14 AM',
+    isEmergency: false,
   },
   {
     id: 'c5',
     name: 'Renee Okafor',
-    phone: '(614) 555-0198',
+    phone: '+16145550198',
     city: 'Powell, OH',
-    time: '11:03 AM',
+    outcome: 'LEAD_CAPTURED',
+    intent: 'INSPECTION',
+    summary:
+      'Insurer has asked for a hail damage inspection report. Claim number to follow by text; upload link already sent.',
     duration: '2m 05s',
-    intent: 'Insurance claim inspection',
-    status: 'followup',
-    score: 68,
+    ago: '3 hours ago',
+    at: 'Today, 11:03 AM',
+    isEmergency: false,
   },
   {
     id: 'c6',
     name: 'Chris Donnelly',
-    phone: '(614) 555-0155',
+    phone: '+16145550155',
     city: 'Reynoldsburg, OH',
-    time: '12:37 PM',
+    outcome: 'APPOINTMENT_REQUESTED',
+    intent: 'REPAIR',
+    summary:
+      'Flat roof over the garage leaking in the same corner after two patches. Repair visit held for Monday at 9:00 AM.',
     duration: '2m 31s',
-    intent: 'Flat roof leak over garage',
-    status: 'booked',
-    score: 79,
+    ago: '4 hours ago',
+    at: 'Today, 12:37 PM',
+    isEmergency: false,
   },
   {
     id: 'c7',
     name: 'Alma Vasquez',
-    phone: '(614) 555-0126',
+    phone: '+16145550126',
     city: 'Upper Arlington, OH',
-    time: '1:48 PM',
+    outcome: 'INFORMATION_PROVIDED',
+    intent: 'WARRANTY',
+    summary:
+      'Asked what the workmanship warranty covers on a skylight reseal. Answered from the knowledge base; calling back after HOA approval.',
     duration: '1m 44s',
-    intent: 'Skylight resealing',
-    status: 'qualified',
-    score: 64,
+    ago: '5 hours ago',
+    at: 'Today, 1:48 PM',
+    isEmergency: false,
+  },
+  {
+    id: 'c8',
+    name: 'Wes Carmichael',
+    phone: '+16145550171',
+    city: 'Gahanna, OH',
+    outcome: 'LEAD_CAPTURED',
+    intent: 'REPAIR',
+    summary:
+      'Cracked ridge cap spotted from the driveway. Wants a repair quote before the next storm; prefers callbacks after 5 PM.',
+    duration: '1m 08s',
+    ago: '6 hours ago',
+    at: 'Today, 2:26 PM',
+    isEmergency: false,
   },
 ];
 
-/** Keyed by call id. Rendered as a replayed transcript, one line at a time. */
-export const transcripts: Record<string, Array<{ role: 'ai' | 'caller'; text: string }>> = {
-  c1: [
-    { role: 'ai', text: 'Thanks for calling Summit Roofing. This is the after-hours line.' },
-    { role: 'caller', text: 'There is water coming through my ceiling right now.' },
-    { role: 'ai', text: 'That is an emergency. Is the water still actively coming in?' },
-    { role: 'caller', text: 'Yes, into a bucket in the hallway.' },
-    { role: 'ai', text: 'Understood. Is anyone able to move what is underneath it safely?' },
-    { role: 'caller', text: 'Already did. It is just the bucket and a towel now.' },
-    { role: 'ai', text: 'I am paging the on-call crew now and holding a 7 AM slot for you.' },
-    { role: 'caller', text: 'Thank you. I did not expect anyone to pick up.' },
-  ],
-  c2: [
-    { role: 'ai', text: 'Thanks for calling Summit Roofing. How can I help?' },
-    { role: 'caller', text: 'I need a quote on replacing the whole roof.' },
-    { role: 'ai', text: 'Happy to help. Do you know roughly how old the current roof is?' },
-    { role: 'caller', text: 'About twenty-two years, original to the house.' },
-    { role: 'ai', text: 'That tracks. Are you seeing any staining on the ceilings inside?' },
-    { role: 'caller', text: 'Not yet, I would just rather get ahead of it.' },
-    { role: 'ai', text: 'Sensible. I can get an estimator out Thursday morning — does 10 work?' },
-    { role: 'caller', text: 'Thursday at ten is fine.' },
-    { role: 'ai', text: 'Booked. You will get a text confirmation in the next minute.' },
-  ],
-  c3: [
-    { role: 'ai', text: 'Thanks for calling Summit Roofing. How can I help?' },
-    { role: 'caller', text: 'The wind took some shingles off the back side.' },
-    { role: 'ai', text: 'Any ceiling stains or drips inside the house?' },
-    { role: 'caller', text: 'No, nothing inside.' },
-    { role: 'ai', text: 'Good. I have you down for Wednesday at 1 PM for an inspection.' },
-  ],
-  c4: [
-    { role: 'ai', text: 'Thanks for calling Summit Roofing. How can I help?' },
-    { role: 'caller', text: 'Looking for a price on new gutters.' },
-    { role: 'ai', text: 'Is this for the full perimeter or one section?' },
-    { role: 'caller', text: 'Just the front of the house.' },
-    { role: 'ai', text: 'Got it. An estimator will call you back within the hour.' },
-  ],
-  c5: [
-    { role: 'ai', text: 'Thanks for calling Summit Roofing. How can I help?' },
-    { role: 'caller', text: 'My insurer wants an inspection report for a hail claim.' },
-    { role: 'ai', text: 'We do those. Do you have a claim number handy?' },
-    { role: 'caller', text: 'I can find it, give me a moment.' },
-    { role: 'ai', text: 'No rush — I will text you a link to upload it.' },
-  ],
-  c6: [
-    { role: 'ai', text: 'Thanks for calling Summit Roofing. How can I help?' },
-    { role: 'caller', text: 'The flat roof over my garage is leaking again.' },
-    { role: 'ai', text: 'Has it been patched before, or would this be the first repair?' },
-    { role: 'caller', text: 'Patched twice. It keeps coming back in the same corner.' },
-    { role: 'ai', text: 'Then it is worth a proper look. Monday at 9 AM — shall I hold it?' },
-    { role: 'caller', text: 'Please do.' },
-  ],
-  c7: [
-    { role: 'ai', text: 'Thanks for calling Summit Roofing. How can I help?' },
-    { role: 'caller', text: 'One of my skylights is letting in water when it rains hard.' },
-    { role: 'ai', text: 'Do you know how old the skylight is?' },
-    { role: 'caller', text: 'It came with the house, so at least fifteen years.' },
-    {
-      role: 'ai',
-      text: 'Resealing usually handles that. I will have an estimator call you today.',
-    },
-  ],
-};
+/* ── Dashboard metrics ───────────────────────────────────────────────────── */
 
 /**
- * Indexed access into a fixture list.
- *
- * The project compiles with `noUncheckedIndexedAccess`, which is right for API
- * data but noisy against hand-written fixtures. This narrows the type in one
- * place and fails loudly if a fixture is ever emptied, rather than scattering
- * non-null assertions through the components.
+ * The four headline figures, in the order the production analytics panel puts
+ * them. `delta` fills the panel's comparison slot — the only place the preview
+ * carries a value the live product currently renders as a dash, because an
+ * empty comparison line is exactly the empty state this preview exists to
+ * avoid.
  */
-export function at<T>(list: readonly T[], index: number): T {
-  const value = list[index];
-  if (value === undefined) {
-    throw new Error(`Preview fixture is missing index ${index}`);
-  }
-  return value;
-}
+export const metrics = [
+  { key: 'calls', label: 'Calls today', value: 47, delta: '+12%' },
+  { key: 'leads', label: 'Leads today', value: 18, delta: '+9%' },
+  { key: 'emergencies', label: 'Emergencies today', value: 3, delta: '+1' },
+  { key: 'appointments', label: 'Pending appointments', value: 9, delta: '+4' },
+] as const;
 
-/** The call the hero and the summary panels open on. */
-export const featuredCall = at(calls, 1);
+/** The AI receptionist summary tiles, matching the product's four. */
+export const summaryTiles = [
+  { key: 'resolution', label: 'Resolution rate', value: '94%', hint: '44 of 47 calls today' },
+  { key: 'length', label: 'Avg. call length', value: '2m 41s', hint: 'Across 47 calls today' },
+  { key: 'hours', label: 'Hours saved', value: '6.8h', hint: '≈ 152 calls this week' },
+  { key: 'missed', label: 'Missed calls', value: '0', hint: 'Answered on the first ring' },
+] as const;
 
-export type Appointment = {
+/** Ranked share of what recent callers wanted, by detected intent. */
+export const insightRows = [
+  { label: 'New estimate', percent: 34 },
+  { label: 'Emergency repair', percent: 24 },
+  { label: 'Repair', percent: 18 },
+  { label: 'Inspection', percent: 14 },
+  { label: 'Warranty', percent: 10 },
+] as const;
+
+/* ── Appointments ────────────────────────────────────────────────────────── */
+
+export type PreviewAppointment = {
   id: string;
   name: string;
   service: string;
-  day: string;
-  time: string;
+  /** `AppointmentPriority`. */
+  priority: string;
+  /** `AppointmentStatus`. */
+  status: string;
+  /** Pre-rendered `formatDate` / `formatDateTime` output. */
+  when: string;
+  window: string;
   address: string;
-  crew: string;
+  requested: string;
 };
 
-export const appointments: Appointment[] = [
+export const appointments: PreviewAppointment[] = [
   {
     id: 'a1',
     name: 'Dana Whitfield',
-    service: 'Emergency tarp + assessment',
-    day: 'Today',
-    time: '7:00 AM',
-    address: '418 Bridge St',
-    crew: 'On-call crew',
+    service: 'Emergency tarp + interior assessment',
+    priority: 'URGENT',
+    status: 'CONFIRMED',
+    when: 'Today',
+    window: '7:00 – 9:00 AM',
+    address: '418 Bridge St, Dublin',
+    requested: '12 minutes ago',
   },
   {
     id: 'a2',
     name: 'Priya Raman',
     service: 'Wind damage inspection',
-    day: 'Wed',
-    time: '1:00 PM',
-    address: '2201 Cemetery Rd',
-    crew: 'Crew B',
+    priority: 'HIGH',
+    status: 'CONFIRMED',
+    when: 'Wed 14 Aug',
+    window: '1:00 – 3:00 PM',
+    address: '2201 Cemetery Rd, Hilliard',
+    requested: '1 hour ago',
   },
   {
     id: 'a3',
     name: 'Marcus Bell',
     service: 'Full replacement estimate',
-    day: 'Thu',
-    time: '10:00 AM',
-    address: '79 Sunbury Rd',
-    crew: 'Estimating',
+    priority: 'HIGH',
+    status: 'REQUESTED',
+    when: 'Thu 15 Aug',
+    window: '10:00 AM – 12:00 PM',
+    address: '79 Sunbury Rd, Westerville',
+    requested: '38 minutes ago',
   },
   {
     id: 'a4',
-    name: 'Louis Trent',
-    service: 'Annual maintenance',
-    day: 'Fri',
-    time: '3:30 PM',
-    address: '1140 Hayden Run',
-    crew: 'Crew A',
+    name: 'Chris Donnelly',
+    service: 'Flat roof leak repair',
+    priority: 'NORMAL',
+    status: 'REQUESTED',
+    when: 'Mon 19 Aug',
+    window: '9:00 – 11:00 AM',
+    address: '5522 Blacklick Dr, Reynoldsburg',
+    requested: '4 hours ago',
+  },
+  {
+    id: 'a5',
+    name: 'Louise Trent',
+    service: 'Annual maintenance visit',
+    priority: 'LOW',
+    status: 'CONFIRMED',
+    when: 'Fri 16 Aug',
+    window: '3:30 – 5:00 PM',
+    address: '1140 Hayden Run, Hilliard',
+    requested: 'Yesterday',
   },
 ];
 
-/** Days carrying at least one booking, for the calendar heat marks. */
-export const bookedDays: Record<number, number> = {
-  9: 1,
-  11: 2,
-  12: 3,
-  13: 1,
-  16: 2,
-  17: 4,
-  18: 2,
-  19: 1,
-  23: 3,
-  24: 1,
-};
+/* ── Customers ───────────────────────────────────────────────────────────── */
 
-export type TimelineEvent = {
+export type PreviewCustomer = {
   id: string;
-  label: string;
-  detail: string;
-  time: string;
-  kind: 'call' | 'ai' | 'booking' | 'message' | 'job';
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  /** `PropertyType`. */
+  propertyType: string;
+  /** `CustomerStatus`. */
+  status: string;
+  added: string;
+  favorite?: boolean;
 };
 
-export const timeline: TimelineEvent[] = [
+export const customers: PreviewCustomer[] = [
   {
-    id: 't1',
-    label: 'Call answered',
-    detail: 'Inbound at 2:41 AM, picked up on the first ring',
-    time: '2:41 AM',
-    kind: 'call',
+    id: 'u1',
+    name: 'Dana Whitfield',
+    phone: '+16145550182',
+    email: 'dana.whitfield@example.com',
+    address: '418 Bridge St, Dublin',
+    propertyType: 'RESIDENTIAL',
+    status: 'ACTIVE',
+    added: '12 minutes ago',
+    favorite: true,
   },
   {
-    id: 't2',
-    label: 'Qualified as emergency',
-    detail: 'Active interior water intrusion confirmed',
-    time: '2:43 AM',
-    kind: 'ai',
+    id: 'u2',
+    name: 'Marcus Bell',
+    phone: '+16145550143',
+    email: 'm.bell@example.com',
+    address: '79 Sunbury Rd, Westerville',
+    propertyType: 'RESIDENTIAL',
+    status: 'NEW',
+    added: '38 minutes ago',
   },
   {
-    id: 't3',
-    label: 'On-call crew paged',
-    detail: 'SMS + push delivered to two responders',
-    time: '2:44 AM',
-    kind: 'message',
+    id: 'u3',
+    name: 'Priya Raman',
+    phone: '+16145550119',
+    email: 'praman@example.com',
+    address: '2201 Cemetery Rd, Hilliard',
+    propertyType: 'RESIDENTIAL',
+    status: 'ACTIVE',
+    added: '1 hour ago',
   },
   {
-    id: 't4',
-    label: 'Appointment booked',
-    detail: 'Today at 7:00 AM — emergency tarp + assessment',
-    time: '2:44 AM',
-    kind: 'booking',
+    id: 'u4',
+    name: 'Grove City Storage Co.',
+    phone: '+16145550167',
+    email: 'facilities@gcstorage.example',
+    address: '3900 Southwest Blvd, Grove City',
+    propertyType: 'COMMERCIAL',
+    status: 'ACTIVE',
+    added: '2 hours ago',
+    favorite: true,
   },
   {
-    id: 't5',
-    label: 'Crew dispatched',
-    detail: 'Marked en route from the Dublin yard',
-    time: '6:31 AM',
-    kind: 'job',
+    id: 'u5',
+    name: 'Renee Okafor',
+    phone: '+16145550198',
+    email: 'renee.okafor@example.com',
+    address: '867 Liberty Rd, Powell',
+    propertyType: 'RESIDENTIAL',
+    status: 'NEW',
+    added: '3 hours ago',
+  },
+  {
+    id: 'u6',
+    name: 'Chris Donnelly',
+    phone: '+16145550155',
+    email: 'cdonnelly@example.com',
+    address: '5522 Blacklick Dr, Reynoldsburg',
+    propertyType: 'RESIDENTIAL',
+    status: 'ACTIVE',
+    added: '4 hours ago',
   },
 ];
 
-export type NotificationItem = {
+/* ── Knowledge base ──────────────────────────────────────────────────────── */
+
+export type PreviewArticle = {
   id: string;
   title: string;
-  detail: string;
-  time: string;
-  urgent?: boolean;
+  excerpt: string;
+  /** `KnowledgeCategory`. */
+  category: string;
+  /** `KnowledgeStatus`, omitted while the article is published. */
+  status?: string;
+  updated: string;
+  version: number;
 };
 
-export const notifications: NotificationItem[] = [
+export const articles: PreviewArticle[] = [
+  {
+    id: 'k1',
+    title: 'What happens on an emergency call after hours?',
+    excerpt:
+      'Active leaks, storm damage and anything letting water into the property are paged straight to the on-call crew, and a tarp visit is held for the next morning.',
+    category: 'EMERGENCY',
+    updated: '2 days ago',
+    version: 4,
+  },
+  {
+    id: 'k2',
+    title: 'Workmanship warranty — what is covered, and for how long',
+    excerpt:
+      'Ten years on workmanship for full replacements, two years on repairs, transferable once to a new homeowner. Manufacturer shingle warranties are registered on your behalf.',
+    category: 'WARRANTY',
+    updated: '5 days ago',
+    version: 7,
+  },
+  {
+    id: 'k3',
+    title: 'Insurance claims: what we need from the homeowner',
+    excerpt:
+      'Claim number, adjuster contact and the date of loss. We supply the inspection report, photographs and a line-item estimate the adjuster can work from.',
+    category: 'POLICIES',
+    updated: '1 week ago',
+    version: 3,
+  },
+  {
+    id: 'k4',
+    title: 'Financing options and monthly payment ranges',
+    excerpt:
+      'Zero-interest for twelve months on approved credit, or fixed monthly terms up to sixty months. Soft credit check only until the job is signed.',
+    category: 'FINANCING',
+    updated: '1 week ago',
+    version: 2,
+  },
+  {
+    id: 'k5',
+    title: 'Frequently asked: how long does a roof replacement take?',
+    excerpt:
+      'Most single-family replacements are one working day, two if the deck needs repairs. Crews arrive at 7:30 AM and the site is cleared and magnet-swept the same evening.',
+    category: 'FAQ',
+    updated: '2 weeks ago',
+    version: 5,
+  },
+  {
+    id: 'k6',
+    title: 'Service areas and travel charges',
+    excerpt:
+      'Franklin County and the ring of suburbs inside I-270 with no travel charge. Delaware and Licking County by arrangement.',
+    category: 'SERVICE_AREAS',
+    status: 'DRAFT',
+    updated: '3 weeks ago',
+    version: 1,
+  },
+];
+
+/* ── Notifications ───────────────────────────────────────────────────────── */
+
+export type PreviewNotification = {
+  id: string;
+  /** `NotificationType` — selects the row icon. */
+  type: string;
+  title: string;
+  message: string;
+  ago: string;
+  unread: boolean;
+  critical?: boolean;
+};
+
+export const notifications: PreviewNotification[] = [
   {
     id: 'n1',
+    type: 'EMERGENCY',
     title: 'Emergency call routed',
-    detail: 'Dana Whitfield — active leak, crew paged',
-    time: 'now',
-    urgent: true,
+    message: 'Dana Whitfield — active leak in Dublin. On-call crew paged by SMS and push.',
+    ago: '12 minutes ago',
+    unread: true,
+    critical: true,
   },
-  { id: 'n2', title: 'Appointment booked', detail: 'Marcus Bell — Thu 10:00 AM', time: '2m' },
-  { id: 'n3', title: 'Estimate sent', detail: 'Priya Raman — wind damage', time: '18m' },
-  { id: 'n4', title: 'Follow-up scheduled', detail: 'Renee Okafor — claim documents', time: '1h' },
+  {
+    id: 'n2',
+    type: 'APPOINTMENT_REQUEST',
+    title: 'Appointment confirmed',
+    message: 'Marcus Bell — full replacement estimate, Thursday 15 Aug at 10:00 AM.',
+    ago: '38 minutes ago',
+    unread: true,
+  },
+  {
+    id: 'n3',
+    type: 'NEW_LEAD',
+    title: 'Lead qualified',
+    message: 'Priya Raman — wind damage, inside the service area, ready to schedule.',
+    ago: '1 hour ago',
+    unread: true,
+  },
+  {
+    id: 'n4',
+    type: 'NEW_CALL',
+    title: 'AI answered a call',
+    message: 'Tom Alvarez asked about gutter replacement across the front elevation.',
+    ago: '2 hours ago',
+    unread: false,
+  },
+  {
+    id: 'n5',
+    type: 'APPOINTMENT_REQUEST',
+    title: 'Appointment requested',
+    message: 'Renee Okafor — hail claim inspection for her insurer, date to confirm.',
+    ago: '3 hours ago',
+    unread: false,
+  },
+  {
+    id: 'n6',
+    type: 'CALL_SUMMARY',
+    title: 'Call summary ready',
+    message:
+      'Alma Vasquez — warranty terms for a skylight reseal, answered from your knowledge base.',
+    ago: '5 hours ago',
+    unread: false,
+  },
 ];
 
-/** Calls answered per day, Monday through Sunday. */
-export const weekVolume = [34, 41, 38, 52, 47, 29, 22];
-export const weekLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
-export const metrics = [
-  { label: 'Calls answered', value: '263', delta: '+12%' },
-  { label: 'Appointments booked', value: '88', delta: '+9%' },
-  { label: 'Answer rate', value: '100%', delta: null },
-  { label: 'Avg. pickup', value: '0.8s', delta: '−0.2s' },
-];
-
-/** Live-activity ticker entries, replayed on a loop in the preview. */
-export const activity = [
-  { id: 'l1', text: 'Call answered — Bexley, OH', meta: 'first ring' },
-  { id: 'l2', text: 'Lead qualified — roof replacement', meta: 'score 91' },
-  { id: 'l3', text: 'Appointment booked — Thu 10:00 AM', meta: 'Crew B' },
-  { id: 'l4', text: 'Owner notified — push + SMS', meta: 'delivered' },
-  { id: 'l5', text: 'Call answered — Gahanna, OH', meta: 'first ring' },
-  { id: 'l6', text: 'Emergency routed — active leak', meta: 'on-call paged' },
-];
-
-/** The qualification checklist the model fills in during a call. */
-export const qualification = [
-  { label: 'Homeowner confirmed', value: 'Yes' },
-  { label: 'Property type', value: 'Single family' },
-  { label: 'Roof age', value: '22 years' },
-  { label: 'Service area', value: 'In range' },
-  { label: 'Insurance claim', value: 'No' },
-  { label: 'Ready to schedule', value: 'Yes' },
-];
+/** Unread badge on the sidebar and the header bell. */
+export const unreadCount = notifications.filter((item) => item.unread).length;

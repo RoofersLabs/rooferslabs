@@ -1,116 +1,82 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { AppFrame, type NavItem } from './chrome';
-import { at, calls, featuredCall } from './data';
-import {
-  AiConversationPanel,
-  AiSummaryPanel,
-  LeadQualificationPanel,
-  RecentCallsPanel,
-} from './panels/CallPanels';
-import { AppointmentsPanel, CalendarPanel, CustomerTimelinePanel } from './panels/SchedulePanels';
-import {
-  AnalyticsPanel,
-  LiveActivityPanel,
-  MetricsRow,
-  NotificationsPanel,
-} from './panels/InsightPanels';
+import { AppWindow, type ViewId } from './chrome';
+import { notifications } from './data';
+import { DashboardView } from './views/DashboardView';
+import { CallsView } from './views/CallsView';
+import { CustomersView } from './views/CustomersView';
+import { AppointmentsView } from './views/AppointmentsView';
+import { KnowledgeView } from './views/KnowledgeView';
+import { NotificationsView } from './views/NotificationsView';
 
 /**
- * The full product, running in the page.
+ * The product, running in the marketing page.
  *
- * Everything here is a real React component driven by real state: choosing a
- * call re-renders the transcript, the summary and the qualification score;
- * choosing a day moves the calendar selection. Nothing is a screenshot, which
- * is the point — a static image of a live product undersells it.
+ * This is the authenticated application's own dashboard rebuilt section for
+ * section — the same sidebar, header, cards, list rows, status colours and
+ * spacing, drawn with the same design tokens and, wherever the component was
+ * free of the router and the API, the same components. What a visitor sees here
+ * is what they see after signing in, filled with a working day instead of the
+ * empty states a new account opens on.
+ *
+ * Nothing is a screenshot. The navigation moves between real views, search
+ * filters real fixtures, the appointment status dropdowns change status and
+ * marking a notification read empties the badge — a still image of a live
+ * product undersells it, and a video of one is a video.
  */
 export function ProductShowcase() {
-  const [nav, setNav] = useState<NavItem>('Overview');
-  const [callId, setCallId] = useState(featuredCall.id);
-  const [day, setDay] = useState(17);
-
-  const call = useMemo(() => calls.find((c) => c.id === callId) ?? at(calls, 0), [callId]);
+  const [view, setView] = useState<ViewId>('dashboard');
+  const [read, setRead] = useState<Record<string, boolean>>({});
   const reduced = useReducedMotion();
 
-  const views: Record<NavItem, React.ReactNode> = {
-    Overview: (
-      <div className="flex min-h-0 flex-1 flex-col gap-3">
-        <MetricsRow />
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-3">
-          <AnalyticsPanel className="min-h-[200px] lg:col-span-2" />
-          <NotificationsPanel className="min-h-[200px]" />
-          <LiveActivityPanel className="min-h-[200px]" />
-          <AiSummaryPanel call={call} className="min-h-[200px] lg:col-span-2" />
-        </div>
-      </div>
-    ),
-    Calls: (
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-3">
-        <RecentCallsPanel
-          selectedId={callId}
-          onSelect={setCallId}
-          className="min-h-[240px] lg:row-span-2"
-        />
-        <AiConversationPanel callId={callId} className="min-h-[280px] lg:row-span-2" />
-        <LeadQualificationPanel call={call} className="min-h-[240px]" />
-        <AiSummaryPanel call={call} className="min-h-[160px]" />
-      </div>
-    ),
-    Appointments: (
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
-        <CalendarPanel selectedDay={day} onSelectDay={setDay} />
-        <AppointmentsPanel className="min-h-[280px]" />
-      </div>
-    ),
-    Customers: (
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-2">
-        <CustomerTimelinePanel className="min-h-[300px] lg:row-span-2" />
-        <LeadQualificationPanel call={call} className="min-h-[180px]" />
-        <AiSummaryPanel call={call} className="min-h-[140px]" />
-      </div>
-    ),
-    Analytics: (
-      <div className="flex min-h-0 flex-1 flex-col gap-3">
-        <MetricsRow />
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-3">
-          <AnalyticsPanel className="min-h-[260px] lg:col-span-2" />
-          <LiveActivityPanel className="min-h-[260px]" />
-        </div>
-      </div>
-    ),
-  };
+  const isUnread = useCallback((id: string) => read[id] ?? isUnreadInitially(id), [read]);
+
+  const toggleRead = useCallback(
+    (id: string) => setRead((prev) => ({ ...prev, [id]: !(prev[id] ?? isUnreadInitially(id)) })),
+    [],
+  );
+
+  const markAllRead = useCallback(
+    () => setRead(Object.fromEntries(notifications.map((item) => [item.id, false]))),
+    [],
+  );
+
+  const unreadCount = notifications.filter((item) => isUnread(item.id)).length;
 
   return (
-    <AppFrame nav={nav} onNavigate={setNav} interactive className="min-h-[560px]">
-      {/* Section tabs, shown where the sidebar is folded away */}
-      <div className="flex gap-1 overflow-x-auto border-b border-mk-line px-3 py-2 lg:hidden">
-        {(Object.keys(views) as NavItem[]).map((item) => (
-          <button
-            key={item}
-            type="button"
-            onClick={() => setNav(item)}
-            aria-current={item === nav ? 'true' : undefined}
-            className={`shrink-0 rounded-md px-3 py-1.5 text-[12.5px] transition-colors duration-200 ease-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mk-accent-ring ${
-              item === nav ? 'bg-white/[0.07] text-white' : 'text-white/50'
-            }`}
-          >
-            {item}
-          </button>
-        ))}
-      </div>
-
+    <AppWindow view={view} unreadCount={unreadCount} onNavigate={setView}>
+      {/* `mode="wait"` so the outgoing view is gone before the next arrives:
+          two dashboards cross-fading through each other is the one thing that
+          would make this read as an animation rather than as an application.
+          `initial={false}` keeps the first paint still — the sections inside
+          run their own entrance. */}
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
-          key={nav}
-          initial={{ opacity: 0, y: reduced ? 0 : 6 }}
+          key={view}
+          initial={{ opacity: 0, y: reduced ? 0 : 8 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: reduced ? 0 : -4 }}
-          transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-          className="flex min-h-0 flex-col p-3"
+          exit={{ opacity: 0, y: reduced ? 0 : -6 }}
+          transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
         >
-          {views[nav]}
+          {view === 'dashboard' && <DashboardView onNavigate={setView} />}
+          {view === 'calls' && <CallsView />}
+          {view === 'customers' && <CustomersView />}
+          {view === 'appointments' && <AppointmentsView />}
+          {view === 'knowledge' && <KnowledgeView />}
+          {view === 'notifications' && (
+            <NotificationsView
+              isUnread={isUnread}
+              onToggle={toggleRead}
+              onMarkAllRead={markAllRead}
+            />
+          )}
         </motion.div>
       </AnimatePresence>
-    </AppFrame>
+    </AppWindow>
   );
+}
+
+/** A notification's shipped read state, before the visitor has touched it. */
+function isUnreadInitially(id: string): boolean {
+  return notifications.find((item) => item.id === id)?.unread ?? false;
 }
