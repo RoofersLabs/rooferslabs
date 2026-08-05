@@ -8,13 +8,12 @@ import { sectionHref } from '../routes';
 /**
  * Everything the offer is made of. These are the only values that change when
  * the programme changes — the bar builds every string it renders from them, so
- * nothing below needs editing to move the price, the cohort size or the label.
+ * nothing below needs editing to move the trial, the cohort size or the label.
  */
 export const FOUNDING_PROGRAM = {
-  name: 'Founding Customer Program',
-  /** Used below `sm`, where the full name would crowd out the offer itself. */
-  shortName: 'Founding Program',
-  price: 49,
+  name: 'Founding Customers Program',
+  trialDays: 14,
+  cohort: 20,
   cta: 'Claim Your Spot',
   /** Below `sm` the offer earns the width; the link keeps `cta` as its
       accessible name, so nothing is lost to a screen reader. */
@@ -24,18 +23,12 @@ export const FOUNDING_PROGRAM = {
   href: '#pricing',
 } as const;
 
-const { price } = FOUNDING_PROGRAM;
-
 /**
- * The offer at two lengths. The bar says one thing now — a price — so a phone
- * only has to drop the product name to keep it on a single line. Only one is
- * ever in the accessibility tree: the other is `display: none`, not visually
- * hidden.
+ * The reason to look. It is the loudest thing in the bar — the programme name
+ * above it is a label, this is the offer — and it is never abbreviated: below
+ * `lg` it takes its own line rather than losing words to the CTA.
  */
-const OFFER = {
-  full: `Get rooferslabs for just $${price}/month.`,
-  short: `Just $${price}/month`,
-} as const;
+const OFFER = `${FOUNDING_PROGRAM.trialDays}-Day Free Trial for the First ${FOUNDING_PROGRAM.cohort} Companies`;
 
 /**
  * Scroll distance at which the bar tucks away — the same threshold the
@@ -48,10 +41,15 @@ const COLLAPSE_AT = 12;
  * The promotional bar above the navigation.
  *
  * It is visible at rest and collapses once the reader scrolls, which is what an
- * in-flow banner would do — but the navigation below it is fixed, so the height
- * is animated rather than scrolled. Collapsing (rather than hiding) keeps the
- * link in the tab order; focus re-opens the bar so a keyboard reader never aims
- * at something they cannot see.
+ * in-flow banner would do — but the navigation below it is fixed, so the bar is
+ * closed rather than scrolled. Collapsing (rather than hiding) keeps the link in
+ * the tab order; focus re-opens the bar so a keyboard reader never aims at
+ * something they cannot see.
+ *
+ * The close animates `grid-template-rows` rather than a height, because the bar
+ * has no single height to name: the offer sets its own line count from the
+ * width and the reader's font size, and a hard height would clip it the moment
+ * either one moved.
  */
 export function AnnouncementBar() {
   const { scrollY } = useScroll();
@@ -72,75 +70,85 @@ export function AnnouncementBar() {
       onBlur={() => setFocusWithin(false)}
       className={cn(
         // The hairline is an inset shadow rather than a border: a border would
-        // hold the bar 1px tall when collapsed.
-        'overflow-hidden bg-gradient-to-r from-mk-accent-700 via-mk-accent-700 to-mk-accent',
+        // hold the bar 1px tall when closed.
+        'grid overflow-hidden bg-gradient-to-r from-mk-accent-700 via-mk-accent-700 to-mk-accent',
         'shadow-[inset_0_-1px_0_rgba(255,255,255,0.12)]',
-        'transition-[height] duration-300 ease-smooth motion-reduce:transition-none',
-        collapsed ? 'h-0' : 'h-10 sm:h-[42px]',
+        'transition-[grid-template-rows] duration-300 ease-smooth motion-reduce:transition-none',
+        collapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]',
       )}
     >
-      <Container>
-        {/* The row keeps its full height while the bar closes around it, so the
-            content slides out of frame instead of being squashed. */}
-        <div
-          className={cn(
-            'flex h-10 items-center justify-between gap-3 text-[11px] font-medium tracking-[-0.005em] sm:h-[42px] sm:gap-6 sm:text-[12.5px]',
-            'transition-opacity duration-200 ease-smooth motion-reduce:transition-none',
-            collapsed && 'opacity-0',
-          )}
-        >
-          <p className="flex min-w-0 items-center gap-2 sm:gap-2.5">
-            {/* On the narrowest phones the programme name is the first thing to
-                go: the price is the reason to look, and a truncated price reads
-                as broken. */}
-            <span className="whitespace-nowrap text-white max-[359px]:hidden">
-              <span className="sm:hidden">{FOUNDING_PROGRAM.shortName}</span>
-              <span className="hidden sm:inline">{FOUNDING_PROGRAM.name}</span>
-            </span>
+      {/* `min-h-0` is what lets the 0fr row actually collapse; the fade runs
+          ahead of it so the copy is gone before the edge reaches it. */}
+      <div
+        className={cn(
+          'min-h-0 transition-opacity duration-200 ease-smooth motion-reduce:transition-none',
+          collapsed && 'opacity-0',
+        )}
+      >
+        <Container>
+          {/* Padding rather than a set height, so the row is as tall as the
+              message needs and no taller: ~41px on the single-line layout,
+              which is the height the bar has always had. */}
+          <div className="flex items-center justify-between gap-4 py-2 sm:gap-8 sm:py-2.5 lg:gap-12 lg:py-2">
+            {/* Label above offer until the row is wide enough to hold both:
+                stacking is deliberate, so the offer never has to compete with
+                the programme name for the same line. */}
+            <p className="flex min-w-0 flex-col gap-y-0.5 lg:flex-row lg:items-center lg:gap-x-2.5">
+              <span className="text-[10.5px] font-medium uppercase leading-[1.35] tracking-[0.08em] text-white/75 sm:text-[11px]">
+                {FOUNDING_PROGRAM.name}
+              </span>
 
-            {/* A drawn dot rather than a bullet glyph, which sits off-centre in
-                most faces at this size. */}
-            <span
-              aria-hidden="true"
-              className="h-[3px] w-[3px] shrink-0 rounded-full bg-white/45 max-[359px]:hidden"
-            />
-
-            <span className="truncate text-white/85">
-              <span className="sm:hidden">{OFFER.short}</span>
-              <span className="hidden sm:inline">{OFFER.full}</span>
-            </span>
-          </p>
-
-          <a
-            href={sectionHref(FOUNDING_PROGRAM.href, pathname)}
-            aria-label={FOUNDING_PROGRAM.cta}
-            className={cn(
-              'group inline-flex shrink-0 items-center gap-1.5 rounded-sm py-1 text-white',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70',
-            )}
-          >
-            <span className="relative whitespace-nowrap">
-              <span className="sm:hidden">{FOUNDING_PROGRAM.ctaShort}</span>
-              <span className="hidden sm:inline">{FOUNDING_PROGRAM.cta}</span>
+              {/* The separator between the two halves of the message, drawn
+                  rather than typed: a bullet glyph sits off-centre in most
+                  faces at this size. It only appears on the single-line
+                  layout, where there are in fact two halves to separate. */}
               <span
                 aria-hidden="true"
-                className={cn(
-                  'absolute -bottom-px left-0 h-px w-full origin-left scale-x-0 bg-current',
-                  'transition-transform duration-300 ease-smooth',
-                  'group-hover:scale-x-100 group-focus-visible:scale-x-100',
-                  'motion-reduce:transition-none',
-                )}
+                className="hidden h-[3px] w-[3px] shrink-0 rounded-full bg-white/45 lg:block"
               />
-            </span>
-            <span
-              aria-hidden="true"
-              className="transition-transform duration-300 ease-smooth group-hover:translate-x-0.5 motion-reduce:transform-none"
+
+              {/* Balanced, so the narrowest phones — the only widths where the
+                  offer wraps at all — get two even lines rather than a full one
+                  and a single trailing word. */}
+              <span className="text-balance text-[12px] font-semibold leading-[1.35] tracking-[-0.005em] text-white sm:text-[13px]">
+                {OFFER}
+              </span>
+            </p>
+
+            <a
+              href={sectionHref(FOUNDING_PROGRAM.href, pathname)}
+              aria-label={FOUNDING_PROGRAM.cta}
+              className={cn(
+                // The leading is named rather than left to the font: the arrow
+                // resolves to a fallback face whose default line box is taller
+                // than the label's, and it would otherwise set the bar's height.
+                'group inline-flex shrink-0 items-center gap-1.5 rounded-sm py-1 text-[11px] font-medium leading-[1.35] text-white sm:text-[12.5px]',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70',
+              )}
             >
-              &rarr;
-            </span>
-          </a>
-        </div>
-      </Container>
+              <span className="relative whitespace-nowrap">
+                <span className="sm:hidden">{FOUNDING_PROGRAM.ctaShort}</span>
+                <span className="hidden sm:inline">{FOUNDING_PROGRAM.cta}</span>
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'absolute -bottom-px left-0 h-px w-full origin-left scale-x-0 bg-current',
+                    'transition-transform duration-300 ease-smooth',
+                    'group-hover:scale-x-100 group-focus-visible:scale-x-100',
+                    'motion-reduce:transition-none',
+                  )}
+                />
+              </span>
+              <span
+                aria-hidden="true"
+                className="transition-transform duration-300 ease-smooth group-hover:translate-x-0.5 motion-reduce:transform-none"
+              >
+                &rarr;
+              </span>
+            </a>
+          </div>
+        </Container>
+      </div>
     </aside>
   );
 }
