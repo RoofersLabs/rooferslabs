@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { forwardRef, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { cn, formatPhone, humanizeEnum } from '@/lib/utils';
 import { LogoMark } from '@/components/Brand';
@@ -13,8 +13,8 @@ import {
   BellIcon,
   BookOpenIcon,
   CalendarDaysIcon,
+  Cog6ToothIcon,
   HomeIcon,
-  LockClosedIcon,
   MagnifyingGlassIcon,
   PhoneIcon,
   Squares2X2Icon,
@@ -22,13 +22,14 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { COMPANY, appointments, articles, calls, customers } from './data';
+import { usePhone } from './formFactor';
 
 /**
  * The authenticated application's chrome, rebuilt for the marketing page.
  *
  * Everything here is a replica of `layouts/AppLayout` and the shared primitives
  * it composes — the same 256px sidebar, the same 64px header, the same
- * collapsed search pill, the same tab bar below `lg`. It is a replica rather
+ * collapsed search pill, the same tab bar on a handset. It is a replica rather
  * than the layout itself because the real one is wired to the router, to Clerk
  * and to React Query: rendering it on a public page would mean a signed-out
  * visitor's clicks navigating the site away from the marketing page.
@@ -38,6 +39,11 @@ import { COMPANY, appointments, articles, calls, customers } from './data';
  * application uses (`bg-surface`, `text-ink`, `border-line-subtle`,
  * `shadow-card`), so this preview re-themes with the product and cannot drift
  * from it by hand.
+ *
+ * Layout switches come from `useFormFactor()` rather than from Tailwind's
+ * viewport prefixes — see formFactor.tsx. The shell now fills whatever screen
+ * it is handed instead of declaring its own height, because the thing that
+ * declares the height is the device around it.
  */
 
 export const NAV = [
@@ -47,6 +53,7 @@ export const NAV = [
   { id: 'appointments', label: 'Appointments', icon: CalendarDaysIcon },
   { id: 'knowledge', label: 'Knowledge Base', icon: BookOpenIcon },
   { id: 'notifications', label: 'Notifications', icon: BellIcon },
+  { id: 'settings', label: 'Settings', icon: Cog6ToothIcon },
 ] as const;
 
 export type ViewId = (typeof NAV)[number]['id'];
@@ -132,14 +139,25 @@ export function PreviewPageHeader({
   actions,
 }: {
   title: ReactNode;
-  description: string;
+  description?: ReactNode;
   actions?: ReactNode;
 }) {
+  const phone = usePhone();
+
   return (
-    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div
+      className={cn(
+        'mb-5 flex gap-3',
+        phone ? 'flex-col' : 'flex-row items-center justify-between',
+      )}
+    >
       <div className="min-w-0">
-        <h3 className="text-h3 text-ink sm:text-h2">{title}</h3>
-        <p className="mt-1 text-body text-ink-muted sm:text-body-lg">{description}</p>
+        <h3 className={cn('text-ink', phone ? 'text-h3' : 'text-h2')}>{title}</h3>
+        {description && (
+          <p className={cn('mt-1 text-ink-muted', phone ? 'text-body' : 'text-body-lg')}>
+            {description}
+          </p>
+        )}
       </div>
       {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -152,6 +170,11 @@ export function PreviewPageHeader({
  * A sidebar row. Shared by the desktop rail and the handheld drawer so the two
  * cannot drift — the active fill, the hover fill and the unread badge are
  * declared once.
+ *
+ * `data-demo-target` is how the showcase's cursor finds this row. It is an
+ * attribute rather than a callback because the demo must not know what the
+ * chrome is made of: it asks for `nav:calls` and the DOM answers with a
+ * rectangle. Nothing here reads it.
  */
 function NavRow({
   item,
@@ -169,6 +192,7 @@ function NavRow({
       <button
         type="button"
         onClick={onSelect}
+        data-demo-target={`nav:${item.id}`}
         aria-current={active ? 'page' : undefined}
         className={cn(
           'focus-ring flex h-[52px] w-full items-center gap-3 rounded-full px-3.5 text-left text-body font-medium',
@@ -181,9 +205,15 @@ function NavRow({
         <item.icon className={cn(ICON_SIZE.nav, 'shrink-0')} aria-hidden />
         <span className="flex-1 truncate">{item.label}</span>
         {item.id === 'notifications' && unreadCount > 0 && (
-          <span className="font-num ml-auto rounded-full bg-accent px-2 py-0.5 text-caption font-semibold text-ink-on-brand">
+          <motion.span
+            key={unreadCount}
+            initial={{ scale: 0.7, opacity: 0.4 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            className="font-num ml-auto rounded-full bg-accent px-2 py-0.5 text-caption font-semibold text-ink-on-brand"
+          >
             {unreadCount}
-          </span>
+          </motion.span>
         )}
       </button>
     </li>
@@ -294,6 +324,7 @@ function searchFixtures(query: string): SearchHit[] {
  * caller from the list they can see.
  */
 function PreviewSearch() {
+  const phone = usePhone();
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState(false);
   const [open, setOpen] = useState(false);
@@ -329,13 +360,14 @@ function PreviewSearch() {
       }}
       className={cn(
         'relative flex-1 transition-[max-width] duration-base ease-standard',
-        expanded ? 'min-w-0 max-w-[15rem] sm:max-w-md' : 'max-w-10',
+        expanded ? (phone ? 'min-w-0 max-w-[15rem]' : 'min-w-0 max-w-md') : 'max-w-10',
       )}
     >
       {!expanded && (
         <button
           type="button"
           onClick={() => setExpanded(true)}
+          data-demo-target="search"
           aria-label="Search customers, calls and appointments"
           aria-expanded={false}
           className="focus-ring relative flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface text-ink-muted transition-colors duration-fast ease-standard hover:border-line-strong hover:text-ink"
@@ -388,31 +420,44 @@ function PreviewSearch() {
   );
 }
 
-/* ── The window ──────────────────────────────────────────────────────────── */
+/* ── The shell ───────────────────────────────────────────────────────────── */
+
+export type AppWindowProps = {
+  view: ViewId;
+  /** Owned by the showcase, so marking a notification read updates the badge. */
+  unreadCount: number;
+  onNavigate: (id: ViewId) => void;
+  /** Controlled drawer, so the demo can open the handheld navigation itself. */
+  drawer?: boolean;
+  onDrawerChange?: (open: boolean) => void;
+  children: ReactNode;
+};
 
 /**
- * The application window as it sits on the marketing page's black canvas.
+ * The application, filling the screen it has been given.
  *
  * `[color-scheme:light]` matters more than it looks: the marketing route sets
  * `color-scheme: dark` on the document so the browser's own UI follows the
  * black page, and without this the scrollbar inside the preview — and the
  * search field's native affordances — would render dark inside a light
  * application.
+ *
+ * The forwarded ref is the scrolling page container. The showcase drives it to
+ * scroll the demo, the way a user's thumb would; nothing else reaches inside.
  */
-export function AppWindow({
-  view,
-  unreadCount,
-  onNavigate,
-  children,
-}: {
-  view: ViewId;
-  /** Owned by the showcase, so marking a notification read updates the badge. */
-  unreadCount: number;
-  onNavigate: (id: ViewId) => void;
-  children: ReactNode;
-}) {
-  const [drawer, setDrawer] = useState(false);
+export const AppWindow = forwardRef<HTMLDivElement, AppWindowProps>(function AppWindow(
+  { view, unreadCount, onNavigate, drawer, onDrawerChange, children },
+  scrollRef,
+) {
+  const phone = usePhone();
   const reduced = useReducedMotion();
+  const [ownDrawer, setOwnDrawer] = useState(false);
+  const drawerOpen = drawer ?? ownDrawer;
+  const setDrawer = (open: boolean) => {
+    setOwnDrawer(open);
+    onDrawerChange?.(open);
+  };
+
   const activeTab = TABS.findIndex((tab) => tab.id === view);
 
   const navigate = (id: ViewId) => {
@@ -421,46 +466,25 @@ export function AppWindow({
   };
 
   return (
-    <figure
-      className={cn(
-        'm-0 flex flex-col overflow-hidden bg-base font-sans text-ink [color-scheme:light]',
-        // The frame. A hairline of white where the app meets the page, and one
-        // long brand-tinted shadow underneath — the window is lit by the page it
-        // sits on rather than outlined against it.
-        'ring-1 ring-white/10 shadow-[0_60px_140px_-60px_rgba(43,92,230,0.55)]',
-        // No radius at all, deliberately. The product's structural geometry is
-        // 0px, and a rounded preview of a square application is the first thing
-        // that would give this away as a mock-up.
-        //
-        // A window also has a size. A fixed height means moving between sections
-        // never resizes the marketing page underneath it, so nothing on the page
-        // can shift while the preview is being used.
-        'h-[560px] sm:h-[620px] lg:h-[720px]',
-      )}
-    >
-      <figcaption className="sr-only">
-        An interactive preview of the rooferslabs dashboard, filled with example data for a roofing
-        company. Use the navigation to move between sections.
-      </figcaption>
-
-      <BrowserBar />
-
+    <div className="flex h-full flex-col overflow-hidden bg-base font-sans text-ink [color-scheme:light]">
       <div className="relative flex min-h-0 flex-1">
-        {/* The 256px rail, exactly as `Sidebar` renders it above `lg`. */}
-        <nav
-          aria-label="Preview sections"
-          className="hidden w-64 shrink-0 flex-col border-r border-line-subtle bg-surface lg:flex"
-        >
-          <SidebarBrand />
-          <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
-            <NavList view={view} unreadCount={unreadCount} onNavigate={navigate} />
-          </div>
-        </nav>
+        {/* The 256px rail, exactly as `Sidebar` renders it on a large screen. */}
+        {!phone && (
+          <nav
+            aria-label="Preview sections"
+            className="flex w-64 shrink-0 flex-col border-r border-line-subtle bg-surface"
+          >
+            <SidebarBrand />
+            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+              <NavList view={view} unreadCount={unreadCount} onNavigate={navigate} />
+            </div>
+          </nav>
+        )}
 
-        {/* Below `lg` the same nav arrives as an off-canvas drawer, which is what
-            `collapsible="offcanvas"` does in the application. */}
+        {/* On a handset the same nav arrives as an off-canvas drawer, which is
+            what `collapsible="offcanvas"` does in the application. */}
         <AnimatePresence>
-          {drawer && (
+          {phone && drawerOpen && (
             <>
               <motion.button
                 type="button"
@@ -470,14 +494,14 @@ export function AppWindow({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="absolute inset-0 z-30 cursor-default bg-black/40 lg:hidden"
+                className="absolute inset-0 z-30 cursor-default bg-black/40"
               />
               <motion.div
                 initial={{ x: reduced ? 0 : '-100%', opacity: reduced ? 0 : 1 }}
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: reduced ? 0 : '-100%', opacity: reduced ? 0 : 1 }}
-                transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                className="absolute inset-y-0 left-0 z-40 flex w-[18rem] flex-col border-r border-line-subtle bg-surface shadow-dialog lg:hidden"
+                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                className="absolute inset-y-0 left-0 z-40 flex w-[17rem] flex-col border-r border-line-subtle bg-surface shadow-dialog"
               >
                 <div className="flex items-center justify-between pr-2">
                   <SidebarBrand />
@@ -501,39 +525,46 @@ export function AppWindow({
 
         <div className="flex min-w-0 flex-1 flex-col">
           {/* The 64px header: drawer trigger, search, install, bell, avatar. */}
-          <header className="group/header relative z-20 flex h-16 shrink-0 items-center gap-3 border-b border-line-subtle bg-[color-mix(in_oklab,var(--surface-1)_88%,transparent)] px-4 backdrop-blur sm:px-6">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Open navigation"
-              aria-expanded={drawer}
-              onClick={() => setDrawer(true)}
-              className="rounded-full lg:hidden"
-            >
-              <Bars3Icon className={ICON_SIZE.nav} aria-hidden />
-            </Button>
+          <header
+            className={cn(
+              'group/header relative z-20 flex h-16 shrink-0 items-center gap-3 border-b border-line-subtle bg-[color-mix(in_oklab,var(--surface-1)_88%,transparent)] backdrop-blur',
+              phone ? 'px-4' : 'px-6',
+            )}
+          >
+            {phone && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Open navigation"
+                aria-expanded={drawerOpen}
+                onClick={() => setDrawer(true)}
+                data-demo-target="menu"
+                className="rounded-full"
+              >
+                <Bars3Icon className={ICON_SIZE.nav} aria-hidden />
+              </Button>
+            )}
 
             <PreviewSearch />
 
             <div className="ml-auto flex shrink-0 items-center gap-1.5">
-              <Button
-                variant="secondary"
-                size="sm"
-                className="hidden rounded-full tracking-tight sm:inline-flex"
-              >
-                <ArrowDownTrayIcon aria-hidden />
-                Install app
-              </Button>
+              {!phone && (
+                <Button variant="secondary" size="sm" className="rounded-full tracking-tight">
+                  <ArrowDownTrayIcon aria-hidden />
+                  Install app
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
                 className="relative rounded-full"
                 aria-label={`Notifications${unreadCount ? ` (${unreadCount} unread)` : ''}`}
                 onClick={() => navigate('notifications')}
+                data-demo-target="bell"
               >
                 <BellIcon className={ICON_SIZE.nav} aria-hidden />
                 {unreadCount > 0 && (
-                  // The only looping animation in the preview, and it is 8px
+                  // The only looping animation in the chrome, and it is 8px
                   // wide. `animate-ping` is a compositor-only transform, and the
                   // global reduced-motion rule stops it after one pass.
                   <span className="absolute right-2 top-2 flex h-2 w-2">
@@ -551,93 +582,77 @@ export function AppWindow({
             </div>
           </header>
 
-          {/* The page itself. Scrolls inside the window on desktop, exactly as
-              the application scrolls inside the viewport. */}
+          {/* The page itself. Scrolls inside the screen exactly as the
+              application scrolls inside the viewport. */}
           {/* Scroll chaining is left at the browser default on purpose: a
               visitor swiping past the bottom of the preview continues down the
               marketing page rather than being held inside it. */}
-          <div className="min-h-0 flex-1 overflow-y-auto bg-base">
-            <div className="mx-auto w-full max-w-dashboard px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
+          <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto bg-base">
+            <div
+              className={cn('mx-auto w-full max-w-dashboard', phone ? 'px-4 py-5' : 'px-8 py-6')}
+            >
               {children}
             </div>
           </div>
 
           {/* The handheld tab bar, matching `components/BottomNav`. */}
-          <nav
-            aria-label="Preview primary"
-            className="shrink-0 border-t border-line-subtle bg-surface lg:hidden"
-          >
-            <ul className="relative mx-auto flex h-16 max-w-md items-stretch">
-              <span
-                aria-hidden
-                className={cn(
-                  'pointer-events-none absolute inset-y-0 left-0 flex items-center justify-center',
-                  'transition-[transform,opacity] duration-slow ease-decelerate motion-reduce:transition-none',
-                  activeTab < 0 && 'opacity-0',
-                )}
-                style={{
-                  width: `${100 / TABS.length}%`,
-                  transform: `translate3d(${Math.max(activeTab, 0) * 100}%, 0, 0)`,
-                }}
-              >
-                <span className="h-9 w-16 rounded-full bg-accent-subtle" />
-              </span>
+          {phone && (
+            <nav
+              aria-label="Preview primary"
+              className="shrink-0 border-t border-line-subtle bg-surface"
+            >
+              <ul className="relative mx-auto flex h-16 max-w-md items-stretch">
+                <span
+                  aria-hidden
+                  className={cn(
+                    'pointer-events-none absolute inset-y-0 left-0 flex items-center justify-center',
+                    'transition-[transform,opacity] duration-slow ease-decelerate motion-reduce:transition-none',
+                    activeTab < 0 && 'opacity-0',
+                  )}
+                  style={{
+                    width: `${100 / TABS.length}%`,
+                    transform: `translate3d(${Math.max(activeTab, 0) * 100}%, 0, 0)`,
+                  }}
+                >
+                  <span className="h-9 w-16 rounded-full bg-accent-subtle" />
+                </span>
 
-              {TABS.map((tab, index) => {
-                const active = index === activeTab;
-                return (
-                  <li key={tab.id} className="relative flex-1">
-                    <button
-                      type="button"
-                      onClick={() => navigate(tab.id)}
-                      aria-label={tab.label}
-                      aria-current={active ? 'page' : undefined}
-                      className="group flex h-full w-full items-center justify-center outline-none"
-                    >
-                      <span className="flex h-9 w-16 items-center justify-center rounded-full group-focus-visible:ring-2 group-focus-visible:ring-focus group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-surface">
-                        <tab.icon
-                          className={cn(
-                            ICON_SIZE.nav,
-                            'transition-[color,transform] duration-base ease-standard motion-reduce:transition-none',
-                            active ? '-translate-y-px text-accent' : 'translate-y-0 text-ink-muted',
-                          )}
-                          aria-hidden
-                        />
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
+                {TABS.map((tab, index) => {
+                  const active = index === activeTab;
+                  return (
+                    <li key={tab.id} className="relative flex-1">
+                      <button
+                        type="button"
+                        onClick={() => navigate(tab.id)}
+                        data-demo-target={`tab:${tab.id}`}
+                        aria-label={tab.label}
+                        aria-current={active ? 'page' : undefined}
+                        className="group flex h-full w-full items-center justify-center outline-none"
+                      >
+                        <span className="flex h-9 w-16 items-center justify-center rounded-full group-focus-visible:ring-2 group-focus-visible:ring-focus group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-surface">
+                          <tab.icon
+                            className={cn(
+                              ICON_SIZE.nav,
+                              'transition-[color,transform] duration-base ease-standard motion-reduce:transition-none',
+                              active
+                                ? '-translate-y-px text-accent'
+                                : 'translate-y-0 text-ink-muted',
+                            )}
+                            aria-hidden
+                          />
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+          )}
         </div>
       </div>
-    </figure>
-  );
-}
-
-/**
- * The browser strip above the application.
- *
- * Deliberately understated and built from the product's own surface tokens: it
- * is there to say "this is a running application at an address", not to be a
- * pixel-accurate drawing of somebody's browser.
- */
-function BrowserBar() {
-  return (
-    <div
-      aria-hidden
-      className="flex h-9 shrink-0 items-center gap-2 border-b border-line-subtle bg-surface-3 px-4"
-    >
-      <span className="flex gap-1.5">
-        <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
-        <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
-        <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
-      </span>
-      <span className="mx-auto flex items-center gap-1.5 rounded-full bg-surface px-3 py-1 text-caption text-ink-faint">
-        <LockClosedIcon className="h-3 w-3" />
-        {COMPANY.host}
-      </span>
     </div>
   );
-}
+});
+
+/** The scroll container type the showcase drives. */
+export type ScrollRef = RefObject<HTMLDivElement | null>;

@@ -1,4 +1,4 @@
-import { formatPhone, humanizeEnum } from '@/lib/utils';
+import { cn, formatPhone, humanizeEnum } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { IconTile, type IconTileTone } from '@/components/ui/IconTile';
 import { ICON_SIZE, type IconComponent } from '@/components/ui/icon';
@@ -17,6 +17,7 @@ import {
 import { COMPANY, appointments, calls, insightRows, metrics, summaryTiles } from '../data';
 import { CountUp, ProportionBar, Reveal, StaggerList, StaggerRow } from '../animation';
 import { PanelCard, PreviewPageHeader, type ViewId } from '../chrome';
+import { usePhone, useWide } from '../formFactor';
 
 /**
  * The dashboard, section for section as `features/dashboard/DashboardPage`
@@ -44,7 +45,20 @@ const SUMMARY_ICONS: Record<string, IconComponent> = {
   missed: PhoneXMarkIcon,
 };
 
-export function DashboardView({ onNavigate }: { onNavigate: (id: ViewId) => void }) {
+export function DashboardView({
+  onNavigate,
+  /** Live figures from the showcase, so today's numbers can move while you watch. */
+  kpi,
+  /** Whether a call has landed since the page opened — marks the newest row. */
+  fresh = false,
+}: {
+  onNavigate: (id: ViewId) => void;
+  kpi?: Partial<Record<string, number>>;
+  fresh?: boolean;
+}) {
+  const phone = usePhone();
+  const wide = useWide();
+
   return (
     <div className="space-y-4">
       <Reveal as="header">
@@ -63,33 +77,46 @@ export function DashboardView({ onNavigate }: { onNavigate: (id: ViewId) => void
       {/* Section 1 — analytics panel */}
       <Reveal index={1}>
         <Card as="section" aria-label="Today’s key metrics" className="overflow-hidden">
-          <div className="grid auto-rows-fr grid-cols-2 gap-px bg-line-subtle lg:grid-cols-4">
+          <div
+            className={cn(
+              // `grid-cols-2 lg:grid-cols-4`, as the panel has it. Four across
+              // is a desk layout: an iPad in portrait gives this panel ~510px
+              // once the sidebar has its rail, and four columns of that are
+              // 127px each — not enough for "↗ +12% vs. yesterday", which then
+              // ran out of its cell.
+              'grid auto-rows-fr gap-px bg-line-subtle',
+              wide ? 'grid-cols-4' : 'grid-cols-2',
+            )}
+          >
             {metrics.map((metric) => {
               const glyph = METRIC_ICONS[metric.key];
               return (
                 <div
                   key={metric.key}
-                  className="flex flex-col gap-4 bg-surface p-5 transition-colors duration-fast ease-standard hover:bg-surface-2 sm:p-6"
+                  className={cn(
+                    'flex flex-col gap-4 bg-surface transition-colors duration-fast ease-standard hover:bg-surface-2',
+                    phone ? 'p-5' : 'p-6',
+                  )}
                 >
                   {glyph && <IconTile icon={glyph.icon} tone={glyph.tone} />}
                   <div>
                     <span className="font-num block text-h2 leading-none text-ink">
-                      <CountUp value={metric.value} />
+                      <CountUp value={kpi?.[metric.key] ?? metric.value} />
                     </span>
                     <span className="mt-2 block text-small font-medium text-ink-muted">
                       {metric.label}
                     </span>
-                    {/* `nowrap`, and the qualifier only from `sm`: at 390px two
-                        of these columns share ~115px of content width, which is
-                        not enough for the arrow, the delta and "vs. yesterday"
-                        on one line — it broke after the delta and left an
-                        orphaned "yesterday" on a second row. The arrow and the
-                        figure carry the comparison on a phone; the words come
-                        back as soon as there is room for them. */}
+                    {/* `nowrap`, and the qualifier only on a tablet: at 390px
+                        two of these columns share ~115px of content width,
+                        which is not enough for the arrow, the delta and "vs.
+                        yesterday" on one line — it broke after the delta and
+                        left an orphaned "yesterday" on a second row. The arrow
+                        and the figure carry the comparison on a phone; the
+                        words come back as soon as there is room for them. */}
                     <span className="mt-1.5 flex items-center gap-1 whitespace-nowrap text-caption text-ink-faint">
                       <ArrowTrendingUpIcon className="h-4 w-4 shrink-0 text-success" aria-hidden />
                       <span className="font-num text-success">{metric.delta}</span>
-                      <span className="hidden sm:inline">vs. yesterday</span>
+                      {!phone && <span>vs. yesterday</span>}
                     </span>
                   </div>
                 </div>
@@ -109,17 +136,25 @@ export function DashboardView({ onNavigate }: { onNavigate: (id: ViewId) => void
           column that floored this panel at 441px against 310px of space —
           scrolling the whole dashboard sideways on a phone. The rows already
           truncate; this is what lets them. */}
-      <div className="grid gap-4 lg:grid-cols-5">
-        <Reveal index={2} className="min-w-0 lg:col-span-3">
+      <div className={cn('grid gap-4', wide && 'grid-cols-5')}>
+        <Reveal index={2} className={cn('min-w-0', wide && 'col-span-3')}>
           <PanelCard
             title="Recent calls"
             action={{ label: 'View all calls', onSelect: () => onNavigate('calls') }}
             className="h-full"
           >
             <StaggerList className="divide-y divide-line-subtle border-t border-line-subtle">
-              {calls.slice(0, 5).map((call) => (
+              {calls.slice(0, 5).map((call, index) => (
                 <StaggerRow key={call.id}>
-                  <div className="flex items-center gap-4 px-6 py-4 transition-colors duration-fast hover:bg-surface-2">
+                  <div
+                    className={cn(
+                      'flex items-center gap-4 px-6 py-4 transition-colors duration-base hover:bg-surface-2',
+                      // The row that arrived while the page was open. It is a
+                      // tint and a rail, not a badge: the log is read top-down
+                      // and the newest row is already the one being read.
+                      fresh && index === 0 && 'bg-accent-subtle/50',
+                    )}
+                  >
                     <IconTile
                       icon={call.isEmergency ? ShieldExclamationIcon : PhoneIcon}
                       tone={call.isEmergency ? 'emergency' : 'brand'}
@@ -136,9 +171,16 @@ export function DashboardView({ onNavigate }: { onNavigate: (id: ViewId) => void
                         <span className="font-num">{formatPhone(call.phone)}</span>
                       </span>
                     </span>
-                    <span className="flex w-28 shrink-0 flex-col items-end text-right sm:w-36">
+                    <span
+                      className={cn(
+                        'flex shrink-0 flex-col items-end text-right',
+                        phone ? 'w-28' : 'w-36',
+                      )}
+                    >
                       <EnumStatusLabel value={call.outcome} className="max-w-full truncate" />
-                      <span className="mt-1 text-small text-ink-muted">{call.ago}</span>
+                      <span className="mt-1 text-small text-ink-muted">
+                        {fresh && index === 0 ? 'Just now' : call.ago}
+                      </span>
                       <span className="font-num mt-0.5 text-caption text-ink-faint">
                         {call.duration}
                       </span>
@@ -150,7 +192,7 @@ export function DashboardView({ onNavigate }: { onNavigate: (id: ViewId) => void
           </PanelCard>
         </Reveal>
 
-        <Reveal index={3} className="min-w-0 lg:col-span-2">
+        <Reveal index={3} className={cn('min-w-0', wide && 'col-span-2')}>
           <PanelCard
             title="Upcoming appointments"
             action={{ label: 'View calendar', onSelect: () => onNavigate('appointments') }}
@@ -188,7 +230,7 @@ export function DashboardView({ onNavigate }: { onNavigate: (id: ViewId) => void
 
       {/* Sections 4 & 5 — Receptionist summary + Top customer insights. Insights
           is desktop-only in the product, and stays desktop-only here. */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className={cn('grid gap-4', wide && 'grid-cols-2')}>
         <Reveal index={4} className="min-w-0">
           <PanelCard title="AI receptionist summary" className="h-full">
             <div className="grid grid-cols-2 gap-px border-t border-line-subtle bg-line-subtle">
@@ -212,7 +254,7 @@ export function DashboardView({ onNavigate }: { onNavigate: (id: ViewId) => void
           </PanelCard>
         </Reveal>
 
-        <Reveal index={5} className="hidden min-w-0 lg:block">
+        <Reveal index={5} className={cn('min-w-0', !wide && 'hidden')}>
           <PanelCard title="Top customer insights" className="h-full">
             <StaggerList className="divide-y divide-line-subtle border-t border-line-subtle">
               {insightRows.map((row, index) => (

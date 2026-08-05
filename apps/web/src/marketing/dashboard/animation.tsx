@@ -130,7 +130,14 @@ export function StaggerRow({
 }
 
 /**
- * A figure that counts up to its value the first time it is seen.
+ * A figure that counts up to its value the first time it is seen, and rolls to
+ * a new one whenever the value changes afterwards.
+ *
+ * The two behaviours are the same animation with different starting points:
+ * the page assembling counts from zero, and a figure ticking over during the
+ * day travels the one unit it actually moved. Neither is a separate component,
+ * because a KPI that animates differently depending on why it changed is a KPI
+ * the eye stops trusting.
  *
  * The element reserves its final width from the first frame (`ch` units against
  * the tabular figure font), so the number growing from 0 to 47 never reflows
@@ -142,22 +149,32 @@ export function CountUp({ value, className }: { value: number; className?: strin
   const inView = useInView(ref, { once: true, margin: '-40px' });
   const reduced = useReducedMotion();
   const [display, setDisplay] = useState(0);
+  // The value the next run counts *from*, kept out of state so arriving at a
+  // new target does not restart the animation that is reading it.
+  const from = useRef(0);
 
   useEffect(() => {
     if (!inView) return;
     if (reduced) {
+      from.current = value;
       setDisplay(value);
       return;
     }
 
-    const duration = 900;
     const start = performance.now();
+    const origin = from.current;
+    const distance = value - origin;
+    // A one-unit tick should not take as long as a count-up from zero.
+    const duration = Math.abs(distance) > 4 ? 900 : 420;
+
     let frame = requestAnimationFrame(function tick(now) {
       const t = Math.min((now - start) / duration, 1);
       // Quartic ease-out: most of the distance is covered early, so the figure
       // lands rather than creeping the last few units.
-      setDisplay(Math.round(value * (1 - Math.pow(1 - t, 4))));
+      const eased = origin + distance * (1 - Math.pow(1 - t, 4));
+      setDisplay(Math.round(eased));
       if (t < 1) frame = requestAnimationFrame(tick);
+      else from.current = value;
     });
 
     return () => cancelAnimationFrame(frame);

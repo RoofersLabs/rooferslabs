@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { humanizeEnum } from '@/lib/utils';
+import { cn, humanizeEnum } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { IconTile } from '@/components/ui/IconTile';
 import { Select } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { CalendarDaysIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import { appointments } from '../data';
 import { Reveal, StaggerList, StaggerRow } from '../animation';
 import { PreviewPageHeader } from '../chrome';
+import { usePhone } from '../formFactor';
 
 const STATUSES = ['REQUESTED', 'CONFIRMED', 'RESCHEDULED', 'COMPLETED', 'CANCELLED'];
 
@@ -17,16 +18,17 @@ const STATUSES = ['REQUESTED', 'CONFIRMED', 'RESCHEDULED', 'COMPLETED', 'CANCELL
  *
  * The status dropdown on each row is live: changing it moves the row's status
  * the way it does in the product, which is the difference between a screenshot
- * of a control and a control.
+ * of a control and a control. The showcase changes one of them the same way a
+ * visitor would — through the same `onChange`, not around it.
  */
-export function AppointmentsView() {
-  const [statuses, setStatuses] = useState<Record<string, string>>(() =>
-    Object.fromEntries(appointments.map((appointment) => [appointment.id, appointment.status])),
-  );
+export function AppointmentsView({ driven }: { driven?: Record<string, string> }) {
+  const phone = usePhone();
+  const [own, setOwn] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState('');
 
+  const statusOf = (id: string, fallback: string) => own[id] ?? driven?.[id] ?? fallback;
   const visible = filter
-    ? appointments.filter((appointment) => statuses[appointment.id] === filter)
+    ? appointments.filter((appointment) => statusOf(appointment.id, appointment.status) === filter)
     : appointments;
 
   return (
@@ -64,9 +66,12 @@ export function AppointmentsView() {
               {visible.map((appointment) => (
                 <StaggerRow
                   key={appointment.id}
-                  className="flex flex-col gap-4 px-6 py-4 transition-colors duration-fast hover:bg-surface-2 sm:flex-row sm:items-center"
+                  className={cn(
+                    'flex gap-4 px-6 py-4 transition-colors duration-fast hover:bg-surface-2',
+                    phone ? 'flex-col' : 'flex-row items-center',
+                  )}
                 >
-                  <IconTile icon={CalendarDaysIcon} className="hidden sm:flex" />
+                  {!phone && <IconTile icon={CalendarDaysIcon} />}
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-body font-medium text-ink">{appointment.name}</span>
@@ -85,12 +90,13 @@ export function AppointmentsView() {
                       <span>Requested {appointment.requested}</span>
                     </p>
                   </div>
-                  <div className="shrink-0 sm:w-44">
+                  <div className={cn('shrink-0', !phone && 'w-44')}>
                     <Select
-                      value={statuses[appointment.id] ?? appointment.status}
+                      value={statusOf(appointment.id, appointment.status)}
                       onChange={(event) =>
-                        setStatuses((prev) => ({ ...prev, [appointment.id]: event.target.value }))
+                        setOwn((prev) => ({ ...prev, [appointment.id]: event.target.value }))
                       }
+                      data-demo-target={`appt:${appointment.id}`}
                       aria-label={`Status for ${appointment.name}`}
                     >
                       {STATUSES.map((status) => (

@@ -285,6 +285,14 @@ export type PreviewCustomer = {
   status: string;
   added: string;
   favorite?: boolean;
+  /** Where the record came from, as the detail page's profile row shows it. */
+  leadSource: string;
+  roofAge: string;
+  since: string;
+  /** Ids into `calls`, newest first — the profile's contact history. */
+  history: string[];
+  /** Id into `appointments`, when one is booked. */
+  appointmentId?: string;
 };
 
 export const customers: PreviewCustomer[] = [
@@ -298,6 +306,11 @@ export const customers: PreviewCustomer[] = [
     status: 'ACTIVE',
     added: '12 minutes ago',
     favorite: true,
+    leadSource: 'Inbound call',
+    roofAge: 'Asphalt shingle · 14 years',
+    since: '14 Mar 2024',
+    history: ['c1'],
+    appointmentId: 'a1',
   },
   {
     id: 'u2',
@@ -308,6 +321,11 @@ export const customers: PreviewCustomer[] = [
     propertyType: 'RESIDENTIAL',
     status: 'NEW',
     added: '38 minutes ago',
+    leadSource: 'Inbound call',
+    roofAge: 'Architectural shingle · 22 years',
+    since: 'Today',
+    history: ['c2'],
+    appointmentId: 'a3',
   },
   {
     id: 'u3',
@@ -318,6 +336,11 @@ export const customers: PreviewCustomer[] = [
     propertyType: 'RESIDENTIAL',
     status: 'ACTIVE',
     added: '1 hour ago',
+    leadSource: 'Storm campaign',
+    roofAge: 'Asphalt shingle · 9 years',
+    since: '2 Nov 2023',
+    history: ['c3'],
+    appointmentId: 'a2',
   },
   {
     id: 'u4',
@@ -329,6 +352,10 @@ export const customers: PreviewCustomer[] = [
     status: 'ACTIVE',
     added: '2 hours ago',
     favorite: true,
+    leadSource: 'Referral',
+    roofAge: 'TPO membrane · 6 years',
+    since: '9 Jan 2023',
+    history: ['c4'],
   },
   {
     id: 'u5',
@@ -339,6 +366,10 @@ export const customers: PreviewCustomer[] = [
     propertyType: 'RESIDENTIAL',
     status: 'NEW',
     added: '3 hours ago',
+    leadSource: 'Insurance claim',
+    roofAge: 'Asphalt shingle · 11 years',
+    since: 'Today',
+    history: ['c5'],
   },
   {
     id: 'u6',
@@ -349,6 +380,11 @@ export const customers: PreviewCustomer[] = [
     propertyType: 'RESIDENTIAL',
     status: 'ACTIVE',
     added: '4 hours ago',
+    leadSource: 'Inbound call',
+    roofAge: 'Modified bitumen · 18 years',
+    since: '30 Jun 2022',
+    history: ['c6'],
+    appointmentId: 'a4',
   },
 ];
 
@@ -492,3 +528,87 @@ export const notifications: PreviewNotification[] = [
 
 /** Unread badge on the sidebar and the header bell. */
 export const unreadCount = notifications.filter((item) => item.unread).length;
+
+/* ── The demo's live records ─────────────────────────────────────────────── */
+
+/**
+ * The call that arrives while the showcase is running.
+ *
+ * It is a fixture like the rest, not a random event: the demo's timeline decides
+ * when it rings, when the receptionist answers and when it lands in the log, so
+ * every visitor sees the same call handled the same way. `outcome` is empty
+ * until the conversation ends, because that is when the product knows it.
+ */
+export const incomingCall = {
+  id: 'live',
+  name: 'Nora Bishop',
+  phone: '+16145550137',
+  city: 'Worthington, OH',
+  intent: 'EMERGENCY_REPAIR',
+  outcome: 'EMERGENCY',
+  summary:
+    'Water staining spreading across the upstairs ceiling since this morning’s hail. On-call crew paged; emergency tarp held for 8:00 AM tomorrow.',
+  at: 'Today, just now',
+} as const;
+
+/** The notification that arrives on the Notifications page mid-demo. */
+export const incomingNotification: PreviewNotification = {
+  id: 'n0',
+  type: 'EMERGENCY',
+  title: 'Emergency call routed',
+  message: 'Nora Bishop — hail damage in Worthington. On-call crew paged by SMS and push.',
+  ago: 'Just now',
+  unread: true,
+  critical: true,
+};
+
+/* ── Settings ────────────────────────────────────────────────────────────── */
+
+/** The business profile, as `SettingsPage`'s Business tab reads it back. */
+export const businessProfile = [
+  ['Company name', 'Summit Roofing'],
+  ['Business email', 'office@summitroofing.example'],
+  ['Business phone', '(614) 555-0100'],
+  ['Website', 'summitroofing.example'],
+  ['Address', '2400 Olentangy River Rd'],
+  ['City', 'Columbus'],
+  ['State', 'OH'],
+  ['ZIP', '43210'],
+  ['Timezone', 'America/New_York'],
+  ['Roofing services', 'Replacement, Repair, Inspection, Gutters'],
+  ['Service areas', 'Franklin County, Delaware County'],
+  ['Emergency phone', '(614) 555-0111'],
+] as const;
+
+/** The AI receptionist configuration, matching the AI tab's fields. */
+export const aiConfig = {
+  assistantName: 'Riley',
+  voice: 'Ember',
+  greeting: 'Thanks for calling Summit Roofing, this is Riley. How can I help today?',
+  persona: 'Warm, efficient, never pushy',
+  instructions: 'Always mention the ten-year workmanship warranty on full replacements.',
+  toggles: [
+    { label: 'Capture leads', hint: 'Collect caller contact details.', on: true },
+    { label: 'Detect emergencies', hint: 'Flag leaks and storm damage.', on: true },
+    { label: 'Request appointments', hint: 'Offer to schedule visits.', on: true },
+  ],
+} as const;
+
+/** The week, as the Hours tab lays it out. */
+export const businessHours = [
+  { day: 'monday', open: '08:00', close: '18:00', closed: false },
+  { day: 'tuesday', open: '08:00', close: '18:00', closed: false },
+  { day: 'wednesday', open: '08:00', close: '18:00', closed: false },
+  { day: 'thursday', open: '08:00', close: '18:00', closed: false },
+  { day: 'friday', open: '08:00', close: '18:00', closed: false },
+  { day: 'saturday', open: '09:00', close: '14:00', closed: false },
+  { day: 'sunday', open: '00:00', close: '00:00', closed: true },
+] as const;
+
+/** Phone setup, as the Phone tab's control centre and number card show it. */
+export const phoneSetup = {
+  aiNumber: '+16145550188',
+  businessNumber: '+16145550100',
+  carrier: 'AT&T',
+  verified: true,
+} as const;

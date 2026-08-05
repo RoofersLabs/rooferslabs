@@ -1,5 +1,5 @@
 import { Container } from '../components/Container';
-import { ProductShowcase } from '../dashboard/ProductShowcase';
+import { ProductDemo } from '../showcase/DemoController';
 
 /**
  * The first screen. The copy earns roughly the top third and the product takes
@@ -44,14 +44,12 @@ export function Hero() {
           </p>
         </div>
 
-        {/* The preview used to be a fixed 1040px canvas dragged sideways in a
-            horizontal scroller below `lg`, because the old mock-up had one
-            desktop layout and no other. It does not any more: it rebuilds
-            itself at each breakpoint the way the application does — sidebar to
-            drawer, table to list, four columns to two — so it simply takes the
-            width it is given. */}
+        {/* The product, on the hardware it runs on. The device is centred and
+            takes whatever width the column can give it; it is drawn at 1:1 and
+            scaled as one piece, so the application inside is always at a real
+            device's own size rather than a squeezed version of a desktop. */}
         <div className="flex-1 pb-10 sm:pb-12">
-          <ProductShowcase />
+          <ProductDemo />
         </div>
       </Container>
     </section>
