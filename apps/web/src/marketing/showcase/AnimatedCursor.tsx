@@ -20,9 +20,9 @@ export function AnimatedCursor({ spot, press }: { spot: PointerSpot; press: numb
       initial={false}
       animate={{ x: spot.x, y: spot.y, opacity: spot.found ? 1 : 0 }}
       transition={{
-        x: { duration: 0.62, ease: EASE_STANDARD },
-        y: { duration: 0.62, ease: EASE_STANDARD },
-        opacity: { duration: 0.25 },
+        x: { duration: 1.05, ease: EASE_STANDARD },
+        y: { duration: 1.05, ease: EASE_STANDARD },
+        opacity: { duration: 0.35 },
       }}
     >
       {/* The click, drawn from the contact point outwards. One ring, one
@@ -33,7 +33,7 @@ export function AnimatedCursor({ spot, press }: { spot: PointerSpot; press: numb
           className="absolute -left-4 -top-4 block h-8 w-8 rounded-full border border-accent"
           initial={{ scale: 0.3, opacity: 0.55 }}
           animate={{ scale: 1.5, opacity: 0 }}
-          transition={{ duration: 0.45, ease: [0, 0, 0.2, 1] }}
+          transition={{ duration: 0.6, ease: [0, 0, 0.2, 1] }}
         />
       </AnimatePresence>
 
@@ -47,7 +47,7 @@ export function AnimatedCursor({ spot, press }: { spot: PointerSpot; press: numb
         animate={{ scale: 1 }}
         key={`arrow-${press}`}
         initial={{ scale: 0.88 }}
-        transition={{ duration: 0.22, ease: EASE_STANDARD }}
+        transition={{ duration: 0.3, ease: EASE_STANDARD }}
       >
         <path
           d="M4 2.2 17.1 14.4h-6.5l-1.2 5.8L4 2.2Z"

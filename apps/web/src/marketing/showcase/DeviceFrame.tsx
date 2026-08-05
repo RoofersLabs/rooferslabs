@@ -1,34 +1,47 @@
 import { useEffect, useLayoutEffect, useState, type ReactNode, type RefObject } from 'react';
 import { ScreenProvider } from '../dashboard/formFactor';
-import { DeviceFloat } from './DeviceFloat';
-import { IPAD, IPAD_COMPACT, IpadFrame, ipadOuter, type IpadSpec } from './IpadFrame';
-import { IPHONE, IphoneFrame, StatusBar, iphoneOuter } from './IphoneFrame';
+import { IPAD_SCREEN, IpadFrame, ipadOuter, ipadSpecFor, type IpadSpec } from './IpadFrame';
+import {
+  IPHONE_SCREEN,
+  IphoneFrame,
+  StatusBar,
+  iphoneOuter,
+  iphoneSpecFor,
+  type IphoneSpec,
+} from './IphoneFrame';
 
 /**
  * The hardware the product runs on, sized to the space the page can give it.
  *
  * Two decisions are made here and nowhere else.
  *
- * **Which device.** Below `sm` the page shows an iPhone, because that is what a
- * visitor holding a phone is deciding whether to install. Above it, an iPad —
- * the same iPad at every width, scaled.
+ * **Which device.** Below `md` the page shows an iPhone, because that is what a
+ * visitor holding a phone is deciding whether to install. Above it, an iPad.
  *
- * **How big.** The device is drawn at 1:1 and scaled as a single transform, so
- * the bezel, the corner radii, the shadow and the application inside all shrink
- * together — the hardware keeps its proportions, and the application keeps
- * getting the screen it was designed for rather than a squeezed one. On a wide
- * desktop the scale lands on 1 and every pixel is native.
+ * **How big.** The application is never drawn below 1:1. That is the whole
+ * rule, and it replaces the two fixed panels this used to scale down into the
+ * column: a 1024pt iPad squeezed into a 720px tablet column rendered the
+ * product's 14px body text at 11.6px, and the 393pt phone came out at the same
+ * 0.83. The panel is sized in *its own points* to the space available instead,
+ * so a narrower column means a smaller tablet — the application lays out for
+ * one, exactly as it would on one — and every glyph is at its native size.
  *
- * That is also why the two iPad specs exist. A 1024pt screen scaled into a
- * 700px tablet column would put the product's 14px body type at 9px; the
- * compact spec renders the same hardware at the 834pt logical width an iPad
- * reports in portrait, so the application is still at an iPad's own size and
- * the type stays legible.
+ * The old height budget (86% of the window) is deliberately gone. It was the
+ * reason a 1366×768 laptop — an ordinary laptop — saw the interface at 0.88,
+ * and the hero's copy already decides where the device starts. Height is
+ * allowed to run past the fold; legibility is not negotiable, and the visitor
+ * scrolls a hero either way.
  */
 
-const TILT_DEGREES = 5;
+/**
+ * The narrowest each panel is allowed to get, in its own points. Both are real
+ * devices — an iPhone SE and a small Android tablet — so the application is
+ * never asked to lay out for a width no hardware has.
+ */
+const MIN_PHONE = 320;
+const MIN_TABLET = 640;
 
-export type DeviceKind = 'ipad' | 'ipad-compact' | 'iphone';
+export type DeviceKind = 'ipad' | 'iphone';
 
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(() =>
@@ -48,25 +61,73 @@ function useMediaQuery(query: string): boolean {
 
 /** Which device the page is showing, and therefore which layout the app renders. */
 export function useDeviceKind(): DeviceKind {
-  const phone = useMediaQuery('(max-width: 639px)');
-  const compact = useMediaQuery('(max-width: 1023px)');
-  if (phone) return 'iphone';
-  return compact ? 'ipad-compact' : 'ipad';
+  return useMediaQuery('(max-width: 767px)') ? 'iphone' : 'ipad';
 }
 
-function outerFor(kind: DeviceKind) {
-  if (kind === 'iphone') return iphoneOuter(IPHONE);
-  return ipadOuter(kind === 'ipad' ? IPAD : IPAD_COMPACT);
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+type Box = { width: number; height: number };
+
+type Fitted =
+  | { kind: 'iphone'; spec: IphoneSpec; outer: Box }
+  | { kind: 'ipad'; spec: IpadSpec; outer: Box };
+
+function fitScreenWidth<Spec extends { screen: { width: number } }>(
+  available: number,
+  preferredMin: number,
+  maxWidth: number,
+  makeSpec: (width: number) => Spec,
+  makeOuter: (spec: Spec) => Box,
+  estimatedInset: number,
+): Spec {
+  const usable = Math.max(1, available - estimatedInset);
+  let width = clamp(usable, Math.min(preferredMin, usable), maxWidth);
+
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const spec = makeSpec(width);
+    const outer = makeOuter(spec);
+    if (outer.width <= available || width <= 1) return spec;
+    width = Math.max(1, width - Math.ceil(outer.width - available));
+  }
+
+  return makeSpec(width);
 }
 
 /**
- * Measures the column, picks a scale, and reserves the space the scaled device
- * will occupy so the page below it never moves.
+ * The panel and the scale for a given column width.
  *
- * The height budget matters as much as the width: a 877pt phone at full width
- * would push the hero's copy off a laptop screen, so whichever of the two
- * constraints binds first wins.
+ * Sizing the screen first and scaling second is what keeps the application at
+ * 1:1 or better: the points come out of the space, rather than the space being
+ * asked to hold a fixed number of points.
  */
+function fit(kind: DeviceKind, available: number): Fitted {
+  if (kind === 'iphone') {
+    const inset = 2 * (iphoneSpecFor(IPHONE_SCREEN.width).bezel + 2.5);
+    const spec = fitScreenWidth(
+      available,
+      MIN_PHONE,
+      IPHONE_SCREEN.width,
+      iphoneSpecFor,
+      iphoneOuter,
+      inset,
+    );
+    const outer = iphoneOuter(spec);
+    return { kind, spec, outer };
+  }
+
+  const inset = 2 * (ipadSpecFor(IPAD_SCREEN.width).bezel + 3);
+  const spec = fitScreenWidth(
+    available,
+    MIN_TABLET,
+    IPAD_SCREEN.width,
+    ipadSpecFor,
+    ipadOuter,
+    inset,
+  );
+  const outer = ipadOuter(spec);
+  return { kind, spec, outer };
+}
+
 export function DeviceFrame({
   kind,
   screenRef,
@@ -80,84 +141,58 @@ export function DeviceFrame({
   overlay?: ReactNode;
   children: ReactNode;
 }) {
-  const outer = outerFor(kind);
-  const [scale, setScale] = useState(1);
   const [host, setHost] = useState<HTMLDivElement | null>(null);
+  const [available, setAvailable] = useState(0);
 
-  // Layout effect, not effect: the device is drawn at 1:1 until it is measured,
-  // and a full-size iPad painting for one frame inside a phone column is a jump
-  // the visitor would see.
+  // Layout effect, not effect: the device is unsized until it is measured, and
+  // a full-size iPad painting for one frame inside a phone column is a jump the
+  // visitor would see.
   useLayoutEffect(() => {
     if (!host) return;
-    const measure = () =>
-      setScale(
-        Math.min(1, host.clientWidth / outer.width, (window.innerHeight * 0.86) / outer.height),
-      );
+    const measure = () => setAvailable(host.clientWidth);
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(host);
-    window.addEventListener('resize', measure);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', measure);
-    };
-  }, [host, outer.width, outer.height]);
+    return () => observer.disconnect();
+  }, [host]);
+
+  const fitted = fit(kind, available || IPAD_SCREEN.width);
+  const { outer } = fitted;
 
   return (
     <div ref={setHost} className="w-full">
-      <DeviceFloat>
-        <div
-          className="relative mx-auto"
-          style={{
-            width: outer.width * scale,
-            // The tilt brings the bottom edge towards the viewer, which makes
-            // it project a little taller than the flat rectangle. The reserved
-            // box allows for it so nothing below is overlapped.
-            height: outer.height * scale * 1.02,
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: '50%',
-              width: outer.width,
-              height: outer.height,
-              marginLeft: -outer.width / 2,
-              transformOrigin: 'top center',
-              transform: `scale(${scale}) perspective(2600px) rotateX(${TILT_DEGREES}deg)`,
-            }}
-          >
-            <Hardware kind={kind} screenRef={screenRef} overlay={overlay}>
-              {children}
-            </Hardware>
-          </div>
+      {available > 0 && (
+        <div className="relative mx-auto" style={{ width: outer.width, height: outer.height }}>
+          <Hardware fitted={fitted} screenRef={screenRef} overlay={overlay}>
+            {children}
+          </Hardware>
         </div>
-      </DeviceFloat>
+      )}
     </div>
   );
 }
 
 function Hardware({
-  kind,
+  fitted,
   screenRef,
   overlay,
   children,
 }: {
-  kind: DeviceKind;
+  fitted: Fitted;
   screenRef: RefObject<HTMLDivElement>;
   overlay?: ReactNode;
   children: ReactNode;
 }) {
-  if (kind === 'iphone') {
+  if (fitted.kind === 'iphone') {
+    const phone = fitted.spec;
     return (
-      <ScreenProvider width={IPHONE.screen.width}>
-        <IphoneFrame spec={IPHONE}>
+      <ScreenProvider width={phone.screen.width}>
+        <IphoneFrame spec={phone}>
           <div ref={screenRef} className="relative flex h-full w-full flex-col bg-base">
-            <StatusBar height={IPHONE.statusBar} islandWidth={IPHONE.island.width} />
+            <StatusBar height={phone.statusBar} islandWidth={phone.island.width} />
             <div className="min-h-0 flex-1">{children}</div>
             {/* The strip the home indicator lives in, as a safe-area inset. */}
-            <div className="shrink-0 bg-surface" style={{ height: IPHONE.homeIndicator }} />
+            <div className="shrink-0 bg-surface" style={{ height: phone.homeIndicator }} />
             {overlay}
           </div>
         </IphoneFrame>
@@ -165,10 +200,9 @@ function Hardware({
     );
   }
 
-  const spec: IpadSpec = kind === 'ipad' ? IPAD : IPAD_COMPACT;
   return (
-    <ScreenProvider width={spec.screen.width}>
-      <IpadFrame spec={spec}>
+    <ScreenProvider width={fitted.spec.screen.width}>
+      <IpadFrame spec={fitted.spec}>
         <div ref={screenRef} className="relative h-full w-full">
           {children}
           {overlay}

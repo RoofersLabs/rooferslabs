@@ -162,12 +162,12 @@ const beats = (at: number, ...actions: Action[]): Beat[] =>
  * clicking on the same frame looks like the page changed on its own.
  */
 const click = (at: number, target: string, ...then: Action[]): Beat[] => [
-  ...beats(at - 480, { type: 'point', target }),
+  ...beats(at - 900, { type: 'point', target }),
   ...beats(at, { type: 'press' }, ...then),
 ];
 
 /** One beat per character, so the field fills the way a field fills. */
-const type_ = (from: number, text: string, per = 65): Beat[] =>
+const type_ = (from: number, text: string, per = 155): Beat[] =>
   [...text].map((_, index) => ({
     at: from + (index + 1) * per,
     action: { type: 'kb', query: text.slice(0, index + 1) } as Action,
@@ -176,38 +176,37 @@ const type_ = (from: number, text: string, per = 65): Beat[] =>
 /* ── The loop ────────────────────────────────────────────────────────────── */
 
 /** Total loop length. The whole demo is this long and then it is this long again. */
-export const LOOP = 21_600;
+export const LOOP = 60_000;
 
 /**
  * Dashboard → Calls → Customers → Appointments → Knowledge Base →
  * Notifications → Settings → Dashboard.
  *
- * Roughly three seconds a page: long enough to read the heading and watch one
- * thing happen, short enough that a visitor who arrived for the pricing sees
- * the whole product before they scroll past.
+ * Roughly one minute end to end. Each major page stays up long enough for a
+ * visitor to read labels and values before the cursor moves again.
  */
 export const TIMELINE: Beat[] = [
   /* Dashboard — the day filling in. */
   ...beats(0, { type: 'reset' }, { type: 'scroll', top: 0 }),
-  ...beats(1100, { type: 'kpi', key: 'calls', by: 1 }),
-  ...beats(1450, { type: 'kpi', key: 'leads', by: 1 }),
-  ...beats(1950, { type: 'kpi', key: 'appointments', by: 1 }),
-  ...click(2800, 'nav:calls', { type: 'nav', route: 'calls' }),
+  ...beats(1800, { type: 'kpi', key: 'calls', by: 1 }),
+  ...beats(2950, { type: 'kpi', key: 'leads', by: 1 }),
+  ...beats(4200, { type: 'kpi', key: 'appointments', by: 1 }),
+  ...click(7200, 'nav:calls', { type: 'nav', route: 'calls' }),
 
   /* Calls — one conversation, start to finish. */
-  ...beats(3400, { type: 'call', phase: 'ringing' }),
-  ...beats(4050, { type: 'call', phase: 'answered' }),
-  ...beats(4750, { type: 'call', phase: 'talking' }),
-  ...beats(5450, { type: 'call', phase: 'captured' }, { type: 'kpi', key: 'emergencies', by: 1 }),
-  ...beats(5950, { type: 'call', phase: 'logged' }),
-  ...click(6450, 'nav:customers', { type: 'nav', route: 'customers' }),
+  ...beats(8200, { type: 'call', phase: 'ringing' }),
+  ...beats(9800, { type: 'call', phase: 'answered' }),
+  ...beats(11600, { type: 'call', phase: 'talking' }),
+  ...beats(13300, { type: 'call', phase: 'captured' }, { type: 'kpi', key: 'emergencies', by: 1 }),
+  ...beats(14600, { type: 'call', phase: 'logged' }),
+  ...click(15800, 'nav:customers', { type: 'nav', route: 'customers' }),
 
   /* Customers — the record behind the call. */
-  ...click(7300, 'row:u1', { type: 'customer', id: 'u1' }),
-  ...beats(8300, { type: 'scroll', top: 320 }),
-  ...beats(9100, { type: 'scroll', top: 620 }),
+  ...click(18600, 'row:u1', { type: 'customer', id: 'u1' }),
+  ...beats(21900, { type: 'scroll', top: 260 }),
+  ...beats(24600, { type: 'scroll', top: 540 }),
   ...click(
-    9800,
+    27400,
     'nav:appointments',
     { type: 'nav', route: 'appointments' },
     {
@@ -217,33 +216,33 @@ export const TIMELINE: Beat[] = [
   ),
 
   /* Appointments — a request becoming a confirmed visit. */
-  ...click(10800, 'appt:a3', { type: 'appt', id: 'a3', status: 'CONFIRMED' }),
-  ...beats(11500, { type: 'scroll', top: 220 }),
-  ...click(12300, 'nav:knowledge', { type: 'nav', route: 'knowledge' }, { type: 'scroll', top: 0 }),
+  ...click(29100, 'appt:a3', { type: 'appt', id: 'a3', status: 'CONFIRMED' }),
+  ...beats(31900, { type: 'scroll', top: 220 }),
+  ...click(35200, 'nav:knowledge', { type: 'nav', route: 'knowledge' }, { type: 'scroll', top: 0 }),
 
   /* Knowledge base — what the receptionist answers from. */
-  ...click(13100, 'kb:search'),
-  ...type_(13150, 'roof leak'),
-  ...click(14500, 'article:k1', { type: 'article', id: 'k1' }),
-  ...click(15450, 'article:back', { type: 'article', id: null }),
-  ...click(15950, 'nav:notifications', { type: 'nav', route: 'notifications' }),
+  ...click(36500, 'kb:search'),
+  ...type_(36700, 'roof leak'),
+  ...click(41200, 'article:k1', { type: 'article', id: 'k1' }),
+  ...click(44600, 'article:back', { type: 'article', id: null }),
+  ...click(46200, 'nav:notifications', { type: 'nav', route: 'notifications' }),
 
   /* Notifications — a live event landing while you watch. */
-  ...beats(16700, { type: 'arrive' }),
-  ...click(17600, 'action:mark-all', { type: 'readAll' }),
-  ...click(18300, 'nav:settings', { type: 'nav', route: 'settings' }),
+  ...beats(47600, { type: 'arrive' }),
+  ...click(51000, 'action:mark-all', { type: 'readAll' }),
+  ...click(52800, 'nav:settings', { type: 'nav', route: 'settings' }),
 
   /* Settings — a change, saved. */
-  ...click(19100, 'settings:ai', { type: 'tab', tab: 'ai' }),
-  ...click(19900, 'field:voice', { type: 'voice', voice: 'Aurora' }),
-  ...click(20600, 'settings:save', { type: 'save', state: 'saving' }),
-  ...beats(21000, { type: 'save', state: 'saved' }),
+  ...click(54200, 'settings:ai', { type: 'tab', tab: 'ai' }),
+  ...click(55600, 'field:voice', { type: 'voice', voice: 'Aurora' }),
+  ...click(57100, 'settings:save', { type: 'save', state: 'saving' }),
+  ...beats(58100, { type: 'save', state: 'saved' }),
 
   /* And round again. The click lands in the last frames of the loop and the
      reset at zero answers it, so the dashboard arrives already empty and
      counts itself up — rather than being reset in front of the visitor a
      moment after they watched it fill in. */
-  ...click(21560, 'nav:dashboard'),
+  ...click(59600, 'nav:dashboard'),
 ]
   .filter((beat) => beat.at >= 0 && beat.at < LOOP)
   .sort((a, b) => a.at - b.at);

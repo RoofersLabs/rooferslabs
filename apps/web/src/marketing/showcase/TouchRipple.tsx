@@ -21,7 +21,7 @@ export function TouchRipple({ spot, press }: { spot: PointerSpot; press: number 
           style={{ left: spot.x - 26, top: spot.y - 26, width: 52, height: 52 }}
           initial={{ scale: 0.35, opacity: 0.28 }}
           animate={{ scale: 1, opacity: 0 }}
-          transition={{ duration: 0.45, ease: [0, 0, 0.2, 1] }}
+          transition={{ duration: 0.62, ease: [0, 0, 0.2, 1] }}
         />
       </AnimatePresence>
     </div>

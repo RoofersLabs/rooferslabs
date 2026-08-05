@@ -45,10 +45,9 @@ export function Hero() {
         </div>
 
         {/* The product, on the hardware it runs on. The device is centred and
-            takes whatever width the column can give it; it is drawn at 1:1 and
-            scaled as one piece, so the application inside is always at a real
-            device's own size rather than a squeezed version of a desktop. */}
-        <div className="flex-1 pb-10 sm:pb-12">
+            takes whatever width the column can give it; the application inside
+            is drawn at native CSS pixels rather than squeezed into the shell. */}
+        <div className="-mx-5 flex-1 pb-10 sm:mx-0 sm:pb-12">
           <ProductDemo />
         </div>
       </Container>

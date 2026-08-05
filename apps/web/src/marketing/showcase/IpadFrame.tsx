@@ -9,9 +9,9 @@ import type { ReactNode } from 'react';
  * proportions and the shadow, and the things that make one look cheap are the
  * highlights someone added afterwards.
  *
- * Every measurement is in the device's own pixels at 1:1. `DeviceFrame` scales
- * the whole thing as one transform, so the bezel, the corner radii and the
- * shadow shrink together and the hardware never loses its proportions.
+ * Every measurement is in the device's own pixels at 1:1. `DeviceFrame` sizes
+ * the display to the available width and does not transform the application
+ * layer, so text stays at native browser resolution.
  */
 
 export type IpadSpec = {
@@ -24,23 +24,35 @@ export type IpadSpec = {
   screenRadius: number;
 };
 
-/** 2388 × 1668 device pixels — the 11" Pro's panel, in points, landscape. */
-export const IPAD: IpadSpec = {
-  screen: { width: 1024, height: 715 },
-  bezel: 16,
-  edge: 3,
-  radius: 34,
-  screenRadius: 18,
-};
+/** A 13-inch iPad Pro-style panel in landscape points, sized for readability. */
+export const IPAD_SCREEN = { width: 1180, height: 824 } as const;
 
-/** The same hardware at the logical width an iPad reports in portrait. */
-export const IPAD_COMPACT: IpadSpec = {
-  ...IPAD,
-  screen: { width: 834, height: 582 },
-  bezel: 14,
-  radius: 30,
-  screenRadius: 16,
-};
+const ASPECT = IPAD_SCREEN.width / IPAD_SCREEN.height;
+
+/**
+ * The same hardware at whatever width the page can give it, in its own points.
+ *
+ * The showcase sizes the display to the space available rather than picking one
+ * of two fixed panels and shrinking it: a tablet drawn at 0.83 renders the
+ * product's 14px body text at 11.6px, which is the single largest reason the
+ * interface was hard to read. Below a full-size iPad the screen simply *is*
+ * fewer points across — the application lays out for a smaller tablet, exactly
+ * as it would on one, and every glyph is at its native size.
+ *
+ * The bezel and the corner radii follow the panel, because a 16px bezel on a
+ * 700pt screen is a chunky picture frame rather than an iPad.
+ */
+export function ipadSpecFor(screenWidth: number): IpadSpec {
+  const width = Math.round(screenWidth);
+  const t = Math.min(1, width / IPAD_SCREEN.width);
+  return {
+    screen: { width, height: Math.round(width / ASPECT) },
+    bezel: Math.round(8 + 4 * t),
+    edge: 2,
+    radius: Math.round(22 + 10 * t),
+    screenRadius: Math.round(11 + 6 * t),
+  };
+}
 
 export function ipadOuter(spec: IpadSpec) {
   const inset = 2 * (spec.bezel + spec.edge);

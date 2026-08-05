@@ -11,7 +11,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
  * entrance, and they only get to run it because the page they belong to was
  * unmounted when it left.
  *
- * 200ms out, 260ms in, on the product's own standard curve. Fast enough that
+ * About a third of a second out and in, on the product's own standard curve. Fast enough that
  * the navigation feels answered, slow enough that the eye follows the change
  * rather than being handed a different screen.
  */
@@ -26,9 +26,9 @@ export function PageTransition({ id, children }: { id: string; children: ReactNo
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: reduced ? 0 : -6 }}
         transition={{
-          duration: 0.26,
+          duration: 0.36,
           ease: [0.4, 0, 0.2, 1],
-          exit: { duration: 0.2 },
+          exit: { duration: 0.34 },
         }}
       >
         {children}

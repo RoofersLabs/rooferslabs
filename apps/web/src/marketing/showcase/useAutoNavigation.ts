@@ -80,7 +80,7 @@ export function useAutoNavigation(
     const distance = Math.min(top, container.scrollHeight - container.clientHeight) - from;
     if (Math.abs(distance) < 1) return;
 
-    const duration = 420;
+    const duration = 1500;
     const start = performance.now();
     let frame = requestAnimationFrame(function step(now) {
       const t = Math.min((now - start) / duration, 1);

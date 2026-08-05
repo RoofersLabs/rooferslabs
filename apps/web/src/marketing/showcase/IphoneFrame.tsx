@@ -11,20 +11,52 @@ import type { ReactNode } from 'react';
  * asked to know it is in a phone.
  */
 
-/** 393 × 852 points — the Pro's panel. */
-export const IPHONE = {
-  screen: { width: 393, height: 852 },
-  bezel: 10,
-  edge: 2.5,
-  radius: 56,
-  screenRadius: 46,
+export type IphoneSpec = {
+  screen: { width: number; height: number };
+  bezel: number;
+  edge: number;
+  radius: number;
+  screenRadius: number;
   /** Status bar, and the strip the home indicator sits in. */
-  statusBar: 44,
-  homeIndicator: 20,
-  island: { width: 122, height: 35, top: 11 },
-} as const;
+  statusBar: number;
+  homeIndicator: number;
+  island: { width: number; height: number; top: number };
+  buttons: { top: number; height: number; side: 'left' | 'right' }[];
+};
 
-export type IphoneSpec = typeof IPHONE;
+/** 393 × 852 points — the Pro's panel, and the reference every part scales from. */
+export const IPHONE_SCREEN = { width: 393, height: 852 } as const;
+
+/**
+ * The same handset at whatever width the page can give it.
+ *
+ * A 390px-wide browser cannot show a 393pt phone at 1:1 *and* the metal around
+ * it, so the old fixed panel was scaled to 0.83 and every glyph inside it came
+ * out a sixth smaller than the application draws it. Narrowing the panel a few
+ * points instead keeps the display at its native size: the product renders at
+ * 341pt the way it renders on a small phone, and the type is the type.
+ */
+export function iphoneSpecFor(screenWidth: number): IphoneSpec {
+  const width = Math.round(screenWidth);
+  const k = width / IPHONE_SCREEN.width;
+  const round = (value: number) => Math.round(value * k);
+  return {
+    screen: { width, height: round(IPHONE_SCREEN.height) },
+    bezel: Math.max(6, round(8)),
+    edge: 2.5,
+    radius: round(52),
+    screenRadius: round(43),
+    statusBar: Math.max(36, round(42)),
+    homeIndicator: Math.max(14, round(18)),
+    island: { width: round(118), height: Math.max(28, round(33)), top: round(10) },
+    buttons: [
+      { side: 'left', top: round(118), height: round(30) },
+      { side: 'left', top: round(166), height: round(54) },
+      { side: 'left', top: round(232), height: round(54) },
+      { side: 'right', top: round(186), height: round(84) },
+    ],
+  };
+}
 
 export function iphoneOuter(spec: IphoneSpec) {
   const inset = 2 * (spec.bezel + spec.edge);
@@ -78,10 +110,14 @@ export function IphoneFrame({ spec, children }: { spec: IphoneSpec; children: Re
           '0 1px 2px rgba(255,255,255,0.2) inset, 0 40px 70px -40px rgba(0,0,0,0.9), 0 60px 120px -60px rgba(43,92,230,0.5)',
       }}
     >
-      <SideButton side="left" top={118} height={30} />
-      <SideButton side="left" top={166} height={54} />
-      <SideButton side="left" top={232} height={54} />
-      <SideButton side="right" top={186} height={84} />
+      {spec.buttons.map((button) => (
+        <SideButton
+          key={`${button.side}-${button.top}`}
+          side={button.side}
+          top={button.top}
+          height={button.height}
+        />
+      ))}
 
       <div
         style={{
@@ -139,10 +175,10 @@ export function IphoneFrame({ spec, children }: { spec: IphoneSpec; children: Re
             aria-hidden
             style={{
               position: 'absolute',
-              bottom: 7,
+              bottom: Math.round(spec.homeIndicator * 0.35),
               left: '50%',
-              marginLeft: -67,
-              width: 134,
+              marginLeft: -spec.screen.width * 0.17,
+              width: spec.screen.width * 0.34,
               height: 5,
               borderRadius: 999,
               background: 'rgba(10,12,16,0.32)',

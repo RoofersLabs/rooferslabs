@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { cn, humanizeEnum } from '@/lib/utils';
+import { cn, formatPhone, humanizeEnum } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { FilterBar } from '@/components/ui/FilterBar';
 import { IconTile } from '@/components/ui/IconTile';
@@ -11,6 +11,7 @@ import { ChevronRightIcon, PhoneIcon, ShieldExclamationIcon } from '@heroicons/r
 import { calls, incomingCall } from '../data';
 import { Reveal, StaggerList, StaggerRow } from '../animation';
 import { PreviewPageHeader } from '../chrome';
+import { usePhone } from '../formFactor';
 
 /**
  * The Calls page, matching `features/calls/CallsPage`: one card holding the
@@ -54,6 +55,7 @@ export function CallsView({
   liveSeconds?: number;
 }) {
   const reduced = useReducedMotion();
+  const phone = usePhone();
   const [search, setSearch] = useState('');
   const needle = search.trim().toLowerCase();
   const visible = needle
@@ -102,7 +104,8 @@ export function CallsView({
               >
                 <div
                   className={cn(
-                    'flex items-center gap-4 border-b border-line-subtle px-6 py-4',
+                    'flex border-b border-line-subtle',
+                    phone ? 'items-start gap-3 px-4 py-4' : 'items-center gap-4 px-6 py-4',
                     'transition-colors duration-slow ease-standard',
                     settled ? 'bg-surface' : 'bg-accent-subtle/60',
                   )}
@@ -139,17 +142,28 @@ export function CallsView({
                     <p className="mt-0.5 line-clamp-2 break-words text-small text-ink-muted">
                       {PHASE_SUMMARY[live]}
                     </p>
+                    {phone && (
+                      <p className="font-num mt-2 flex flex-wrap gap-x-3 gap-y-1 text-caption text-ink-faint">
+                        <span>{formatPhone(incomingCall.phone)}</span>
+                        <span>{ringing ? 'Ringing' : clock(liveSeconds)}</span>
+                        <span>{live === 'logged' ? incomingCall.at : PHASE_LABEL[live]}</span>
+                      </p>
+                    )}
                   </div>
 
-                  <div className="shrink-0 text-right">
-                    <p className="font-num text-small text-ink-muted">
-                      {ringing ? '—' : clock(liveSeconds)}
-                    </p>
-                    <p className="mt-0.5 text-caption text-ink-faint">
-                      {live === 'logged' ? incomingCall.at : PHASE_LABEL[live]}
-                    </p>
-                  </div>
-                  <ChevronRightIcon className="h-4 w-4 shrink-0 text-ink-faint" aria-hidden />
+                  {!phone && (
+                    <>
+                      <div className="shrink-0 text-right">
+                        <p className="font-num text-small text-ink-muted">
+                          {ringing ? '—' : clock(liveSeconds)}
+                        </p>
+                        <p className="mt-0.5 text-caption text-ink-faint">
+                          {live === 'logged' ? incomingCall.at : PHASE_LABEL[live]}
+                        </p>
+                      </div>
+                      <ChevronRightIcon className="h-4 w-4 shrink-0 text-ink-faint" aria-hidden />
+                    </>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -163,7 +177,12 @@ export function CallsView({
             <StaggerList className="divide-y divide-line-subtle">
               {visible.map((call) => (
                 <StaggerRow key={call.id}>
-                  <div className="group flex items-center gap-4 px-6 py-4 transition-colors duration-fast hover:bg-surface-2">
+                  <div
+                    className={cn(
+                      'group flex transition-colors duration-fast hover:bg-surface-2',
+                      phone ? 'items-start gap-3 px-4 py-4' : 'items-center gap-4 px-6 py-4',
+                    )}
+                  >
                     <IconTile
                       icon={call.isEmergency ? ShieldExclamationIcon : PhoneIcon}
                       tone={call.isEmergency ? 'emergency' : 'brand'}
@@ -186,6 +205,13 @@ export function CallsView({
                       <p className="mt-0.5 line-clamp-2 break-words text-small text-ink-muted">
                         {call.summary}
                       </p>
+                      {phone && (
+                        <p className="font-num mt-2 flex flex-wrap gap-x-3 gap-y-1 text-caption text-ink-faint">
+                          <span>{formatPhone(call.phone)}</span>
+                          <span>{call.duration}</span>
+                          <span>{call.at}</span>
+                        </p>
+                      )}
                     </div>
                     {/* Two lines, as the product has them. A third carrying the
                         phone number was the widest thing in this column and, at
@@ -193,14 +219,18 @@ export function CallsView({
                         "Dana Whitfield" truncated to "Dana W…" so a number
                         already shown on the Customers page could be repeated
                         here. */}
-                    <div className="shrink-0 text-right">
-                      <p className="font-num text-small text-ink-muted">{call.duration}</p>
-                      <p className="mt-0.5 text-caption text-ink-faint">{call.at}</p>
-                    </div>
-                    <ChevronRightIcon
-                      className="h-4 w-4 shrink-0 text-ink-faint opacity-0 transition-opacity duration-fast group-hover:opacity-100"
-                      aria-hidden
-                    />
+                    {!phone && (
+                      <>
+                        <div className="shrink-0 text-right">
+                          <p className="font-num text-small text-ink-muted">{call.duration}</p>
+                          <p className="mt-0.5 text-caption text-ink-faint">{call.at}</p>
+                        </div>
+                        <ChevronRightIcon
+                          className="h-4 w-4 shrink-0 text-ink-faint opacity-0 transition-opacity duration-fast group-hover:opacity-100"
+                          aria-hidden
+                        />
+                      </>
+                    )}
                   </div>
                 </StaggerRow>
               ))}

@@ -22,7 +22,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { COMPANY, appointments, articles, calls, customers } from './data';
-import { usePhone } from './formFactor';
+import { usePhone, useScreenWidth, useWide } from './formFactor';
 
 /**
  * The authenticated application's chrome, rebuilt for the marketing page.
@@ -143,12 +143,14 @@ export function PreviewPageHeader({
   actions?: ReactNode;
 }) {
   const phone = usePhone();
+  const wide = useWide();
+  const stacked = phone || !wide;
 
   return (
     <div
       className={cn(
         'mb-5 flex gap-3',
-        phone ? 'flex-col' : 'flex-row items-center justify-between',
+        stacked ? 'flex-col' : 'flex-row items-center justify-between',
       )}
     >
       <div className="min-w-0">
@@ -450,6 +452,8 @@ export const AppWindow = forwardRef<HTMLDivElement, AppWindowProps>(function App
   scrollRef,
 ) {
   const phone = usePhone();
+  const screenWidth = useScreenWidth();
+  const compactTablet = !phone && screenWidth < 900;
   const reduced = useReducedMotion();
   const [ownDrawer, setOwnDrawer] = useState(false);
   const drawerOpen = drawer ?? ownDrawer;
@@ -472,10 +476,18 @@ export const AppWindow = forwardRef<HTMLDivElement, AppWindowProps>(function App
         {!phone && (
           <nav
             aria-label="Preview sections"
-            className="flex w-64 shrink-0 flex-col border-r border-line-subtle bg-surface"
+            className={cn(
+              'flex shrink-0 flex-col border-r border-line-subtle bg-surface',
+              compactTablet ? 'w-52' : 'w-64',
+            )}
           >
             <SidebarBrand />
-            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+            <div
+              className={cn(
+                'min-h-0 flex-1 overflow-y-auto py-4',
+                compactTablet ? 'px-2.5' : 'px-3',
+              )}
+            >
               <NavList view={view} unreadCount={unreadCount} onNavigate={navigate} />
             </div>
           </nav>
@@ -528,7 +540,7 @@ export const AppWindow = forwardRef<HTMLDivElement, AppWindowProps>(function App
           <header
             className={cn(
               'group/header relative z-20 flex h-16 shrink-0 items-center gap-3 border-b border-line-subtle bg-[color-mix(in_oklab,var(--surface-1)_88%,transparent)] backdrop-blur',
-              phone ? 'px-4' : 'px-6',
+              phone || compactTablet ? 'px-4' : 'px-6',
             )}
           >
             {phone && (
@@ -589,7 +601,10 @@ export const AppWindow = forwardRef<HTMLDivElement, AppWindowProps>(function App
               marketing page rather than being held inside it. */}
           <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto bg-base">
             <div
-              className={cn('mx-auto w-full max-w-dashboard', phone ? 'px-4 py-5' : 'px-8 py-6')}
+              className={cn(
+                'mx-auto w-full max-w-dashboard',
+                phone ? 'px-4 py-5' : compactTablet ? 'px-6 py-6' : 'px-8 py-6',
+              )}
             >
               {children}
             </div>
