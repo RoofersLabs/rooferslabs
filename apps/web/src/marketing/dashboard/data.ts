@@ -16,11 +16,40 @@
  * dashboard's own `timeAgo` is right for live records; here it would make every
  * screenshot, every visual diff and every page load slightly different for no
  * gain.
+ *
+ * ## Everything identifying is written already masked
+ *
+ * The preview is a demonstration on a public page, so no record here carries a
+ * whole name, number, address or mailbox — not because these people exist, but
+ * because a product screenshot that shows complete customer details teaches the
+ * wrong thing about the product. The values are stored in the masked form the
+ * screen shows, rather than being masked on the way out, so there is nothing
+ * complete in the bundle to leak in the first place.
+ *
+ * One convention throughout, so a masked field reads as a convention rather
+ * than as damage:
+ *
+ * - **Names** keep the first word; every later word keeps its initial, so a
+ *   caller reads `Dana W********` and a business `Summit R******`. People and
+ *   companies follow the same rule.
+ * - **Phones** keep the area code and the last four: `(614) ***-0182`. They are
+ *   written pre-formatted rather than as E.164 — `formatPhone` returns anything
+ *   that is not E.164 unchanged, so the pages still call it and still get this.
+ * - **Emails** keep the first segment of the mailbox and the domain, unless the
+ *   domain is the business's own name, which is masked like any other business:
+ *   `dana.w********@example.com`, `o*****@s************.example`.
+ * - **Addresses** keep the house number, the street type and the city — enough
+ *   to place a job on a map in your head — and mask the street name:
+ *   `418 B***** St, Dublin`.
+ *
+ * Anything added here follows the same rule, including names mentioned inside
+ * prose: a notification that names a caller masks them exactly as the record
+ * does.
  */
 
 /** The fictional business the preview is signed in as. */
 export const COMPANY = {
-  name: 'Summit Roofing',
+  name: 'Summit R******',
   /** The signed-in owner — the greeting is addressed to them. */
   firstName: 'Ray',
   initials: 'RS',
@@ -32,7 +61,7 @@ export const COMPANY = {
 export type PreviewCall = {
   id: string;
   name: string;
-  /** E.164, so the preview formats it through the product's own `formatPhone`. */
+  /** Masked and pre-formatted; `formatPhone` passes it through untouched. */
   phone: string;
   city: string;
   /** `ConversationOutcome` — drives the status colour. */
@@ -51,8 +80,8 @@ export type PreviewCall = {
 export const calls: PreviewCall[] = [
   {
     id: 'c1',
-    name: 'Dana Whitfield',
-    phone: '+16145550182',
+    name: 'Dana W********',
+    phone: '(614) ***-0182',
     city: 'Dublin, OH',
     outcome: 'EMERGENCY',
     intent: 'EMERGENCY_REPAIR',
@@ -65,8 +94,8 @@ export const calls: PreviewCall[] = [
   },
   {
     id: 'c2',
-    name: 'Marcus Bell',
-    phone: '+16145550143',
+    name: 'Marcus B***',
+    phone: '(614) ***-0143',
     city: 'Westerville, OH',
     outcome: 'APPOINTMENT_REQUESTED',
     intent: 'NEW_ESTIMATE',
@@ -79,8 +108,8 @@ export const calls: PreviewCall[] = [
   },
   {
     id: 'c3',
-    name: 'Priya Raman',
-    phone: '+16145550119',
+    name: 'Priya R****',
+    phone: '(614) ***-0119',
     city: 'Hilliard, OH',
     outcome: 'APPOINTMENT_REQUESTED',
     intent: 'INSPECTION',
@@ -93,8 +122,8 @@ export const calls: PreviewCall[] = [
   },
   {
     id: 'c4',
-    name: 'Tom Alvarez',
-    phone: '+16145550167',
+    name: 'Tom A******',
+    phone: '(614) ***-0167',
     city: 'Grove City, OH',
     outcome: 'LEAD_CAPTURED',
     intent: 'NEW_ESTIMATE',
@@ -107,8 +136,8 @@ export const calls: PreviewCall[] = [
   },
   {
     id: 'c5',
-    name: 'Renee Okafor',
-    phone: '+16145550198',
+    name: 'Renee O*****',
+    phone: '(614) ***-0198',
     city: 'Powell, OH',
     outcome: 'LEAD_CAPTURED',
     intent: 'INSPECTION',
@@ -121,8 +150,8 @@ export const calls: PreviewCall[] = [
   },
   {
     id: 'c6',
-    name: 'Chris Donnelly',
-    phone: '+16145550155',
+    name: 'Chris D*******',
+    phone: '(614) ***-0155',
     city: 'Reynoldsburg, OH',
     outcome: 'APPOINTMENT_REQUESTED',
     intent: 'REPAIR',
@@ -135,8 +164,8 @@ export const calls: PreviewCall[] = [
   },
   {
     id: 'c7',
-    name: 'Alma Vasquez',
-    phone: '+16145550126',
+    name: 'Alma V******',
+    phone: '(614) ***-0126',
     city: 'Upper Arlington, OH',
     outcome: 'INFORMATION_PROVIDED',
     intent: 'WARRANTY',
@@ -149,8 +178,8 @@ export const calls: PreviewCall[] = [
   },
   {
     id: 'c8',
-    name: 'Wes Carmichael',
-    phone: '+16145550171',
+    name: 'Wes C*********',
+    phone: '(614) ***-0171',
     city: 'Gahanna, OH',
     outcome: 'LEAD_CAPTURED',
     intent: 'REPAIR',
@@ -216,57 +245,57 @@ export type PreviewAppointment = {
 export const appointments: PreviewAppointment[] = [
   {
     id: 'a1',
-    name: 'Dana Whitfield',
+    name: 'Dana W********',
     service: 'Emergency tarp + interior assessment',
     priority: 'URGENT',
     status: 'CONFIRMED',
     when: 'Today',
     window: '7:00 – 9:00 AM',
-    address: '418 Bridge St, Dublin',
+    address: '418 B***** St, Dublin',
     requested: '12 minutes ago',
   },
   {
     id: 'a2',
-    name: 'Priya Raman',
+    name: 'Priya R****',
     service: 'Wind damage inspection',
     priority: 'HIGH',
     status: 'CONFIRMED',
     when: 'Wed 14 Aug',
     window: '1:00 – 3:00 PM',
-    address: '2201 Cemetery Rd, Hilliard',
+    address: '2201 C******* Rd, Hilliard',
     requested: '1 hour ago',
   },
   {
     id: 'a3',
-    name: 'Marcus Bell',
+    name: 'Marcus B***',
     service: 'Full replacement estimate',
     priority: 'HIGH',
     status: 'REQUESTED',
     when: 'Thu 15 Aug',
     window: '10:00 AM – 12:00 PM',
-    address: '79 Sunbury Rd, Westerville',
+    address: '79 S****** Rd, Westerville',
     requested: '38 minutes ago',
   },
   {
     id: 'a4',
-    name: 'Chris Donnelly',
+    name: 'Chris D*******',
     service: 'Flat roof leak repair',
     priority: 'NORMAL',
     status: 'REQUESTED',
     when: 'Mon 19 Aug',
     window: '9:00 – 11:00 AM',
-    address: '5522 Blacklick Dr, Reynoldsburg',
+    address: '5522 B******** Dr, Reynoldsburg',
     requested: '4 hours ago',
   },
   {
     id: 'a5',
-    name: 'Louise Trent',
+    name: 'Louise T****',
     service: 'Annual maintenance visit',
     priority: 'LOW',
     status: 'CONFIRMED',
     when: 'Fri 16 Aug',
     window: '3:30 – 5:00 PM',
-    address: '1140 Hayden Run, Hilliard',
+    address: '1140 H***** Run, Hilliard',
     requested: 'Yesterday',
   },
 ];
@@ -298,10 +327,10 @@ export type PreviewCustomer = {
 export const customers: PreviewCustomer[] = [
   {
     id: 'u1',
-    name: 'Dana Whitfield',
-    phone: '+16145550182',
-    email: 'dana.whitfield@example.com',
-    address: '418 Bridge St, Dublin',
+    name: 'Dana W********',
+    phone: '(614) ***-0182',
+    email: 'dana.w********@example.com',
+    address: '418 B***** St, Dublin',
     propertyType: 'RESIDENTIAL',
     status: 'ACTIVE',
     added: '12 minutes ago',
@@ -314,10 +343,10 @@ export const customers: PreviewCustomer[] = [
   },
   {
     id: 'u2',
-    name: 'Marcus Bell',
-    phone: '+16145550143',
-    email: 'm.bell@example.com',
-    address: '79 Sunbury Rd, Westerville',
+    name: 'Marcus B***',
+    phone: '(614) ***-0143',
+    email: 'm.b***@example.com',
+    address: '79 S****** Rd, Westerville',
     propertyType: 'RESIDENTIAL',
     status: 'NEW',
     added: '38 minutes ago',
@@ -329,10 +358,10 @@ export const customers: PreviewCustomer[] = [
   },
   {
     id: 'u3',
-    name: 'Priya Raman',
-    phone: '+16145550119',
-    email: 'praman@example.com',
-    address: '2201 Cemetery Rd, Hilliard',
+    name: 'Priya R****',
+    phone: '(614) ***-0119',
+    email: 'p*****@example.com',
+    address: '2201 C******* Rd, Hilliard',
     propertyType: 'RESIDENTIAL',
     status: 'ACTIVE',
     added: '1 hour ago',
@@ -344,10 +373,10 @@ export const customers: PreviewCustomer[] = [
   },
   {
     id: 'u4',
-    name: 'Grove City Storage Co.',
-    phone: '+16145550167',
-    email: 'facilities@gcstorage.example',
-    address: '3900 Southwest Blvd, Grove City',
+    name: 'Grove C*** S****** C*.',
+    phone: '(614) ***-0167',
+    email: 'f*********@g********.example',
+    address: '3900 S******** Blvd, Grove City',
     propertyType: 'COMMERCIAL',
     status: 'ACTIVE',
     added: '2 hours ago',
@@ -359,10 +388,10 @@ export const customers: PreviewCustomer[] = [
   },
   {
     id: 'u5',
-    name: 'Renee Okafor',
-    phone: '+16145550198',
-    email: 'renee.okafor@example.com',
-    address: '867 Liberty Rd, Powell',
+    name: 'Renee O*****',
+    phone: '(614) ***-0198',
+    email: 'renee.o*****@example.com',
+    address: '867 L****** Rd, Powell',
     propertyType: 'RESIDENTIAL',
     status: 'NEW',
     added: '3 hours ago',
@@ -373,10 +402,10 @@ export const customers: PreviewCustomer[] = [
   },
   {
     id: 'u6',
-    name: 'Chris Donnelly',
-    phone: '+16145550155',
-    email: 'cdonnelly@example.com',
-    address: '5522 Blacklick Dr, Reynoldsburg',
+    name: 'Chris D*******',
+    phone: '(614) ***-0155',
+    email: 'c********@example.com',
+    address: '5522 B******** Dr, Reynoldsburg',
     propertyType: 'RESIDENTIAL',
     status: 'ACTIVE',
     added: '4 hours ago',
@@ -480,7 +509,7 @@ export const notifications: PreviewNotification[] = [
     id: 'n1',
     type: 'EMERGENCY',
     title: 'Emergency call routed',
-    message: 'Dana Whitfield — active leak in Dublin. On-call crew paged by SMS and push.',
+    message: 'Dana W******** — active leak in Dublin. On-call crew paged by SMS and push.',
     ago: '12 minutes ago',
     unread: true,
     critical: true,
@@ -489,7 +518,7 @@ export const notifications: PreviewNotification[] = [
     id: 'n2',
     type: 'APPOINTMENT_REQUEST',
     title: 'Appointment confirmed',
-    message: 'Marcus Bell — full replacement estimate, Thursday 15 Aug at 10:00 AM.',
+    message: 'Marcus B*** — full replacement estimate, Thursday 15 Aug at 10:00 AM.',
     ago: '38 minutes ago',
     unread: true,
   },
@@ -497,7 +526,7 @@ export const notifications: PreviewNotification[] = [
     id: 'n3',
     type: 'NEW_LEAD',
     title: 'Lead qualified',
-    message: 'Priya Raman — wind damage, inside the service area, ready to schedule.',
+    message: 'Priya R**** — wind damage, inside the service area, ready to schedule.',
     ago: '1 hour ago',
     unread: true,
   },
@@ -505,7 +534,7 @@ export const notifications: PreviewNotification[] = [
     id: 'n4',
     type: 'NEW_CALL',
     title: 'AI answered a call',
-    message: 'Tom Alvarez asked about gutter replacement across the front elevation.',
+    message: 'Tom A****** asked about gutter replacement across the front elevation.',
     ago: '2 hours ago',
     unread: false,
   },
@@ -513,7 +542,7 @@ export const notifications: PreviewNotification[] = [
     id: 'n5',
     type: 'APPOINTMENT_REQUEST',
     title: 'Appointment requested',
-    message: 'Renee Okafor — hail claim inspection for her insurer, date to confirm.',
+    message: 'Renee O***** — hail claim inspection for her insurer, date to confirm.',
     ago: '3 hours ago',
     unread: false,
   },
@@ -522,7 +551,7 @@ export const notifications: PreviewNotification[] = [
     type: 'CALL_SUMMARY',
     title: 'Call summary ready',
     message:
-      'Alma Vasquez — warranty terms for a skylight reseal, answered from your knowledge base.',
+      'Alma V****** — warranty terms for a skylight reseal, answered from your knowledge base.',
     ago: '5 hours ago',
     unread: false,
   },
@@ -543,8 +572,8 @@ export const unreadCount = notifications.filter((item) => item.unread).length;
  */
 export const incomingCall = {
   id: 'live',
-  name: 'Nora Bishop',
-  phone: '+16145550137',
+  name: 'Nora B*****',
+  phone: '(614) ***-0137',
   city: 'Worthington, OH',
   intent: 'EMERGENCY_REPAIR',
   outcome: 'EMERGENCY',
@@ -558,7 +587,7 @@ export const incomingNotification: PreviewNotification = {
   id: 'n0',
   type: 'EMERGENCY',
   title: 'Emergency call routed',
-  message: 'Nora Bishop — hail damage in Worthington. On-call crew paged by SMS and push.',
+  message: 'Nora B***** — hail damage in Worthington. On-call crew paged by SMS and push.',
   ago: 'Just now',
   unread: true,
   critical: true,
@@ -568,25 +597,25 @@ export const incomingNotification: PreviewNotification = {
 
 /** The business profile, as `SettingsPage`'s Business tab reads it back. */
 export const businessProfile = [
-  ['Company name', 'Summit Roofing'],
-  ['Business email', 'office@summitroofing.example'],
-  ['Business phone', '(614) 555-0100'],
-  ['Website', 'summitroofing.example'],
-  ['Address', '2400 Olentangy River Rd'],
+  ['Company name', 'Summit R******'],
+  ['Business email', 'o*****@s************.example'],
+  ['Business phone', '(614) ***-0100'],
+  ['Website', 's************.example'],
+  ['Address', '2400 O******** R**** Rd'],
   ['City', 'Columbus'],
   ['State', 'OH'],
   ['ZIP', '43210'],
   ['Timezone', 'America/New_York'],
   ['Roofing services', 'Replacement, Repair, Inspection, Gutters'],
   ['Service areas', 'Franklin County, Delaware County'],
-  ['Emergency phone', '(614) 555-0111'],
+  ['Emergency phone', '(614) ***-0111'],
 ] as const;
 
 /** The AI receptionist configuration, matching the AI tab's fields. */
 export const aiConfig = {
   assistantName: 'Riley',
   voice: 'Ember',
-  greeting: 'Thanks for calling Summit Roofing, this is Riley. How can I help today?',
+  greeting: 'Thanks for calling Summit R******, this is Riley. How can I help today?',
   persona: 'Warm, efficient, never pushy',
   instructions: 'Always mention the ten-year workmanship warranty on full replacements.',
   toggles: [
@@ -609,8 +638,8 @@ export const businessHours = [
 
 /** Phone setup, as the Phone tab's control centre and number card show it. */
 export const phoneSetup = {
-  aiNumber: '+16145550188',
-  businessNumber: '+16145550100',
+  aiNumber: '(614) ***-0188',
+  businessNumber: '(614) ***-0100',
   carrier: 'AT&T',
   verified: true,
 } as const;

@@ -116,7 +116,7 @@ function fit(kind: DeviceKind, available: number): Fitted {
   }
 
   const inset = 2 * (ipadSpecFor(IPAD_SCREEN.width).bezel + 3);
-  const spec = fitScreenWidth(
+  const fittedSpec = fitScreenWidth(
     available,
     MIN_TABLET,
     IPAD_SCREEN.width,
@@ -124,6 +124,12 @@ function fit(kind: DeviceKind, available: number): Fitted {
     ipadOuter,
     inset,
   );
+  // `MIN_TABLET` is a floor for the tablet, not a preference. Below it the
+  // replica draws the application's *phone* layout — a bottom tab bar and a
+  // hamburger — inside an iPad, which no longer reads as a smaller tablet but
+  // as the wrong hardware. It takes the room back out of the margin around it
+  // instead; the margin is a preference, and this is not.
+  const spec = fittedSpec.screen.width < MIN_TABLET ? ipadSpecFor(MIN_TABLET) : fittedSpec;
   const outer = ipadOuter(spec);
   return { kind, spec, outer };
 }
@@ -160,14 +166,38 @@ export function DeviceFrame({
   const { outer } = fitted;
 
   return (
-    <div ref={setHost} className="w-full">
-      {available > 0 && (
-        <div className="relative mx-auto" style={{ width: outer.width, height: outer.height }}>
-          <Hardware fitted={fitted} screenRef={screenRef} overlay={overlay}>
-            {children}
-          </Hardware>
-        </div>
-      )}
+    // The margin the hardware sits in. It is padding on a wrapper rather than
+    // on the measured element, because `clientWidth` counts padding — the
+    // device would size itself to the space *including* the room meant to be
+    // left around it, and land flush against the edge anyway.
+    //
+    // These stops read the browser, not the screen inside the device, which is
+    // the one place in the preview where that is the right question: this is
+    // the device's room on the page, not the application's layout. (Everything
+    // inside asks `formFactor.tsx` instead.)
+    //
+    // On a phone the padding also answers the hero's own bleed: the column
+    // there is pulled 20px wider than the page's gutter, and this is what lands
+    // the handset level with the copy above it rather than out in the margin.
+    //
+    // 16px is deliberately modest until `xl`, and the reason is the panel this
+    // padding comes out of. Every point spent on margin is a point the
+    // application is not laid out for, and two of the replica's layout tiers sit
+    // close to the widths the page can give it: an 11-inch tablet at a 768px
+    // browser has 34pt of headroom over the phone layout, and the desk layout
+    // arrives at 1024pt. Anything wider than this here would have moved those
+    // boundaries, so the device would gain margin by rendering a smaller
+    // interface. From `xl` there is room for both.
+    <div className="w-full px-4 xl:px-8">
+      <div ref={setHost} className="w-full">
+        {available > 0 && (
+          <div className="relative mx-auto" style={{ width: outer.width, height: outer.height }}>
+            <Hardware fitted={fitted} screenRef={screenRef} overlay={overlay}>
+              {children}
+            </Hardware>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

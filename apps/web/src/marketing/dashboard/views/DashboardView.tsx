@@ -132,7 +132,7 @@ export function DashboardView({
           on `SidebarInset` in the application: a grid item defaults to
           `min-width: auto`, so the track cannot shrink below its content's
           min-content. A call row's second line ("Emergency repair · (614)
-          555-0182") is one unbreakable run, and inside the preview's narrower
+          ***-0182") is one unbreakable run, and inside the preview's narrower
           column that floored this panel at 441px against 310px of space —
           scrolling the whole dashboard sideways on a phone. The rows already
           truncate; this is what lets them. */}

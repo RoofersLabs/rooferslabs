@@ -8,7 +8,7 @@ import { SearchInput } from '@/components/ui/SearchInput';
 import { EnumStatusText, StatusText } from '@/components/ui/StatusText';
 import { Pagination } from '@/components/ui/pagination';
 import { ChevronRightIcon, PhoneIcon, ShieldExclamationIcon } from '@heroicons/react/24/outline';
-import { calls, incomingCall } from '../data';
+import { COMPANY, aiConfig, calls, incomingCall } from '../data';
 import { Reveal, StaggerList, StaggerRow } from '../animation';
 import { PreviewPageHeader } from '../chrome';
 import { usePhone } from '../formFactor';
@@ -36,7 +36,10 @@ const PHASE_LABEL: Record<LivePhase, string> = {
 /** What the receptionist has established so far, revealed as it establishes it. */
 const PHASE_SUMMARY: Record<LivePhase, string> = {
   ringing: 'Worthington, OH · unknown number',
-  answered: '“Thanks for calling Summit Roofing, this is Riley…”',
+  // Quoted from the fixture rather than restated, so the greeting the visitor
+  // hears the receptionist give is the one configured in Settings — and so the
+  // company name arrives already masked, exactly as everywhere else.
+  answered: `“Thanks for calling ${COMPANY.name}, this is ${aiConfig.assistantName}…”`,
   talking: 'Caller reports water staining spreading across an upstairs ceiling.',
   captured: incomingCall.summary,
   logged: incomingCall.summary,
@@ -216,7 +219,7 @@ export function CallsView({
                     {/* Two lines, as the product has them. A third carrying the
                         phone number was the widest thing in this column and, at
                         342px, it took the width the caller's name needed —
-                        "Dana Whitfield" truncated to "Dana W…" so a number
+                        "Dana W********" truncated to "Dana W…" so a number
                         already shown on the Customers page could be repeated
                         here. */}
                     {!phone && (

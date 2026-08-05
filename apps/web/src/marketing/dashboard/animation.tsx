@@ -18,9 +18,16 @@ const EASE = [0.16, 1, 0.3, 1] as const;
  *  the way back up. */
 const VIEWPORT = { once: true, margin: '-64px 0px -64px 0px' } as const;
 
+/**
+ * Entrances are sized against the page swap that precedes them (360ms — see
+ * `showcase/PageTransition`): a section that is still arriving 900ms after the
+ * navigation makes the navigation itself feel slow, whatever the transition
+ * cost. A page now settles in a little over half a second, well inside the
+ * shortest gap the tour leaves between two clicks.
+ */
 const panelVariants: Variants = {
-  hidden: { opacity: 0, y: 14 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: EASE } },
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE } },
 };
 
 const panelVariantsReduced: Variants = {
@@ -32,8 +39,10 @@ const panelVariantsReduced: Variants = {
  * One dashboard section entering.
  *
  * `index` phrases a group: sections of the same view are handed 0, 1, 2… and
- * arrive about 70ms apart, which reads as the page assembling rather than as
- * six independent animations that happen to overlap.
+ * arrive 50ms apart, which reads as the page assembling rather than as six
+ * independent animations that happen to overlap. The gap is small enough that
+ * the last section of a seven-section page is still in before the page has been
+ * up half a second.
  */
 export function Reveal({
   children,
@@ -56,7 +65,7 @@ export function Reveal({
       initial="hidden"
       whileInView="visible"
       viewport={VIEWPORT}
-      transition={{ delay: index * 0.07 }}
+      transition={{ delay: index * 0.05 }}
     >
       {children}
     </Component>
@@ -88,7 +97,7 @@ export function StaggerList({
       className={className}
       variants={{
         hidden: {},
-        visible: { transition: { staggerChildren: 0.05, delayChildren: delay } },
+        visible: { transition: { staggerChildren: 0.035, delayChildren: delay } },
       }}
       initial="hidden"
       whileInView="visible"
@@ -100,8 +109,8 @@ export function StaggerList({
 }
 
 const rowVariants: Variants = {
-  hidden: { opacity: 0, y: 8 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE } },
+  hidden: { opacity: 0, y: 6 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.32, ease: EASE } },
 };
 
 const rowVariantsReduced: Variants = {
