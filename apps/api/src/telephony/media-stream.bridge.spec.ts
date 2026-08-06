@@ -97,6 +97,22 @@ function buildBridge(callerContext: unknown = CALLER_CONTEXT) {
   return { bridge, receptionist, callProcessing, twilio, accountStatus };
 }
 
+/**
+ * Close anything a case left open.
+ *
+ * A live session holds a max-duration timeout and a tenant-status interval, and
+ * both keep the Jest worker alive after the assertions finish — the suite ran
+ * only because Jest force-exited it. Closing the Twilio socket is what production
+ * does when a caller hangs up, so this drives the real teardown path rather than
+ * reaching in and clearing timers.
+ */
+afterEach(() => {
+  for (const ws of MockWebSocket.instances) {
+    if (ws.readyState === MockWebSocket.OPEN) ws.close();
+  }
+  MockWebSocket.instances = [];
+});
+
 /** Start a session and return the Twilio + OpenAI mock sockets, OpenAI socket opened. */
 async function startSession(callerContext: unknown = CALLER_CONTEXT) {
   MockWebSocket.instances = [];
@@ -465,5 +481,128 @@ describe('tenant status during a call', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+});
+
+/**
+ * The audio path, from the caller finishing a sentence to hearing an answer.
+ *
+ * These cases are about *when* things happen rather than what: audio forwarded
+ * on the first delta rather than at the end of a response, playback abandoned
+ * the instant the caller speaks over it, and the model's context corrected to
+ * match what the caller actually heard.
+ */
+describe('streaming and interruption', () => {
+  it('forwards the first audio delta immediately, without waiting for the response', async () => {
+    const { openaiWs, twilioWs } = await startSession();
+    openaiWs.deliver({ type: 'session.updated' });
+    openaiWs.deliver({ type: 'response.created' });
+
+    const before = twilioWs.sent.filter((m) => m.event === 'media').length;
+    openaiWs.deliver({
+      type: 'response.output_audio.delta',
+      delta: 'AAAA',
+      item_id: 'item-1',
+    });
+
+    // One delta in, one frame out — no buffering, no waiting for response.done.
+    const after = twilioWs.sent.filter((m) => m.event === 'media');
+    expect(after).toHaveLength(before + 1);
+    expect((after.at(-1) as { media?: { payload?: string } }).media?.payload).toBe('AAAA');
+  });
+
+  it('keeps streaming every delta as it arrives', async () => {
+    const { openaiWs, twilioWs } = await startSession();
+    openaiWs.deliver({ type: 'session.updated' });
+    for (const chunk of ['AAAA', 'BBBB', 'CCCC']) {
+      openaiWs.deliver({ type: 'response.output_audio.delta', delta: chunk, item_id: 'i' });
+    }
+    const payloads = twilioWs.sent
+      .filter((m) => m.event === 'media')
+      .map((m) => (m as { media: { payload: string } }).media.payload);
+    expect(payloads).toEqual(['AAAA', 'BBBB', 'CCCC']);
+  });
+
+  it('drops queued audio the moment the caller talks over the AI', async () => {
+    // Twilio buffers what it has been sent. Without the clear, the caller keeps
+    // hearing the abandoned sentence after they interrupted it.
+    const { openaiWs, twilioWs } = await startSession();
+    openaiWs.deliver({ type: 'session.updated' });
+    openaiWs.deliver({ type: 'response.output_audio.delta', delta: 'AAAA', item_id: 'item-1' });
+
+    openaiWs.deliver({ type: 'input_audio_buffer.speech_started' });
+
+    expect(twilioWs.sent.some((m) => m.event === 'clear')).toBe(true);
+  });
+
+  it('truncates the assistant turn at the point the caller actually heard', async () => {
+    // The model must believe it said only what was played, or its next turn
+    // refers to words the caller never heard.
+    const { openaiWs, twilioWs } = await startSession();
+    openaiWs.deliver({ type: 'session.updated' });
+    twilioWs.emit(
+      'message',
+      Buffer.from(JSON.stringify({ event: 'media', media: { timestamp: '1000', payload: 'x' } })),
+    );
+    openaiWs.deliver({ type: 'response.output_audio.delta', delta: 'AAAA', item_id: 'item-1' });
+    twilioWs.emit(
+      'message',
+      Buffer.from(JSON.stringify({ event: 'media', media: { timestamp: '2500', payload: 'x' } })),
+    );
+
+    openaiWs.deliver({ type: 'input_audio_buffer.speech_started' });
+
+    const truncate = openaiWs.sent.find((m) => m.type === 'conversation.item.truncate');
+    expect(truncate).toBeDefined();
+    expect(truncate?.item_id).toBe('item-1');
+    expect(truncate?.audio_end_ms).toBeGreaterThan(0);
+  });
+
+  it('never sends a negative truncation point', async () => {
+    // Twilio's clock is not guaranteed monotonic across a reconnect; a negative
+    // offset is rejected by OpenAI and would leave the context uncorrected.
+    const { openaiWs, twilioWs } = await startSession();
+    openaiWs.deliver({ type: 'session.updated' });
+    twilioWs.emit(
+      'message',
+      Buffer.from(JSON.stringify({ event: 'media', media: { timestamp: '5000', payload: 'x' } })),
+    );
+    openaiWs.deliver({ type: 'response.output_audio.delta', delta: 'AAAA', item_id: 'item-1' });
+    twilioWs.emit(
+      'message',
+      Buffer.from(JSON.stringify({ event: 'media', media: { timestamp: '100', payload: 'x' } })),
+    );
+
+    openaiWs.deliver({ type: 'input_audio_buffer.speech_started' });
+
+    const truncate = openaiWs.sent.find((m) => m.type === 'conversation.item.truncate');
+    expect(truncate?.audio_end_ms).toBeGreaterThanOrEqual(0);
+  });
+
+  it('holds caller audio back until the session is confirmed configured', async () => {
+    // Frames sent before session.updated would be interpreted in the wrong
+    // format, which corrupts the turn rather than merely delaying it.
+    MockWebSocket.instances = [];
+    const { bridge } = buildBridge();
+    const twilioWs = new MockWebSocket();
+    bridge.handleConnection(twilioWs as unknown as BridgeSocket);
+    twilioWs.deliver({
+      event: 'start',
+      start: {
+        streamSid: 'MZ1',
+        callSid: 'CA1',
+        customParameters: { callId: 'call-1', companyId: 'co-1', token: 't' },
+      },
+    });
+    await flush();
+    const openaiWs = MockWebSocket.instances[1];
+    openaiWs?.emit('open');
+
+    twilioWs.deliver({ event: 'media', media: { timestamp: '20', payload: 'CALLER' } });
+    expect(openaiWs?.types()).not.toContain('input_audio_buffer.append');
+
+    openaiWs?.deliver({ type: 'session.updated' });
+    twilioWs.deliver({ event: 'media', media: { timestamp: '40', payload: 'CALLER' } });
+    expect(openaiWs?.types()).toContain('input_audio_buffer.append');
   });
 });

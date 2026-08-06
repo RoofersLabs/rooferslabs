@@ -14,6 +14,11 @@ import { CompaniesService } from '../companies/companies.service';
 import { OpenAiService } from '../ai/openai.service';
 import { RagService } from '../ai/rag.service';
 import { buildGreeting, buildReceptionistInstructions } from './prompt.builder';
+import {
+  buildAnalysisInstructions,
+  mergeNormalizedTranscript,
+  renderTranscriptForAnalysis,
+} from './normalization';
 import { buildRealtimeTools, CONVERSATION_OUTPUT_SCHEMA, TOOL } from './tools';
 import { type CallerContext } from './caller-context';
 import { type LiveConversationSignals, type ToolExecutionResult } from './session-state';
@@ -61,6 +66,49 @@ export interface RealtimeSessionConfig {
 const TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
 
 /**
+ * How long the caller must be silent before the server calls their turn over.
+ *
+ * This single number is the dominant latency in the whole conversation: it is
+ * added to *every* turn, before the model has even been asked to think. At the
+ * previous 500ms the receptionist felt like it was considering its answer; the
+ * caller finished a sentence and waited half a second in silence before
+ * anything happened.
+ *
+ * 340ms is chosen against how people actually speak. Pauses *inside* a sentence
+ * — between clauses, or while recalling a house number — cluster around 150 to
+ * 250ms, so 340 still sits clear of them and does not cut a caller off
+ * mid-thought. It is not pushed lower than that: the failure mode of a value
+ * that is too small is clipping a caller mid-address, which is far worse than
+ * feeling slightly deliberate, and every 50ms below this buys less than it
+ * risks.
+ *
+ * Everything downstream is already streaming, so this reduction is felt in full
+ * rather than being absorbed by a later stage.
+ */
+const TURN_END_SILENCE_MS = 340;
+
+/**
+ * How much audio before detected speech is kept.
+ *
+ * Left at 300ms deliberately. It does not delay the *response* — it is
+ * retrospective padding on the caller's own audio — and trimming it only makes
+ * it likelier the first phoneme of a turn is lost. It costs nothing to keep and
+ * protects the thing hardest to recover from.
+ */
+const SPEECH_PREFIX_PADDING_MS = 300;
+
+/**
+ * How loud audio must be to count as speech.
+ *
+ * Unchanged at 0.5. Lowering it would detect speech onset marginally sooner —
+ * which is really a barge-in concern, and barge-in is already handled by
+ * truncation — while making the receptionist interrupt itself over a passing
+ * truck or wind noise on a roof. The callers this product serves are frequently
+ * standing outside next to the damage they are describing.
+ */
+const SPEECH_THRESHOLD = 0.5;
+
+/**
  * The AI receptionist "brain": produces the Realtime session configuration for a
  * company, executes the model's tool calls during a call, and performs post-call
  * structured extraction/summarization via the Responses API. It is persistence
@@ -103,9 +151,12 @@ export class ReceptionistService {
             transcription: { model: TRANSCRIPTION_MODEL },
             turn_detection: {
               type: 'server_vad',
-              threshold: 0.5,
-              prefix_padding_ms: 300,
-              silence_duration_ms: 500,
+              threshold: SPEECH_THRESHOLD,
+              prefix_padding_ms: SPEECH_PREFIX_PADDING_MS,
+              silence_duration_ms: TURN_END_SILENCE_MS,
+              // The server both starts the reply and cancels it on barge-in.
+              // Doing either from here would cost a round trip across the
+              // Atlantic before the caller heard anything.
               create_response: true,
               interrupt_response: true,
             },
@@ -241,44 +292,57 @@ export class ReceptionistService {
     }
 
     const company = await this.companies.getById(companyId);
-    const conversationText = transcript
-      .map((entry) => `${entry.role === 'assistant' ? 'AI' : 'Caller'}: ${entry.text}`)
-      .join('\n');
-
-    // leadQuality is the field the office sorts its callback list by, so it gets
-    // an explicit rubric rather than being left to interpretation — without one
-    // the same call was graded differently from one day to the next.
-    const instructions = [
-      `You analyze a phone call transcript for ${company.name}, a roofing company, and extract a structured business record.`,
-      `Base every field strictly on the transcript. Use null for unknown values. Never infer a detail the caller did not give.`,
-      `Write a concise, factual summary (2-3 sentences) from the roofing company's perspective — what they want, how urgent it is, and what was promised.`,
-      `When insurance claims are discussed, include the claim status in the summary and keyPoints.`,
-      `leadQuality rubric:`,
-      `- HOT: an emergency, or a visit was agreed, or they have a real problem now and gave contact details.`,
-      `- WARM: a genuine roofing need and reachable contact details, but no visit agreed yet.`,
-      `- COLD: early-stage interest only — price curiosity, a general question, no timeline, or incomplete contact details.`,
-      `- UNQUALIFIED: no roofing need, out of the service area, a wrong number, a sales call, or nothing usable was captured.`,
-      `Mark the outcome SPAM for solicitations, robocalls, and sales calls, and do not grade them as leads.`,
-      `keyPoints are for the person who calls this customer back: what is wrong, what was committed to, and anything about access, timing, or the decision maker.`,
-    ].join(' ');
 
     try {
       const analysis = await this.openai.createStructuredResponse<ConversationStructuredOutput>(
         companyId,
         {
-          instructions,
-          input: conversationText || 'No conversation content was recorded.',
+          // One prompt, built in one place. Everything the stored record must
+          // read like — English policy, transcript rules, roofing vocabulary,
+          // summary structure — lives in `normalization.ts`, so there is no
+          // second copy here to fall out of step with it.
+          instructions: buildAnalysisInstructions(company.name),
+          input: renderTranscriptForAnalysis(transcript),
           schemaName: 'conversation_analysis',
           schema: CONVERSATION_OUTPUT_SCHEMA,
         },
       );
       // Null means the adapter declined — the tenant is not active. Fall back to
       // the deterministic path rather than treating it as a model failure.
-      return analysis ?? this.fallbackAnalysis(transcript, signals);
+      if (!analysis) return this.fallbackAnalysis(transcript, signals);
+      return this.reconcileTranscript(analysis, transcript);
     } catch (error) {
       this.logger.warn(`Structured analysis failed, using fallback: ${(error as Error).message}`);
       return this.fallbackAnalysis(transcript, signals);
     }
+  }
+
+  /**
+   * Accept the model's normalized transcript only if it still describes the same
+   * conversation.
+   *
+   * The alignment check lives in `mergeNormalizedTranscript`; this reports what
+   * it decided. A rejected transcript is a warning rather than a failure — the
+   * structured record and the summary are still good, and the recorded
+   * transcript is kept as it was.
+   */
+  private reconcileTranscript(
+    analysis: ConversationStructuredOutput,
+    raw: TranscriptEntry[],
+  ): ConversationStructuredOutput {
+    const { applied, reason } = mergeNormalizedTranscript(raw, analysis.transcript);
+    if (!applied && raw.length > 0) {
+      this.logger.warn(
+        `Normalized transcript rejected (${reason}); keeping the recorded transcript. ` +
+          `call had ${raw.length} line(s).`,
+      );
+      return { ...analysis, transcript: [] };
+    }
+    const languages = analysis.detectedLanguages ?? [];
+    if (languages.some((l) => l && l.toLowerCase() !== 'en')) {
+      this.logger.log(`Call transcript normalized to English from: ${languages.join(', ')}.`);
+    }
+    return analysis;
   }
 
   /** Deterministic analysis from live signals when the LLM is unavailable. */
@@ -344,6 +408,13 @@ export class ReceptionistService {
       keyPoints: callerLines.slice(0, 4),
       followUpRequired: outcome !== ConversationOutcome.NO_ACTION,
       followUpReason: appointmentRequested ? 'Schedule the requested visit.' : null,
+      // Empty rather than a copy of the raw lines. This path runs when no model
+      // was available, so nothing has been normalized — and claiming a
+      // normalized transcript here would present recogniser output as though it
+      // had been through the English policy. The recorded transcript is stored
+      // unchanged instead, which is the honest record.
+      transcript: [],
+      detectedLanguages: [],
     };
   }
 }

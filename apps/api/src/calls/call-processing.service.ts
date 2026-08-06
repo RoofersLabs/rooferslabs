@@ -23,6 +23,7 @@ import { CustomersService } from '../customers/customers.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TwilioService } from '../telephony/twilio.service';
 import { AccountStatusService } from '../tenant-status/account-status.service';
+import { mergeNormalizedTranscript } from '../receptionist/normalization';
 
 export interface CreateInboundCallInput {
   companyId: string;
@@ -286,7 +287,13 @@ export class CallProcessingService {
           leadQuality: structured.leadQuality as $Enums.LeadQuality,
           urgency: structured.urgency as $Enums.UrgencyLevel,
           isEmergency: structured.emergency.isEmergency,
-          transcript: input.transcript as unknown as object,
+          // The normalized transcript when analysis produced one that still
+          // lines up with what was recorded, and the recorded lines otherwise.
+          // `mergeNormalizedTranscript` decides which — it is the same function
+          // the receptionist validated with, so the stored transcript and the
+          // summary can never disagree about how many turns there were.
+          transcript: mergeNormalizedTranscript(input.transcript, structured.transcript)
+            .entries as unknown as object,
           summary: structured.summary,
           keyPoints: structured.keyPoints,
           structuredOutput: structured as unknown as object,

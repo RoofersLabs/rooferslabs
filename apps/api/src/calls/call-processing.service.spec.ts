@@ -37,6 +37,8 @@ function makeStructured(
     emergency: { isEmergency: true, urgency: UrgencyLevel.EMERGENCY, reason: 'Active leak' },
     summary: 'Caller reported an active roof leak.',
     keyPoints: [],
+    transcript: [],
+    detectedLanguages: ['en'],
     followUpRequired: true,
     followUpReason: null,
     ...overrides,

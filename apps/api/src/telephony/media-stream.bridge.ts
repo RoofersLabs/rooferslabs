@@ -32,8 +32,15 @@ const BENIGN_OPENAI_ERRORS = new Set(['response_cancel_not_active']);
  * If `session.updated` hasn't arrived this long after the socket opens, activate
  * anyway (send the greeting, start accepting audio) so a missing/renamed ack can
  * never leave the caller in silence.
+ *
+ * Cut from 2s to 800ms. This is the very first thing a caller experiences — the
+ * gap between the line connecting and the receptionist saying hello — and on the
+ * healthy path the ack lands in tens of milliseconds, so the timer only ever
+ * fires when something has gone wrong. Two full seconds of silence to cover a
+ * rare case taught every caller in that case that nobody was there; 800ms still
+ * gives a slow ack room to arrive first.
  */
-const SESSION_ACTIVATION_FALLBACK_MS = 2_000;
+const SESSION_ACTIVATION_FALLBACK_MS = 800;
 
 /**
  * After a caller turn is committed we expect the server (server VAD with
@@ -41,8 +48,14 @@ const SESSION_ACTIVATION_FALLBACK_MS = 2_000;
  * within this window we create one explicitly — the safety net that guarantees
  * the AI always answers a completed caller turn, even if the server's implicit
  * auto-response does not fire. This is the fix for "silent after greeting".
+ *
+ * Cut from 700ms to 400ms. The auto-response, when it fires at all, arrives well
+ * inside 100ms of the commit, so anything past that is already an anomaly — and
+ * this window is pure dead air added on top of the turn-end silence whenever the
+ * anomaly happens. 400ms stays comfortably clear of a healthy auto-response
+ * while halving the worst case a caller can hear.
  */
-const RESPONSE_WATCHDOG_MS = 700;
+const RESPONSE_WATCHDOG_MS = 400;
 
 /** Grace period after end_call so the farewell audio finishes playing. */
 const HANGUP_GRACE_MS = 2500;

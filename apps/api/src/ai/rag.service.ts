@@ -1,8 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { KnowledgeStatus, type RetrievedKnowledge } from '@rooferslabs/shared';
+import { createHash } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 import { AccountStatusService } from '../tenant-status/account-status.service';
 import { OpenAiService } from './openai.service';
+
+/**
+ * How long a query's embedding is reused.
+ *
+ * The vector for a phrase never changes — only the embedding model could change
+ * it — so this could be far longer. A day is chosen because it is long enough
+ * that a company's common questions stay warm through a working week of calls,
+ * and short enough that swapping the embedding model does not require anyone to
+ * remember to flush a cache.
+ */
+const QUERY_EMBEDDING_TTL_SECONDS = 86_400;
 
 /**
  * Retrieval-Augmented Generation over a company's knowledge base. Uses semantic
@@ -18,6 +31,7 @@ export class RagService {
     private readonly prisma: PrismaService,
     private readonly openai: OpenAiService,
     private readonly accountStatus: AccountStatusService,
+    private readonly redis: RedisService,
   ) {}
 
   async retrieve(companyId: string, query: string, limit = 5): Promise<RetrievedKnowledge[]> {
@@ -47,12 +61,46 @@ export class RagService {
     return this.keywordRetrieve(companyId, trimmed, limit);
   }
 
+  /**
+   * The query's embedding, from cache when possible.
+   *
+   * This is the one piece of the pipeline that makes a caller wait *during* a
+   * sentence. The receptionist calls `lookup_knowledge` mid-turn, and until the
+   * embedding comes back the line is silent — so a round trip to OpenAI here is
+   * heard, unlike the same call in the post-call pipeline where nobody is
+   * listening.
+   *
+   * Callers ask the same handful of things ("do you do metal roofs", "how much
+   * is a new roof"), so after the first call of a given phrasing this collapses
+   * to a Redis GET. A cache miss costs exactly what it cost before, and a Redis
+   * failure degrades to the same thing: `RedisService` swallows its own errors,
+   * so the worst case is the old behaviour rather than a failed lookup.
+   *
+   * Keyed by a hash of the text, not the text: queries are caller speech and can
+   * be long, and a hash keeps the keyspace bounded and free of anything
+   * resembling personal data. It is not tenant-scoped because an embedding is a
+   * property of the words alone — the retrieval it feeds is still scoped to the
+   * company, which is where tenant isolation actually lives.
+   */
+  private async embedQuery(companyId: string, query: string): Promise<number[] | null> {
+    const key = `rag:qvec:${createHash('sha256').update(query.toLowerCase()).digest('hex')}`;
+
+    const cached = await this.redis.get<number[]>(key);
+    if (cached && cached.length > 0) return cached;
+
+    const [embedding] = await this.openai.embed(companyId, [query]);
+    if (!embedding || embedding.length === 0) return null;
+
+    void this.redis.set(key, embedding, QUERY_EMBEDDING_TTL_SECONDS);
+    return embedding;
+  }
+
   private async semanticRetrieve(
     companyId: string,
     query: string,
     limit: number,
   ): Promise<RetrievedKnowledge[]> {
-    const [queryEmbedding] = await this.openai.embed(companyId, [query]);
+    const queryEmbedding = await this.embedQuery(companyId, query);
     if (!queryEmbedding) return this.keywordRetrieve(companyId, query, limit);
 
     const chunks = await this.prisma.knowledgeChunk.findMany({

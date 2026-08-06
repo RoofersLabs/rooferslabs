@@ -208,6 +208,25 @@ export const CONVERSATION_OUTPUT_SCHEMA: Record<string, unknown> = {
     keyPoints: { type: 'array', items: { type: 'string' } },
     followUpRequired: { type: 'boolean' },
     followUpReason: { type: ['string', 'null'] },
+    // The normalized transcript rides on the same structured response as the
+    // summary. One pass, one view of the conversation: a separate cleanup call
+    // would cost a second round trip and could disagree with the summary about
+    // what was said.
+    transcript: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          role: { type: 'string', enum: ['assistant', 'customer'] },
+          text: { type: 'string' },
+          originalText: { type: ['string', 'null'] },
+          lowConfidence: { type: 'boolean' },
+        },
+        required: ['role', 'text', 'originalText', 'lowConfidence'],
+      },
+    },
+    detectedLanguages: { type: 'array', items: { type: 'string' } },
   },
   required: [
     'intent',
@@ -222,5 +241,7 @@ export const CONVERSATION_OUTPUT_SCHEMA: Record<string, unknown> = {
     'keyPoints',
     'followUpRequired',
     'followUpReason',
+    'transcript',
+    'detectedLanguages',
   ],
 };

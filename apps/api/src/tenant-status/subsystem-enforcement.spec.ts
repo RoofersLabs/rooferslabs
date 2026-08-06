@@ -83,7 +83,8 @@ describe('knowledge retrieval', () => {
     } as unknown as Args<typeof RagService>[0];
     const openai = { isEnabled: false, embed: jest.fn() } as unknown as Args<typeof RagService>[1];
 
-    const rag = new RagService(prisma, openai, gate);
+    const redis = { get: jest.fn(), set: jest.fn() } as unknown as Args<typeof RagService>[3];
+    const rag = new RagService(prisma, openai, gate, redis);
     await expect(rag.retrieve('co-1', 'roof leak')).resolves.toEqual([]);
     expect(prisma.knowledgeChunk.findMany).not.toHaveBeenCalled();
     expect(openai.embed).not.toHaveBeenCalled();
