@@ -80,14 +80,21 @@ function buildBridge(callerContext: unknown = CALLER_CONTEXT) {
     verifyStreamToken: jest.fn().mockReturnValue(true),
     startCallRecording: jest.fn().mockResolvedValue(true),
     hangupCall: jest.fn().mockResolvedValue(true),
+    endCallWithMessage: jest.fn().mockResolvedValue(true),
+  };
+  // Active by default: these cases are about the bridge's own behaviour, and a
+  // gate that refused would make every one of them assert nothing.
+  const accountStatus = {
+    ensureActive: jest.fn().mockResolvedValue({ allowed: true, status: 'ACTIVE' }),
   };
   const bridge = new MediaStreamBridge(
     config as unknown as BridgeDeps[0],
     receptionist as unknown as BridgeDeps[1],
     callProcessing as unknown as BridgeDeps[2],
     twilio as unknown as BridgeDeps[3],
+    accountStatus as unknown as BridgeDeps[4],
   );
-  return { bridge, receptionist, callProcessing };
+  return { bridge, receptionist, callProcessing, twilio, accountStatus };
 }
 
 /** Start a session and return the Twilio + OpenAI mock sockets, OpenAI socket opened. */
@@ -320,5 +327,143 @@ describe('MediaStreamBridge orchestration wiring', () => {
     openaiWs.deliver({ type: 'response.done' }); // a late event still in flight
 
     expect(guidanceTexts(openaiWs)).toHaveLength(before);
+  });
+});
+
+/**
+ * A live call is the one unit of work on this platform that outlives the moment
+ * it was authorised. These cases cover what happens when the founder pauses an
+ * account while a caller is still on the line.
+ */
+describe('tenant status during a call', () => {
+  /** Build a bridge whose gate answers `allowed` on the Nth check and after. */
+  function bridgeWithGate(answers: boolean[]) {
+    MockWebSocket.instances = [];
+    const built = buildBridge();
+    let call = 0;
+    built.accountStatus.ensureActive.mockImplementation(() => {
+      const allowed = answers[Math.min(call, answers.length - 1)] ?? true;
+      call += 1;
+      return Promise.resolve({ allowed, status: allowed ? 'ACTIVE' : 'PAUSED' });
+    });
+    return built;
+  }
+
+  function startStream(bridge: MediaStreamBridge) {
+    const twilioWs = new MockWebSocket();
+    bridge.handleConnection(twilioWs as unknown as BridgeSocket);
+    twilioWs.deliver({
+      event: 'start',
+      start: {
+        streamSid: 'MZ123',
+        callSid: 'CA123',
+        customParameters: { callId: 'call-1', companyId: 'co-1', token: 'tok' },
+      },
+    });
+    return twilioWs;
+  }
+
+  it('never opens an OpenAI session for a tenant paused before the stream arrived', async () => {
+    // The webhook admitted the call, then the founder paused. The stream is the
+    // second gate, and it is what keeps this call free.
+    const { bridge, receptionist, twilio } = bridgeWithGate([false]);
+    const twilioWs = startStream(bridge);
+    await flush();
+
+    expect(MockWebSocket.instances).toHaveLength(1); // Twilio's socket only
+    expect(receptionist.buildSessionConfig).not.toHaveBeenCalled();
+    expect(twilio.startCallRecording).not.toHaveBeenCalled();
+    expect(twilioWs.readyState).not.toBe(MockWebSocket.OPEN);
+  });
+
+  it('tells the caller the office is unavailable rather than dropping the line', async () => {
+    const { bridge, twilio } = bridgeWithGate([false]);
+    startStream(bridge);
+    await flush();
+
+    expect(twilio.endCallWithMessage).toHaveBeenCalledWith(
+      'CA123',
+      expect.stringContaining('office'),
+    );
+  });
+
+  it('writes no conversation for a call it refused', async () => {
+    // `callId` is cleared on refusal precisely so finalize leaves the record
+    // alone: a refused call must not produce an AI-analysed transcript.
+    const { bridge, callProcessing } = bridgeWithGate([false]);
+    const twilioWs = startStream(bridge);
+    await flush();
+    twilioWs.close();
+    await flush();
+
+    expect(callProcessing.finalizeCall).not.toHaveBeenCalled();
+  });
+
+  it('terminates a call in progress when the tenant is paused mid-conversation', async () => {
+    jest.useFakeTimers();
+    try {
+      // Allowed at the stream gate, refused by the watcher 15 seconds later.
+      const { bridge, twilio } = bridgeWithGate([true, false]);
+      startStream(bridge);
+      await flush();
+
+      const openaiWs = MockWebSocket.instances[1];
+      if (!openaiWs) throw new Error('OpenAI socket was not created');
+      openaiWs.emit('open');
+
+      await jest.advanceTimersByTimeAsync(15_000);
+      await flush();
+
+      // The meter is stopped and the caller is told something true.
+      expect(openaiWs.readyState).not.toBe(MockWebSocket.OPEN);
+      expect(twilio.endCallWithMessage).toHaveBeenCalledWith(
+        'CA123',
+        expect.stringContaining('no longer available'),
+      );
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('leaves a call alone while the tenant stays active', async () => {
+    jest.useFakeTimers();
+    try {
+      const { bridge, twilio } = bridgeWithGate([true]);
+      startStream(bridge);
+      await flush();
+      const openaiWs = MockWebSocket.instances[1];
+      openaiWs?.emit('open');
+
+      await jest.advanceTimersByTimeAsync(60_000); // four watch ticks
+      await flush();
+
+      expect(twilio.endCallWithMessage).not.toHaveBeenCalled();
+      expect(openaiWs?.readyState).toBe(MockWebSocket.OPEN);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('keeps the call up when the status lookup itself fails', async () => {
+    // A database blip is not a pause. Hanging up on a live caller because a
+    // query failed would turn a transient fault into a lost customer.
+    jest.useFakeTimers();
+    try {
+      MockWebSocket.instances = [];
+      const built = buildBridge();
+      built.accountStatus.ensureActive
+        .mockResolvedValueOnce({ allowed: true, status: 'ACTIVE' })
+        .mockRejectedValue(new Error('db down'));
+      startStream(built.bridge);
+      await flush();
+      MockWebSocket.instances[1]?.emit('open');
+
+      await jest.advanceTimersByTimeAsync(15_000);
+      await flush();
+
+      expect(built.twilio.endCallWithMessage).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

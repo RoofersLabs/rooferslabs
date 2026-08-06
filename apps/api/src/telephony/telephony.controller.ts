@@ -10,6 +10,7 @@ import { AppConfigService } from '../config/app-config.service';
 import { CallProcessingService } from '../calls/call-processing.service';
 import { CallsRepository } from '../calls/calls.repository';
 import { CompaniesService } from '../companies/companies.service';
+import { AccountStatusService } from '../tenant-status/account-status.service';
 import { PhoneNumbersService } from './phone-numbers.service';
 import { TwilioService } from './twilio.service';
 import { AssignPhoneNumberDto } from './dto/phone-number.dto';
@@ -23,6 +24,18 @@ interface TwilioVoiceWebhookBody {
   CallStatus?: string;
   RecordingUrl?: string;
 }
+
+/**
+ * What a caller hears when the tenant's account is not active.
+ *
+ * Deliberately says nothing about *why*. The caller is a homeowner with a leak,
+ * not a party to the roofing company's account status — "awaiting approval" or
+ * "paused" would be both meaningless and embarrassing to the business. It reads
+ * as an ordinary out-of-hours message, which from the caller's side is exactly
+ * what it is.
+ */
+const UNAVAILABLE_MESSAGE =
+  'Thank you for calling. The office is currently unavailable. Please try again later.';
 
 interface TwilioRecordingWebhookBody {
   CallSid?: string;
@@ -42,6 +55,7 @@ export class TelephonyController {
     private readonly callProcessing: CallProcessingService,
     private readonly companies: CompaniesService,
     private readonly calls: CallsRepository,
+    private readonly accountStatus: AccountStatusService,
   ) {}
 
   /** Twilio Programmable Voice webhook for inbound calls. Returns TwiML. */
@@ -70,6 +84,27 @@ export class TelephonyController {
             'This number is not yet configured. Please try again later.',
           ),
         );
+      return;
+    }
+
+    // The platform gate, checked before anything is spent.
+    //
+    // This is the earliest point at which a call can be refused, and therefore
+    // the cheapest: no Call row, no media stream, no OpenAI Realtime session, no
+    // recording, no tokens, no downstream pipeline. Everything the receptionist
+    // would cost is downstream of this `if`.
+    //
+    // It is checked ahead of `receptionistEnabled` deliberately. That switch is
+    // the owner's, and an owner whose account is paused does not get a say —
+    // reading their preference first would let a paused tenant's configuration
+    // decide which of two refusals the caller hears.
+    const gate = await this.accountStatus.ensureActive(
+      resolved.companyId,
+      'telephony.inbound',
+      'answer-call',
+    );
+    if (!gate.allowed) {
+      res.status(200).type('text/xml').send(this.twilio.buildRejectTwiml(UNAVAILABLE_MESSAGE));
       return;
     }
 
@@ -123,7 +158,24 @@ export class TelephonyController {
 
     const status = mapTwilioStatus(body.CallStatus);
     if (status && body.CallSid) {
-      await this.callProcessing.handleStatusCallback(body.CallSid, status);
+      // Gated on the call's own tenant. A status callback for a call that was
+      // answered before the pause still arrives afterwards, and writing it would
+      // be the platform recording work for a tenant it has stopped serving.
+      //
+      // 204 either way: Twilio is told the webhook was received, because it was.
+      // Answering an error would earn a retry schedule for a delivery that is
+      // never going to be accepted.
+      const call = await this.calls.findByTwilioSid(body.CallSid);
+      const gate = call
+        ? await this.accountStatus.ensureActive(
+            call.companyId,
+            'telephony.status-webhook',
+            'record-call-status',
+          )
+        : { allowed: false, status: null };
+      if (gate.allowed) {
+        await this.callProcessing.handleStatusCallback(body.CallSid, status);
+      }
     }
     res.status(204).send();
   }
@@ -182,7 +234,14 @@ export class TelephonyController {
 
     if (body.CallSid && body.RecordingSid) {
       const call = await this.calls.findByTwilioSid(body.CallSid);
-      if (call) {
+      const gate = call
+        ? await this.accountStatus.ensureActive(
+            call.companyId,
+            'telephony.recording-webhook',
+            'attach-recording',
+          )
+        : { allowed: false, status: null };
+      if (call && gate.allowed) {
         await this.calls.update(call.id, {
           recordingSid: body.RecordingSid,
           recordingUrl: body.RecordingUrl ?? null,

@@ -7,7 +7,7 @@ import {
   IS_PUBLIC_KEY,
 } from '../../common/constants';
 import type { AuthenticatedRequest } from '../../common/interfaces/authenticated-request.interface';
-import { AccountStatusService } from '../account-status.service';
+import { AccountStatusService } from '../../tenant-status/account-status.service';
 
 /**
  * The founder-approval wall, and the reason no controller has to think about

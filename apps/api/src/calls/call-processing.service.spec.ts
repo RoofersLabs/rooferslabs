@@ -119,6 +119,7 @@ describe('getCallerContext', () => {
       customers as unknown as Deps[2],
       {} as Deps[3],
       {} as Deps[4],
+      {} as Deps[5],
     );
     return { service, prisma, customers };
   }
@@ -178,6 +179,7 @@ describe('getCallerContext', () => {
       { findByPhone: jest.fn() } as unknown as Deps[2],
       {} as Deps[3],
       {} as Deps[4],
+      {} as Deps[5],
     );
 
     await expect(service.getCallerContext('call-1')).resolves.toEqual({

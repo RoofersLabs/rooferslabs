@@ -263,12 +263,18 @@ export class ReceptionistService {
     ].join(' ');
 
     try {
-      return await this.openai.createStructuredResponse<ConversationStructuredOutput>({
-        instructions,
-        input: conversationText || 'No conversation content was recorded.',
-        schemaName: 'conversation_analysis',
-        schema: CONVERSATION_OUTPUT_SCHEMA,
-      });
+      const analysis = await this.openai.createStructuredResponse<ConversationStructuredOutput>(
+        companyId,
+        {
+          instructions,
+          input: conversationText || 'No conversation content was recorded.',
+          schemaName: 'conversation_analysis',
+          schema: CONVERSATION_OUTPUT_SCHEMA,
+        },
+      );
+      // Null means the adapter declined — the tenant is not active. Fall back to
+      // the deterministic path rather than treating it as a model failure.
+      return analysis ?? this.fallbackAnalysis(transcript, signals);
     } catch (error) {
       this.logger.warn(`Structured analysis failed, using fallback: ${(error as Error).message}`);
       return this.fallbackAnalysis(transcript, signals);

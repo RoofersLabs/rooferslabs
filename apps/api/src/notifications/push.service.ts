@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import webpush from 'web-push';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppConfigService } from '../config/app-config.service';
+import { AccountStatusService } from '../tenant-status/account-status.service';
 
 export interface PushPayload {
   title: string;
@@ -38,6 +39,7 @@ export class PushService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: AppConfigService,
+    private readonly accountStatus: AccountStatusService,
   ) {
     const { vapidPublicKey, vapidPrivateKey, vapidSubject } = this.config.push;
     this.enabled = Boolean(vapidPublicKey && vapidPrivateKey);
@@ -92,6 +94,16 @@ export class PushService {
    * Best-effort: delivery failures are logged, dead endpoints are pruned.
    */
   async sendToCompany(companyId: string, payload: PushPayload): Promise<void> {
+    // Gated in its own right, not only through NotificationsService: this is a
+    // public method on an injectable service, and a fan-out to every device a
+    // paused tenant owns is precisely the kind of work that should stop.
+    const gate = await this.accountStatus.ensureActive(
+      companyId,
+      'notifications.push',
+      'send-push',
+    );
+    if (!gate.allowed) return;
+
     if (!this.enabled) return;
 
     const subscriptions = await this.prisma.pushSubscription.findMany({

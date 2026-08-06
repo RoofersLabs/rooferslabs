@@ -22,6 +22,7 @@ import type { LiveConversationSignals } from '../receptionist/session-state';
 import { CustomersService } from '../customers/customers.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TwilioService } from '../telephony/twilio.service';
+import { AccountStatusService } from '../tenant-status/account-status.service';
 
 export interface CreateInboundCallInput {
   companyId: string;
@@ -55,6 +56,7 @@ export class CallProcessingService {
     private readonly customers: CustomersService,
     private readonly notifications: NotificationsService,
     private readonly twilio: TwilioService,
+    private readonly accountStatus: AccountStatusService,
   ) {}
 
   /**
@@ -150,6 +152,23 @@ export class CallProcessingService {
     }
 
     const companyId = call.companyId;
+
+    // The deferred-work gate, and the closest thing this platform has to a
+    // queue check.
+    //
+    // Everything below was authorised when the call was *answered*, and runs
+    // when it *ends* — minutes later, on a fire-and-forget promise the bridge
+    // does not await. That gap is exactly the window a founder pauses an account
+    // in, so the pipeline re-asks before spending anything: no AI analysis, no
+    // customer record, no conversation, no appointment, no notifications, no
+    // SMS. The call row keeps whatever the bridge already wrote; it is
+    // operational history, not new work.
+    const gate = await this.accountStatus.ensureActive(
+      companyId,
+      'calls.finalize',
+      'finalize-call',
+    );
+    if (!gate.allowed) return;
 
     // 1. AI analysis (external, slow — run before the DB transaction).
     const structured = await this.receptionist.analyzeConversation(

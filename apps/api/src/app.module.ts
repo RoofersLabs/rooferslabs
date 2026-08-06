@@ -16,6 +16,7 @@ import { AppConfigModule } from './config/app-config.module';
 import { AppConfigService } from './config/app-config.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
+import { TenantStatusModule } from './tenant-status/tenant-status.module';
 import { RedisService } from './redis/redis.service';
 
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -50,6 +51,7 @@ import { HealthModule } from './health/health.module';
     AppConfigModule,
     PrismaModule,
     RedisModule,
+    TenantStatusModule,
     LoggerModule.forRootAsync({
       inject: [AppConfigService],
       useFactory: (config: AppConfigService) => ({

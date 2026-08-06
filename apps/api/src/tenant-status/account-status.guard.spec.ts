@@ -5,12 +5,12 @@ import {
   AllowNoCompany,
   AllowUnapprovedAccount,
   Public,
-} from '../../common/decorators/public.decorator';
-import { DomainException } from '../../common/exceptions/domain.exception';
-import type { AuthenticatedUser } from '../../common/interfaces/authenticated-request.interface';
-import type { PrismaService } from '../../prisma/prisma.service';
-import { AccountStatusService } from '../account-status.service';
-import { AccountStatusGuard } from './account-status.guard';
+} from '../common/decorators/public.decorator';
+import { DomainException } from '../common/exceptions/domain.exception';
+import type { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
+import type { PrismaService } from '../prisma/prisma.service';
+import { AccountStatusService } from './account-status.service';
+import { AccountStatusGuard } from '../auth/guards/account-status.guard';
 
 const tenant: AuthenticatedUser = {
   id: 'user_1',

@@ -8,6 +8,7 @@ import {
 } from '@rooferslabs/shared';
 import { NotFoundError } from '../common/exceptions/domain.exception';
 import { buildPaginationMeta, normalizePagination } from '../common/utils/pagination.util';
+import { AccountStatusService } from '../tenant-status/account-status.service';
 import { NotificationsRepository } from './notifications.repository';
 import { PushService } from './push.service';
 import type { NotificationQueryDto } from './dto/notification.dto';
@@ -27,13 +28,24 @@ export class NotificationsService {
   constructor(
     private readonly repo: NotificationsRepository,
     private readonly push: PushService,
+    private readonly accountStatus: AccountStatusService,
   ) {}
 
   /**
    * Emit a notification. Called by the call pipeline and other domains.
    * Also fans out to the company's Web Push subscriptions (best-effort).
    */
-  async create(input: CreateNotificationInput): Promise<Notification> {
+  async create(input: CreateNotificationInput): Promise<Notification | null> {
+    // One gate covering both channels this method fans out to: the stored
+    // notification and the web push that follows it. A paused tenant's staff
+    // stop being told about work the platform is no longer doing for them.
+    const gate = await this.accountStatus.ensureActive(
+      input.companyId,
+      'notifications.create',
+      'create-notification',
+    );
+    if (!gate.allowed) return null;
+
     const notification = await this.repo.create({
       company: { connect: { id: input.companyId } },
       type: input.type,

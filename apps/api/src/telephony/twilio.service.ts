@@ -143,6 +143,31 @@ export class TwilioService {
   }
 
   /**
+   * Interrupt a live call, say one sentence, and hang up.
+   *
+   * Used when a tenant is paused mid-call. A bare {@link hangupCall} would drop
+   * the line silently, which to the caller is indistinguishable from the product
+   * failing — they would redial, and reach the same wall. Replacing the call's
+   * TwiML speaks the message and then ends it, so the caller is told something
+   * true and the media stream is torn down by Twilio as a consequence.
+   *
+   * Best-effort, like every other REST call here: a failure is logged and the
+   * bridge falls back to closing the socket itself.
+   */
+  async endCallWithMessage(callSid: string, message: string): Promise<boolean> {
+    if (!this.isConfigured) return false;
+    try {
+      // The same builder the inbound webhook uses, so the voice matches and the
+      // message is XML-escaped by the SDK rather than by hand.
+      await this.rest.calls(callSid).update({ twiml: this.buildRejectTwiml(message) });
+      return true;
+    } catch (error) {
+      this.logger.warn(`Ending ${callSid} with a message failed: ${(error as Error).message}`);
+      return false;
+    }
+  }
+
+  /**
    * Fetch a recording's audio from Twilio (recordings require account auth,
    * so the dashboard streams them through our API). Returns the raw response
    * so the controller can pipe status, type, and body straight through.

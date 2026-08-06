@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { KnowledgeStatus, type RetrievedKnowledge } from '@rooferslabs/shared';
 import { PrismaService } from '../prisma/prisma.service';
+import { AccountStatusService } from '../tenant-status/account-status.service';
 import { OpenAiService } from './openai.service';
 
 /**
@@ -16,11 +17,23 @@ export class RagService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly openai: OpenAiService,
+    private readonly accountStatus: AccountStatusService,
   ) {}
 
   async retrieve(companyId: string, query: string, limit = 5): Promise<RetrievedKnowledge[]> {
     const trimmed = query.trim();
     if (!trimmed) return [];
+
+    // Gated here as well as inside the OpenAI adapter, because the keyword
+    // fallback below never touches OpenAI: without this, a paused tenant's
+    // knowledge base would still be searchable and its articles still quotable
+    // by anything that reached this method.
+    const gate = await this.accountStatus.ensureActive(
+      companyId,
+      'knowledge.retrieval',
+      'retrieve',
+    );
+    if (!gate.allowed) return [];
 
     if (this.openai.isEnabled) {
       try {
@@ -39,7 +52,7 @@ export class RagService {
     query: string,
     limit: number,
   ): Promise<RetrievedKnowledge[]> {
-    const [queryEmbedding] = await this.openai.embed([query]);
+    const [queryEmbedding] = await this.openai.embed(companyId, [query]);
     if (!queryEmbedding) return this.keywordRetrieve(companyId, query, limit);
 
     const chunks = await this.prisma.knowledgeChunk.findMany({

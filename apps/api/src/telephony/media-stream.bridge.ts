@@ -13,6 +13,7 @@ import { createEmptySignals, type LiveConversationSignals } from '../receptionis
 import { anonymousCallerContext, type CallerContext } from '../receptionist/caller-context';
 import { ConversationOrchestrator } from '../receptionist/orchestrator';
 import { TOOL } from '../receptionist/tools';
+import { AccountStatusService } from '../tenant-status/account-status.service';
 
 /** Hard safety cap on a single call so a stuck socket can never burn an
  *  unbounded OpenAI Realtime session. Well above any legitimate call length. */
@@ -47,6 +48,21 @@ const RESPONSE_WATCHDOG_MS = 700;
 const HANGUP_GRACE_MS = 2500;
 
 /**
+ * How often a live call re-checks that its tenant is still active.
+ *
+ * This is the only place on the platform where work continues for minutes after
+ * it was authorised, so it is the only place that has to keep asking. Fifteen
+ * seconds bounds how long a paused tenant's receptionist can still be talking —
+ * short enough that "immediately" is honest, long enough that a half-hour call
+ * costs 120 primary-key lookups rather than a continuous poll.
+ */
+const STATUS_WATCH_INTERVAL_MS = 15_000;
+
+/** What a caller hears when their tenant is paused mid-conversation. */
+const MID_CALL_UNAVAILABLE_MESSAGE =
+  'I am sorry, the office is no longer available. Please try again later. Goodbye.';
+
+/**
  * Bridges a single Twilio Media Streams WebSocket to an OpenAI Realtime GA
  * session (wss://api.openai.com/v1/realtime, no beta header). Audio flows both
  * ways as g711 μ-law; the model's tool calls are executed against the company
@@ -62,6 +78,7 @@ export class MediaStreamBridge {
     private readonly receptionist: ReceptionistService,
     private readonly callProcessing: CallProcessingService,
     private readonly twilio: TwilioService,
+    private readonly accountStatus: AccountStatusService,
   ) {}
 
   handleConnection(twilioWs: WebSocket): void {
@@ -71,6 +88,7 @@ export class MediaStreamBridge {
       this.receptionist,
       this.callProcessing,
       this.twilio,
+      this.accountStatus,
       this.logger,
     ).start();
   }
@@ -97,6 +115,13 @@ class CallBridgeSession {
   private finalized = false;
   private reconnects = 0;
   private maxDurationTimer: NodeJS.Timeout | null = null;
+
+  /**
+   * Re-asks whether the tenant is still active for as long as the call runs.
+   * Cleared on finalize like every other timer here — a live interval on a
+   * finished call is a leak that only shows up under load.
+   */
+  private statusWatchTimer: NodeJS.Timeout | null = null;
 
   // Session activation gate: caller audio is only appended once the session is
   // confirmed configured (μ-law + server VAD), so no frame is ever fed to OpenAI
@@ -128,6 +153,7 @@ class CallBridgeSession {
     private readonly receptionist: ReceptionistService,
     private readonly callProcessing: CallProcessingService,
     private readonly twilio: TwilioService,
+    private readonly accountStatus: AccountStatusService,
     private readonly logger: Logger,
   ) {}
 
@@ -174,6 +200,23 @@ class CallBridgeSession {
   }
 
   private onStart(message: TwilioInboundMessage): void {
+    void this.onStartAsync(message);
+  }
+
+  /**
+   * The stream's own tenant check, and the second of two.
+   *
+   * The inbound webhook already refused paused tenants before this socket could
+   * exist — but the two are separated by however long Twilio took to dial back,
+   * and a founder can pause an account inside that window. Re-checking here is
+   * what makes the guarantee "no OpenAI session for a paused tenant" rather than
+   * "no OpenAI session for a tenant that was paused a moment earlier".
+   *
+   * It runs before recording starts and before OpenAI is connected, so a stream
+   * that arrives for a paused tenant costs one database lookup and a socket
+   * close — no tokens, no recording, no Call row touched.
+   */
+  private async onStartAsync(message: TwilioInboundMessage): Promise<void> {
     this.streamSid = message.start?.streamSid ?? null;
     this.twilioCallSid = message.start?.callSid ?? null;
     const params = message.start?.customParameters ?? {};
@@ -192,6 +235,25 @@ class CallBridgeSession {
       return;
     }
 
+    const gate = await this.accountStatus.ensureActive(
+      this.companyId,
+      'telephony.media-stream',
+      'open-stream',
+    );
+    if (!gate.allowed) {
+      // Nothing has been spent yet, and nothing will be: no recording, no
+      // OpenAI socket, and `callId` is cleared so `finalize` leaves the call
+      // record alone rather than writing an AI-analysed conversation for a
+      // tenant the platform has stopped serving.
+      this.log('warn', 'tenant is not active; refusing the media stream.');
+      if (this.twilioCallSid) {
+        await this.twilio.endCallWithMessage(this.twilioCallSid, MID_CALL_UNAVAILABLE_MESSAGE);
+      }
+      this.callId = null;
+      this.twilioWs.close();
+      return;
+    }
+
     this.log('log', `Twilio media stream started (streamSid=${this.streamSid}).`);
 
     // Record every answered call (dual-channel); best-effort, never blocking.
@@ -199,7 +261,84 @@ class CallBridgeSession {
       void this.twilio.startCallRecording(this.twilioCallSid);
     }
 
+    this.startStatusWatch();
     void this.connectOpenAi(this.companyId);
+  }
+
+  /**
+   * Keep asking, for as long as the call lasts.
+   *
+   * A call is the one unit of work on this platform that outlives the moment it
+   * was authorised. Everything else — an HTTP request, a webhook, a post-call
+   * pipeline run — checks once because it finishes in milliseconds. A call can
+   * run for half an hour, and a founder pausing an account expects the line to
+   * go down, not to be told it will go down after the current conversation.
+   */
+  private startStatusWatch(): void {
+    this.statusWatchTimer = setInterval(() => {
+      void this.checkTenantStillActive();
+    }, STATUS_WATCH_INTERVAL_MS);
+  }
+
+  private async checkTenantStillActive(): Promise<void> {
+    if (this.finalized || !this.companyId) return;
+
+    const gate = await this.accountStatus
+      .ensureActive(this.companyId, 'telephony.live-call', 'continue-call')
+      // A failed lookup is not a pause. Dropping a live call because the
+      // database blinked would turn a transient fault into a hung-up customer,
+      // so the call continues and the next tick asks again.
+      .catch(() => ({ allowed: true, status: null }));
+    if (gate.allowed) return;
+
+    await this.terminateForInactiveTenant();
+  }
+
+  /**
+   * Wind the call down because the tenant stopped being active mid-conversation.
+   *
+   * Order matters. OpenAI is closed first, because it is the meter that is
+   * running: every further frame of caller audio would be tokens spent for a
+   * tenant the platform has stopped serving. Then the caller is told something
+   * true and the line is released. `finalize` runs last and, because the tenant
+   * is no longer active, the post-call pipeline declines to analyse or persist
+   * the conversation — so the pause takes effect on the transcript as well as on
+   * the line.
+   */
+  private async terminateForInactiveTenant(): Promise<void> {
+    if (this.finalized) return;
+    this.log('warn', 'tenant became inactive mid-call; terminating.');
+
+    this.stopStatusWatch();
+    // Stop the meter first. `finalize` would close this too, but only after the
+    // Twilio round trip below — and every frame in between is billed tokens for
+    // a tenant the platform has stopped serving.
+    try {
+      this.openaiWs?.close();
+    } catch {
+      /* already closing */
+    }
+
+    if (this.twilioCallSid) {
+      const spoken = await this.twilio.endCallWithMessage(
+        this.twilioCallSid,
+        MID_CALL_UNAVAILABLE_MESSAGE,
+      );
+      // Twilio refused, or is unconfigured: drop the socket ourselves rather
+      // than leaving the caller connected to a bridge that will never answer.
+      if (!spoken && this.twilioWs.readyState === WebSocket.OPEN) this.twilioWs.close();
+    } else if (this.twilioWs.readyState === WebSocket.OPEN) {
+      this.twilioWs.close();
+    }
+
+    await this.finalize(CallStatus.COMPLETED);
+  }
+
+  private stopStatusWatch(): void {
+    if (this.statusWatchTimer) {
+      clearInterval(this.statusWatchTimer);
+      this.statusWatchTimer = null;
+    }
   }
 
   private onMedia(message: TwilioInboundMessage): void {
@@ -359,6 +498,20 @@ class CallBridgeSession {
     }
 
     if (this.reconnects < MAX_OPENAI_RECONNECTS && this.companyId) {
+      // A reconnect opens a genuinely new Realtime session, so it asks again
+      // rather than inheriting the answer the call started with. Without this,
+      // a socket that happened to drop just after a pause would reopen and keep
+      // billing tokens for a tenant the platform has stopped serving.
+      const gate = await this.accountStatus.ensureActive(
+        this.companyId,
+        'openai.realtime',
+        'reconnect-session',
+      );
+      if (!gate.allowed) {
+        await this.terminateForInactiveTenant();
+        return;
+      }
+
       this.reconnects += 1;
       this.log(
         'warn',
@@ -651,6 +804,7 @@ class CallBridgeSession {
     this.finalized = true;
 
     if (this.maxDurationTimer) clearTimeout(this.maxDurationTimer);
+    this.stopStatusWatch();
     this.clearActivationFallback();
     this.clearResponseWatchdog();
 

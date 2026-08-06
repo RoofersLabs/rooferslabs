@@ -125,7 +125,7 @@ export class KnowledgeService {
 
       let embeddings: number[][] = pieces.map(() => []);
       if (this.openai.isEnabled) {
-        embeddings = await this.openai.embed(pieces);
+        embeddings = await this.openai.embed(companyId, pieces);
       }
 
       const chunks: ChunkInput[] = pieces.map((content, i) => ({
