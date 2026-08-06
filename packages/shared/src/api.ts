@@ -84,6 +84,18 @@ export enum ApiErrorCode {
   BILLING_PROVIDER_DISABLED = 'BILLING_PROVIDER_DISABLED',
   /** The active billing provider is missing the credentials it needs to run. */
   BILLING_PROVIDER_UNCONFIGURED = 'BILLING_PROVIDER_UNCONFIGURED',
+  /**
+   * The tenant has finished setup and is waiting on a founder decision. Every
+   * tenant-scoped endpoint answers this until the account is approved, so a
+   * client that defeats its own routing still reaches nothing.
+   */
+  ACCOUNT_PENDING_APPROVAL = 'ACCOUNT_PENDING_APPROVAL',
+  /**
+   * The tenant was approved and has since been paused by the founder. Distinct
+   * from ACCOUNT_PENDING_APPROVAL because the two mean different things to the
+   * person reading the screen: one has never had access, the other has lost it.
+   */
+  ACCOUNT_PAUSED = 'ACCOUNT_PAUSED',
   COMPANY_NOT_FOUND = 'COMPANY_NOT_FOUND',
   CUSTOMER_NOT_FOUND = 'CUSTOMER_NOT_FOUND',
   CONVERSATION_NOT_FOUND = 'CONVERSATION_NOT_FOUND',

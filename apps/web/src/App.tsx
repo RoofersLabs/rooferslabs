@@ -11,6 +11,7 @@ import { AppLayout } from '@/layouts/AppLayout';
 import { FullScreenSpinner } from '@/components/ui/spinner';
 import { SignInPage, SignUpPage } from '@/pages/AuthPages';
 import { OnboardingLayout } from '@/pages/onboarding/OnboardingLayout';
+import { AccountStatusPage } from '@/pages/AccountStatusPage';
 import { PaymentPage } from '@/pages/PaymentPage';
 import { BillingPage } from '@/pages/BillingPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -61,6 +62,9 @@ const AdminCompanyDetailPage = lazy(() =>
     default: m.AdminCompanyDetailPage,
   })),
 );
+const AdminApprovalsPage = lazy(() =>
+  import('@/features/admin/AdminApprovalsPage').then((m) => ({ default: m.AdminApprovalsPage })),
+);
 const AdminAnalyticsPage = lazy(() =>
   import('@/features/admin/AdminAnalyticsPage').then((m) => ({ default: m.AdminAnalyticsPage })),
 );
@@ -96,7 +100,7 @@ function AuthenticatedShell() {
  * redirects on its own — there is exactly one decision site (`redirectFor`) and
  * one place that renders its outcome (`RouteGuard`), which is what makes the flow
  *
- *     visitor → sign in → onboarding (4 steps) → payment → dashboard
+ *     visitor → sign in → onboarding (4 steps) → approval → payment → dashboard
  *
  * enforceable in both directions without any page knowing about the others.
  *
@@ -161,6 +165,13 @@ function CustomerApp() {
         <Route element={<RouteGuard route={ROUTES.onboarding} />}>
           <Route path={ROUTES.onboarding} element={<OnboardingLayout />} />
           <Route path={`${ROUTES.onboarding}/:step`} element={<OnboardingLayout />} />
+        </Route>
+
+        {/* The approval wall. A tenant that has finished setup waits here until
+            the founder admits them, and returns here if they are ever paused —
+            one route, two states, chosen from the live account status. */}
+        <Route element={<RouteGuard route={ROUTES.accountStatus} />}>
+          <Route path={ROUTES.accountStatus} element={<AccountStatusPage />} />
         </Route>
 
         {/* The payment wall. Unreachable once subscribed — that guard is the
@@ -232,6 +243,9 @@ function AdminApp() {
                 directly. */}
             <Route index element={<AdminCompaniesPage />} />
             <Route path="companies/:id" element={<AdminCompanyDetailPage />} />
+            {/* The approval queue. Nothing else on the platform writes a
+                tenant's lifecycle status. */}
+            <Route path="approvals" element={<AdminApprovalsPage />} />
             <Route path="analytics" element={<AdminAnalyticsPage />} />
             <Route path="settings" element={<AdminSettingsPage />} />
           </Route>

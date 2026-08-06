@@ -21,6 +21,19 @@ type SubscriptionRequiredListener = () => void;
 
 const subscriptionRequiredListeners = new Set<SubscriptionRequiredListener>();
 
+type AccessRevokedListener = () => void;
+
+const accessRevokedListeners = new Set<AccessRevokedListener>();
+
+/**
+ * The API's stable codes for "this tenant may not use the platform right now".
+ *
+ * A tenant can be paused while it is sitting on the dashboard. Watching for
+ * these turns the next failed request into a re-route instead of an error toast
+ * on a page the tenant is no longer entitled to see.
+ */
+const ACCESS_REVOKED_CODES = new Set(['ACCOUNT_PENDING_APPROVAL', 'ACCOUNT_PAUSED']);
+
 /**
  * Subscribe to "the API says this tenant is no longer entitled" (HTTP 402
  * SUBSCRIPTION_REQUIRED, returned by every gated endpoint once a subscription
@@ -40,6 +53,26 @@ export function onSubscriptionRequired(listener: SubscriptionRequiredListener): 
 
 function notifySubscriptionRequired(): void {
   for (const listener of subscriptionRequiredListeners) listener();
+}
+
+/**
+ * Subscribe to "the API says this tenant's account is no longer open" — the 403
+ * ACCOUNT_PENDING_APPROVAL or ACCOUNT_PAUSED that every gated endpoint returns
+ * once the founder pauses an account. Returns an unsubscribe function.
+ *
+ * Modelled on {@link onSubscriptionRequired} and for the same reason: the client
+ * does not navigate. It refetches the session, the stage machine recomputes, and
+ * the route guard moves the browser. Routing stays a single decision site, and a
+ * revoked tenant leaves the dashboard on its next request rather than on its
+ * next full page load.
+ */
+export function onAccessRevoked(listener: AccessRevokedListener): () => void {
+  accessRevokedListeners.add(listener);
+  return () => accessRevokedListeners.delete(listener);
+}
+
+function notifyAccessRevoked(): void {
+  for (const listener of accessRevokedListeners) listener();
 }
 
 type TokenGetter = () => Promise<string | null>;
@@ -118,6 +151,7 @@ async function request<T>(
   if (!payload.success) {
     const err = payload.error;
     if (response.status === 402) notifySubscriptionRequired();
+    if (response.status === 403 && ACCESS_REVOKED_CODES.has(err.code)) notifyAccessRevoked();
     throw new ApiError(err.code, err.message, response.status, err.validationErrors);
   }
   return payload;

@@ -12,9 +12,26 @@ model Company {
   id                      String             @id @default(cuid())
   name                    String
   slug                    String             @unique
+  /// Whether this tenant may use the platform, and the only thing that decides
+  /// it. `AccountStatusGuard` reads this column on every tenant-scoped request;
+  /// the columns below record *who* moved it and *when*, and are never consulted
+  /// by an authorization decision.
   status                  CompanyStatus      @default(ONBOARDING)
   onboardingStep          OnboardingStep     @default(COMPANY)
   onboardedAt             DateTime?
+  /// When the founder approved this account. Null while PENDING_APPROVAL, and
+  /// deliberately *not* cleared by a later pause — an account that has been
+  /// approved once keeps the date it happened.
+  approvedAt              DateTime?
+  /// The `users.id` of the staff account that approved it. A plain id rather
+  /// than a relation, so removing a staff account never rewrites the record of
+  /// a decision they made.
+  approvedBy              String?
+  pausedAt                DateTime?
+  pausedBy                String?
+  /// Optional note from the founder. Internal — never shown to the tenant, who
+  /// is told to contact support rather than given an operational reason.
+  pauseReason             String?
   email                   String?
   phone                   String?
   website                 String?
@@ -515,10 +532,13 @@ enum PlatformRole {
   OWNER
 }
 
+/// Mirrors `CompanyStatus` in `packages/shared/src/enums.ts`, which documents
+/// the lifecycle. ACTIVE is the only value that grants access.
 enum CompanyStatus {
   ONBOARDING
+  PENDING_APPROVAL
   ACTIVE
-  SUSPENDED
+  PAUSED
 }
 
 enum OnboardingStep {

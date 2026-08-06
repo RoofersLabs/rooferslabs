@@ -12,5 +12,8 @@ export const ALLOW_NO_COMPANY_KEY = 'allowNoCompany';
 /** Route decorator key marking an endpoint as reachable without active billing. */
 export const ALLOW_INACTIVE_SUBSCRIPTION_KEY = 'allowInactiveSubscription';
 
+/** Route decorator key marking an endpoint as reachable before founder approval. */
+export const ALLOW_UNAPPROVED_ACCOUNT_KEY = 'allowUnapprovedAccount';
+
 /** Header used to correlate a request across logs and the response envelope. */
 export const REQUEST_ID_HEADER = 'x-request-id';

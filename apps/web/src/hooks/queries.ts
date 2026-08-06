@@ -3,6 +3,7 @@
  *. Components never call fetch.
  */
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { CompanyStatus } from '@rooferslabs/shared';
 import type { BillingInterval, OnboardingStep, SubscriptionPlan } from '@rooferslabs/shared';
 import { api, type PaginatedResult } from '@/lib/api-client';
 import type {
@@ -13,6 +14,7 @@ import type {
   Company,
   Conversation,
   AdminAnalytics,
+  AdminApprovalCounts,
   AdminCompanyDetail,
   AdminCompanyRow,
   BillingConfig,
@@ -169,7 +171,7 @@ async function syncSessionCompany(
   qc: ReturnType<typeof useQueryClient>,
   company: Pick<
     Company,
-    'id' | 'name' | 'slug' | 'status' | 'onboardingStep' | 'logoUrl' | 'primaryColor'
+    'id' | 'name' | 'slug' | 'status' | 'onboardingStep' | 'logoUrl' | 'primaryColor' | 'createdAt'
   >,
 ) {
   await qc.cancelQueries({ queryKey: queryKeys.session });
@@ -185,6 +187,7 @@ async function syncSessionCompany(
             onboardingStep: company.onboardingStep,
             logoUrl: company.logoUrl,
             primaryColor: company.primaryColor,
+            createdAt: company.createdAt,
           },
         }
       : session,
@@ -211,9 +214,10 @@ export function useCompleteOnboarding() {
     mutationFn: () => api.post<Company>('/companies/me/onboarding/complete'),
     onSuccess: async (company) => {
       qc.setQueryData(queryKeys.company, company);
-      // Same reason as above, one stage further on: this is what flips the
-      // visitor from `onboarding` to `payment`, so without it the final click
-      // leaves them sitting on the review screen until a refetch happens to land.
+      // Same reason as above, one stage further on: the server answers with
+      // `PENDING_APPROVAL`, and writing it here is what flips the visitor from
+      // `onboarding` to `approval`. Without it the final click leaves them
+      // sitting on the review screen until a refetch happens to land.
       await syncSessionCompany(qc, company);
       void qc.invalidateQueries({ queryKey: queryKeys.session });
     },
@@ -613,10 +617,25 @@ export function useGlobalSearch(q: string) {
 // convenience, never the protection.
 // ---------------------------------------------------------------------------
 
-export function useAdminCompanies(params: ListParams & { subscription?: string }) {
-  return useQuery({
+/**
+ * The company list, with the platform-wide lifecycle counts attached.
+ *
+ * The counts ride on the same response as the page they annotate rather than
+ * having their own query. That is what stops the summary cards and the table
+ * from being one request out of step with each other after an approval — there
+ * is only ever one answer in flight.
+ */
+export type AdminCompanyPage = PaginatedResult<AdminCompanyRow> & {
+  counts?: AdminApprovalCounts;
+};
+
+export function useAdminCompanies(params: ListParams & { subscription?: string; status?: string }) {
+  return useQuery<AdminCompanyPage>({
     queryKey: queryKeys.adminCompanies(params),
-    queryFn: () => api.getPaginated<AdminCompanyRow>('/admin/companies', params),
+    queryFn: async () => {
+      const page = await api.getPaginated<AdminCompanyRow>('/admin/companies', params);
+      return { ...page, counts: page.metadata?.counts as AdminApprovalCounts | undefined };
+    },
     placeholderData: keepPreviousData,
   });
 }
@@ -634,5 +653,69 @@ export function useAdminAnalytics(days: number) {
     queryKey: queryKeys.adminAnalytics(days),
     queryFn: () => api.get<AdminAnalytics>('/admin/analytics', { days: String(days) }),
     placeholderData: keepPreviousData,
+  });
+}
+
+/** The founder decisions, and the status each one lands the tenant in. */
+const APPROVAL_ACTIONS = {
+  approve: CompanyStatus.ACTIVE,
+  pause: CompanyStatus.PAUSED,
+  resume: CompanyStatus.ACTIVE,
+} as const;
+
+export type ApprovalAction = keyof typeof APPROVAL_ACTIONS;
+
+/**
+ * Approve, pause, or resume a tenant.
+ *
+ * One hook for all three, because they are one operation to the caller: send the
+ * decision, paint the outcome immediately, then let the server's answer settle
+ * it. Three near-identical hooks would have been three chances for the optimistic
+ * update and the rollback to diverge.
+ *
+ * The optimistic write repaints only the row's status, and only in the list
+ * pages already in the cache. It does not invent `approvedAt` or a history entry
+ * — those are the server's to say, they arrive milliseconds later with the
+ * invalidation, and a fabricated timestamp that turned out wrong would be a
+ * worse experience than a field that fills in a moment late.
+ *
+ * `onError` restores the exact snapshot rather than refetching. A failed pause
+ * has to leave the row saying "Active", and refetching would show the true value
+ * only after a round trip the founder is already staring at.
+ */
+export function useCompanyApproval() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, action, reason }: { id: string; action: ApprovalAction; reason?: string }) =>
+      api.patch<AdminCompanyRow>(
+        `/admin/companies/${id}/${action}`,
+        action === 'pause' ? { reason } : undefined,
+      ),
+
+    onMutate: async ({ id, action }) => {
+      // Stop any in-flight list refetch from landing on top of the optimistic
+      // write with the pre-decision status.
+      await qc.cancelQueries({ queryKey: ['admin', 'companies'] });
+      const snapshot = qc.getQueriesData<AdminCompanyPage>({ queryKey: ['admin', 'companies'] });
+
+      const status = APPROVAL_ACTIONS[action];
+      for (const [key, page] of snapshot) {
+        if (!page?.items) continue;
+        qc.setQueryData<AdminCompanyPage>(key, {
+          ...page,
+          items: page.items.map((row) => (row.id === id ? { ...row, status } : row)),
+        });
+      }
+      return { snapshot };
+    },
+
+    onError: (_error, _variables, context) => {
+      for (const [key, page] of context?.snapshot ?? []) qc.setQueryData(key, page);
+    },
+
+    // Always revalidate, success or failure: the counts, the audit history and
+    // every derived field come from the server, and the optimistic write only
+    // ever claimed one column.
+    onSettled: () => void qc.invalidateQueries({ queryKey: ['admin'] }),
   });
 }

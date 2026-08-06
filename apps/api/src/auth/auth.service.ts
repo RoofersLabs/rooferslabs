@@ -12,10 +12,17 @@ export interface SessionCompanySummary {
   id: string;
   name: string;
   slug: string;
+  /**
+   * The account-status wall's answer, as the browser sees it. It decides which
+   * screen renders, never whether data is served — `AccountStatusGuard` answers
+   * that on every request from the same column.
+   */
   status: CompanyStatus;
   onboardingStep: OnboardingStep;
   logoUrl: string | null;
   primaryColor: string | null;
+  /** Signup date. The waiting screen shows it, so a tenant can see how long. */
+  createdAt: string;
 }
 
 export interface SessionResponse {
@@ -74,6 +81,7 @@ export class AuthService {
         onboardingStep: true,
         logoUrl: true,
         primaryColor: true,
+        createdAt: true,
       },
     });
 
@@ -90,6 +98,7 @@ export class AuthService {
             onboardingStep: company.onboardingStep as OnboardingStep,
             logoUrl: company.logoUrl,
             primaryColor: company.primaryColor,
+            createdAt: company.createdAt.toISOString(),
           }
         : null,
     };

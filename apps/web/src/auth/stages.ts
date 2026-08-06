@@ -9,7 +9,7 @@
  * This file is deliberately free of React, Clerk, and the router so the whole
  * policy can be unit-tested as pure functions.
  */
-import { OnboardingStep } from '@rooferslabs/shared';
+import { CompanyStatus, OnboardingStep } from '@rooferslabs/shared';
 
 /**
  * The progression a tenant moves through, in order. A visitor is in exactly one
@@ -20,9 +20,17 @@ export type Stage =
   | 'anonymous'
   /** Signed in, but the company record or its guided setup is unfinished. */
   | 'onboarding'
-  /** Setup finished, no active subscription. The payment wall. */
+  /**
+   * Setup finished, and the account is either waiting on founder approval or
+   * paused. The two share a stage because they are the same routing fact — the
+   * tenant may reach nothing — and differ only in which sentence the one page
+   * they can reach prints. Splitting them would double every entry in the access
+   * table to express a distinction routing does not make.
+   */
+  | 'approval'
+  /** Approved, no active subscription. The payment wall. */
   | 'payment'
-  /** Signed in, onboarded, and paying. The application proper. */
+  /** Signed in, onboarded, approved, and paying. The application proper. */
   | 'app';
 
 /**
@@ -37,6 +45,13 @@ export const ROUTES = {
   signIn: '/sign-in',
   signUp: '/sign-up',
   onboarding: '/onboarding',
+  /**
+   * The one address a tenant behind the approval wall can reach. Named for the
+   * question it answers rather than for either answer, because the same URL
+   * renders "awaiting approval" and "paused" — and a tenant paused after months
+   * of use should not be sent to a path called `/awaiting-approval`.
+   */
+  accountStatus: '/account-status',
   payment: '/payment',
   billing: '/billing',
   /** The canonical dashboard. `home('app')` resolves here. */
@@ -96,6 +111,15 @@ export interface AccessFacts {
   isSignedIn: boolean;
   /** Null until the tenant creates its company in wizard step 1. */
   onboardingStep: OnboardingStep | null;
+  /**
+   * The tenant's lifecycle status, or null before a company exists.
+   *
+   * This is a *copy* of what the API enforces, used to pick a screen. It is
+   * never the protection: `AccountStatusGuard` reads the same column from the
+   * database on every request, so editing this value in a browser changes which
+   * page renders and nothing about what data it can load.
+   */
+  companyStatus: CompanyStatus | null;
   /** Mirrors the payment provider via the backend. Grandfathered tenants also read true. */
   isSubscribed: boolean;
   /**
@@ -113,6 +137,7 @@ export interface AccessFacts {
 export function resolveStage({
   isSignedIn,
   onboardingStep,
+  companyStatus,
   isSubscribed,
   paymentsEnabled,
 }: AccessFacts): Stage {
@@ -120,6 +145,14 @@ export function resolveStage({
   // No company yet, or the wizard never reached the end: setup is unfinished.
   if (onboardingStep === null || onboardingStep !== OnboardingStep.COMPLETE) {
     return 'onboarding';
+  }
+  // Approval sits before payment, matching the API's guard order. A tenant
+  // nobody has admitted is never shown a checkout, and one that has just been
+  // paused is not asked to keep paying. ONBOARDING is not tested here: the
+  // wizard check above already caught it, and a company that somehow held that
+  // status with a COMPLETE wizard is a contradiction the setup stage handles.
+  if (companyStatus === CompanyStatus.PENDING_APPROVAL || companyStatus === CompanyStatus.PAUSED) {
+    return 'approval';
   }
   // With billing off there is no wall, so 'payment' is unreachable and a
   // finished tenant goes straight into the application.
@@ -131,11 +164,14 @@ export function resolveStage({
  * The stages `resolveStage` can actually produce. With payments off nothing
  * resolves to 'payment', which is what makes the billing routes unreachable
  * without special-casing them in the guard.
+ *
+ * 'approval' is reachable in both configurations: the founder's decision is not
+ * a billing concern and does not switch off with payments.
  */
 export function reachableStages(paymentsEnabled: boolean): readonly Stage[] {
   return paymentsEnabled
-    ? ['anonymous', 'onboarding', 'payment', 'app']
-    : ['anonymous', 'onboarding', 'app'];
+    ? ['anonymous', 'onboarding', 'approval', 'payment', 'app']
+    : ['anonymous', 'onboarding', 'approval', 'app'];
 }
 
 /**
@@ -163,6 +199,8 @@ export function home(stage: Stage): GuardedRoute {
       return ROUTES.signIn;
     case 'onboarding':
       return ROUTES.onboarding;
+    case 'approval':
+      return ROUTES.accountStatus;
     case 'payment':
       return ROUTES.payment;
     case 'app':
@@ -190,6 +228,11 @@ export function routeAccess(paymentsEnabled: boolean): RouteAccess {
     [ROUTES.signIn]: ['anonymous'],
     [ROUTES.signUp]: ['anonymous'],
     [ROUTES.onboarding]: ['onboarding'],
+    // Exactly one stage, and deliberately not 'app': an approved tenant landing
+    // here after a browser back-button is bounced to the dashboard rather than
+    // shown a page telling them they are waiting for something that already
+    // happened.
+    [ROUTES.accountStatus]: ['approval'],
     [ROUTES.payment]: paymentsEnabled ? ['payment'] : [],
     // Reachable while unpaid *and* while paying: a tenant returning from the
     // provider's approval page lands here before the activation webhook has,

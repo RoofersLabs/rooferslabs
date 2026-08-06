@@ -15,6 +15,13 @@ export const ADMIN_ROUTES = {
   root: '/admin',
   companies: '/admin',
   company: (id: string) => `/admin/companies/${id}`,
+  /**
+   * The approval queue. Its own page rather than a filter on the companies
+   * list: approving is a decision, not a way of browsing, and it needs summary
+   * counts, per-row actions and a detail drawer that the read-only list has no
+   * use for.
+   */
+  approvals: '/admin/approvals',
   analytics: '/admin/analytics',
   settings: '/admin/settings',
 } as const;

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
+import type { Company, CompanyStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
@@ -10,9 +10,12 @@ import { PrismaService } from '../prisma/prisma.service';
  * a query without a `companyId` filter is a bug anywhere else, so keeping them
  * together makes the exception auditable rather than scattered.
  *
- * Nothing here writes to tenant data. The portal observes; it does not operate
- * the customer's account for them. The single exception is `company_notes`,
- * which is admin-owned data no customer endpoint can reach.
+ * Nothing here writes to tenant *business* data. The portal observes; it does
+ * not operate the customer's account for them. There are exactly two exceptions,
+ * and both are the platform's own record rather than the customer's:
+ * `company_notes`, which no customer endpoint can reach, and `companies.status`
+ * plus its approval columns, which is the founder's decision about whether an
+ * account may run at all.
  */
 @Injectable()
 export class AdminRepository {
@@ -145,6 +148,86 @@ export class AdminRepository {
           },
         },
         phoneNumbers: { select: { phoneNumber: true, status: true } },
+      },
+    });
+  }
+
+  // ---- Approval lifecycle -------------------------------------------------
+
+  /**
+   * How many tenants sit in each lifecycle status, for the summary cards.
+   *
+   * Grouped in one query rather than four counts, and deliberately unfiltered by
+   * whatever the table is currently showing: "3 pending" has to stay true while
+   * the founder is looking at the Active tab, or the number is worse than
+   * useless — it is the reason they would go and look.
+   */
+  statusCounts() {
+    return this.prisma.company.groupBy({
+      by: ['status'],
+      orderBy: { status: 'asc' },
+      _count: { _all: true },
+    });
+  }
+
+  /**
+   * Move a tenant's status and record that it happened, atomically.
+   *
+   * The two writes are one transaction because a lifecycle change with no audit
+   * row is exactly the state this feature exists to prevent: the founder's
+   * decisions about who may use the platform have to be reconstructable, and a
+   * partial write would leave an account switched on with nothing saying who
+   * switched it. Either both land or neither does.
+   *
+   * `expectedFrom` makes the update conditional on the status the caller
+   * believed it was acting on. Two portal tabs open on the same pending tenant
+   * would otherwise both "succeed", writing two audit rows for one transition
+   * — the second claiming a previous status that was already gone. The service
+   * turns the resulting zero-row update into a conflict the operator can see.
+   */
+  async transition(
+    companyId: string,
+    expectedFrom: readonly CompanyStatus[],
+    data: Prisma.CompanyUpdateInput,
+    audit: { userId: string; action: string; metadata: Prisma.InputJsonValue },
+  ): Promise<Company | null> {
+    return this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.company.updateMany({
+        where: { id: companyId, status: { in: expectedFrom as CompanyStatus[] } },
+        data: data as Prisma.CompanyUpdateManyMutationInput,
+      });
+      if (!count) return null;
+
+      await tx.auditLog.create({
+        data: {
+          companyId,
+          userId: audit.userId,
+          action: audit.action,
+          entityType: 'Company',
+          entityId: companyId,
+          metadata: audit.metadata,
+        },
+      });
+
+      return tx.company.findUnique({ where: { id: companyId } });
+    });
+  }
+
+  /**
+   * One tenant's lifecycle history, newest first.
+   *
+   * Filtered to the approval actions rather than returning the whole audit log:
+   * this table is shared with anything else that ever writes an audit row, and
+   * the drawer is answering one question — how did this account get to the
+   * status it is in.
+   */
+  approvalHistory(companyId: string, actions: readonly string[], take = 50) {
+    return this.prisma.auditLog.findMany({
+      where: { companyId, action: { in: actions as string[] } },
+      orderBy: { createdAt: 'desc' },
+      take,
+      include: {
+        user: { select: { id: true, email: true, firstName: true, lastName: true } },
       },
     });
   }

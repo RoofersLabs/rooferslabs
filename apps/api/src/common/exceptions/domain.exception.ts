@@ -59,6 +59,37 @@ export class OnboardingIncompleteError extends DomainException {
   }
 }
 
+/**
+ * The tenant has finished setup and is waiting on a founder decision.
+ *
+ * 403 rather than 402: nothing the caller can do resolves it. Paying, retrying,
+ * or reconfiguring changes nothing — a person has to say yes — so the client is
+ * told to show the waiting screen and poll, not to offer an action.
+ */
+export class AccountPendingApprovalError extends DomainException {
+  constructor(message = 'Your account is awaiting founder approval.') {
+    super(ApiErrorCode.ACCOUNT_PENDING_APPROVAL, message, HttpStatus.FORBIDDEN);
+  }
+}
+
+/**
+ * The tenant was approved and has since been paused by the founder.
+ *
+ * Deliberately a separate code from {@link AccountPendingApprovalError} even
+ * though both are 403 and both mean "not now". They are different events to the
+ * person reading the screen — one has never had access, the other has just lost
+ * it — and a client that could not tell them apart would have to guess which
+ * sentence to show.
+ *
+ * The message never carries `pauseReason`. That note is written by staff for
+ * staff; the tenant is pointed at support, who can explain it in context.
+ */
+export class AccountPausedError extends DomainException {
+  constructor(message = 'Your account has been temporarily paused.') {
+    super(ApiErrorCode.ACCOUNT_PAUSED, message, HttpStatus.FORBIDDEN);
+  }
+}
+
 export class ExternalServiceError extends DomainException {
   constructor(message = 'An upstream service is currently unavailable.') {
     super(ApiErrorCode.EXTERNAL_SERVICE_ERROR, message, HttpStatus.BAD_GATEWAY);

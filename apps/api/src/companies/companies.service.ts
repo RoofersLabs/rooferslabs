@@ -130,7 +130,13 @@ export class CompaniesService {
 
   /**
    * Finalize the guided setup wizard. This marks configuration as done; it does
-   * not make the tenant operational — the payment step comes next.
+   * not make the tenant operational — founder approval comes next, then payment.
+   *
+   * The status set here is PENDING_APPROVAL, not ACTIVE. That one word is the
+   * whole of the approval feature's enforcement on this side: finishing setup
+   * used to admit a tenant to the product, and now it admits them to a queue.
+   * Only {@link AdminService.approve} writes ACTIVE, and it is reachable by
+   * platform staff alone.
    *
    * Phone-number provisioning deliberately does *not* happen here. Onboarding
    * now runs before the payment wall, so provisioning on completion would buy a
@@ -145,7 +151,7 @@ export class CompaniesService {
     }
     await this.repo.update(companyId, {
       onboardingStep: OnboardingStep.COMPLETE,
-      status: CompanyStatus.ACTIVE,
+      status: CompanyStatus.PENDING_APPROVAL,
       onboardedAt: new Date(),
     });
     await this.invalidate(companyId);

@@ -37,6 +37,22 @@ export class AdminAnalyticsQueryDto {
   days?: '7' | '30';
 }
 
+/**
+ * The optional note behind a pause.
+ *
+ * Internal by design: it is written by staff for staff, stored on the tenant row
+ * and shown in the portal, and never travels to the paused customer — their
+ * screen points them at support, who can explain the situation with the context
+ * a one-line reason cannot carry.
+ */
+export class PauseCompanyDto {
+  @ApiPropertyOptional({ description: 'Internal note. Never shown to the customer.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
+}
+
 export class CreateCompanyNoteDto {
   @IsString()
   @MinLength(1)

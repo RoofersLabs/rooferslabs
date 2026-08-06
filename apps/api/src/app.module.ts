@@ -24,6 +24,7 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { RequestContextMiddleware } from './common/middleware/request-context.middleware';
 
 import { AuthModule } from './auth/auth.module';
+import { AccountStatusGuard } from './auth/guards/account-status.guard';
 import { ClerkAuthGuard } from './auth/guards/clerk-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { SubscriptionGuard } from './auth/guards/subscription.guard';
@@ -103,11 +104,17 @@ import { HealthModule } from './health/health.module';
     HealthModule,
   ],
   providers: [
-    // Order matters: authentication → throttling → tenant isolation →
-    // subscription (payment wall) → roles.
+    // Order matters: authentication → throttling → tenant isolation → founder
+    // approval → subscription (payment wall) → roles.
+    //
+    // Approval sits before payment because that is the business order: a tenant
+    // nobody has admitted is never shown a checkout, and a paused one is never
+    // asked to keep paying. It sits after tenant isolation because it needs the
+    // company the previous guard just established.
     { provide: APP_GUARD, useClass: ClerkAuthGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: TenantGuard },
+    { provide: APP_GUARD, useClass: AccountStatusGuard },
     { provide: APP_GUARD, useClass: SubscriptionGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },

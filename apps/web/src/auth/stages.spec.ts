@@ -1,4 +1,4 @@
-import { OnboardingStep } from '@rooferslabs/shared';
+import { CompanyStatus, OnboardingStep } from '@rooferslabs/shared';
 import {
   ONBOARDING_STEPS,
   ROUTES,
@@ -18,6 +18,7 @@ import {
 const facts = (overrides: Partial<Parameters<typeof resolveStage>[0]> = {}) => ({
   isSignedIn: true,
   onboardingStep: OnboardingStep.COMPLETE,
+  companyStatus: CompanyStatus.ACTIVE,
   isSubscribed: true,
   paymentsEnabled: true,
   ...overrides,
@@ -61,6 +62,82 @@ describe('resolveStage', () => {
   });
 });
 
+describe('resolveStage and founder approval', () => {
+  it('holds a tenant awaiting approval at the wall', () => {
+    expect(resolveStage(facts({ companyStatus: CompanyStatus.PENDING_APPROVAL }))).toBe('approval');
+  });
+
+  it('returns a paused tenant to the wall, however entitled it otherwise is', () => {
+    // The case the ordering exists for: an approved, paying tenant using the
+    // product is paused mid-session. Every other fact still says 'app'.
+    expect(resolveStage(facts({ companyStatus: CompanyStatus.PAUSED, isSubscribed: true }))).toBe(
+      'approval',
+    );
+  });
+
+  it('gates approval before payment, not after', () => {
+    // A tenant nobody has admitted is never shown a checkout. If this inverted,
+    // the product would take money from an account it had not yet accepted.
+    expect(
+      resolveStage(facts({ companyStatus: CompanyStatus.PENDING_APPROVAL, isSubscribed: false })),
+    ).toBe('approval');
+  });
+
+  it('still gates approval when payments are switched off', () => {
+    // The founder's decision is not a billing concern, so PAYMENTS_ENABLED=false
+    // must not open it. Production runs with payments off.
+    for (const status of [CompanyStatus.PENDING_APPROVAL, CompanyStatus.PAUSED]) {
+      expect(resolveStage(facts({ companyStatus: status, paymentsEnabled: false }))).toBe(
+        'approval',
+      );
+    }
+    expect(reachableStages(false)).toContain('approval');
+  });
+
+  it('keeps an unfinished tenant in onboarding rather than at the wall', () => {
+    // Setup comes first: a tenant mid-wizard has not been asked about yet, and
+    // sending them to a page that says "we are reviewing you" would be a lie.
+    expect(resolveStage(facts({ onboardingStep: OnboardingStep.AI, companyStatus: null }))).toBe(
+      'onboarding',
+    );
+  });
+
+  it('lets an approved tenant straight through', () => {
+    expect(resolveStage(facts({ companyStatus: CompanyStatus.ACTIVE }))).toBe('app');
+  });
+});
+
+describe('the approval wall route', () => {
+  it('admits the approval stage and nothing else', () => {
+    for (const table of [withPayments, withoutPayments]) {
+      expect(table[ROUTES.accountStatus]).toEqual(['approval']);
+    }
+  });
+
+  it('turns an approved tenant away from it', () => {
+    // Reaching this page after being approved would say the opposite of what is
+    // true, so the back button lands on the dashboard instead.
+    expect(redirectFor('app', withPayments[ROUTES.accountStatus], withPayments)).toBe(
+      ROUTES.dashboard,
+    );
+  });
+
+  it('bounces a waiting tenant off every application route', () => {
+    for (const route of [ROUTES.dashboard, ROUTES.calls, ROUTES.customers, ROUTES.settings]) {
+      expect(redirectFor('approval', withPayments[route], withPayments)).toBe(ROUTES.accountStatus);
+    }
+  });
+
+  it('bounces a waiting tenant off the payment and onboarding surfaces too', () => {
+    expect(redirectFor('approval', withPayments[ROUTES.payment], withPayments)).toBe(
+      ROUTES.accountStatus,
+    );
+    expect(redirectFor('approval', withPayments[ROUTES.onboarding], withPayments)).toBe(
+      ROUTES.accountStatus,
+    );
+  });
+});
+
 describe('resolveStage with payments disabled', () => {
   it('sends an unsubscribed tenant straight to the application', () => {
     // The whole point of the flag: onboarding → dashboard, no payment step.
@@ -91,6 +168,7 @@ describe('redirectFor', () => {
     // Each stage may sit on its own landing route.
     { stage: 'anonymous', route: ROUTES.signIn, expected: null },
     { stage: 'onboarding', route: ROUTES.onboarding, expected: null },
+    { stage: 'approval', route: ROUTES.accountStatus, expected: null },
     { stage: 'payment', route: ROUTES.payment, expected: null },
     { stage: 'app', route: ROUTES.dashboard, expected: null },
 

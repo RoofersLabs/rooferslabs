@@ -70,9 +70,33 @@ export interface AdminCompanyRow {
   subscriptionStatus?: SubscriptionStatus;
   lastActiveAt: string | null;
   createdAt?: string;
+  approvedAt?: string | null;
+  pausedAt?: string | null;
+  pauseReason?: string | null;
   callsToday: number;
   leadsToday: number;
   appointmentsToday: number;
+}
+
+/**
+ * Tenants per lifecycle status, sent as metadata alongside the company list.
+ *
+ * Unfiltered totals, so the summary cards keep telling the truth while the
+ * founder is looking at a filtered tab.
+ */
+export type AdminApprovalCounts = Record<CompanyStatus, number> & { total: number };
+
+/** One founder decision, as the drawer's audit history renders it. */
+export interface AdminApprovalEvent {
+  id: string;
+  action: string;
+  previousStatus: CompanyStatus | null;
+  newStatus: CompanyStatus | null;
+  reason: string | null;
+  actorId: string | null;
+  actorEmail: string | null;
+  actorName: string | null;
+  createdAt: string;
 }
 
 export interface AdminCompanyDetail {
@@ -87,6 +111,12 @@ export interface AdminCompanyDetail {
     timezone: string;
     createdAt: string;
     onboardedAt: string | null;
+    approvedAt: string | null;
+    approvedBy: string | null;
+    pausedAt: string | null;
+    pausedBy: string | null;
+    /** Internal staff note. Never shown to the customer. */
+    pauseReason: string | null;
     receptionistEnabled: boolean;
     phoneNumbers: { phoneNumber: string; status: string }[];
     ownerName: string | null;
@@ -112,6 +142,7 @@ export interface AdminCompanyDetail {
   recentCustomers: Customer[];
   recentAppointments: Appointment[];
   notes: CompanyNote[];
+  approvalHistory: AdminApprovalEvent[];
 }
 
 export interface CompanyNote {
@@ -142,10 +173,17 @@ export interface SessionCompany {
   id: string;
   name: string;
   slug: string;
+  /**
+   * Which of the four lifecycle walls this tenant is behind, if any. The stage
+   * machine derives routing from it; the API enforces the same value on every
+   * request, so nothing here is load-bearing for security.
+   */
   status: CompanyStatus;
   onboardingStep: OnboardingStep;
   logoUrl: string | null;
   primaryColor: string | null;
+  /** Signup date, shown on the awaiting-approval screen. */
+  createdAt: string;
 }
 
 /**

@@ -70,8 +70,9 @@ export function ReviewStep() {
 
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    // The stage flips to `payment` once the session reports COMPLETE; the
-    // route guard performs the navigation, so there is none here.
+    // The stage flips to `approval` once the session reports COMPLETE and
+    // PENDING_APPROVAL; the route guard performs the navigation, so there is
+    // none here.
     await advanceFrom(OnboardingStep.KNOWLEDGE);
   };
 
@@ -146,17 +147,21 @@ export function ReviewStep() {
           <IconTile icon={SparklesIcon} tone="brand" size="md" />
           <div className="min-w-0">
             <p className="text-h5 text-ink">You’re all set</p>
+            {/* What actually happens next, said before the click rather than
+                discovered after it. Finishing setup no longer opens the product
+                — it submits the account for approval — and a button that
+                promised a dashboard would be making a promise it cannot keep. */}
             <p className="mt-1 text-body text-ink-muted">
-              {paymentsEnabled
-                ? 'Finishing setup takes you to plan selection. Your receptionist goes live once your subscription is active.'
-                : 'Finishing setup takes you straight to your dashboard.'}
+              Finishing setup submits your account for approval. Our team reviews it and you’ll get
+              access as soon as it’s approved
+              {paymentsEnabled ? ', where you’ll choose a plan to go live.' : '.'}
             </p>
           </div>
         </div>
         <StepError error={error} />
         <StepActions
           submitting={isSaving}
-          submitLabel={paymentsEnabled ? 'Finish setup & choose a plan' : 'Finish setup'}
+          submitLabel="Finish setup & request access"
           onBack={() => navigate(stepPath(OnboardingStep.AI))}
         />
       </Card>

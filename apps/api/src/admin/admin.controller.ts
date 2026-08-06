@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -22,6 +23,7 @@ import {
   AdminCompanyQueryDto,
   AdminSearchQueryDto,
   CreateCompanyNoteDto,
+  PauseCompanyDto,
 } from './dto/admin.dto';
 
 /**
@@ -33,8 +35,11 @@ import {
  * `@rooferslabs/shared` and nothing else — never `role`, which is
  * `UserRole.OWNER` for every customer on the platform.
  *
- * Read-only over tenant data. The only writes are company notes, which are
- * admin-owned and unreachable from any customer endpoint.
+ * Read-only over tenant *business* data. The only writes are company notes,
+ * which are admin-owned and unreachable from any customer endpoint, and the
+ * three approval endpoints, which move `companies.status` — the founder's
+ * decision about whether an account may run at all, and the one thing on this
+ * platform that is nobody else's to make.
  *
  * `@AllowNoCompany` is required, not a loosening. `TenantGuard` and
  * `SubscriptionGuard` are global and run *before* any controller guard, and both
@@ -64,16 +69,55 @@ export class AdminController {
   }
 
   @Get('companies')
-  @ApiOperation({ summary: 'List every company with today’s usage' })
+  @ApiOperation({ summary: 'List every company with today’s usage and lifecycle counts' })
   async companies(@Query() query: AdminCompanyQueryDto) {
-    const { items, pagination } = await this.admin.listCompanies(query);
-    return paginated(items, pagination, 'Companies retrieved.');
+    const { items, pagination, counts } = await this.admin.listCompanies(query);
+    return paginated(items, pagination, 'Companies retrieved.', { counts });
   }
 
   @Get('companies/:id')
-  @ApiOperation({ summary: 'One company’s operational detail' })
+  @ApiOperation({ summary: 'One company’s operational detail and approval history' })
   async company(@Param('id') id: string) {
     return respond(await this.admin.getCompany(id), 'Company retrieved.');
+  }
+
+  /**
+   * The three founder decisions.
+   *
+   * PATCH on a sub-resource rather than one endpoint taking a target status:
+   * each is a distinct decision with its own precondition (only a pending
+   * account can be approved, only an active one paused, only a paused one
+   * resumed), and naming them separately means the precondition is part of the
+   * route rather than a branch inside a handler.
+   *
+   * They are the only writes to tenant lifecycle state anywhere in the API, and
+   * they are behind `PlatformAdminGuard` by sitting in this controller. A
+   * customer calling them — with any token, from any client — is refused before
+   * the handler is reached.
+   */
+  @Patch('companies/:id/approve')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Approve a pending account — grants full access immediately' })
+  async approve(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return respond(await this.admin.approve(id, user), 'Account approved.');
+  }
+
+  @Patch('companies/:id/pause')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Pause an active account — revokes access immediately' })
+  async pause(
+    @Param('id') id: string,
+    @Body() dto: PauseCompanyDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return respond(await this.admin.pause(id, user, dto), 'Account paused.');
+  }
+
+  @Patch('companies/:id/resume')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Resume a paused account — restores full access immediately' })
+  async resume(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return respond(await this.admin.resume(id, user), 'Account resumed.');
   }
 
   @Get('live-calls')

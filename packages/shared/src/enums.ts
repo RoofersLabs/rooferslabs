@@ -33,11 +33,31 @@ export enum PlatformRole {
   OWNER = 'OWNER',
 }
 
-/** Lifecycle status of a company (tenant). */
+/**
+ * Lifecycle status of a company (tenant) — and the single source of truth for
+ * whether it may use the platform at all.
+ *
+ * The progression is linear up to ACTIVE and then reversible:
+ *
+ *     ONBOARDING → PENDING_APPROVAL → ACTIVE ⇄ PAUSED
+ *
+ * Exactly one value, ACTIVE, grants access. Everything else is a wall, enforced
+ * by `AccountStatusGuard` on the API rather than by any screen — the frontend
+ * reads the same value only to decide *which* wall to draw.
+ *
+ * `PAUSED` is the former `SUSPENDED`, renamed rather than added alongside it:
+ * two words for "this tenant is switched off" is how a status column ends up
+ * with one value the founder sets and another the code checks.
+ */
 export enum CompanyStatus {
+  /** The guided setup wizard is unfinished. No approval decision exists yet. */
   ONBOARDING = 'ONBOARDING',
+  /** Setup is finished and the account is waiting on a founder decision. */
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  /** Approved. The only status that admits a tenant to the application. */
   ACTIVE = 'ACTIVE',
-  SUSPENDED = 'SUSPENDED',
+  /** Access withdrawn by the founder after approval. Reversible with Resume. */
+  PAUSED = 'PAUSED',
 }
 
 /** Discrete steps of the guided onboarding wizard. */

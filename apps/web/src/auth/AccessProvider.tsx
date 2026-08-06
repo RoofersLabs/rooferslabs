@@ -3,7 +3,7 @@ import { useAuth } from '@clerk/clerk-react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { OnboardingStep } from '@rooferslabs/shared';
 import { queryKeys, useSessionQuery } from '@/hooks/queries';
-import { onSubscriptionRequired } from '@/lib/api-client';
+import { onAccessRevoked, onSubscriptionRequired } from '@/lib/api-client';
 import type { SessionCompany, SessionUser } from '@/types/api';
 import { resolveStage, routeAccess, type RouteAccess, type Stage } from './stages';
 
@@ -24,6 +24,15 @@ export interface AccessState {
   access: RouteAccess;
   /** True while Clerk or the session request is still resolving. */
   isLoading: boolean;
+  /**
+   * True while the session is being re-read, including background refetches.
+   *
+   * Distinct from `isLoading`, which is only ever true before the first answer.
+   * A surface that polls the session — the approval wall — needs to show that a
+   * manual refresh did something, and `isLoading` goes back to false forever
+   * after the first load.
+   */
+  isRefreshing: boolean;
   error: Error | null;
   retry: () => void;
 }
@@ -46,28 +55,38 @@ export function AccessProvider({ children }: { children: ReactNode }) {
   const signedIn = Boolean(isLoaded && isSignedIn);
   const session = useSessionQuery(signedIn);
 
-  // The API answers 402 on every gated endpoint once a subscription lapses.
-  // Refetching the session re-derives the stage, and the guards move the user
-  // to /payment on the next render — no full page reload, no lost state.
-  useEffect(
-    () =>
-      onSubscriptionRequired(() => {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.session });
-      }),
-    [queryClient],
-  );
+  // The API answers 402 on every gated endpoint once a subscription lapses, and
+  // 403 ACCOUNT_PAUSED once the founder pauses the account. Both are handled the
+  // same way and for the same reason: refetching the session re-derives the
+  // stage, and the guards move the user to /payment or /account-status on the
+  // next render — no full page reload, no lost state, and no second copy of the
+  // routing rules living in the API client.
+  useEffect(() => {
+    const revalidate = () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.session });
+    };
+    const unsubscribe = [onSubscriptionRequired(revalidate), onAccessRevoked(revalidate)];
+    return () => unsubscribe.forEach((off) => off());
+  }, [queryClient]);
 
-  const { data, isPending, isError, error, refetch } = session;
+  const { data, isPending, isFetching, isError, error, refetch } = session;
 
   const value = useMemo<AccessState>(() => {
     const company = data?.company ?? null;
     const onboardingStep = company?.onboardingStep ?? null;
+    const companyStatus = company?.status ?? null;
     const isSubscribed = data?.subscription?.isActive ?? false;
     // Default to enabled until the session answers, matching the API's own
     // fail-closed default so a slow response cannot flash the billing surface.
     const paymentsEnabled = data?.paymentsEnabled ?? true;
     return {
-      stage: resolveStage({ isSignedIn: signedIn, onboardingStep, isSubscribed, paymentsEnabled }),
+      stage: resolveStage({
+        isSignedIn: signedIn,
+        onboardingStep,
+        companyStatus,
+        isSubscribed,
+        paymentsEnabled,
+      }),
       user: data?.user ?? null,
       company,
       onboardingStep,
@@ -77,10 +96,11 @@ export function AccessProvider({ children }: { children: ReactNode }) {
       // already fully resolved and must not be held behind a request that
       // will never run.
       isLoading: !isLoaded || (signedIn && isPending),
+      isRefreshing: signedIn && isFetching,
       error: isError ? (error as Error) : null,
       retry: () => void refetch(),
     };
-  }, [isLoaded, signedIn, data, isPending, isError, error, refetch]);
+  }, [isLoaded, signedIn, data, isPending, isFetching, isError, error, refetch]);
 
   return <AccessContext.Provider value={value}>{children}</AccessContext.Provider>;
 }

@@ -7,14 +7,23 @@ import {
   AdjustmentsHorizontalIcon,
   BuildingOffice2Icon,
   ChartBarIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline';
 
 /**
- * `end` on Companies so the tab does not stay lit while a company's own page is
- * open — that page is a level down, not the list.
+ * `end` on every tab, Companies included.
+ *
+ * Companies is mounted at `/admin`, the portal's root, so without `end` its
+ * NavLink matches every path beneath it — the tab lit up on Analytics, on
+ * Settings, and on a company's own detail page, which is a level down rather
+ * than the list. The comment here has always said `end`; the value did not,
+ * and adding a second tab is what made the disagreement visible.
  */
 const NAV = [
-  { to: ADMIN_ROUTES.companies, label: 'Companies', icon: BuildingOffice2Icon, end: false },
+  { to: ADMIN_ROUTES.companies, label: 'Companies', icon: BuildingOffice2Icon, end: true },
+  // Second, not last: it is the only tab that carries work, and the founder
+  // opens it every day. `end` because it has no children to stay lit for.
+  { to: ADMIN_ROUTES.approvals, label: 'Customer approvals', icon: UserGroupIcon, end: true },
   { to: ADMIN_ROUTES.analytics, label: 'Analytics', icon: ChartBarIcon, end: true },
   { to: ADMIN_ROUTES.settings, label: 'Settings', icon: AdjustmentsHorizontalIcon, end: true },
 ] as const;
